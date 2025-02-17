@@ -123,6 +123,7 @@ class Response(BaseModel):
 
 
 def main(cfg: AppConfig):
+    # TODO: Add logging
     logging.info("\n%s", cfg)
     cfg.output_dir.mkdir(parents=True, exist_ok=True)
     sampling_params = SamplingParams(**dataclasses.asdict(cfg.sampling_params))
