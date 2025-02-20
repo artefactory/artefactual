@@ -21,13 +21,16 @@
 import abc
 import dataclasses
 from collections.abc import Callable, Sequence
+from contextlib import ExitStack
 from itertools import chain
-from typing import Any
+from typing import Annotated, Any
 
+import numpy as np
 import polars as pl
 import toolz as tlz
 from absl import app, logging
 from beartype import beartype
+from beartype.vale import Is
 from datasets import Dataset, DatasetDict, IterableDataset, IterableDatasetDict, load_dataset
 from etils import eapp, edc, epath, etqdm
 from simple_parsing import Serializable, field, subgroups
@@ -37,6 +40,8 @@ from vllm.sampling_params import RequestOutputKind
 from vllm.sequence import Logprob
 
 HFDataset = DatasetDict | Dataset | IterableDataset | IterableDatasetDict
+
+MIN_VAL = 1e-2
 
 
 @dataclasses.dataclass
@@ -141,6 +146,14 @@ class SamplingConfig:
 
 @edc.dataclass
 @dataclasses.dataclass
+class Gemma2SamplingConfig(SamplingConfig):
+    temperature: float = 0.6
+    top_p: float = 0.9
+    add_generation_prompt: bool = True
+
+
+@edc.dataclass
+@dataclasses.dataclass
 class ModelConfig:
     model: str
     task: str = "generate"
@@ -166,6 +179,12 @@ class ModelConfig:
 
 @edc.dataclass
 @dataclasses.dataclass
+class Gemma2ModelConfig(ModelConfig):
+    model: str = "neuralmagic/gemma-2-9b-it-FP8"
+
+
+@edc.dataclass
+@dataclasses.dataclass
 class MistralModelConfig(ModelConfig):
     tokenizer_mode: str = "mistral"
     config_format: str = "mistral"
@@ -174,14 +193,45 @@ class MistralModelConfig(ModelConfig):
 
 @edc.dataclass
 @dataclasses.dataclass
+class MultipleGenerationConfig:
+    min_val: Annotated[float, Is[lambda x: x > MIN_VAL]] = 1.0
+    max_val: float = 1.0
+    n_samples: int = 1
+    seed: int = 42
+
+    def __post_init__(self):
+        if self.min_val > self.max_val:
+            msg = "min_val can't be larger than max_val"
+            raise ValueError(msg)
+
+    def sampling_params_temperature(self, sp: SamplingParams):
+        temperature = 10 ** np.random.uniform(np.log10(self.min_val), np.log10(self.max_val))
+        new_sp = sp.clone()
+        new_sp.temperature = temperature
+        return new_sp
+
+
+@edc.dataclass
+@dataclasses.dataclass
 class AppConfig:
-    model: ModelConfig = subgroups({"default": ModelConfig, "mistral": MistralModelConfig}, default="default")
+    # TODO: Could be an experiments config
+    output_dir: epath.Path = edc.field(validate=epath.Path, default="outputs")
+    model: ModelConfig = subgroups(
+        {"default": ModelConfig, "mistral": MistralModelConfig, "gemma2": Gemma2ModelConfig}, default="default"
+    )
     dataset: DatasetConfig = subgroups(
         {"mrqa": MrQaDatasetConfig, "squad": SquadDatasetConfig, "naturalqa": NaturalQADatasetConfig}, default="squad"
     )
-    output_dir: epath.Path = edc.field(validate=epath.Path, default="outputs")
-    sampling_params: SamplingConfig = field(default_factory=SamplingConfig)
-    limit: int | None = None
+    sampling_params: SamplingConfig = subgroups(
+        {"default": SamplingConfig, "gemma": Gemma2SamplingConfig}, default="default"
+    )
+    repeat: MultipleGenerationConfig = field(default_factory=MultipleGenerationConfig)
+
+    def __post_init__(self):
+        if self.repeat.n_samples == 1:
+            self.repeat = dataclasses.replace(
+                self.repeat, min_val=self.sampling_params.temperature, max_val=self.sampling_params.temperature
+            )
 
 
 @beartype
@@ -198,41 +248,48 @@ def make_dataset(
 
 @beartype
 def extract_logprobs(logprobs: Sequence[dict[int, Logprob]]) -> tuple[Sequence[int], Sequence[float]]:
-    tokens, lps = zip(*chain.from_iterable([lp.items() for lp in logprobs]), strict=False)
+    tokens, lps = zip(*chain.from_iterable([lp.items() for lp in logprobs]), strict=True)
     return (tokens, tuple(lp.logprob for lp in lps))
 
 
 def main(cfg: AppConfig):
     logging.info("\n%s", cfg)
-    cfg.output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = cfg.output_dir / f"{cfg.model.model}_{cfg.dataset.name}".replace("/", "_")
+    output_dir.mkdir(parents=True, exist_ok=False)
     logging.debug("Make dataset")
     ds = make_dataset(cfg.dataset.train, cfg.dataset.sample_fn, num_proc=cfg.dataset.num_proc)
-    sampling_params = SamplingParams(**dataclasses.asdict(cfg.sampling_params))
     logging.debug("Make llm")
-    llm = LLM(**dataclasses.asdict(cfg.model))
-    output_file = cfg.output_dir / f"responses_{cfg.model.model}_{cfg.dataset.name}.json".replace("/", "_")
-    logging.debug("Output file %s", output_file)
-    if output_file.exists():
-        msg = f"{output_file} already exists"
-        raise FileExistsError(msg)
-    with output_file.open("a") as dst:
-        for batch in etqdm.tqdm(ds):
-            requests = llm.generate(batch["question"], sampling_params)
-            responses, logprobs = zip(
-                *((req.outputs[0].text, req.outputs[0].logprobs) for req in requests), strict=False
-            )
-            tokens, processed = zip(*map(extract_logprobs, logprobs), strict=False)
-            sample = {
-                "id": batch["id"],
-                "response": responses,
-                "question": batch["question"],
-                "answer": batch["answer"],
-                "tokens": tokens,
-                "logprobs": processed,
-            }
+    sampling_params = SamplingParams.from_optional(**dataclasses.asdict(cfg.sampling_params))
 
-            df = pl.DataFrame(sample)
-            df.write_ndjson(dst)
+    # Write n_samples files
+    # Draw temperature randomly at each batch but be careful to write each document only once
+
+    sps = [cfg.repeat.sampling_params_temperature(sampling_params) for _ in range(cfg.repeat.n_samples)]
+    output_files = [output_dir / f"responses_temperature_{sp.temperature}.json" for sp in sps]
+
+    llm = LLM(**dataclasses.asdict(cfg.model))
+    total = cfg.repeat.n_samples * len(ds)
+    with ExitStack() as stack:
+        opened_files = [stack.enter_context(path.open("a")) for path in output_files]
+        with etqdm.tqdm(total=total, desc="batch") as pbar:
+            for batch in ds:
+                for opened_file, sp in zip(opened_files, sps, strict=True):
+                    requests = llm.generate(batch["question"], sampling_params=sp, use_tqdm=False)
+                    responses, logprobs = zip(
+                        *((req.outputs[0].text, req.outputs[0].logprobs) for req in requests), strict=True
+                    )
+                    tokens, processed = zip(*map(extract_logprobs, logprobs), strict=True)
+                    sample = {
+                        "id": batch["id"],
+                        "response": responses,
+                        "question": batch["question"],
+                        "answer": batch["answer"],
+                        "tokens": tokens,
+                        "logprobs": processed,
+                    }
+                    df = pl.DataFrame(sample)
+                    df.write_ndjson(opened_file)
+                    pbar.update(len(df))
 
 
 if __name__ == "__main__":
