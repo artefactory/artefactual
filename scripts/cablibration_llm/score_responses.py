@@ -57,10 +57,15 @@ class AppConfig:
     responses_file: epath.Path
     ratings_file: epath.Path
     max_length: int
+    ratings_file: epath.Path | None = None
     batch_size: int = 2**20
-    output_dir: epath.Path = epath.Path("outputs")
+    output_dir: epath.Path | None = None
     method: ScoringMethod = ScoringMethod.NAIVE
     threshold: int = 4
+
+    def __post_init__(self):
+        if self.output_dir is None:
+            self.output_dir = self.responses_file.parent
 
 
 Logprobs = NDArray[np.float32]
@@ -135,16 +140,26 @@ def join_samples(
 def main(cfg: AppConfig):
     logging.info("\n%s", cfg)
 
-    output_file = (
-        cfg.output_dir / f"scores_{cfg.method}_{cfg.responses_file.name}_{cfg.ratings_file.name}.json".replace("/", "_")
-    )
+    output_file = cfg.output_dir / f"scores_{cfg.method}_{cfg.responses_file.name}.json".replace("/", "_")
+    if cfg.ratings_file:
+        output_file = f"{output_file.name}_{cfg.ratings_file.name}.json"
     if output_file.exists():
         msg = f"File {output_file} already exists"
         raise FileExistsError(msg)
     samples = read_file(cfg.responses_file)
 
-    rating_samples = tlz.pipe(cfg.ratings_file, read_file, tlz.curried.filter(lambda d: d["rating"] is not None))
-    samples = join_samples(rating_samples, samples)
+    labels = None
+    if cfg.ratings_file:
+        rating_samples = tlz.pipe(cfg.ratings_file, read_file, tlz.curried.filter(lambda d: d["rating"] is not None))
+        samples = join_samples(rating_samples, samples)
+        ratings = tlz.pipe(samples, tlz.curried.pluck("rating"), tlz.curried.map(tlz.compose_left(float, int)))
+        labels = tlz.pipe(
+            ratings,
+            tlz.curried.map(lambda rating: rating >= cfg.threshold),
+            list,
+            partial(np.array, dtype=int),
+        )
+
     ids, logprobs = zip(*tlz.pluck(["id", "logprobs"], samples), strict=False)
     ids = np.array(list(map(int, ids)), dtype=int)
 
@@ -160,8 +175,10 @@ def main(cfg: AppConfig):
 
     if cfg.method in ScoringMethod.supervised():
         ids, scores, labels = score_fn(cfg.method, logprobs, ids, labels)
+        df = pl.DataFrame({"id": ids, "score": scores, "label": labels})
     elif cfg.method in ScoringMethod.unsupervised():
         scores = score_fn(cfg.method, logprobs)
+        df = pl.DataFrame({"id": ids, "score": scores})
     else:
         msg = "wrong method"
         raise ValueError(msg)
