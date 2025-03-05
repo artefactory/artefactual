@@ -45,6 +45,12 @@ def score_fn(method: Literal[ScoringMethod.NAIVE], logprobs: Logprobs) -> Scores
 
     Returns:
         Confidence scores
+
+    Example:
+        >>> import numpy as np
+        >>> logprobs = np.array([[-1.0, -2.0, -3.0]], dtype=np.float32)
+        >>> score_fn(ScoringMethod.NAIVE, logprobs)
+        array([0.0025], dtype=float32)
     """
     return np.exp(reduce(logprobs, "batch max_len -> batch", "sum"))
 
@@ -59,6 +65,12 @@ def score_fn(method: Literal[ScoringMethod.MEAN], logprobs: Logprobs) -> Scores:
 
     Returns:
         Confidence scores
+
+    Example:
+        >>> import numpy as np
+        >>> logprobs = np.array([[-1.0, -2.0, -3.0]], dtype=np.float32)
+        >>> score_fn(ScoringMethod.MEAN, logprobs)
+        array([0.1353], dtype=float32)
     """
     return np.exp(reduce(logprobs, "batch max_len -> batch", "mean"))
 
@@ -80,6 +92,17 @@ def score_fn(
 
     Returns:
         Tuple of (IDs, scores, labels) for the test split
+
+    Example:
+        >>> import numpy as np
+        >>> logprobs = np.array([[-1.0, -2.0, -3.0], [-4.0, -5.0, -6.0]], dtype=np.float32)
+        >>> ids = np.array([1, 2])
+        >>> labels = np.array([1, 0])
+        >>> test_ids, scores, test_labels = score_fn(
+        ...     ScoringMethod.SUPERVISED_SIGMOID, logprobs, ids, labels
+        ... )
+        >>> len(scores) > 0
+        True
     """
     probs = np.exp(logprobs)
     scores = reduce(probs, "n_samples max_len -> n_samples", "mean")
