@@ -14,72 +14,43 @@
 #     "vllm>=0.7",
 #     "datasets>=3.2.0",
 #     "polars",
+#     "triton<3.1",
+#     "artefactual",
 # ]
 # ///
 
 
-import abc
 import dataclasses
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from contextlib import ExitStack
 from itertools import chain
-from typing import Annotated, Any
+from typing import Any
 
 import numpy as np
 import polars as pl
 import toolz as tlz
 from absl import app, logging
 from beartype import beartype
-from beartype.vale import Is
 from datasets import Dataset, DatasetDict, IterableDataset, IterableDatasetDict, load_dataset
 from etils import eapp, edc, epath, etqdm
-from simple_parsing import Serializable, field, subgroups
+from simple_parsing import field, subgroups
 from typing_extensions import override
-from vllm import LLM, SamplingParams
-from vllm.sampling_params import RequestOutputKind
-from vllm.sequence import Logprob
+from vllm import LLM, SamplingParams  # pytype: disable=import-error
+
+from artefactual.config.dataset import (
+    DatasetConfig,
+    SplitDatasetConfig,
+    TrainSplitDatasetConfig,
+)
+from artefactual.config.model import ModelConfig
+from artefactual.config.sampling import MultipleGenerationConfig, SamplingConfig
+
+# Import from artefactual library
+from artefactual.scoring import extract_logprobs
 
 HFDataset = DatasetDict | Dataset | IterableDataset | IterableDatasetDict
 
 MIN_VAL = 1e-2
-
-
-@dataclasses.dataclass
-class SplitDatasetConfig(abc.ABC, Serializable):
-    path: str
-    split: str
-    batch_size: int = 1
-
-
-@edc.dataclass
-@dataclasses.dataclass
-class TrainSplitDatasetConfig(SplitDatasetConfig):
-    split: str = "train"
-
-
-@edc.dataclass
-@dataclasses.dataclass
-class TestSplitDatasetConfig(SplitDatasetConfig):
-    split: str = "test"
-
-
-@edc.dataclass
-@dataclasses.dataclass
-class ValSplitDatasetConfig(SplitDatasetConfig):
-    split: str = "val"
-
-
-@dataclasses.dataclass
-class DatasetConfig(abc.ABC, Serializable):
-    name: str
-    train: TrainSplitDatasetConfig
-    val: ValSplitDatasetConfig | None = None
-    test: TestSplitDatasetConfig | None = None
-    num_proc: int | None = None
-
-    @abc.abstractmethod
-    def sample_fn(self, sample: dict[str, Any]) -> dict[str, Any]:
-        pass
 
 
 @edc.dataclass
@@ -88,12 +59,22 @@ class MrQaDatasetConfig(DatasetConfig):
     name: str = "mrqua"
     train: TrainSplitDatasetConfig = field(default_factory=lambda: TrainSplitDatasetConfig(path="mrqa"))
 
+    @override
+    def sample_fn(self, sample: dict[str, Any]) -> dict[str, Any]:
+        # Implementation for MRQA dataset processing
+        return {"question": None, "answer": None}
+
 
 @edc.dataclass
 @dataclasses.dataclass
 class SquadDatasetConfig(DatasetConfig):
     name: str = "squad"
     train: TrainSplitDatasetConfig = field(default_factory=lambda: TrainSplitDatasetConfig(path="squad"))
+
+    @override
+    def sample_fn(self, sample: dict[str, Any]) -> dict[str, Any]:
+        # Implementation for SQuAD dataset processing
+        return {"question": None, "answer": None}
 
 
 @edc.dataclass
@@ -118,63 +99,10 @@ class NaturalQADatasetConfig(DatasetConfig):
 
 @edc.dataclass
 @dataclasses.dataclass
-class SamplingConfig:
-    n: int = 1
-    best_of: int | None = None
-    presence_penalty: float = 0.0
-    frequency_penalty: float = 0.0
-    repetition_penalty: float = 1.0
-    temperature: float = 1.0
-    top_p: float = 1.0
-    top_k: int = -1
-    min_p: float = 0.0
-    seed: int | None = None
-    stop: str | list[str] | None = None
-    stop_token_ids: list[int] | None = None
-    bad_words: list[str] | None = None
-    ignore_eos: bool = False
-    max_tokens: int = 1024
-    min_tokens: int = 0
-    logprobs: int | None = 0
-    prompt_logprobs: int | None = None
-    detokenize: bool = True
-    skip_special_tokens: bool = True
-    spaces_between_special_tokens: bool = True
-    include_stop_str_in_output: bool = False
-    output_kind: RequestOutputKind = RequestOutputKind.CUMULATIVE
-
-
-@edc.dataclass
-@dataclasses.dataclass
 class Gemma2SamplingConfig(SamplingConfig):
     temperature: float = 0.6
     top_p: float = 0.9
     add_generation_prompt: bool = True
-
-
-@edc.dataclass
-@dataclasses.dataclass
-class ModelConfig:
-    model: str
-    task: str = "generate"
-    tokenizer: str | None = None
-    tokenizer_mode: str = "auto"
-    skip_tokenizer_init: bool = False
-    trust_remote_code: bool = False
-    allowed_local_media_path: str = ""
-    tensor_parallel_size: int = 1
-    dtype: str = "auto"
-    quantization: str | None = None
-    revision: str | None = None
-    tokenizer_revision: str | None = None
-    seed: int = 0
-    gpu_memory_utilization: float = 0.9
-    swap_space: float = 4
-    cpu_offload_gb: float = 0
-    enforce_eager: bool = False
-    max_seq_len_to_capture: int = 8192
-    disable_custom_all_reduce: bool = False
-    disable_async_output_proc: bool = False
 
 
 @edc.dataclass
@@ -189,26 +117,6 @@ class MistralModelConfig(ModelConfig):
     tokenizer_mode: str = "mistral"
     config_format: str = "mistral"
     load_format: str = "mistral"
-
-
-@edc.dataclass
-@dataclasses.dataclass
-class MultipleGenerationConfig:
-    min_val: Annotated[float, Is[lambda x: x > MIN_VAL]] = 1.0
-    max_val: float = 1.0
-    n_samples: int = 1
-    seed: int = 42
-
-    def __post_init__(self):
-        if self.min_val > self.max_val:
-            msg = "min_val can't be larger than max_val"
-            raise ValueError(msg)
-
-    def sampling_params_temperature(self, sp: SamplingParams):
-        temperature = 10 ** np.random.uniform(np.log10(self.min_val), np.log10(self.max_val))
-        new_sp = sp.clone()
-        new_sp.temperature = temperature
-        return new_sp
 
 
 @edc.dataclass
@@ -246,10 +154,11 @@ def make_dataset(
     return ds
 
 
-@beartype
-def extract_logprobs(logprobs: Sequence[dict[int, Logprob]]) -> tuple[Sequence[int], Sequence[float]]:
-    tokens, lps = zip(*chain.from_iterable([lp.items() for lp in logprobs]), strict=True)
-    return (tokens, tuple(lp.logprob for lp in lps))
+def sampling_params_temperature(config: MultipleGenerationConfig, sp: SamplingParams):
+    temperature = 10 ** np.random.uniform(np.log10(config.min_val), np.log10(config.max_val))
+    new_sp = sp.clone()
+    new_sp.temperature = temperature
+    return new_sp
 
 
 def main(cfg: AppConfig):
@@ -264,7 +173,7 @@ def main(cfg: AppConfig):
     # Write n_samples files
     # Draw temperature randomly at each batch but be careful to write each document only once
 
-    sps = [cfg.repeat.sampling_params_temperature(sampling_params) for _ in range(cfg.repeat.n_samples)]
+    sps = [sampling_params_temperature(cfg.repeat, sampling_params) for _ in range(cfg.repeat.n_samples)]
     output_files = [output_dir / f"responses_temperature_{sp.temperature}.json" for sp in sps]
 
     llm = LLM(**dataclasses.asdict(cfg.model))

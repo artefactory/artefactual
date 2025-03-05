@@ -15,40 +15,17 @@
 # ///
 
 import dataclasses
-from collections.abc import Callable, Sequence
-from enum import StrEnum, auto
 from functools import partial
-from typing import Any, Literal
 
 import numpy as np
-import orjson as json
 import polars as pl
 import tlz
 from absl import app, logging
-from beartype import beartype
-from einops import rearrange, reduce
 from etils import eapp, edc, epath
-from numpy.typing import NDArray
-from plum import dispatch, overload
-from sklearn.calibration import CalibratedClassifierCV
-from sklearn.model_selection import train_test_split
 
-
-class ScoringMethod(StrEnum):
-    NAIVE = auto()  # https://cookbook.openai.com/examples/using_logprobs
-    SUPERVISED_ISOTONIC = auto()
-    SUPERVISED_SIGMOID = auto()
-
-    @staticmethod
-    def supervised():
-        return {
-            ScoringMethod.SUPERVISED_ISOTONIC,
-            ScoringMethod.SUPERVISED_SIGMOID,
-        }
-
-    @staticmethod
-    def unsupervised():
-        return {ScoringMethod.NAIVE}
+# Import from artefactual library
+from artefactual.data import join_samples, read_file
+from artefactual.scoring import ScoringMethod, process_logprobs, score_fn
 
 
 @edc.dataclass
@@ -67,79 +44,13 @@ class AppConfig:
             self.output_dir = self.responses_file.parent
 
 
-Logprobs = NDArray[np.float32]
-Scores = NDArray[np.float32]
-
-
-@beartype
-def process_logprobs(logprobs: Sequence[Sequence[float]], max_len: int) -> Logprobs:
-    logprobs = (lp[:max_len] for lp in logprobs)
-    logprobs = [np.pad(lp, (0, max_len - len(lp)), mode="constant") for lp in logprobs]
-    return np.array(logprobs, dtype=np.float32)
-
-
-@overload
-def score_fn(method: ScoringMethod, logprobs: Any):  # noqa: ARG001
-    probs = np.exp(logprobs)
-    scores = reduce(probs, "batch max_len -> batch", "mean")
-    return scores
-
-
-@overload
-def score_fn(
-    method: Literal["SUPERVISED_ISOTONIC", "SUPERVISED_SIGMOID"],
-    logprobs: Sequence[float],
-    ids: Sequence[int],
-    labels: Sequence[int],
-):
-    probs = np.exp(logprobs)
-    scores = reduce(probs, "n_samples max_len -> n_samples", "mean")
-    scores = rearrange(scores, "(n_samples dim) -> n_samples dim", dim=1)
-    _, ids_test, scores_train, scores_test, labels_train, labels_test = train_test_split(
-        ids, scores, labels, test_size=0.8, random_state=42
-    )
-    if method is ScoringMethod.SUPERVISED_ISOTONIC:
-        calibration_method = "isotonic"
-    elif method is ScoringMethod.SUPERVISED_SIGMOID:
-        calibration_method = "sigmoid"
-    else:
-        msg = f"method {method} is not recognized"
-        raise ValueError(msg)
-    calibrated = CalibratedClassifierCV(method=calibration_method)
-    calibrated.fit(scores_train, labels_train)
-    scores = calibrated.predict_proba(scores_test)
-    return ids_test, scores[:, 0], labels_test
-
-
-@dispatch
-def score_fn(method: ScoringMethod, logprobs: Any, ids: Any | None, labels: Sequence[int] | None):
-    raise NotImplementedError
-
-
-@beartype
-def read_file(path: epath.Path) -> list[dict[str, Any]]:
-    with path.open("r") as src:
-        lines = src.readlines()
-        samples = map(json.loads, lines)
-        return list(samples)
-
-
 DEFAULT_GET_ID = tlz.curried.get("id")
-
-
-def join_samples(
-    ratings: Sequence[dict[str, Any]],
-    responses: Sequence[dict[str, Any]],
-    key_fn: Callable[[dict[str, str]], str] = DEFAULT_GET_ID,
-):
-    joined = tlz.join(key_fn, responses, key_fn, ratings)
-    return [{"id": left["id"], **left, **right} for left, right in joined]
 
 
 def main(cfg: AppConfig):
     logging.info("\n%s", cfg)
 
-    output_file = cfg.output_dir / f"scores_{cfg.method}_{cfg.responses_file.name}.json".replace("/", "_")
+    output_file: epath.Path = cfg.output_dir / f"scores_{cfg.method}_{cfg.responses_file.name}.json".replace("/", "_")
     if cfg.ratings_file:
         output_file = f"{output_file.name}_{cfg.ratings_file.name}.json"
     if output_file.exists():
