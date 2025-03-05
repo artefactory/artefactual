@@ -2,7 +2,7 @@
 
 from collections.abc import Sequence
 from itertools import chain
-from typing import Any
+from typing import Protocol, TypeVar
 
 import numpy as np
 from beartype import beartype
@@ -11,6 +11,15 @@ from numpy.typing import NDArray
 # Type aliases
 Logprobs = NDArray[np.float32]
 Scores = NDArray[np.float32]
+
+
+class LogProbValue(Protocol):
+    """Protocol for objects that have a logprob attribute."""
+
+    logprob: float
+
+
+T = TypeVar("T", bound=LogProbValue)
 
 
 @beartype
@@ -30,11 +39,11 @@ def process_logprobs(logprobs: Sequence[Sequence[float]], max_len: int) -> Logpr
 
 
 @beartype
-def extract_logprobs(logprobs: Sequence[dict[int, Any]]) -> tuple[Sequence[int], Sequence[float]]:
+def extract_logprobs(logprobs: Sequence[dict[int, LogProbValue]]) -> tuple[Sequence[int], Sequence[float]]:
     """Extract token IDs and log probabilities from sequence of dictionaries.
 
     Args:
-        logprobs: Sequence of dictionaries mapping token IDs to log probabilities
+        logprobs: Sequence of dictionaries mapping token IDs to objects with logprob attribute
 
     Returns:
         Tuple of (token IDs, log probabilities)

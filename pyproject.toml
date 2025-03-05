@@ -148,7 +148,7 @@ output = ".pytype"
 
 # Bind 'self' in methods with non-transparent decorators. This flag is temporary
 # and will be removed once this behavior is enabled by default.
-bind_decorated_methods = false
+bind_decorated_methods = true
 
 # Don't allow None to match bool. This flag is temporary and will be removed
 # once this behavior is enabled by default.
@@ -157,7 +157,7 @@ none_is_not_bool = true
 # Enable parameter count checks for overriding methods with renamed arguments.
 # This flag is temporary and will be removed once this behavior is enabled by
 # default.
-overriding_renamed_parameter_count_checks = false
+overriding_renamed_parameter_count_checks = true
 
 # Variables initialized as None retain their None binding. This flag is
 # temporary and will be removed once this behavior is enabled by default.
@@ -178,6 +178,7 @@ require_override_decorator = true
 precise_return = true
 
 # Experimental: Solve unknown types to label with structural types.
+# Enabling this seems to disable typechecking
 protocols = false
 
 # Experimental: Only load submodules that are explicitly imported.
@@ -197,7 +198,7 @@ strict_undefined_checks = true
 use_rewrite = false
 
 # Space-separated list of error names to ignore.
-disable = ["pyi-error", "import-error"]
+disable = ["pyi-error"]
 
 # Don't report errors.
 report_errors = true

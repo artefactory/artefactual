@@ -33,8 +33,8 @@ from jinja2 import Environment, Template
 from outlines import generate, models
 from pydantic import BaseModel, ValidationError
 from simple_parsing import field, subgroups
-from vllm import LLM, SamplingParams
-from vllm.sampling_params import RequestOutputKind
+from vllm import LLM, SamplingParams  # pytype: disable=import-error
+from vllm.sampling_params import RequestOutputKind  # pytype: disable=import-error
 
 
 @edc.dataclass

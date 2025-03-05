@@ -19,12 +19,11 @@ If here is no logprobs key, it returns an error
 import dataclasses
 
 import polars as pl
+import wandb
 from absl import app, logging
 from beartype import beartype
 from etils import eapp, edc, epath
 from sklearn.calibration import calibration_curve
-
-import wandb
 
 
 @edc.dataclass
