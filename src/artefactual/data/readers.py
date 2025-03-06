@@ -1,7 +1,11 @@
-"""Utilities for reading data files."""
+"""Utilities for reading and processing data files.
+
+This module provides functions for reading data samples from files and
+joining samples from different sources based on a common identifier.
+"""
 
 from collections.abc import Callable, Sequence
-from typing import Any, NotRequired, TypedDict, TypeVar
+from typing import NotRequired, TypedDict
 
 import orjson as json
 import toolz as tlz
@@ -10,7 +14,11 @@ from etils import epath
 
 
 class DataSample(TypedDict):
-    """Common structure for data samples with ID."""
+    """Common structure for data samples with ID.
+
+    All data samples must have an 'id' field. Other fields are optional
+    and can be extended for specific use cases.
+    """
 
     id: str
     question: NotRequired[str]
@@ -20,19 +28,26 @@ class DataSample(TypedDict):
     logprobs: NotRequired[list[float]]
 
 
-T = TypeVar("T", bound=dict[str, Any])
+# Type for generic dictionary-like objects with string keys
 DEFAULT_GET_ID = tlz.curried.get("id")
 
 
 @beartype
-def read_file(path: epath.Path) -> list[DataSample]:
+def read_file(path: epath.Path) -> Sequence[DataSample]:
     """Read a file containing JSON lines.
 
+    Reads a file containing one JSON object per line and parses each line
+    into a DataSample object.
+
     Args:
-        path: Path to the file
+        path: Path to the file to read
 
     Returns:
         List of data samples parsed from the file
+
+    Raises:
+        FileNotFoundError: If the file does not exist
+        json.JSONDecodeError: If the file contains invalid JSON
 
     Example:
         >>> samples = read_file(epath.Path("data.jsonl"))
@@ -47,19 +62,22 @@ def read_file(path: epath.Path) -> list[DataSample]:
 
 @beartype
 def join_samples(
-    ratings: Sequence[DataSample],
-    responses: Sequence[DataSample],
+    left_samples: Sequence[DataSample],
+    right_samples: Sequence[DataSample],
     key_fn: Callable[[DataSample], str] = DEFAULT_GET_ID,
-) -> list[DataSample]:
+) -> Sequence[DataSample]:
     """Join two sequences of dictionaries on a common key.
 
     Args:
-        ratings: First sequence of data samples
-        responses: Second sequence of data samples
-        key_fn: Function to extract the key from each sample
+        left_samples: First sequence of samples
+        right_samples: Second sequence of samples
+        key_fn: Function to extract the join key from each sample
 
     Returns:
-        List of joined data samples
+        List of joined samples
+
+    Raises:
+        KeyError: If key_fn fails to extract a key from any sample
 
     Example:
         >>> ratings = [{"id": "1", "rating": 5}]
@@ -67,5 +85,8 @@ def join_samples(
         >>> join_samples(ratings, responses)
         [{"id": "1", "rating": 5, "response": "answer"}]
     """
-    joined = tlz.join(key_fn, responses, key_fn, ratings)
-    return [{"id": left["id"], **left, **right} for left, right in joined]
+    if not left_samples or not right_samples:
+        return []
+
+    joined = tlz.join(key_fn, right_samples, key_fn, left_samples)
+    return [{"id": right["id"], **left, **right} for left, right in joined]
