@@ -1,7 +1,8 @@
 """Scoring module for artefactual library."""
 
 from artefactual.scoring.logprobs import (
-    Logprobs,
+    LogProbs,
+    LogProbValue,
     Scores,
     extract_logprobs,
     process_logprobs,
@@ -9,7 +10,8 @@ from artefactual.scoring.logprobs import (
 from artefactual.scoring.methods import ScoringMethod, score_fn
 
 __all__ = [
-    "Logprobs",
+    "LogProbValue",
+    "LogProbs",
     "Scores",
     "ScoringMethod",
     "extract_logprobs",
