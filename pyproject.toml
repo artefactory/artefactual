@@ -27,6 +27,7 @@ artefactual = "artefactual:main"
 
 [project.optional-dependencies]
 hub = ["huggingface-hub>=0.27.0", "keras-hub>=0.18.1", "safetensors>=0.4.5"]
+test = ["hypothesis>=6.127.8"]
 
 [build-system]
 requires = ["hatchling"]
@@ -59,6 +60,7 @@ dev = [
     "pydantic>=2.10.6",
     "pytype>=2024.10.11",
     "jupyterlab>=4.3.5",
+    "hypothesis>=6.127.8",
 ]
 
 [tool.ruff]
