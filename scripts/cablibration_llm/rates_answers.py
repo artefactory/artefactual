@@ -99,6 +99,8 @@ class ModelConfig:
 @edc.dataclass
 @dataclasses.dataclass
 class MistralModelConfig(ModelConfig):
+    """Model configuration for Mistral models."""
+
     tokenizer_mode: str = "mistral"
     config_format: str = "mistral"
     load_format: str = "mistral"
@@ -107,6 +109,8 @@ class MistralModelConfig(ModelConfig):
 @edc.dataclass
 @dataclasses.dataclass
 class LLamaModelConfig(ModelConfig):
+    """Model configuration for Llama models."""
+
     model: str = "neuralmagic/Meta-Llama-3.1-70B-Instruct-FP8"
     tensor_parallel_size: int = 2
 
@@ -145,6 +149,8 @@ Remember: Your goal is to determine factual correctness, not stylistic similarit
 @edc.dataclass
 @dataclasses.dataclass
 class PromptConfig:
+    """Configuration for prompt templating."""
+
     prompt: str | None = None
     template: Template = field(init=False)
 
@@ -156,13 +162,34 @@ class PromptConfig:
         self.template = env.from_string(self.prompt)
 
     def render(self, query: str, expected_answer: str, provided_answer: str) -> str:
+        """Render the prompt template with the given parameters.
+
+        Args:
+            query: The question or query to evaluate
+            expected_answer: The reference/correct answer
+            provided_answer: The generated answer to evaluate
+
+        Returns:
+            Formatted prompt string
+        """
         return self.template.render(query=query, expected_answer=expected_answer, provided_answer=provided_answer)
 
 
 @edc.dataclass
 @dataclasses.dataclass
 class AppConfig:
-    source: epath.Path
+    """Application configuration for the judgment pipeline.
+
+    This class defines all the parameters needed to run the judgment pipeline,
+    including input/output paths, model configuration, and processing parameters.
+    """
+
+    # Input/output configuration
+    source: epath.Path  # Path to input data file
+    output_dir: epath.Path = edc.field(validate=epath.Path, default="outputs")  # Directory for output files
+    resume: bool = False  # Whether to resume from existing output
+
+    # Model configuration
     model: ModelConfig = subgroups(
         {
             "default": ModelConfig,
@@ -171,12 +198,14 @@ class AppConfig:
         },
         default="default",
     )
+
+    # Prompt and sampling configuration
     prompt: PromptConfig = edc.field(default_factory=PromptConfig)
-    output_dir: epath.Path = edc.field(validate=epath.Path, default="outputs")
     sampling_params: SamplingConfig = field(default_factory=SamplingConfig)
-    limit: int | None = None
-    batch_size: int = 64
-    resume: bool = False
+
+    # Processing parameters
+    limit: int | None = None  # Maximum number of batches to process
+    batch_size: int = 64  # Number of samples to process in each batch
 
 
 class Response(BaseModel):
@@ -186,11 +215,25 @@ class Response(BaseModel):
     explanation: str  # Explanation of the judgment
 
 
+# === Data Processing Functions ===
+
+
 def expand_samples(samples: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Expand each sample by creating one entry per generated answer."""
+    """Expand each sample by creating one entry per generated answer.
+
+    Takes samples with multiple generated answers and creates individual samples
+    for each answer, adding a sub_id to track the specific generation.
+
+    Args:
+        samples: List of samples with query, expected_answer, and generated_answers
+
+    Returns:
+        List of expanded samples with one entry per generated answer
+    """
     expanded_samples = []
 
     for sample in samples:
+        # Get sample identification info
         query_id = sample.get("query_id", sample.get("id"))
         query = sample["query"]
 
@@ -218,23 +261,39 @@ def expand_samples(samples: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return expanded_samples
 
 
+# === Main Application Function ===
+
+
 def main(cfg: AppConfig):
+    """Main function that runs the True/False judgment pipeline.
+
+    This function:
+    1. Initializes the model and output files
+    2. Processes samples in batches
+    3. Generates True/False judgments using the LLM
+    4. Saves results to the output file
+
+    Args:
+        cfg: Application configuration
+    """
     logging.info("\n%s", cfg)
+
+    # === Setup and Initialization ===
+
+    # Create output directory
     cfg.output_dir.mkdir(parents=True, exist_ok=True)
-    sampling_params = SamplingParams(**dataclasses.asdict(cfg.sampling_params))
 
-    logging.debug("Make Embedder")
-    llm = LLM(**dataclasses.asdict(cfg.model))
-    model = models.VLLM(llm)
-
+    # Define output file path
     output_file = cfg.output_dir / f"judgments_{cfg.model.model}_{cfg.source.name}".replace("/", "_")
-    logging.debug("Output file %s", output_file)
+    logging.debug("Output file: %s", output_file)
 
+    # Check if output file exists
     if output_file.exists():
         if not cfg.resume:
             msg = f"Output file {output_file} already exists"
             raise ValueError(msg)
         else:
+            # Load existing IDs to avoid duplicates when resuming
             with output_file.open("r") as src:
                 samples = map(json.loads, src)
                 # Track both query_id and sub_id to avoid duplicates
@@ -242,29 +301,36 @@ def main(cfg: AppConfig):
     else:
         existing_ids = set()
 
+    # Initialize model
+    logging.debug("Initializing model")
+    sampling_params = SamplingParams(**dataclasses.asdict(cfg.sampling_params))
+    llm = LLM(**dataclasses.asdict(cfg.model))
+    model = models.VLLM(llm)
     generator = generate.json(model, Response)
+
+    # === Process Samples ===
 
     with cfg.source.open("r") as src:
         with output_file.open("a") as dst:
-            # Top level iterator with tqdm for tracking progress
-            for _ in etqdm.tqdm(range(cfg.limit or float("inf"))):
+            # Process batches with progress tracking
+            for batch_idx in etqdm.tqdm(range(cfg.limit or float("inf")), desc="Processing batches"):
+                # Read batch of samples
                 lines = list(tlz.take(cfg.batch_size, src))
                 if not lines:
                     break
 
-                # Parse raw samples
+                # Parse samples
                 raw_samples = list(map(json.loads, lines))
 
-                # Expand samples - one entry per generated answer
+                # Expand samples - create one entry per generated answer
                 expanded_samples = expand_samples(raw_samples)
 
                 # Filter out already processed samples
                 expanded_samples = [s for s in expanded_samples if (s["query_id"], s["sub_id"]) not in existing_ids]
-
                 if not expanded_samples:
                     continue
 
-                # Prepare data for batch processing
+                # Prepare prompts for batch processing
                 prompts = [
                     cfg.prompt.render(
                         query=sample["query"],
@@ -276,9 +342,10 @@ def main(cfg: AppConfig):
 
                 # Get model judgments
                 try:
+                    logging.debug(f"Batch {batch_idx + 1}: Processing {len(expanded_samples)} samples")
                     responses = generator(prompts, sampling_params=sampling_params)
 
-                    # Create results
+                    # Create results from responses
                     results = []
                     for sample, response in zip(expanded_samples, responses, strict=True):
                         result = {
@@ -290,20 +357,19 @@ def main(cfg: AppConfig):
                         results.append(result)
                         existing_ids.add((sample["query_id"], sample["sub_id"]))
 
-                    # Write results
+                    # Write results to output file
                     if results:
                         df = pl.DataFrame(results)
                         df.write_ndjson(dst)
 
                 except ValidationError:
-                    msg = "Error validating generated output"
-                    logging.exception(msg)
+                    logging.exception("Error validating generated output")
                     continue
                 except Exception as e:
                     logging.exception(f"Unexpected error: {e}")
                     continue
 
-    logging.info("Wrote results in %s", output_file)
+    logging.info("Completed processing. Results saved to %s", output_file)
 
 
 if __name__ == "__main__":
