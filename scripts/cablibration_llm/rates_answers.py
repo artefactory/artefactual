@@ -23,6 +23,7 @@
 
 
 import dataclasses
+from typing import Any
 
 import orjson as json
 import polars as pl
@@ -110,48 +111,34 @@ class LLamaModelConfig(ModelConfig):
     tensor_parallel_size: int = 2
 
 
-DEFAULT_PROMPT = """
-You are tasked with evaluating how closely a generated answer matches the provided golden answer:
+TRUE_FALSE_PROMPT = """
+You are an expert evaluator tasked with determining if a provided answer correctly responds to a query based on an expected answer. Your task is to make a binary True/False judgment.
 
-1. Evaluate Core Factual Content Only:
-- Focus solely on comparing the core factual content of the generated answer against the golden answer.
-- Key facts (dates, names, numbers, relationships, etc.) must exactly match the golden answer. Any deviation in these critical details is unacceptable.
-- Extra explanatory details are acceptable only if they do not contradict or obscure the core answer.
+Query:
+{{ query }}
 
-2. Identify and Classify Errors:
-    - Major Error:
-        - Occurs when the generated answer contradicts any key fact or core detail of the golden answer (e.g., an incorrect date, name, number, or relationship).
-        - Occurs when the generated answer fails to provide the required core answer—such as asking questions or offering irrelevant commentary—instead of stating the answer.
-    - Minor Error:
-        - Occurs when the generated answer has slight wording differences, includes extra correct details, or omits non-critical elements without changing the overall correctness.
-        - Minor formatting or stylistic differences (e.g., punctuation or extra adjectives) that do not alter meaning should be ignored.
+Expected Answer:
+{{ expected_answer }}
 
-3. Specific Considerations:
-    - Numeric and Date Accuracy: Any numerical values or dates must match exactly. Even a one-year or several-day discrepancy is a major error.
-    - Entity and Name Precision: All key names or entities provided in the golden answer must appear correctly in the generated answer. Substituting or omitting a key entity is a major error.
-    - Irrelevant Content: If the generated answer includes unrelated content (e.g., asking for more details or providing instructions on contacting someone) rather than delivering the required answer, this is a major error.
+Provided Answer:
+{{ provided_answer }}
 
-4. Scoring Guidelines:
-    - Assign a similarity rating on a scale from 0 to 5:
-        - 0: Completely dissimilar to the golden answer.
-        - 1: Mostly dissimilar, with only minimal overlapping elements.
-        - 2: Partially similar but with significant discrepancies.
-        - 3: Mostly similar, with some noticeable discrepancies.
-        - 4: Similar with only minor issues or omissions.
-        - 5: Perfectly similar and fully consistent with the golden answer.
+Instructions:
+1. Focus solely on comparing the core factual content of the provided answer against the expected answer.
+2. Key facts (dates, names, numbers, relationships, etc.) must match the expected answer. Significant deviations in critical details should result in a "False" judgment.
+3. Minor formatting or stylistic differences that do not alter meaning can be ignored.
+4. The judgment should be "True" only if the provided answer conveys the same essential information as the expected answer.
+5. The judgment should be "False" if:
+   - The provided answer contradicts the expected answer
+   - The provided answer is significantly incomplete
+   - The provided answer includes major factual errors
+   - The provided answer fails to address the query directly
 
-5. Provide a Clear, Concise Explanation:
-    - Detail the specific similarities and discrepancies between the generated answer and the golden answer.
-    - Clearly indicate any major or minor errors (e.g., incorrect dates, names, numbers, or inclusion of irrelevant content).
-    - Keep your explanation focused solely on the factual similarity between the generated answer and the golden answer.
+After careful analysis, provide:
+1. A binary judgment: True or False
+2. A brief explanation (1-3 sentences) justifying your judgment
 
-Your evaluation must be objective, detailed, and exclusively focused on ensuring that all key details in the generated answer exactly match those in the golden answer while dismissing any non-essential or unrelated information.
-
-Golden Answer:
-{{ golden_answer }}
-
-Generated Answer:
-{{ generated_answer }}
+Remember: Your goal is to determine factual correctness, not stylistic similarity. Focus on whether the provided answer would give a user the correct information they need.
 """
 
 
@@ -163,13 +150,13 @@ class PromptConfig:
 
     def __post_init__(self):
         if self.prompt is None:
-            self.prompt = DEFAULT_PROMPT
+            self.prompt = TRUE_FALSE_PROMPT
 
         env = Environment(autoescape=True)
         self.template = env.from_string(self.prompt)
 
-    def render(self, question: str, golden_answer: str, generated_answer: str) -> str:
-        return self.template.render(question=question, golden_answer=golden_answer, generated_answer=generated_answer)
+    def render(self, query: str, expected_answer: str, provided_answer: str) -> str:
+        return self.template.render(query=query, expected_answer=expected_answer, provided_answer=provided_answer)
 
 
 @edc.dataclass
@@ -193,26 +180,56 @@ class AppConfig:
 
 
 class Response(BaseModel):
-    explanation: str
-    rating: int
+    """Model for the LLM's judgment response."""
+
+    judgment: bool  # True or False judgment
+    explanation: str  # Explanation of the judgment
+
+
+def expand_samples(samples: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Expand each sample by creating one entry per generated answer."""
+    expanded_samples = []
+
+    for sample in samples:
+        query_id = sample.get("query_id", sample.get("id"))
+        query = sample["query"]
+
+        # Handle expected_answer as string or list
+        expected_answer = sample["expected_answer"]
+        if isinstance(expected_answer, list):
+            expected_answer = " ".join(expected_answer)
+
+        # Process each generated answer
+        for gen_answer_dict in sample["generated_answers"]:
+            # Extract the answer text from the dictionary
+            gen_key = next(iter(gen_answer_dict.keys()))
+            provided_answer = gen_answer_dict[gen_key]
+
+            # Create new sample with the sub id
+            expanded_sample = {
+                "query_id": query_id,
+                "sub_id": gen_key,
+                "query": query,
+                "expected_answer": expected_answer,
+                "provided_answer": provided_answer,
+            }
+            expanded_samples.append(expanded_sample)
+
+    return expanded_samples
 
 
 def main(cfg: AppConfig):
     logging.info("\n%s", cfg)
     cfg.output_dir.mkdir(parents=True, exist_ok=True)
     sampling_params = SamplingParams(**dataclasses.asdict(cfg.sampling_params))
+
     logging.debug("Make Embedder")
     llm = LLM(**dataclasses.asdict(cfg.model))
     model = models.VLLM(llm)
-    output_file = cfg.output_dir / f"scores_{cfg.model.model}_{cfg.source.name}.json".replace("/", "_")
+
+    output_file = cfg.output_dir / f"judgments_{cfg.model.model}_{cfg.source.name}".replace("/", "_")
     logging.debug("Output file %s", output_file)
-    if output_file.exists():
-        msg = f"{output_file} already exists"
-        raise FileExistsError(msg)
 
-    generator = generate.json(model, Response)
-
-    output_file = cfg.output_dir / f"ratings_{cfg.model.model}_{cfg.source.name}".replace("/", "_")
     if output_file.exists():
         if not cfg.resume:
             msg = f"Output file {output_file} already exists"
@@ -220,38 +237,72 @@ def main(cfg: AppConfig):
         else:
             with output_file.open("r") as src:
                 samples = map(json.loads, src)
-                existing_ids = set(tlz.pluck("id", samples))
+                # Track both query_id and sub_id to avoid duplicates
+                existing_ids = {(s["query_id"], s["sub_id"]) for s in samples}
     else:
-        existing_ids = {}
+        existing_ids = set()
+
+    generator = generate.json(model, Response)
 
     with cfg.source.open("r") as src:
         with output_file.open("a") as dst:
-            while etqdm.tqdm(src):
-                lines = tlz.take(cfg.batch_size, src)
-                samples = map(json.loads, lines)
-                samples = tlz.filter(lambda s: s["id"] not in existing_ids, samples)
-                try:
-                    _, samples = tlz.peek(samples)
-                except StopIteration:
+            # Top level iterator with tqdm for tracking progress
+            for _ in etqdm.tqdm(range(cfg.limit or float("inf"))):
+                lines = list(tlz.take(cfg.batch_size, src))
+                if not lines:
                     break
 
-                ids, questions, responses, answers = zip(
-                    *tlz.pluck(["id", "question", "response", "answer"], samples), strict=True
-                )
+                # Parse raw samples
+                raw_samples = list(map(json.loads, lines))
+
+                # Expand samples - one entry per generated answer
+                expanded_samples = expand_samples(raw_samples)
+
+                # Filter out already processed samples
+                expanded_samples = [s for s in expanded_samples if (s["query_id"], s["sub_id"]) not in existing_ids]
+
+                if not expanded_samples:
+                    continue
+
+                # Prepare data for batch processing
                 prompts = [
-                    cfg.prompt.render(question=question, golden_answer=golden_answer, generated_answer=generated_answer)
-                    for question, golden_answer, generated_answer in zip(questions, answers, responses, strict=True)
+                    cfg.prompt.render(
+                        query=sample["query"],
+                        expected_answer=sample["expected_answer"],
+                        provided_answer=sample["provided_answer"],
+                    )
+                    for sample in expanded_samples
                 ]
+
+                # Get model judgments
                 try:
-                    requests = generator(prompts, sampling_params=sampling_params)
+                    responses = generator(prompts, sampling_params=sampling_params)
+
+                    # Create results
+                    results = []
+                    for sample, response in zip(expanded_samples, responses, strict=True):
+                        result = {
+                            "query_id": sample["query_id"],
+                            "sub_id": sample["sub_id"],
+                            "judgment": response.judgment,
+                            "explanation": response.explanation,
+                        }
+                        results.append(result)
+                        existing_ids.add((sample["query_id"], sample["sub_id"]))
+
+                    # Write results
+                    if results:
+                        df = pl.DataFrame(results)
+                        df.write_ndjson(dst)
+
                 except ValidationError:
                     msg = "Error validating generated output"
                     logging.exception(msg)
                     continue
-                ratings, explanations = zip(*((req.rating, req.explanation) for req in requests), strict=False)
-                samples = {"id": ids, "rating": ratings, "explanation": explanations}
-                df = pl.DataFrame(samples)
-                df.write_ndjson(dst)
+                except Exception as e:
+                    logging.exception(f"Unexpected error: {e}")
+                    continue
+
     logging.info("Wrote results in %s", output_file)
 
 
