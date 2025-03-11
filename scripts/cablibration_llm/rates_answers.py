@@ -234,7 +234,7 @@ def expand_samples(samples: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
     for sample in samples:
         # Get sample identification info
-        query_id = sample.get("query_id", sample.get("id"))
+        query_id = sample.get("query_id", -1)
         query = sample["query"]
 
         # Handle expected_answer as string or list
@@ -290,14 +290,20 @@ def main(cfg: AppConfig):
     # Check if output file exists
     if output_file.exists():
         if not cfg.resume:
-            msg = f"Output file {output_file} already exists"
-            raise ValueError(msg)
-        else:
-            # Load existing IDs to avoid duplicates when resuming
-            with output_file.open("r") as src:
-                samples = map(json.loads, src)
-                # Track both query_id and sub_id to avoid duplicates
-                existing_ids = {(s["query_id"], s["sub_id"]) for s in samples}
+            response = input(f"Output file {output_file} already exists. Continue? (y/n): ")
+            if response.lower() != "y":
+                msg = f"Output file {output_file} already exists"
+                raise ValueError(msg)
+            else:
+                # Continue with existing output file
+                logging.info(f"Continuing with existing output file {output_file}")
+
+        # Load existing IDs to avoid duplicates when resuming
+        with output_file.open("r") as src:
+            samples = list(map(json.loads, src))
+            # Track both query_id and sub_id to avoid duplicates
+            existing_ids = {(s["query_id"], s["sub_id"]) for s in samples}
+            logging.info(f"Loaded {len(existing_ids)} existing sample IDs to avoid duplicates")
     else:
         existing_ids = set()
 
@@ -312,18 +318,27 @@ def main(cfg: AppConfig):
 
     with cfg.source.open("r") as src:
         with output_file.open("a") as dst:
+            # Load the full JSON file
+            data = json.loads(src.read())
+
+            # Extract the results list from the JSON structure
+            if "results" not in data:
+                msg = "Input file does not contain 'results' key"
+                raise ValueError(msg)
+
+            raw_samples = data["results"]
+            logging.info(f"Loaded {len(raw_samples)} samples from input file")
+
+            # Process samples in batches
+            batches = list(tlz.partition_all(cfg.batch_size, raw_samples))
+
             # Process batches with progress tracking
-            for batch_idx in etqdm.tqdm(range(cfg.limit or float("inf")), desc="Processing batches"):
-                # Read batch of samples
-                lines = list(tlz.take(cfg.batch_size, src))
-                if not lines:
+            for batch_idx, batch in enumerate(etqdm.tqdm(batches)):
+                if cfg.limit is not None and batch_idx >= cfg.limit:
                     break
 
-                # Parse samples
-                raw_samples = list(map(json.loads, lines))
-
                 # Expand samples - create one entry per generated answer
-                expanded_samples = expand_samples(raw_samples)
+                expanded_samples = expand_samples(batch)
 
                 # Filter out already processed samples
                 expanded_samples = [s for s in expanded_samples if (s["query_id"], s["sub_id"]) not in existing_ids]
