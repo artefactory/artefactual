@@ -70,6 +70,12 @@ class SamplingConfig:
 
 @edc.dataclass
 @dataclasses.dataclass
+class MistralSmallSamplingConfig(SamplingConfig):
+    max_tokens: int = 8092
+
+
+@edc.dataclass
+@dataclasses.dataclass
 class ModelConfig:
     """Configuration for a language model."""
 
@@ -104,6 +110,14 @@ class MistralModelConfig(ModelConfig):
     tokenizer_mode: str = "mistral"
     config_format: str = "mistral"
     load_format: str = "mistral"
+    tensor_parallel_size: int = 2
+    gpu_memory_utilization: float = 0.65
+
+
+@edc.dataclass
+@dataclasses.dataclass
+class MistralSmallModelConfig(MistralModelConfig):
+    model: str = "mistralai/Mistral-Small-24B-Instruct-2501"
 
 
 @edc.dataclass
@@ -194,6 +208,7 @@ class AppConfig:
         {
             "default": ModelConfig,
             "mistral": MistralModelConfig,
+            "mistral-small": MistralSmallModelConfig,
             "llama-3.1-70b": LLamaModelConfig,
         },
         default="default",
@@ -201,7 +216,9 @@ class AppConfig:
 
     # Prompt and sampling configuration
     prompt: PromptConfig = edc.field(default_factory=PromptConfig)
-    sampling_params: SamplingConfig = field(default_factory=SamplingConfig)
+    sampling_params: SamplingConfig = subgroups(
+        {"default": SamplingConfig, "mistral-small": MistralSmallSamplingConfig}, default="default"
+    )
 
     # Processing parameters
     limit: int | None = None  # Maximum number of batches to process
