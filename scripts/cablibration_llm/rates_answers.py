@@ -261,25 +261,20 @@ def expand_samples(samples: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return expanded_samples
 
 
-# === Main Application Function ===
+# === Helper Functions for Main Application ===
 
 
-def main(cfg: AppConfig):
-    """Main function that runs the True/False judgment pipeline.
-
-    This function:
-    1. Initializes the model and output files
-    2. Processes samples in batches
-    3. Generates True/False judgments using the LLM
-    4. Saves results to the output file
+def setup_output_file(cfg: AppConfig) -> tuple[epath.Path, set[tuple[Any, str]]]:
+    """Set up the output file and load existing IDs if resuming.
 
     Args:
         cfg: Application configuration
+
+    Returns:
+        Tuple containing:
+        - Path to the output file
+        - Set of existing IDs to avoid duplicates
     """
-    logging.info("\n%s", cfg)
-
-    # === Setup and Initialization ===
-
     # Create output directory
     cfg.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -307,82 +302,171 @@ def main(cfg: AppConfig):
     else:
         existing_ids = set()
 
-    # Initialize model
+    return output_file, existing_ids
+
+
+def initialize_model(cfg: AppConfig) -> tuple[SamplingParams, Any]:
+    """Initialize the model and sampling parameters.
+
+    Args:
+        cfg: Application configuration
+
+    Returns:
+        Tuple containing:
+        - Sampling parameters
+        - Model generator for structured output
+    """
     logging.debug("Initializing model")
     sampling_params = SamplingParams(**dataclasses.asdict(cfg.sampling_params))
     llm = LLM(**dataclasses.asdict(cfg.model))
     model = models.VLLM(llm)
     generator = generate.json(model, Response)
 
-    # === Process Samples ===
+    return sampling_params, generator
 
-    with cfg.source.open("r") as src:
-        with output_file.open("a") as dst:
-            # Load the full JSON file
-            data = json.loads(src.read())
 
-            # Extract the results list from the JSON structure
-            if "results" not in data:
-                msg = "Input file does not contain 'results' key"
-                raise ValueError(msg)
+def load_input_data(source_path: epath.Path) -> list[dict[str, Any]]:
+    """Load input data from the source file.
 
-            raw_samples = data["results"]
-            logging.info(f"Loaded {len(raw_samples)} samples from input file")
+    Args:
+        source_path: Path to the input file
 
-            # Process samples in batches
-            batches = list(tlz.partition_all(cfg.batch_size, raw_samples))
+    Returns:
+        List of samples to process
+    """
+    with source_path.open("r") as src:
+        # Load the full JSON file
+        data = json.loads(src.read())
 
-            # Process batches with progress tracking
-            for batch_idx, batch in enumerate(etqdm.tqdm(batches)):
-                if cfg.limit is not None and batch_idx >= cfg.limit:
-                    break
+        # Extract the results list from the JSON structure
+        if "results" not in data:
+            msg = "Input file does not contain 'results' key"
+            raise ValueError(msg)
 
-                # Expand samples - create one entry per generated answer
-                expanded_samples = expand_samples(batch)
+        raw_samples = data["results"]
+        logging.info(f"Loaded {len(raw_samples)} samples from input file")
 
-                # Filter out already processed samples
-                expanded_samples = [s for s in expanded_samples if (s["query_id"], s["sub_id"]) not in existing_ids]
-                if not expanded_samples:
-                    continue
+    return raw_samples
 
-                # Prepare prompts for batch processing
-                prompts = [
-                    cfg.prompt.render(
-                        query=sample["query"],
-                        expected_answer=sample["expected_answer"],
-                        provided_answer=sample["provided_answer"],
-                    )
-                    for sample in expanded_samples
-                ]
 
-                # Get model judgments
-                try:
-                    logging.debug(f"Batch {batch_idx + 1}: Processing {len(expanded_samples)} samples")
-                    responses = generator(prompts, sampling_params=sampling_params)
+def process_batch(
+    batch: list[dict[str, Any]],
+    existing_ids: set[tuple[Any, str]],
+    cfg: AppConfig,
+    sampling_params: SamplingParams,
+    generator: Any,
+) -> tuple[list[dict[str, Any]], set[tuple[Any, str]]]:
+    """Process a batch of samples.
 
-                    # Create results from responses
-                    results = []
-                    for sample, response in zip(expanded_samples, responses, strict=True):
-                        result = {
-                            "query_id": sample["query_id"],
-                            "sub_id": sample["sub_id"],
-                            "judgment": response.judgment,
-                            "explanation": response.explanation,
-                        }
-                        results.append(result)
-                        existing_ids.add((sample["query_id"], sample["sub_id"]))
+    Args:
+        batch: Batch of samples to process
+        existing_ids: Set of existing IDs to avoid duplicates
+        cfg: Application configuration
+        sampling_params: Sampling parameters
+        generator: Model generator
 
-                    # Write results to output file
-                    if results:
-                        df = pl.DataFrame(results)
-                        df.write_ndjson(dst)
+    Returns:
+        Tuple containing:
+        - Results from processing the batch
+        - Updated set of existing IDs
+    """
+    # Expand samples - create one entry per generated answer
+    expanded_samples = expand_samples(batch)
 
-                except ValidationError:
-                    logging.exception("Error validating generated output")
-                    continue
-                except Exception as e:
-                    logging.exception(f"Unexpected error: {e}")
-                    continue
+    # Filter out already processed samples
+    expanded_samples = [s for s in expanded_samples if (s["query_id"], s["sub_id"]) not in existing_ids]
+    if not expanded_samples:
+        return [], existing_ids
+
+    # Prepare prompts for batch processing
+    prompts = [
+        cfg.prompt.render(
+            query=sample["query"],
+            expected_answer=sample["expected_answer"],
+            provided_answer=sample["provided_answer"],
+        )
+        for sample in expanded_samples
+    ]
+
+    # Get model judgments
+    try:
+        logging.debug(f"Processing {len(expanded_samples)} samples")
+        responses = generator(prompts, sampling_params=sampling_params)
+
+        # Create results from responses
+        results = []
+        for sample, response in zip(expanded_samples, responses, strict=True):
+            result = {
+                "query_id": sample["query_id"],
+                "sub_id": sample["sub_id"],
+                "judgment": response.judgment,
+                "explanation": response.explanation,
+            }
+            results.append(result)
+            existing_ids.add((sample["query_id"], sample["sub_id"]))
+
+        return results, existing_ids
+
+    except ValidationError:
+        logging.exception("Error validating generated output")
+        return [], existing_ids
+    except Exception as e:
+        logging.exception(f"Unexpected error: {e}")
+        return [], existing_ids
+
+
+def write_results(results: list[dict[str, Any]], dst_file) -> None:
+    """Write batch results to the output file.
+
+    Args:
+        results: List of result dictionaries to write
+        dst_file: Destination file object
+    """
+    if results:
+        df = pl.DataFrame(results)
+        df.write_ndjson(dst_file)
+
+
+# === Main Application Function ===
+
+
+def main(cfg: AppConfig):
+    """Main function that runs the True/False judgment pipeline.
+
+    This function:
+    1. Initializes the model and output files
+    2. Processes samples in batches
+    3. Generates True/False judgments using the LLM
+    4. Saves results to the output file
+
+    Args:
+        cfg: Application configuration
+    """
+    logging.info("\n%s", cfg)
+
+    # Setup output file and load existing IDs
+    output_file, existing_ids = setup_output_file(cfg)
+
+    # Initialize model
+    sampling_params, generator = initialize_model(cfg)
+
+    # Load input data
+    raw_samples = load_input_data(cfg.source)
+
+    # Process samples in batches
+    batches = list(tlz.partition_all(cfg.batch_size, raw_samples))
+
+    with output_file.open("a") as dst:
+        # Process batches with progress tracking
+        for batch_idx, batch in enumerate(etqdm.tqdm(batches)):
+            if cfg.limit is not None and batch_idx >= cfg.limit:
+                break
+
+            # Process the batch
+            results, existing_ids = process_batch(batch, existing_ids, cfg, sampling_params, generator)
+
+            # Write results to output file
+            write_results(results, dst)
 
     logging.info("Completed processing. Results saved to %s", output_file)
 
