@@ -1,10 +1,8 @@
 # Artefactual Project Guide
 
 ## Commands
-- Type check: `pytype`
 - Lint/Format: `ruff check` or `ruff format`
-- Run all tests: `python -m absl.testing.absltest`
-- Run single test: `python -m absl.testing.absltest path/to/test.py`
+- Run single test: `python path/to/test.py`
 - Run script with config: `python scripts/path/to/script.py --config.param=value`
 
 ## Code Style
@@ -16,7 +14,7 @@
 - **Line length**: 120 chars (80 for docstring code examples)
 - **Documentation**: Google-style docstrings with triple double-quotes
 - **Error handling**: Descriptive exceptions with f-strings
-- **Validation**: Use dataclass validation and `Annotated` with validators
+- **Validation**: Use annotation from the `beartype.vale` module
 
 ## Architecture
 - Artefactual is a library - scripts must import and use it as an independent library
