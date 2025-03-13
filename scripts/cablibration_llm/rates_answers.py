@@ -6,18 +6,15 @@
 #     "beartype",
 #     "jinja2",
 #     "toolz",
-#     "clu",
 #     "huggingface-hub",
-#     "grain",
-#     "wandb",
 #     "safetensors",
-#     "numpy",
 #     "vllm>=0.7",
 #     "polars",
-#     "tensorflow-datasets",
 #     "orjson",
 #     "outlines[vllm]",
 #     "pydantic",
+#     "triton==3.1",
+#     "torch==2.5.1",
 # ]
 # ///
 
@@ -76,6 +73,14 @@ class MistralSmallSamplingConfig(SamplingConfig):
 
 @edc.dataclass
 @dataclasses.dataclass
+class FlowJudgeSamplingConfig(SamplingConfig):
+    max_tokens: int = 4096
+    temperature: float = 0.1
+    top_p: float = 0.9
+
+
+@edc.dataclass
+@dataclasses.dataclass
 class ModelConfig:
     """Configuration for a language model."""
 
@@ -101,6 +106,18 @@ class ModelConfig:
     disable_async_output_proc: bool = False
     max_model_len: int = 8192
 
+    @classmethod
+    def make_generator(cls, model: Any) -> Any:
+        """Create a generator that produces structured output for this model.
+
+        Args:
+            model: The model to use for generation
+
+        Returns:
+            A generator that produces structured output
+        """
+        return generate.json(model, Response)
+
 
 @edc.dataclass
 @dataclasses.dataclass
@@ -117,6 +134,10 @@ class MistralModelConfig(ModelConfig):
 @edc.dataclass
 @dataclasses.dataclass
 class MistralSmallModelConfig(MistralModelConfig):
+    """
+    Note: this model does not seem to support guided decoding
+    """
+
     model: str = "mistralai/Mistral-Small-24B-Instruct-2501"
 
 
@@ -127,6 +148,29 @@ class LLamaModelConfig(ModelConfig):
 
     model: str = "neuralmagic/Meta-Llama-3.1-70B-Instruct-FP8"
     tensor_parallel_size: int = 2
+
+
+@edc.dataclass
+@dataclasses.dataclass
+class FlowJudgeModelConfig(ModelConfig):
+    """Model configuration for Flow Judge models."""
+
+    model: str = "flowaicom/Flow-Judge-v0.1"
+    tensor_parallel_size: int = 1
+    gpu_memory_utilization: float = 0.9
+
+    @classmethod
+    def make_generator(cls, model: Any) -> Any:
+        """Create a generator that produces structured output for this model.
+
+        Args:
+            model: The model to use for generation
+
+        Returns:
+            A generator that produces structured output for Flow-Judge
+        """
+        logging.info("Using FlowJudgeResponse model for output parsing")
+        return generate.json(model, FlowJudgeResponse)
 
 
 TRUE_FALSE_PROMPT = """
@@ -157,6 +201,49 @@ After careful analysis, provide:
 2. A brief explanation (1-3 sentences) justifying your judgment
 
 Remember: Your goal is to determine factual correctness, not stylistic similarity. Focus on whether the provided answer would give a user the correct information they need.
+"""
+
+
+FLOW_JUDGE_PROMPT = """
+# GOAL
+Your job is to evaluate a task carried out by an AI system powered by a large language model.
+You will be provided with the inputs and output of the task, as well as the evaluation criteria and scoring rubric. Your task is to evaluate the output of the AI system based on the evaluation criteria and scoring rubric provided.
+
+# INPUT
+Below are the inputs required for performing the task:
+<inputs>
+{{ query }}
+</inputs>
+
+# OUTPUT
+Below is the output of the task:
+<output>
+{{ provided_answer }}
+</output>
+
+# EVALUATION CRITERIA AND SCORING RUBRIC
+Here are the evaluation criteria and the rubric that you need to use for evaluating the task:
+<evaluation_criteria>
+{{ expected_answer }}
+</evaluation_criteria>
+
+<scoring_rubric>
+True: The output satisfactorily addresses the task according to the evaluation criteria.
+False: The output fails to adequately address the task according to the evaluation criteria.
+</scoring_rubric>
+
+# INSTRUCTIONS FOR THE EVALUATION
+1. Understand the task and criteria: Familiarize yourself with the task to be evaluated. Review the evaluation criteria and scoring rubric.
+2. Review the inputs and output: Look at the inputs provided for the task. Examine the output generated from completing the task.
+3. Compare output to the evaluation criteria: Determine whether the output satisfies the evaluation criteria.
+4. Make a binary judgment (True/False) based on this comparison.
+5. Write verbal feedback justifying your evaluation that includes a detailed rationale.
+
+## FORMAT FOR THE EVALUATION
+- Write the verbal feedback inside <feedback> tags without any additional surrounding text.
+- Write the binary judgment (True or False only) inside <score> tags, without any additional surrounding text and always after the feedback.
+
+Please accurately evaluate the task. Strictly adhere to the evaluation criteria and scoring rubric. Your response must provide a binary True/False judgment.
 """
 
 
@@ -191,6 +278,19 @@ class PromptConfig:
 
 @edc.dataclass
 @dataclasses.dataclass
+class FlowJudgePromptConfig(PromptConfig):
+    """Configuration for Flow Judge prompt templating."""
+
+    def __post_init__(self):
+        if self.prompt is None:
+            self.prompt = FLOW_JUDGE_PROMPT
+
+        env = Environment(autoescape=True)
+        self.template = env.from_string(self.prompt)
+
+
+@edc.dataclass
+@dataclasses.dataclass
 class AppConfig:
     """Application configuration for the judgment pipeline.
 
@@ -210,14 +310,22 @@ class AppConfig:
             "mistral": MistralModelConfig,
             "mistral-small": MistralSmallModelConfig,
             "llama-3.1-70b": LLamaModelConfig,
+            "flow-judge": FlowJudgeModelConfig,
         },
         default="default",
     )
 
     # Prompt and sampling configuration
-    prompt: PromptConfig = edc.field(default_factory=PromptConfig)
+    prompt: PromptConfig = subgroups(
+        {
+            "default": PromptConfig,
+            "flow-judge": FlowJudgePromptConfig,
+        },
+        default="default",
+    )
     sampling_params: SamplingConfig = subgroups(
-        {"default": SamplingConfig, "mistral-small": MistralSmallSamplingConfig}, default="default"
+        {"default": SamplingConfig, "mistral-small": MistralSmallSamplingConfig, "flow-judge": FlowJudgeSamplingConfig},
+        default="default",
     )
 
     # Processing parameters
@@ -230,6 +338,13 @@ class Response(BaseModel):
 
     judgment: bool  # True or False judgment
     explanation: str  # Explanation of the judgment
+
+
+class FlowJudgeResponse(BaseModel):
+    """Model for the Flow-Judge response format with feedback and score tags."""
+
+    feedback: str  # Verbal feedback inside <feedback> tags
+    score: bool  # Binary judgment (True/False) inside <score> tags
 
 
 # === Data Processing Functions ===
@@ -250,30 +365,26 @@ def expand_samples(samples: list[dict[str, Any]]) -> list[dict[str, Any]]:
     expanded_samples = []
 
     for sample in samples:
-        # Get sample identification info
-        query_id = sample.get("query_id", -1)
-        query = sample["query"]
-
-        # Handle expected_answer as string or list
+        # Normalize expected_answer to string
         expected_answer = sample["expected_answer"]
         if isinstance(expected_answer, list):
             expected_answer = " ".join(expected_answer)
 
-        # Process each generated answer
-        for gen_answer_dict in sample["generated_answers"]:
-            # Extract the answer text from the dictionary
-            gen_key = next(iter(gen_answer_dict.keys()))
-            provided_answer = gen_answer_dict[gen_key]
+        # Extract common fields once
+        base_sample = {
+            "query_id": sample.get("query_id", -1),
+            "query": sample["query"],
+            "expected_answer": expected_answer,
+        }
 
-            # Create new sample with the sub id
-            expanded_sample = {
-                "query_id": query_id,
+        # Flatten the generated answers
+        for gen_answer_dict in sample["generated_answers"]:
+            gen_key = next(iter(gen_answer_dict.keys()))
+            expanded_samples.append({
+                **base_sample,
                 "sub_id": gen_key,
-                "query": query,
-                "expected_answer": expected_answer,
-                "provided_answer": provided_answer,
-            }
-            expanded_samples.append(expanded_sample)
+                "provided_answer": gen_answer_dict[gen_key],
+            })
 
     return expanded_samples
 
@@ -333,11 +444,14 @@ def initialize_model(cfg: AppConfig) -> tuple[SamplingParams, Any]:
         - Sampling parameters
         - Model generator for structured output
     """
-    logging.debug("Initializing model")
+    logging.debug(f"Initializing model: {cfg.model.model}")
     sampling_params = SamplingParams(**dataclasses.asdict(cfg.sampling_params))
-    llm = LLM(**dataclasses.asdict(cfg.model))
-    model = models.VLLM(llm)
-    generator = generate.json(model, Response)
+    llm = LLM(**dataclasses.asdict(cfg.model), distributed_executor_backend="ray")
+    vllm_model = models.VLLM(llm)
+
+    # Use the model-specific generator creation method with its class
+    model_class = type(cfg.model)
+    generator = model_class.make_generator(vllm_model)
 
     return sampling_params, generator
 
@@ -352,18 +466,17 @@ def load_input_data(source_path: epath.Path) -> list[dict[str, Any]]:
         List of samples to process
     """
     with source_path.open("r") as src:
-        # Load the full JSON file
+        # Load the JSON file and extract results
         data = json.loads(src.read())
 
-        # Extract the results list from the JSON structure
-        if "results" not in data:
-            msg = "Input file does not contain 'results' key"
+        # Extract the results list or raise a descriptive error
+        if not (raw_samples := data.get("results")):
+            available_keys = list(data.keys())
+            msg = f"Input file does not contain 'results' key: {available_keys}"
             raise ValueError(msg)
 
-        raw_samples = data["results"]
         logging.info(f"Loaded {len(raw_samples)} samples from input file")
-
-    return raw_samples
+        return raw_samples
 
 
 def process_batch(
@@ -410,17 +523,18 @@ def process_batch(
         logging.debug(f"Processing {len(expanded_samples)} samples")
         responses = generator(prompts, sampling_params=sampling_params)
 
-        # Create results from responses
-        results = []
-        for sample, response in zip(expanded_samples, responses, strict=True):
-            result = {
+        # Create results from responses using comprehension
+        results = [
+            {
                 "query_id": sample["query_id"],
                 "sub_id": sample["sub_id"],
-                "judgment": response.judgment,
-                "explanation": response.explanation,
+                **response.model_dump(mode="json"),  # Include all fields from response
             }
-            results.append(result)
-            existing_ids.add((sample["query_id"], sample["sub_id"]))
+            for sample, response in zip(expanded_samples, responses, strict=True)
+        ]
+
+        # Update existing IDs
+        existing_ids.update((s["query_id"], s["sub_id"]) for s in expanded_samples)
 
         return results, existing_ids
 
