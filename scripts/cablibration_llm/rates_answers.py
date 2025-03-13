@@ -446,7 +446,8 @@ def initialize_model(cfg: AppConfig) -> tuple[SamplingParams, Any]:
     """
     logging.debug(f"Initializing model: {cfg.model.model}")
     sampling_params = SamplingParams(**dataclasses.asdict(cfg.sampling_params))
-    llm = LLM(**dataclasses.asdict(cfg.model), distributed_executor_backend="ray")
+    # Disable progress bar for model initialization and inference
+    llm = LLM(**dataclasses.asdict(cfg.model), distributed_executor_backend="ray", disable_log_progress=True)
     vllm_model = models.VLLM(llm)
 
     # Use the model-specific generator creation method with its class
@@ -589,8 +590,8 @@ def main(cfg: AppConfig):
 
     with output_file.open("a") as dst:
         # Process batches with progress tracking
-        for batch_idx, batch in enumerate(etqdm.tqdm(batches)):
-            if cfg.limit is not None and batch_idx >= cfg.limit:
+        for batch_idx, batch in enumerate(etqdm.tqdm(batches, desc="Processing batches")):
+            if cfg.limit is not None and (batch_idx * cfg.batch_size) >= cfg.limit:
                 break
 
             # Process the batch
