@@ -29,7 +29,7 @@ from absl import app, logging
 from etils import eapp, edc, epath, etqdm
 from jinja2 import Environment, Template
 from outlines import generate, models
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 from simple_parsing import field, subgroups
 from vllm import LLM, SamplingParams  # pytype: disable=import-error
 from vllm.sampling_params import RequestOutputKind  # pytype: disable=import-error
@@ -330,7 +330,7 @@ class AppConfig:
 
     # Processing parameters
     limit: int | None = None  # Maximum number of batches to process
-    batch_size: int = 64  # Number of samples to process in each batch
+    batch_size: int = 4  # Number of samples to process in each batch
 
 
 class Response(BaseModel):
@@ -447,7 +447,7 @@ def initialize_model(cfg: AppConfig) -> tuple[SamplingParams, Any]:
     logging.debug(f"Initializing model: {cfg.model.model}")
     sampling_params = SamplingParams(**dataclasses.asdict(cfg.sampling_params))
     # Disable progress bar for model initialization and inference
-    llm = LLM(**dataclasses.asdict(cfg.model), distributed_executor_backend="ray", disable_log_progress=True)
+    llm = LLM(**dataclasses.asdict(cfg.model), distributed_executor_backend="mp")
     vllm_model = models.VLLM(llm)
 
     # Use the model-specific generator creation method with its class
@@ -520,31 +520,23 @@ def process_batch(
     ]
 
     # Get model judgments
-    try:
-        logging.debug(f"Processing {len(expanded_samples)} samples")
-        responses = generator(prompts, sampling_params=sampling_params)
+    logging.debug(f"Processing {len(expanded_samples)} samples")
+    responses = generator(prompts, sampling_params=sampling_params, use_tqdm=False)
 
-        # Create results from responses using comprehension
-        results = [
-            {
-                "query_id": sample["query_id"],
-                "sub_id": sample["sub_id"],
-                **response.model_dump(mode="json"),  # Include all fields from response
-            }
-            for sample, response in zip(expanded_samples, responses, strict=True)
-        ]
+    # Create results from responses using comprehension
+    results = [
+        {
+            "query_id": sample["query_id"],
+            "sub_id": sample["sub_id"],
+            **response.model_dump(mode="json"),  # Include all fields from response
+        }
+        for sample, response in zip(expanded_samples, responses, strict=True)
+    ]
 
-        # Update existing IDs
-        existing_ids.update((s["query_id"], s["sub_id"]) for s in expanded_samples)
+    # Update existing IDs
+    existing_ids.update((s["query_id"], s["sub_id"]) for s in expanded_samples)
 
-        return results, existing_ids
-
-    except ValidationError:
-        logging.exception("Error validating generated output")
-        return [], existing_ids
-    except Exception as e:
-        logging.exception(f"Unexpected error: {e}")
-        return [], existing_ids
+    return results, existing_ids
 
 
 def write_results(results: list[dict[str, Any]], dst_file) -> None:
@@ -596,9 +588,11 @@ def main(cfg: AppConfig):
 
             # Process the batch
             results, existing_ids = process_batch(batch, existing_ids, cfg, sampling_params, generator)
+            logging.debug("Process batch %d - %d results", batch_idx, len(results))
 
             # Write results to output file
-            write_results(results, dst)
+            if results:
+                write_results(results, dst)
 
     logging.info("Completed processing. Results saved to %s", output_file)
 
