@@ -151,6 +151,7 @@ class LLamaModelConfig(ModelConfig):
 
     model: str = "neuralmagic/Meta-Llama-3.1-70B-Instruct-FP8"
     tensor_parallel_size: int = 2
+    gpu_memory_utilization: float = 0.9
 
 
 @edc.dataclass
