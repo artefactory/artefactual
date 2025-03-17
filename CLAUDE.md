@@ -1,7 +1,7 @@
 # Artefactual Project Guide
 
 ## Commands
-- Lint/Format: `ruff check` or `ruff format`
+- Lint/Format: `ruff format`
 - Run single test: `python path/to/test.py`
 - Run script with config: `python scripts/path/to/script.py --config.param=value`
 

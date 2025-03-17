@@ -73,10 +73,13 @@ class MistralSmallSamplingConfig(SamplingConfig):
 
 @edc.dataclass
 @dataclasses.dataclass
-class FlowJudgeSamplingConfig(SamplingConfig):
+class GemmaSamplingConfig(SamplingConfig):
+    """Configuration for Gemma model sampling parameters."""
+
     max_tokens: int = 4096
-    temperature: float = 0.1
+    temperature: float = 0.7
     top_p: float = 0.9
+    repetition_penalty: float = 1.1
 
 
 @edc.dataclass
@@ -152,25 +155,15 @@ class LLamaModelConfig(ModelConfig):
 
 @edc.dataclass
 @dataclasses.dataclass
-class FlowJudgeModelConfig(ModelConfig):
-    """Model configuration for Flow Judge models."""
+class GemmaModelConfig(ModelConfig):
+    """Model configuration for Gemma models."""
 
-    model: str = "flowaicom/Flow-Judge-v0.1"
+    model: str = "neuralmagic/gemma-2-9b-it-FP8"
     tensor_parallel_size: int = 1
     gpu_memory_utilization: float = 0.9
-
-    @classmethod
-    def make_generator(cls, model: Any) -> Any:
-        """Create a generator that produces structured output for this model.
-
-        Args:
-            model: The model to use for generation
-
-        Returns:
-            A generator that produces structured output for Flow-Judge
-        """
-        logging.info("Using FlowJudgeResponse model for output parsing")
-        return generate.json(model, FlowJudgeResponse)
+    max_model_len: int = 8192
+    trust_remote_code: bool = True
+    dtype: str = "auto"
 
 
 TRUE_FALSE_PROMPT = """
@@ -183,7 +176,7 @@ Expected Answer:
 {{ expected_answer }}
 
 Provided Answer:
-{{ provided_answer }}
+{{ generated_answer }}
 
 Instructions:
 1. Focus solely on comparing the core factual content of the provided answer against the expected answer.
@@ -204,49 +197,6 @@ Remember: Your goal is to determine factual correctness, not stylistic similarit
 """
 
 
-FLOW_JUDGE_PROMPT = """
-# GOAL
-Your job is to evaluate a task carried out by an AI system powered by a large language model.
-You will be provided with the inputs and output of the task, as well as the evaluation criteria and scoring rubric. Your task is to evaluate the output of the AI system based on the evaluation criteria and scoring rubric provided.
-
-# INPUT
-Below are the inputs required for performing the task:
-<inputs>
-{{ query }}
-</inputs>
-
-# OUTPUT
-Below is the output of the task:
-<output>
-{{ provided_answer }}
-</output>
-
-# EVALUATION CRITERIA AND SCORING RUBRIC
-Here are the evaluation criteria and the rubric that you need to use for evaluating the task:
-<evaluation_criteria>
-{{ expected_answer }}
-</evaluation_criteria>
-
-<scoring_rubric>
-True: The output satisfactorily addresses the task according to the evaluation criteria.
-False: The output fails to adequately address the task according to the evaluation criteria.
-</scoring_rubric>
-
-# INSTRUCTIONS FOR THE EVALUATION
-1. Understand the task and criteria: Familiarize yourself with the task to be evaluated. Review the evaluation criteria and scoring rubric.
-2. Review the inputs and output: Look at the inputs provided for the task. Examine the output generated from completing the task.
-3. Compare output to the evaluation criteria: Determine whether the output satisfies the evaluation criteria.
-4. Make a binary judgment (True/False) based on this comparison.
-5. Write verbal feedback justifying your evaluation that includes a detailed rationale.
-
-## FORMAT FOR THE EVALUATION
-- Write the verbal feedback inside <feedback> tags without any additional surrounding text.
-- Write the binary judgment (True or False only) inside <score> tags, without any additional surrounding text and always after the feedback.
-
-Please accurately evaluate the task. Strictly adhere to the evaluation criteria and scoring rubric. Your response must provide a binary True/False judgment.
-"""
-
-
 @edc.dataclass
 @dataclasses.dataclass
 class PromptConfig:
@@ -262,31 +212,18 @@ class PromptConfig:
         env = Environment(autoescape=True)
         self.template = env.from_string(self.prompt)
 
-    def render(self, query: str, expected_answer: str, provided_answer: str) -> str:
+    def render(self, query: str, expected_answer: str, generated_answer: str) -> str:
         """Render the prompt template with the given parameters.
 
         Args:
             query: The question or query to evaluate
             expected_answer: The reference/correct answer
-            provided_answer: The generated answer to evaluate
+            generated_answer: The generated answer to evaluate
 
         Returns:
             Formatted prompt string
         """
-        return self.template.render(query=query, expected_answer=expected_answer, provided_answer=provided_answer)
-
-
-@edc.dataclass
-@dataclasses.dataclass
-class FlowJudgePromptConfig(PromptConfig):
-    """Configuration for Flow Judge prompt templating."""
-
-    def __post_init__(self):
-        if self.prompt is None:
-            self.prompt = FLOW_JUDGE_PROMPT
-
-        env = Environment(autoescape=True)
-        self.template = env.from_string(self.prompt)
+        return self.template.render(query=query, expected_answer=expected_answer, generated_answer=generated_answer)
 
 
 @edc.dataclass
@@ -310,7 +247,7 @@ class AppConfig:
             "mistral": MistralModelConfig,
             "mistral-small": MistralSmallModelConfig,
             "llama-3.1-70b": LLamaModelConfig,
-            "flow-judge": FlowJudgeModelConfig,
+            "gemma-2-9b": GemmaModelConfig,
         },
         default="default",
     )
@@ -319,12 +256,15 @@ class AppConfig:
     prompt: PromptConfig = subgroups(
         {
             "default": PromptConfig,
-            "flow-judge": FlowJudgePromptConfig,
         },
         default="default",
     )
     sampling_params: SamplingConfig = subgroups(
-        {"default": SamplingConfig, "mistral-small": MistralSmallSamplingConfig, "flow-judge": FlowJudgeSamplingConfig},
+        {
+            "default": SamplingConfig,
+            "mistral-small": MistralSmallSamplingConfig,
+            "gemma-2-9b": GemmaSamplingConfig,
+        },
         default="default",
     )
 
@@ -340,14 +280,7 @@ class Response(BaseModel):
     explanation: str  # Explanation of the judgment
 
 
-class FlowJudgeResponse(BaseModel):
-    """Model for the Flow-Judge response format with feedback and score tags."""
-
-    feedback: str  # Verbal feedback inside <feedback> tags
-    score: bool  # Binary judgment (True/False) inside <score> tags
-
-
-# === Data Processing Functions ===
+# === Utility Functions ===
 
 
 def expand_samples(samples: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -383,20 +316,22 @@ def expand_samples(samples: list[dict[str, Any]]) -> list[dict[str, Any]]:
             expanded_samples.append({
                 **base_sample,
                 "sub_id": gen_key,
-                "provided_answer": gen_answer_dict[gen_key],
+                "generated_answer": gen_answer_dict[gen_key],
             })
 
     return expanded_samples
 
 
-# === Helper Functions for Main Application ===
-
-
-def setup_output_file(cfg: AppConfig) -> tuple[epath.Path, set[tuple[Any, str]]]:
+def setup_output_file(
+    output_dir: epath.Path, model_name: str, source_name: str, *, resume: bool = False
+) -> tuple[epath.Path, set[tuple[Any, str]]]:
     """Set up the output file and load existing IDs if resuming.
 
     Args:
-        cfg: Application configuration
+        output_dir: Directory to store output files
+        model_name: Name of the model
+        source_name: Name of the source file
+        resume: Whether to resume from existing output
 
     Returns:
         Tuple containing:
@@ -404,15 +339,15 @@ def setup_output_file(cfg: AppConfig) -> tuple[epath.Path, set[tuple[Any, str]]]
         - Set of existing IDs to avoid duplicates
     """
     # Create output directory
-    cfg.output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Define output file path
-    output_file = cfg.output_dir / f"judgments_{cfg.model.model}_{cfg.source.name}".replace("/", "_")
+    # Define output file path - use "judgements" in the filename
+    output_file = output_dir / f"judgements_{model_name}_{source_name}".replace("/", "_")
     logging.debug("Output file: %s", output_file)
 
     # Check if output file exists
     if output_file.exists():
-        if not cfg.resume:
+        if not resume:
             response = input(f"Output file {output_file} already exists. Continue? (y/n): ")
             if response.lower() != "y":
                 msg = f"Output file {output_file} already exists"
@@ -431,30 +366,6 @@ def setup_output_file(cfg: AppConfig) -> tuple[epath.Path, set[tuple[Any, str]]]
         existing_ids = set()
 
     return output_file, existing_ids
-
-
-def initialize_model(cfg: AppConfig) -> tuple[SamplingParams, Any]:
-    """Initialize the model and sampling parameters.
-
-    Args:
-        cfg: Application configuration
-
-    Returns:
-        Tuple containing:
-        - Sampling parameters
-        - Model generator for structured output
-    """
-    logging.debug(f"Initializing model: {cfg.model.model}")
-    sampling_params = SamplingParams(**dataclasses.asdict(cfg.sampling_params))
-    # Disable progress bar for model initialization and inference
-    llm = LLM(**dataclasses.asdict(cfg.model), distributed_executor_backend="mp")
-    vllm_model = models.VLLM(llm)
-
-    # Use the model-specific generator creation method with its class
-    model_class = type(cfg.model)
-    generator = model_class.make_generator(vllm_model)
-
-    return sampling_params, generator
 
 
 def load_input_data(source_path: epath.Path) -> list[dict[str, Any]]:
@@ -480,63 +391,30 @@ def load_input_data(source_path: epath.Path) -> list[dict[str, Any]]:
         return raw_samples
 
 
-def process_batch(
-    batch: list[dict[str, Any]],
-    existing_ids: set[tuple[Any, str]],
-    cfg: AppConfig,
-    sampling_params: SamplingParams,
-    generator: Any,
-) -> tuple[list[dict[str, Any]], set[tuple[Any, str]]]:
-    """Process a batch of samples.
+def initialize_model(model_config: ModelConfig, sampling_config: SamplingConfig) -> tuple[SamplingParams, Any]:
+    """Initialize the model and sampling parameters.
 
     Args:
-        batch: Batch of samples to process
-        existing_ids: Set of existing IDs to avoid duplicates
-        cfg: Application configuration
-        sampling_params: Sampling parameters
-        generator: Model generator
+        model_config: Configuration for the model
+        sampling_config: Configuration for sampling parameters
 
     Returns:
         Tuple containing:
-        - Results from processing the batch
-        - Updated set of existing IDs
+        - Sampling parameters
+        - Model generator for structured output
     """
-    # Expand samples - create one entry per generated answer
-    expanded_samples = expand_samples(batch)
+    logging.debug(f"Initializing model: {model_config.model}")
+    sampling_params = SamplingParams(**dataclasses.asdict(sampling_config))
 
-    # Filter out already processed samples
-    expanded_samples = [s for s in expanded_samples if (s["query_id"], s["sub_id"]) not in existing_ids]
-    if not expanded_samples:
-        return [], existing_ids
+    # Disable progress bar for model initialization and inference
+    llm = LLM(**dataclasses.asdict(model_config), distributed_executor_backend="mp")
+    vllm_model = models.VLLM(llm)
 
-    # Prepare prompts for batch processing
-    prompts = [
-        cfg.prompt.render(
-            query=sample["query"],
-            expected_answer=sample["expected_answer"],
-            provided_answer=sample["provided_answer"],
-        )
-        for sample in expanded_samples
-    ]
+    # Use the model-specific generator creation method with its class
+    model_class = type(model_config)
+    generator = model_class.make_generator(vllm_model)
 
-    # Get model judgments
-    logging.debug(f"Processing {len(expanded_samples)} samples")
-    responses = generator(prompts, sampling_params=sampling_params, use_tqdm=False)
-
-    # Create results from responses using comprehension
-    results = [
-        {
-            "query_id": sample["query_id"],
-            "sub_id": sample["sub_id"],
-            **response.model_dump(mode="json"),  # Include all fields from response
-        }
-        for sample, response in zip(expanded_samples, responses, strict=True)
-    ]
-
-    # Update existing IDs
-    existing_ids.update((s["query_id"], s["sub_id"]) for s in expanded_samples)
-
-    return results, existing_ids
+    return sampling_params, generator
 
 
 def write_results(results: list[dict[str, Any]], dst_file) -> None:
@@ -549,6 +427,47 @@ def write_results(results: list[dict[str, Any]], dst_file) -> None:
     if results:
         df = pl.DataFrame(results)
         df.write_ndjson(dst_file)
+        dst_file.flush()  # Ensure data is flushed to disk after each batch
+
+
+def filter_processed_samples(
+    expanded_samples: list[dict[str, Any]], processed_ids: set[tuple[Any, str]]
+) -> list[dict[str, Any]]:
+    """Filter out samples that have already been processed.
+
+    Args:
+        expanded_samples: Expanded samples to filter
+        processed_ids: Set of already processed IDs
+
+    Returns:
+        Filtered list of samples
+    """
+    # Keep samples with ID -1 (default) and filter out others that are already processed
+    filtered_samples = [
+        s for s in expanded_samples if s["query_id"] == -1 or (s["query_id"], s["sub_id"]) not in processed_ids
+    ]
+    return filtered_samples
+
+
+def create_result_from_response(sample: dict[str, Any], response: Any) -> dict[str, Any] | None:
+    """Create a result dictionary from a sample and its corresponding response.
+
+    Args:
+        sample: The sample that was processed
+        response: The model's response
+
+    Returns:
+        Result dictionary or None if there was an error
+    """
+    try:
+        return {
+            "query_id": sample["query_id"],
+            "sub_id": sample["sub_id"],
+            **response.model_dump(mode="json"),
+        }
+    except Exception as e:
+        logging.error(f"Error creating result for sample {sample['query_id']}-{sample['sub_id']}: {e}")
+        return None
 
 
 # === Main Application Function ===
@@ -568,31 +487,81 @@ def main(cfg: AppConfig):
     """
     logging.info("\n%s", cfg)
 
-    # Setup output file and load existing IDs
-    output_file, existing_ids = setup_output_file(cfg)
+    # Step 1: Set up output file and get existing processed samples
+    output_file, existing_ids = setup_output_file(
+        output_dir=cfg.output_dir, model_name=cfg.model.model, source_name=cfg.source.name, resume=cfg.resume
+    )
 
-    # Initialize model
-    sampling_params, generator = initialize_model(cfg)
+    # Step 2: Initialize model
+    sampling_params, generator = initialize_model(model_config=cfg.model, sampling_config=cfg.sampling_params)
 
-    # Load input data
+    # Step 3: Load input data
     raw_samples = load_input_data(cfg.source)
 
-    # Process samples in batches
+    # Step 4: Divide samples into batches
     batches = list(tlz.partition_all(cfg.batch_size, raw_samples))
+
+    # Step 5: Process each batch and write results
+    processed_ids = set(existing_ids)  # Create a copy for tracking
 
     with output_file.open("a") as dst:
         # Process batches with progress tracking
         for batch_idx, batch in enumerate(etqdm.tqdm(batches, desc="Processing batches")):
-            if cfg.limit is not None and (batch_idx * cfg.batch_size) >= cfg.limit:
+            # Check if we've reached the batch limit
+            if cfg.limit is not None and batch_idx >= cfg.limit:
+                logging.info(f"Reached limit of {cfg.limit} batches, stopping")
                 break
 
-            # Process the batch
-            results, existing_ids = process_batch(batch, existing_ids, cfg, sampling_params, generator)
-            logging.debug("Process batch %d - %d results", batch_idx, len(results))
+            try:
+                # Step 5.1: Expand samples (one entry per generated answer)
+                expanded_samples = expand_samples(batch)
+                logging.debug(f"Batch {batch_idx}: Expanded to {len(expanded_samples)} individual samples")
 
-            # Write results to output file
-            if results:
-                write_results(results, dst)
+                # Step 5.2: Filter out already processed samples (keep samples with ID -1)
+                to_process = filter_processed_samples(expanded_samples, processed_ids)
+                logging.debug(f"Batch {batch_idx}: {len(to_process)} samples to process after filtering")
+
+                if not to_process:
+                    logging.warning(f"Batch {batch_idx}: All samples already processed, skipping")
+                    continue
+
+                # Step 5.3: Prepare prompts for generation
+                prompts = [
+                    cfg.prompt.render(
+                        query=sample["query"],
+                        expected_answer=sample["expected_answer"],
+                        generated_answer=sample["generated_answer"],
+                    )
+                    for sample in to_process
+                ]
+
+                # Step 5.4: Get model judgments
+                logging.debug(f"Processing {len(to_process)} samples")
+                responses = generator(prompts, sampling_params=sampling_params, use_tqdm=False)
+
+                # Step 5.5: Process responses into results
+                results = (
+                    create_result_from_response(sample, response)
+                    for sample, response in zip(to_process, responses, strict=True)
+                )
+                results = [res for res in results if res is not None]
+
+                logging.debug(f"Batch {batch_idx}: Generated {len(results)} results")
+
+                # Step 5.6: Write results to output file
+                if results:
+                    write_results(results, dst)
+                    logging.debug(f"Batch {batch_idx}: Wrote {len(results)} results to output file")
+
+                # Step 5.7: Update processed IDs set (except for default IDs)
+                processed_ids |= {
+                    (sample["query_id"], sample["sub_id"]) for sample in to_process if sample["query_id"] != -1
+                }
+
+            except (ValueError, RuntimeError, json.JSONDecodeError) as e:
+                # Log error but continue processing remaining batches
+                logging.error(f"Error processing batch {batch_idx}: {e}")
+                logging.debug("Error details", exc_info=True)
 
     logging.info("Completed processing. Results saved to %s", output_file)
 
