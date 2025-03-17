@@ -44,14 +44,17 @@ def entropy_from_logprobs(logprobs: LogProbsInput) -> float:
         msg = "Cannot calculate entropy from empty log probabilities"
         raise ValueError(msg)
 
-    # Check for inf or nan values
-    if np.any(~np.isfinite(logprobs_array)):
-        msg = "Log probabilities cannot contain inf or nan values"
+    if np.any(np.isnan(logprobs_array)) or np.any(np.isposinf(logprobs_array)):
+        msg = "Log probabilities cannot contain nan or +inf values"
         raise ValueError(msg)
 
-    # Handle numerical stability with np.exp for log probabilities
     probs = np.exp(logprobs_array)
-    return float(-np.sum(probs * logprobs_array))
+    # Calculate p * log(p), handle 0 * -inf = 0 using np.nan_to_num
+    with np.errstate(invalid="ignore"):  # Suppress "invalid value" warnings for 0*log(0)
+        entropy_terms = probs * logprobs_array
+    entropy_terms_fixed = np.nan_to_num(entropy_terms, nan=0.0, posinf=0.0, neginf=0.0)  # Explicitly handle all inf/nan
+    entropy_val = -np.sum(entropy_terms_fixed)
+    return float(entropy_val)
 
 
 @beartype
