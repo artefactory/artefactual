@@ -168,7 +168,7 @@ class GemmaModelConfig(ModelConfig):
 
 
 TRUE_FALSE_PROMPT = """
-You are an expert evaluator tasked with determining if a provided answer correctly responds to a query based on an expected answer. Your task is to make a binary True/False judgment.
+You are an expert evaluator tasked with determining if two answers convey compatible information. Your task is to make a binary True/False judgment on whether the answers are SEMANTICALLY COMPATIBLE.
 
 Query:
 {{ query }}
@@ -176,25 +176,44 @@ Query:
 Expected Answer:
 {{ expected_answer }}
 
-Provided Answer:
+Generated Answer:
 {{ generated_answer }}
 
-Instructions:
-1. Focus solely on comparing the core factual content of the provided answer against the expected answer.
-2. Key facts (dates, names, numbers, relationships, etc.) must match the expected answer. Significant deviations in critical details should result in a "False" judgment.
-3. Minor formatting or stylistic differences that do not alter meaning can be ignored.
-4. The judgment should be "True" only if the provided answer conveys the same essential information as the expected answer.
-5. The judgment should be "False" if:
-   - The provided answer contradicts the expected answer
-   - The provided answer is significantly incomplete
-   - The provided answer includes major factual errors
-   - The provided answer fails to address the query directly
+CRITICAL INSTRUCTIONS:
+1. FIRST, perform a simple VERBATIM TEXT COMPARISON:
+   - If the expected answer and generated answer are IDENTICAL (exact same text), your judgment MUST be TRUE
+   - If not identical, proceed to semantic comparison
 
-After careful analysis, provide:
-1. A binary judgment: True or False
-2. A brief explanation (1-3 sentences) justifying your judgment
+2. For SEMANTIC COMPARISON, use these MANDATORY RULES:
+   - Judge "True" WHENEVER the general meaning or core concept is the same
+   - Judge "True" if one answer is GENERAL and one is SPECIFIC about the same thing
+   - Judge "True" if one answer names a CATEGORY (e.g., "missionaries") and the other provides SPECIFIC INSTANCES of that category (e.g., "Augustine was sent by Pope Gregory")
+   - Judge "True" if one answer gives a BRIEF fact and the other ELABORATES with more details
+   - Judge "True" if one answer is more detailed but does NOT contradict the other
+   - Judge "False" ONLY if the answers directly CONTRADICT each other or discuss ENTIRELY different topics
 
-Remember: Your goal is to determine factual correctness, not stylistic similarity. Focus on whether the provided answer would give a user the correct information they need.
+3. EXTREMELY IMPORTANT RULES ABOUT SPECIFICITY:
+   - When one answer is general and one is specific → TRUE
+   - When one uses a category term and one gives examples → TRUE
+   - When one gives "who/what" and the other adds "when/where/how/why" → TRUE
+   - When one gives a person's role and the other gives their name → TRUE
+   - When one refers to a group and the other names individuals → TRUE
+
+4. Always check if the specific answer is an INSTANCE or EXAMPLE of the general answer
+   - If it is, the judgment MUST be TRUE regardless of how detailed the specific answer is
+
+5. The query is provided ONLY for context - do NOT use it in your judgment
+
+FINAL CHECK BEFORE SUBMITTING:
+- If one answer could reasonably be considered a more detailed version of the other → TRUE
+- If after reading both answers, they feel like they're talking about the same basic concept → TRUE
+- If you think "these answers are not contradicting each other" → TRUE
+
+Your response MUST follow this format:
+{
+  "judgment": true/false,
+  "explanation": "One clear sentence explaining why the answers are compatible or contradictory."
+}
 """
 
 
@@ -462,6 +481,9 @@ def create_result_from_response(sample: dict[str, Any], response: Any) -> dict[s
     """
     try:
         return {
+            "query": sample["query"],
+            "expected_answer": sample["expected_answer"],
+            "generated_answer": sample["generated_answer"],
             "query_id": sample["query_id"],
             "sub_id": sample["sub_id"],
             **response.model_dump(mode="json"),
