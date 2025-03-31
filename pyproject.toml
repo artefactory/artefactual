@@ -61,6 +61,9 @@ dev = [
     "hypothesis>=6.127.8",
 ]
 
+[tool.codespell]
+ignore-words-list = "rouge,ans"
+
 [tool.ruff]
 preview = true
 target-version = "py310"
