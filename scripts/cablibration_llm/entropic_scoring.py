@@ -3,6 +3,7 @@ import json
 import logging
 import sys
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -11,6 +12,8 @@ import numpy as np
 MINISTRAL_8B_VOCAB_SIZE = 2**17
 FALCON_10B_VOCAB_SIZE = 2**17
 QWEN_25_3B_VOCAB_SIZE = 151936
+
+EPSILON = 1e-20  # Small value to avoid log(0) in entropy calculations
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -22,7 +25,7 @@ parser.add_argument(
     "-i",
     dest="input_filename",
     required=True,
-    type=str,
+    type=Path,
     help="Path to the input JSON file to be processed.",
 )
 parser.add_argument(
@@ -30,41 +33,72 @@ parser.add_argument(
     "-o",
     dest="output_filename",
     required=False,
-    type=str,
+    type=Path,
     help="Path to the output file where results will be saved.",
 )
 
 args = parser.parse_args()
 
-input_file = Path(args.input_filename)
+input_file = args.input_filename
 output_file_name = args.output_filename  # Access using the 'dest' name or the long flag name without '--'
 if not output_file_name:
     output_file_name = input_file.stem + "_entropy_score.json"  # Default output file name
     output_file_name = Path(input_file.parent, output_file_name)  # Use the same directory as input file
 
 
-def compute_entropy_rate(logprobs, number_logprobs, vocab_size: int):
-    entropy_rate = 0
+def compute_entropy_rate(
+    logprobs: list[list[dict[str, Any]]], number_logprobs: int, vocab_size: int
+) -> tuple[float, float, list[float]]:
+    """
+    Computes entropy metrics for a sequence of token log probabilities.
+
+    Args:
+        logprobs: A list where each element corresponds to a token in the sequence.
+                  Each element is itself a list of dictionaries, where each dictionary
+                  represents one of the top-k logprobs provided for that token position
+                  (e.g., [{'token_str': ' a', 'logprob': -1.2}, ...]).
+                  Expected keys in the inner dict: 'logprob'.
+        number_logprobs: The number of logprobs provided per token (k in top-k).
+        vocab_size: The total vocabulary size of the language model.
+
+    Returns:
+        A tuple containing:
+        - cumulative_entropy_rate (float): The sum of token entropies over the sequence.
+        - average_entropy_rate_per_token (float): The cumulative entropy rate divided by the number of tokens.
+        - token_relative_remaining_entropy (List[float]): A list containing the ratio of
+          estimated maximum remaining entropy to calculated token entropy for each token position.
+    """
+    cumulative_entropy_rate = 0.0
     token_relative_remaining_entropy = []
+    if not logprobs:
+        return 0.0, 0.0, []
     for token in logprobs:  # length of the answer
         token_logprobs = np.array([rank["logprob"] for rank in token])  # logprobs of the tokens
         token_probs = np.exp(token_logprobs)
         sum_probs = np.sum(token_probs)  # compute the sum of probabilities over the top k tokens
-        remaining_prob = 1 - sum_probs  # remaining probability to be distributed over the rest of the vocabulary
 
-        token_entropy = -np.sum(token_probs * np.log2(token_probs + 1e-20))  # Avoid log(0) by adding a small value
-        entropy_rate += token_entropy
+        # Clamp sum_probs to avoid remaining_prob being negative due to float precision
+        sum_probs = min(sum_probs, 1.0)
+        remaining_prob = 1.0 - sum_probs
+
+        token_entropy = -np.sum(token_probs * np.log2(token_probs + EPSILON))  # Avoid log(0) by adding a small value
+        cumulative_entropy_rate += token_entropy
 
         max_remaining_entropy = (
-            -remaining_prob * np.log2(remaining_prob) + np.log2(vocab_size - number_logprobs) * remaining_prob
-        )
-        token_relative_remaining_entropy.append(max_remaining_entropy / token_entropy)
-    return entropy_rate, entropy_rate / len(logprobs), token_relative_remaining_entropy
+            -remaining_prob * np.log2(remaining_prob + EPSILON) + np.log2(vocab_size - number_logprobs) * remaining_prob
+        )  # Supposing uniform distribution over the remaining tokens (very bold assumption)
+        # Avoid division by zero
+        if token_entropy <= EPSILON:
+            relative_remaining = np.inf
+        else:
+            relative_remaining = max_remaining_entropy / token_entropy
+        token_relative_remaining_entropy.append(relative_remaining)
 
+    return cumulative_entropy_rate, cumulative_entropy_rate / len(logprobs), token_relative_remaining_entropy
 
-logging.info(f"Processing file: {input_file}")
 
 if __name__ == "__main__":
+    logging.info(f"Processing file: {input_file}")
     json_data = None  # init
     try:
         with open(input_file, encoding="utf-8") as f:
@@ -83,8 +117,6 @@ if __name__ == "__main__":
         try:
             metadata = json_data["metadata"]
             json_results = json_data["results"]
-            # json_results_full_info = [item["full_info"] for item in json_results]
-
         except KeyError as e:
             # Log the specific key error and then exit
             logging.error(f"Check JSON file structure. Required key missing: {e}")
@@ -97,6 +129,10 @@ if __name__ == "__main__":
             # Catch any other unexpected errors during processing
             logging.error(f"An unexpected error occurred processing JSON data: {e}")
             sys.exit(1)  # <--- Exit on other processing errors
+
+    if not json_results:
+        logging.error("The 'results' list in the JSON is empty. Cannot determine defaults or process data.")
+        sys.exit(1)
 
     # get vocab_size from metadata
     generator_model = metadata["generator_model"]
@@ -116,20 +152,21 @@ if __name__ == "__main__":
     else:
         logging.error(f"Unknown generator model: {generator_model}. Please specify a known model in JSON metadata.")
         print("-" * 30)
-        vocab_size = input("Please specify the vocabulary size of the model used (this needs to be an integer): ")
-        try:
-            vocab_size = int(vocab_size)
-        except ValueError:
-            logging.error(f"Invalid vocabulary size provided: {vocab_size}. Please try again.")
-        vocab_size = input("Please specify the vocabulary size of the model used (this needs to be an integer): ")
-        try:
-            vocab_size = int(vocab_size)
-        except ValueError:
-            logging.error(f"Invalid vocabulary size provided: {vocab_size}. Exiting.")
-            sys.exit(1)
-        if vocab_size <= 0:
-            logging.error(f"Vocabulary size must be a positive integer. Provided: {vocab_size}. Exiting.")
-            sys.exit(1)
+        vocab_size = None
+        while vocab_size is None:  # Loop until we have a valid integer
+            user_input = input("Please specify the vocabulary size of the model used (must be a positive integer): ")
+            try:
+                vocab_size_candidate = int(user_input)
+                if vocab_size_candidate <= 0:
+                    logging.warning("Vocabulary size must be positive. Please try again.")
+                    # vocab_size remains None, loop continues
+                else:
+                    vocab_size = vocab_size_candidate  # Valid input received, store it
+                    logging.info(f"Using provided vocabulary size: {vocab_size}")
+            except ValueError:
+                logging.warning(f"Invalid input '{user_input}'. Please enter an integer.")
+                # vocab_size remains None, loop continues
+        print("-" * 30)
 
     results = []
 
@@ -142,13 +179,13 @@ if __name__ == "__main__":
             answer_text = ans["answer_text"]
             cumulative_logprob = ans["cumulative_logprob"]
             logprobs = ans["detailed_logprobs"]
-            entropy_rate, entropy_rate_per_token, token_relative_remaining_entropy = compute_entropy_rate(
+            cumulative_entropy_rate, entropy_rate_per_token, token_relative_remaining_entropy = compute_entropy_rate(
                 logprobs, number_logprobs, vocab_size
             )
             scored_answer = {
                 "answer_text": answer_text,
                 "cumulative_logprob": cumulative_logprob,
-                "entropy_rate": entropy_rate,
+                "cumulative_entropy_rate": cumulative_entropy_rate,
                 "entropy_rate_per_token": entropy_rate_per_token,
                 "token_relative_remaining_entropy": token_relative_remaining_entropy,
             }
