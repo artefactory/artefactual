@@ -20,6 +20,7 @@ dependencies = [
     "clu>=0.0.12",
     "tensorflow-cpu<2.18; platform_system != 'Darwin'",
     "tensorflow<2.18; platform_system == 'Darwin'",
+    "transformers>=4.50.3",
 ]
 
 [project.scripts]
