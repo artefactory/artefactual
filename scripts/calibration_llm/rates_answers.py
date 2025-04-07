@@ -26,18 +26,20 @@ import orjson as json
 import polars as pl
 import toolz as tlz
 from absl import app, logging
+from beartype.door import die_if_unbearable
 from etils import eapp, edc, epath, etqdm
 from jinja2 import Environment, Template
 from outlines import generate, models
 from pydantic import BaseModel
 from simple_parsing import field, subgroups
+from simple_parsing.helpers import Serializable
 from vllm import LLM, SamplingParams  # pytype: disable=import-error
 from vllm.sampling_params import RequestOutputKind  # pytype: disable=import-error
 
 
 @edc.dataclass
 @dataclasses.dataclass
-class SamplingConfig:
+class SamplingConfig(Serializable):
     """Configuration for sampling parameters in text generation."""
 
     n: int = 1
@@ -67,7 +69,19 @@ class SamplingConfig:
 
 @edc.dataclass
 @dataclasses.dataclass
-class MistralSmallSamplingConfig(SamplingConfig):
+class MistralSamplingConfig(SamplingConfig):
+    """Configuration for Mistral models sampling parameters."""
+
+    max_tokens: int = 8092
+    temperature: float = 0.8
+    top_p: float = 0.95
+
+
+@edc.dataclass
+@dataclasses.dataclass
+class MistralSmallSamplingConfig(MistralSamplingConfig):
+    """Configuration for Mistral Small model sampling parameters."""
+
     max_tokens: int = 8092
 
 
@@ -84,10 +98,21 @@ class GemmaSamplingConfig(SamplingConfig):
 
 @edc.dataclass
 @dataclasses.dataclass
-class ModelConfig:
+class LlamaSamplingConfig(SamplingConfig):
+    """Configuration for Llama model sampling parameters."""
+
+    max_tokens: int = 4096
+    temperature: float = 0.8
+    top_p: float = 0.95
+    repetition_penalty: float = 1.1
+
+
+@edc.dataclass
+@dataclasses.dataclass
+class ModelConfig(Serializable):
     """Configuration for a language model."""
 
-    model: str
+    model: str | None = None
     task: str = "generate"
     tokenizer: str | None = None
     tokenizer_mode: str = "auto"
@@ -132,6 +157,7 @@ class MistralModelConfig(ModelConfig):
     load_format: str = "mistral"
     tensor_parallel_size: int = 2
     gpu_memory_utilization: float = 0.65
+    dtype: str = "bfloat16"
 
 
 @edc.dataclass
@@ -141,30 +167,81 @@ class MistralSmallModelConfig(MistralModelConfig):
     Note: this model does not seem to support guided decoding
     """
 
-    model: str = "mistralai/Mistral-Small-24B-Instruct-2501"
+    model: str | None = "mistralai/Mistral-Small-24B-Instruct-2501"
 
 
 @edc.dataclass
 @dataclasses.dataclass
-class LLamaModelConfig(ModelConfig):
-    """Model configuration for Llama models."""
+class LlamaModelConfig(ModelConfig):
+    """Base configuration for Llama models."""
 
-    model: str = "neuralmagic/Meta-Llama-3.1-70B-Instruct-FP8"
+    model: str | None = None
+    tensor_parallel_size: int = 2
+    gpu_memory_utilization: float = 0.8
+    trust_remote_code: bool = True
+    max_model_len: int = 8192
+
+
+@edc.dataclass
+@dataclasses.dataclass
+class Llama31ModelConfig(LlamaModelConfig):
+    """Configuration for Llama 3.1 models."""
+
+    model: str | None = "meta-llama/Llama-3.1-70B-Instruct"
     tensor_parallel_size: int = 2
     gpu_memory_utilization: float = 0.9
 
 
 @edc.dataclass
 @dataclasses.dataclass
-class GemmaModelConfig(ModelConfig):
-    """Model configuration for Gemma models."""
+class Llama32ModelConfig(LlamaModelConfig):
+    """Configuration for Llama 3.2 models."""
 
-    model: str = "neuralmagic/gemma-2-9b-it-FP8"
+    model: str | None = "meta-llama/Llama-3.2-11B-Vision-Instruct"
     tensor_parallel_size: int = 1
-    gpu_memory_utilization: float = 0.9
+    gpu_memory_utilization: float = 0.85
+
+
+@edc.dataclass
+@dataclasses.dataclass
+class Llama33ModelConfig(LlamaModelConfig):
+    """Configuration for Llama 3.3 models."""
+
+    model: str | None = "nvidia/Llama-3.3-70B-Instruct-FP4"
+    tensor_parallel_size: int = 2
+    gpu_memory_utilization: float = 0.8
+
+
+@edc.dataclass
+@dataclasses.dataclass
+class GemmaModelConfig(ModelConfig):
+    """Base model configuration for Gemma models."""
+
+    tensor_parallel_size: int = 1
     max_model_len: int = 8192
     trust_remote_code: bool = True
-    dtype: str = "auto"
+    dtype: str = "bfloat16"
+
+
+@edc.dataclass
+@dataclasses.dataclass
+class Gemma2ModelConfig(GemmaModelConfig):
+    """Model configuration for Gemma 2 models."""
+
+    model: str | None = "google/gemma-2-27b-it"
+    tensor_parallel_size: int = 1
+    gpu_memory_utilization: float = 0.9
+
+
+@edc.dataclass
+@dataclasses.dataclass
+class Gemma3ModelConfig(GemmaModelConfig):
+    """Model configuration for Gemma 3 models."""
+
+    model: str | None = "google/gemma-3-27b-it"
+    tensor_parallel_size: int = 2
+    gpu_memory_utilization: float = 0.9
+    dtype: str = "bfloat16"
 
 
 TRUE_FALSE_PROMPT = """
@@ -219,7 +296,7 @@ Your response MUST follow this format:
 
 @edc.dataclass
 @dataclasses.dataclass
-class PromptConfig:
+class PromptConfig(Serializable):
     """Configuration for prompt templating."""
 
     prompt: str | None = None
@@ -248,7 +325,7 @@ class PromptConfig:
 
 @edc.dataclass
 @dataclasses.dataclass
-class AppConfig:
+class AppConfig(Serializable):
     """Application configuration for the judgment pipeline.
 
     This class defines all the parameters needed to run the judgment pipeline,
@@ -259,6 +336,7 @@ class AppConfig:
     source: epath.Path  # Path to input data file
     output_dir: epath.Path = edc.field(validate=epath.Path, default="outputs")  # Directory for output files
     resume: bool = False  # Whether to resume from existing output
+    config_file: epath.Path | None = None  # Path to a YAML configuration file to load
 
     # Model configuration
     model: ModelConfig = subgroups(
@@ -266,8 +344,12 @@ class AppConfig:
             "default": ModelConfig,
             "mistral": MistralModelConfig,
             "mistral-small": MistralSmallModelConfig,
-            "llama-3.1-70b": LLamaModelConfig,
-            "gemma-2-9b": GemmaModelConfig,
+            "llama": LlamaModelConfig,
+            "llama-3.1": Llama31ModelConfig,
+            "llama-3.2": Llama32ModelConfig,
+            "llama-3.3": Llama33ModelConfig,
+            "gemma-2": Gemma2ModelConfig,
+            "gemma-3": Gemma3ModelConfig,
         },
         default="default",
     )
@@ -282,8 +364,10 @@ class AppConfig:
     sampling_params: SamplingConfig = subgroups(
         {
             "default": SamplingConfig,
+            "mistral": MistralSamplingConfig,
             "mistral-small": MistralSmallSamplingConfig,
-            "gemma-2-9b": GemmaSamplingConfig,
+            "llama": LlamaSamplingConfig,
+            "gemma": GemmaSamplingConfig,
         },
         default="default",
     )
@@ -423,7 +507,14 @@ def initialize_model(model_config: ModelConfig, sampling_config: SamplingConfig)
         - Sampling parameters
         - Model generator for structured output
     """
+    # Validate input types
+    die_if_unbearable(model_config, ModelConfig)
+    die_if_unbearable(sampling_config, SamplingConfig)
+
     logging.debug(f"Initializing model: {model_config.model}")
+    logging.debug(f"Using sampling config: {type(sampling_config).__name__}")
+
+    # Convert sampling config to VLLM SamplingParams
     sampling_params = SamplingParams(**dataclasses.asdict(sampling_config))
 
     # Disable progress bar for model initialization and inference
@@ -508,14 +599,40 @@ def main(cfg: AppConfig):
     Args:
         cfg: Application configuration
     """
+    # Check if we should load the configuration from a file
+    if cfg.config_file is not None:
+        if not cfg.config_file.exists():
+            msg = f"Config file not found: {cfg.config_file}"
+            raise ValueError(msg)
+
+        # Load the config file and replace our configuration
+        logging.info("Loading configuration from %s", cfg.config_file)
+        cfg = AppConfig.load(cfg.config_file)
+        logging.info("Configuration loaded from file")
+
+    # Validate model
+    if cfg.model.model is None:
+        msg = "Model path must be specified either via command line or in the config file"
+        raise ValueError(msg)
+
     logging.info("\n%s", cfg)
+
+    # Create output directory if it doesn't exist
+    cfg.output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save the config to the output directory
+    # Replace special characters in model name with underscores
+    model_name = cfg.model.model.split("/")[-1].replace("/", "_").replace(".", "_")
+    config_file = cfg.output_dir / f"{model_name}_config.yaml"
+    cfg.save(config_file)
+    logging.info(f"Saved configuration to {config_file}")
 
     # Step 1: Set up output file and get existing processed samples
     output_file, existing_ids = setup_output_file(
         output_dir=cfg.output_dir, model_name=cfg.model.model, source_name=cfg.source.name, resume=cfg.resume
     )
 
-    # Step 2: Initialize model
+    # Step 2: Initialize model - sampling_config can be None for auto-selection
     sampling_params, generator = initialize_model(model_config=cfg.model, sampling_config=cfg.sampling_params)
 
     # Step 3: Load input data
