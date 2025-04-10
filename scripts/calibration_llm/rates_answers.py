@@ -252,22 +252,29 @@ Query:
 
 Expected Answer:
 {{ expected_answer }}
+{% if answer_aliases %}
+Answer Aliases (Additional Correct Answers):
+{% for alias in answer_aliases %}
+- {{ alias }}
+{% endfor %}
+{% endif %}
 
 Generated Answer:
 {{ generated_answer }}
 
 CRITICAL INSTRUCTIONS:
 1. FIRST, perform a simple VERBATIM TEXT COMPARISON:
-   - If the expected answer and generated answer are IDENTICAL (exact same text), your judgment MUST be TRUE
-   - If not identical, proceed to semantic comparison
+   - If the generated answer is IDENTICAL (exact same text) to EITHER the expected answer OR ANY of the answer aliases, your judgment MUST be TRUE
+   - If not identical to any of them, proceed to semantic comparison
 
 2. For SEMANTIC COMPARISON, use these MANDATORY RULES:
-   - Judge "True" WHENEVER the general meaning or core concept is the same
+   - Judge "True" if the generated answer matches the SEMANTIC MEANING of EITHER the expected answer OR ANY of the answer aliases
+   - Judge "True" WHENEVER the general meaning or core concept is the same as either the expected answer or any alias
    - Judge "True" if one answer is GENERAL and one is SPECIFIC about the same thing
    - Judge "True" if one answer names a CATEGORY (e.g., "missionaries") and the other provides SPECIFIC INSTANCES of that category (e.g., "Augustine was sent by Pope Gregory")
    - Judge "True" if one answer gives a BRIEF fact and the other ELABORATES with more details
    - Judge "True" if one answer is more detailed but does NOT contradict the other
-   - Judge "False" ONLY if the answers directly CONTRADICT each other or discuss ENTIRELY different topics
+   - Judge "False" ONLY if the answers directly CONTRADICT all of the expected answer and all aliases, or discuss ENTIRELY different topics
 
 3. EXTREMELY IMPORTANT RULES ABOUT SPECIFICITY:
    - When one answer is general and one is specific → TRUE
@@ -281,10 +288,12 @@ CRITICAL INSTRUCTIONS:
 
 5. The query is provided ONLY for context - do NOT use it in your judgment
 
+6. IMPORTANT: The generated answer should be considered TRUE if it matches EITHER the expected answer OR ANY of the answer aliases in meaning
+
 FINAL CHECK BEFORE SUBMITTING:
-- If one answer could reasonably be considered a more detailed version of the other → TRUE
-- If after reading both answers, they feel like they're talking about the same basic concept → TRUE
-- If you think "these answers are not contradicting each other" → TRUE
+- If the generated answer could reasonably be considered matching ANY of the expected answer or aliases → TRUE
+- If after reading all answers, they feel like they're talking about the same basic concept → TRUE
+- If you think "the generated answer is not contradicting the expected answer or any of its aliases" → TRUE
 
 Your response MUST follow this format:
 {
@@ -309,18 +318,26 @@ class PromptConfig(Serializable):
         env = Environment(autoescape=True)
         self.template = env.from_string(self.prompt)
 
-    def render(self, query: str, expected_answer: str, generated_answer: str) -> str:
+    def render(
+        self, query: str, expected_answer: str, generated_answer: str, answer_aliases: list[str] | None = None
+    ) -> str:
         """Render the prompt template with the given parameters.
 
         Args:
             query: The question or query to evaluate
             expected_answer: The reference/correct answer
             generated_answer: The generated answer to evaluate
+            answer_aliases: Optional list of alternative correct answers
 
         Returns:
             Formatted prompt string
         """
-        return self.template.render(query=query, expected_answer=expected_answer, generated_answer=generated_answer)
+        return self.template.render(
+            query=query,
+            expected_answer=expected_answer,
+            generated_answer=generated_answer,
+            answer_aliases=answer_aliases or [],
+        )
 
 
 @edc.dataclass
@@ -394,7 +411,7 @@ def expand_samples(samples: list[dict[str, Any]]) -> list[dict[str, Any]]:
     for each answer, adding a sub_id to track the specific generation.
 
     Args:
-        samples: List of samples with query, expected_answer, and generated_answers
+        samples: List of samples with query, expected_answer, generated_answers, and optional answer_aliases
 
     Returns:
         List of expanded samples with one entry per generated answer
@@ -407,11 +424,18 @@ def expand_samples(samples: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if isinstance(expected_answer, list):
             expected_answer = " ".join(expected_answer)
 
+        # Process answer aliases if available
+        answer_aliases = sample.get("answer_aliases", [])
+        # Convert any non-list aliases to a list
+        if answer_aliases and not isinstance(answer_aliases, list):
+            answer_aliases = [answer_aliases]
+
         # Extract common fields once
         base_sample = {
             "query_id": sample.get("query_id", -1),
             "query": sample["query"],
             "expected_answer": expected_answer,
+            "answer_aliases": answer_aliases,
         }
 
         # Flatten the generated answers
@@ -571,7 +595,7 @@ def create_result_from_response(sample: dict[str, Any], response: Any) -> dict[s
         Result dictionary or None if there was an error
     """
     try:
-        return {
+        result = {
             "query": sample["query"],
             "expected_answer": sample["expected_answer"],
             "generated_answer": sample["generated_answer"],
@@ -579,6 +603,12 @@ def create_result_from_response(sample: dict[str, Any], response: Any) -> dict[s
             "sub_id": sample["sub_id"],
             **response.model_dump(mode="json"),
         }
+
+        # Include answer aliases if available
+        if "answer_aliases" in sample:
+            result["answer_aliases"] = sample["answer_aliases"]
+
+        return result
     except Exception as e:
         logging.error(f"Error creating result for sample {sample['query_id']}-{sample['sub_id']}: {e}")
         return None
@@ -671,6 +701,7 @@ def main(cfg: AppConfig):
                         query=sample["query"],
                         expected_answer=sample["expected_answer"],
                         generated_answer=sample["generated_answer"],
+                        answer_aliases=sample.get("answer_aliases", []),
                     )
                     for sample in to_process
                 ]
