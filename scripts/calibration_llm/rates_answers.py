@@ -18,21 +18,22 @@
 
 
 import dataclasses
+import re
 from typing import Any
 
+# Using vLLM's built-in JSON schema generation for structured output
 import orjson as json
 import polars as pl
 import toolz as tlz
 from absl import app, logging
-from beartype.door import die_if_unbearable
 from etils import eapp, edc, epath, etqdm
 from jinja2 import Environment, Template
-from outlines import generate, models
 from pydantic import BaseModel
 from simple_parsing import field, subgroups
 from simple_parsing.helpers import Serializable
 from vllm import LLM, SamplingParams  # pytype: disable=import-error
-from vllm.sampling_params import RequestOutputKind  # pytype: disable=import-error
+from vllm.outputs import RequestOutput
+from vllm.sampling_params import GuidedDecodingParams, RequestOutputKind  # pytype: disable=import-error
 
 
 @edc.dataclass
@@ -131,18 +132,6 @@ class ModelConfig(Serializable):
     disable_custom_all_reduce: bool = False
     disable_async_output_proc: bool = False
     max_model_len: int = 8192
-
-    @classmethod
-    def make_generator(cls, model: Any) -> Any:
-        """Create a generator that produces structured output for this model.
-
-        Args:
-            model: The model to use for generation
-
-        Returns:
-            A generator that produces structured output
-        """
-        return generate.json(model, Response)
 
 
 @edc.dataclass
@@ -517,8 +506,13 @@ def load_input_data(source_path: epath.Path) -> list[dict[str, Any]]:
         return raw_samples
 
 
-def initialize_model(model_config: ModelConfig, sampling_config: SamplingConfig) -> tuple[SamplingParams, Any]:
+def initialize_model(
+    model_config: ModelConfig, sampling_config: SamplingConfig
+) -> tuple[SamplingParams, LLM, dict[str, Any]]:
     """Initialize the model and sampling parameters.
+
+    Uses vLLM's native guided decoding with JSON schema for structured output generation.
+    The JSON schema is derived from the Pydantic model for consistent response formatting.
 
     Args:
         model_config: Configuration for the model
@@ -526,28 +520,28 @@ def initialize_model(model_config: ModelConfig, sampling_config: SamplingConfig)
 
     Returns:
         Tuple containing:
-        - Sampling parameters
-        - Model generator for structured output
+        - Sampling parameters with guided JSON schema
+        - LLM instance
+        - JSON schema for structured output (for reference)
     """
-    # Validate input types
-    die_if_unbearable(model_config, ModelConfig)
-    die_if_unbearable(sampling_config, SamplingConfig)
-
     logging.debug(f"Initializing model: {model_config.model}")
     logging.debug(f"Using sampling config: {type(sampling_config).__name__}")
 
-    # Convert sampling config to VLLM SamplingParams
-    sampling_params = SamplingParams(**dataclasses.asdict(sampling_config))
-
-    # Disable progress bar for model initialization and inference
+    # Initialize the LLM directly
     llm = LLM(**dataclasses.asdict(model_config), distributed_executor_backend="mp")
-    vllm_model = models.VLLM(llm)
 
-    # Use the model-specific generator creation method with its class
-    model_class = type(model_config)
-    generator = model_class.make_generator(vllm_model)
+    # Get JSON schema for structured output from the Pydantic model
+    json_schema = Response.model_json_schema()
 
-    return sampling_params, generator
+    # Create guided decoding parameters with JSON schema
+    guided_decoding_params = GuidedDecodingParams(json=json_schema)
+
+    # Create sampling parameters with guided decoding for JSON
+    sampling_params_with_schema = SamplingParams(
+        **dataclasses.asdict(sampling_config), guided_decoding=guided_decoding_params
+    )
+
+    return sampling_params_with_schema, llm
 
 
 def write_results(results: list[dict[str, Any]], dst_file) -> None:
@@ -582,24 +576,49 @@ def filter_processed_samples(
     return filtered_samples
 
 
-def create_result_from_response(sample: dict[str, Any], response: Any) -> dict[str, Any] | None:
+def create_result_from_response(sample: dict[str, Any], output: RequestOutput) -> dict[str, Any] | None:
     """Create a result dictionary from a sample and its corresponding response.
+
+    Parses the LLM response which should be a JSON object with judgment and explanation fields.
+    Handles both clean JSON responses and responses where JSON may be embedded in other text
+    (by using regex extraction if needed).
 
     Args:
         sample: The sample that was processed
-        response: The model's response
+        output: The model's output with generated response (from vLLM directly)
 
     Returns:
-        Result dictionary or None if there was an error
+        Result dictionary or None if there was an error or invalid response
     """
     try:
+        # Extract the generated text from vLLM output
+        generated_text = output.outputs[0].text
+
+        # Try to extract JSON from the response using regex
+        # This is more robust than direct JSON parsing as it handles cases where
+        # the model might add extra text before/after the JSON
+        json_match = re.search(r"\{.*\}", generated_text, re.DOTALL)
+        if json_match:
+            response_dict = json.loads(json_match.group(0))
+        else:
+            # Fall back to parsing the whole response as JSON if regex doesn't find a match
+            response_dict = json.loads(generated_text)
+
+        # Validate that the judgment field exists
+        if "judgment" not in response_dict:
+            logging.error(f"Response missing judgment field for sample {sample['query_id']}-{sample['sub_id']}")
+            logging.debug(f"Response text: {generated_text[:200]}...")
+            return None
+
+        # Create properly formatted result dictionary
         result = {
             "query": sample["query"],
             "expected_answer": sample["expected_answer"],
             "generated_answer": sample["generated_answer"],
             "query_id": sample["query_id"],
             "sub_id": sample["sub_id"],
-            **response.model_dump(mode="json"),
+            "judgment": response_dict["judgment"],
+            "explanation": response_dict.get("explanation", "No explanation provided"),
         }
 
         # Include answer aliases if available
@@ -609,6 +628,7 @@ def create_result_from_response(sample: dict[str, Any], response: Any) -> dict[s
         return result
     except Exception as e:
         logging.error(f"Error creating result for sample {sample['query_id']}-{sample['sub_id']}: {e}")
+        logging.debug(f"Response text: {output.outputs[0].text[:200]}...")
         return None
 
 
@@ -661,7 +681,7 @@ def main(cfg: AppConfig):
     )
 
     # Step 2: Initialize model - sampling_config can be None for auto-selection
-    sampling_params, generator = initialize_model(model_config=cfg.model, sampling_config=cfg.sampling_params)
+    sampling_params, llm = initialize_model(model_config=cfg.model, sampling_config=cfg.sampling_params)
 
     # Step 3: Load input data
     raw_samples = load_input_data(cfg.source)
@@ -704,14 +724,16 @@ def main(cfg: AppConfig):
                     for sample in to_process
                 ]
 
-                # Step 5.4: Get model judgments
+                # Step 5.4: Get model judgments using structured output
                 logging.debug(f"Processing {len(to_process)} samples")
-                responses = generator(prompts, sampling_params=sampling_params, use_tqdm=False)
+
+                # Generate responses directly with vLLM (using sampling params with guided decoding)
+                outputs = llm.generate(prompts, sampling_params=sampling_params)
 
                 # Step 5.5: Process responses into results
                 results = (
-                    create_result_from_response(sample, response)
-                    for sample, response in zip(to_process, responses, strict=True)
+                    create_result_from_response(sample, output)
+                    for sample, output in zip(to_process, outputs, strict=True)
                 )
                 results = [res for res in results if res is not None]
 
