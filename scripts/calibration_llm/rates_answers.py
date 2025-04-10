@@ -8,13 +8,11 @@
 #     "toolz",
 #     "huggingface-hub",
 #     "safetensors",
-#     "vllm>=0.7",
+#     "vllm>0.8",
 #     "polars",
 #     "orjson",
-#     "outlines[vllm]",
 #     "pydantic",
-#     "triton==3.1",
-#     "torch==2.5.1",
+#     "transformers>=4.51",
 # ]
 # ///
 
