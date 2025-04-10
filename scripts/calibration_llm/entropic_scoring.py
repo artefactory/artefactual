@@ -87,7 +87,8 @@ def compute_entropy_rate(
         max_remaining_entropy = (
             -remaining_prob * np.log2(remaining_prob + EPSILON) + np.log2(vocab_size - number_logprobs) * remaining_prob
         )  # Supposing uniform distribution over the remaining tokens (very bold assumption)
-        # Avoid division by zero
+        if vocab_size - number_logprobs <= 0:
+            logging.warning("Vocab size is too small compared to the number of logprobs. The remaining entropy calculation might be inaccurate.")
         if token_entropy <= EPSILON:
             relative_remaining = np.inf
         else:
