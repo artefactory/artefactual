@@ -445,8 +445,8 @@ def setup_output_file(
     # Create output directory
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Define output file path - use "judgements" in the filename
-    output_file = output_dir / f"judgements_{model_name}_{source_name}".replace("/", "_")
+    # Define output file path - use "judgments" in the filename
+    output_file = output_dir / f"judgments_{model_name}_{source_name}".replace("/", "_")
     logging.debug("Output file: %s", output_file)
 
     # Check if output file exists
