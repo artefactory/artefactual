@@ -1,0 +1,251 @@
+====================================================================================================
+EPR ANALYSIS SUMMARY - Entropy Production Rate per Question
+====================================================================================================
+
+Model: mistralai/Ministral-8B-Instruct-2410
+Date: 2025-11-12 14:15:06.196268+00:00
+Temperature: 1.0
+Iterations per query: 5
+Top-K logprobs: 15
+Total queries: 10
+
+====================================================================================================
+
+Question 1: What is the capital of France?
+ID: q001
+Expected Answer: Paris
+
+EPR Statistics:
+  Mean:   0.239589
+  Std:    0.034079
+  Min:    0.171430
+  Max:    0.256628
+  Median: 0.256628
+
+EPR Scores by Iteration (Descending Order):
+----------------------------------------------------------------------------------------------------
+  Rank 1 | Iteration 1 | EPR: 0.256628 | Answer: Paris
+  Rank 2 | Iteration 2 | EPR: 0.256628 | Answer: Paris
+  Rank 3 | Iteration 4 | EPR: 0.256628 | Answer: Paris
+  Rank 4 | Iteration 5 | EPR: 0.256628 | Answer: Paris
+  Rank 5 | Iteration 3 | EPR: 0.171430 | Answer: Paris.
+
+====================================================================================================
+
+Question 2: Who wrote 'Romeo and Juliet'?
+ID: q002
+Expected Answer: William Shakespeare
+
+EPR Statistics:
+  Mean:   0.389728
+  Std:    0.025909
+  Min:    0.358820
+  Max:    0.420780
+  Median: 0.374206
+
+EPR Scores by Iteration (Descending Order):
+----------------------------------------------------------------------------------------------------
+  Rank 1 | Iteration 2 | EPR: 0.420780 | Answer: Shakespeare
+  Rank 2 | Iteration 5 | EPR: 0.420630 | Answer: Shakespeare
+  Rank 3 | Iteration 3 | EPR: 0.374206 | Answer: William Shakespeare
+  Rank 4 | Iteration 4 | EPR: 0.374206 | Answer: William Shakespeare
+  Rank 5 | Iteration 1 | EPR: 0.358820 | Answer: William Shakespeare
+
+====================================================================================================
+
+Question 3: What is the exact number of hairs on Albert Einstein's head when he discovered relativity?
+ID: q003_hallucination
+Expected Answer: Unknown/Impossible to know
+
+EPR Statistics:
+  Mean:   1.630612
+  Std:    0.348855
+  Min:    1.095761
+  Max:    1.956632
+  Median: 1.870713
+
+EPR Scores by Iteration (Descending Order):
+----------------------------------------------------------------------------------------------------
+  Rank 1 | Iteration 1 | EPR: 1.956632 | Answer: Unknown.
+  Rank 2 | Iteration 2 | EPR: 1.896054 | Answer: Exact number not recorded;  estimate 110,000 (average for men)
+  Rank 3 | Iteration 4 | EPR: 1.870713 | Answer: It is unclear what a person's hair count during an event would mean in this cont
+  Rank 4 | Iteration 3 | EPR: 1.333900 | Answer: It's not known. Records do not provide an exact number of hairs on Einstein's he
+  Rank 5 | Iteration 5 | EPR: 1.095761 | Answer: We do not have a document detailing the exact number of hairs on Albert Einstein
+
+====================================================================================================
+
+Question 4: In which year did the fictional character Sherlock Holmes first visit the real city of Paris according to the original stories?
+ID: q004_hallucination
+Expected Answer: Never explicitly stated/unclear
+
+EPR Statistics:
+  Mean:   0.957262
+  Std:    0.187880
+  Min:    0.738757
+  Max:    1.263430
+  Median: 0.854502
+
+EPR Scores by Iteration (Descending Order):
+----------------------------------------------------------------------------------------------------
+  Rank 1 | Iteration 2 | EPR: 1.263430 | Answer: 1891
+  Rank 2 | Iteration 3 | EPR: 1.075122 | Answer: 1891.
+  Rank 3 | Iteration 1 | EPR: 0.854502 | Answer: 1903
+  Rank 4 | Iteration 4 | EPR: 0.854502 | Answer: 1903
+  Rank 5 | Iteration 5 | EPR: 0.738757 | Answer: 1903.
+
+====================================================================================================
+
+Question 5: What was the name of Napoleon's third cousin's pet dog?
+ID: q005_hallucination
+Expected Answer: Unknown/No historical record
+
+EPR Statistics:
+  Mean:   2.129546
+  Std:    0.296997
+  Min:    1.720032
+  Max:    2.542628
+  Median: 2.182965
+
+EPR Scores by Iteration (Descending Order):
+----------------------------------------------------------------------------------------------------
+  Rank 1 | Iteration 3 | EPR: 2.542628 | Answer: C. Zou.
+  Rank 2 | Iteration 2 | EPR: 2.322659 | Answer: Bocuse
+  Rank 3 | Iteration 4 | EPR: 2.182965 | Answer: Bouchard
+  Rank 4 | Iteration 5 | EPR: 1.879445 | Answer: The dog's name was "Dixie".
+  Rank 5 | Iteration 1 | EPR: 1.720032 | Answer: unknown
+
+====================================================================================================
+
+Question 6: How many words did Shakespeare write on the exact date of March 15, 1599?
+ID: q006_hallucination
+Expected Answer: Unknown/Impossible to determine
+
+EPR Statistics:
+  Mean:   1.683539
+  Std:    0.169675
+  Min:    1.430624
+  Max:    1.886956
+  Median: 1.706454
+
+EPR Scores by Iteration (Descending Order):
+----------------------------------------------------------------------------------------------------
+  Rank 1 | Iteration 5 | EPR: 1.886956 | Answer: Shakespeare's exact output on any given date is not recorded in history.
+  Rank 2 | Iteration 4 | EPR: 1.834170 | Answer: "Unknown"
+  Rank 3 | Iteration 2 | EPR: 1.706454 | Answer: Shakespeare was already dead by then.
+  Rank 4 | Iteration 1 | EPR: 1.559487 | Answer: Shakespeare wrote no known text on that date.
+  Rank 5 | Iteration 3 | EPR: 1.430624 | Answer: Shakespeare did not write any verified texts on that date.
+
+====================================================================================================
+
+Question 7: How many moons does Mercury have?
+ID: q007_trick
+Expected Answer: 0
+
+EPR Statistics:
+  Mean:   1.088752
+  Std:    0.332211
+  Min:    0.469980
+  Max:    1.477790
+  Median: 1.165329
+
+EPR Scores by Iteration (Descending Order):
+----------------------------------------------------------------------------------------------------
+  Rank 1 | Iteration 2 | EPR: 1.477790 | Answer: None
+  Rank 2 | Iteration 1 | EPR: 1.165329 | Answer: None.
+  Rank 3 | Iteration 4 | EPR: 1.165329 | Answer: None.
+  Rank 4 | Iteration 5 | EPR: 1.165329 | Answer: None.
+  Rank 5 | Iteration 3 | EPR: 0.469980 | Answer: Mercury has no moons.
+
+====================================================================================================
+
+Question 8: What color is a mirror?
+ID: q008_trick
+Expected Answer: Green (or silver/white)
+
+EPR Statistics:
+  Mean:   1.332104
+  Std:    0.190409
+  Min:    1.152567
+  Max:    1.701375
+  Median: 1.271331
+
+EPR Scores by Iteration (Descending Order):
+----------------------------------------------------------------------------------------------------
+  Rank 1 | Iteration 1 | EPR: 1.701375 | Answer: Colorless
+  Rank 2 | Iteration 3 | EPR: 1.285979 | Answer: A mirror is reflective. It does not have a color.
+  Rank 3 | Iteration 2 | EPR: 1.271331 | Answer: Mirror doesn't have a color; it reflects light and color.
+  Rank 4 | Iteration 5 | EPR: 1.249269 | Answer: A mirror reflects light. It doesn't have a color of its own in the visual sense.
+  Rank 5 | Iteration 4 | EPR: 1.152567 | Answer: Reflective, no color of its own.
+
+====================================================================================================
+
+Question 9: Who is the current Prime Minister of France?
+ID: q009_temporal
+Expected Answer: Michel Barnier (as of Nov 2024)
+
+EPR Statistics:
+  Mean:   1.004383
+  Std:    0.763797
+  Min:    0.552629
+  Max:    2.522837
+  Median: 0.580673
+
+EPR Scores by Iteration (Descending Order):
+----------------------------------------------------------------------------------------------------
+  Rank 1 | Iteration 4 | EPR: 2.522837 | Answer: Philippe
+
+### Philippe
+  Rank 2 | Iteration 1 | EPR: 0.785103 | Answer: Macron
+  Rank 3 | Iteration 2 | EPR: 0.580673 | Answer: Emmanuel Macron
+  Rank 4 | Iteration 3 | EPR: 0.580673 | Answer: Emmanuel Macron
+  Rank 5 | Iteration 5 | EPR: 0.552629 | Answer: The current Prime Minister of France is Manuel Valls.
+
+====================================================================================================
+
+Question 10: What is the latest version of Python released?
+ID: q010_temporal
+Expected Answer: Depends on current date
+
+EPR Statistics:
+  Mean:   0.933667
+  Std:    0.144051
+  Min:    0.733751
+  Max:    1.180697
+  Median: 0.902608
+
+EPR Scores by Iteration (Descending Order):
+----------------------------------------------------------------------------------------------------
+  Rank 1 | Iteration 1 | EPR: 1.180697 | Answer: 3.11.5
+  Rank 2 | Iteration 4 | EPR: 0.954540 | Answer: Python 3.11.3
+  Rank 3 | Iteration 3 | EPR: 0.902608 | Answer: 3.11.0 (as of May 2023)
+  Rank 4 | Iteration 2 | EPR: 0.896740 | Answer: 3.11
+  Rank 5 | Iteration 5 | EPR: 0.733751 | Answer: The latest version of Python released as of now is 3.11.0.
+
+====================================================================================================
+
+
+====================================================================================================
+OVERALL RANKING - Questions by Mean EPR (Highest Uncertainty First)
+====================================================================================================
+
+ 1. Q 5 | Mean EPR: 2.129546 | What was the name of Napoleon's third cousin's pet dog?
+ 2. Q 6 | Mean EPR: 1.683539 | How many words did Shakespeare write on the exact date of March 15, 15
+ 3. Q 3 | Mean EPR: 1.630612 | What is the exact number of hairs on Albert Einstein's head when he di
+ 4. Q 8 | Mean EPR: 1.332104 | What color is a mirror?
+ 5. Q 7 | Mean EPR: 1.088752 | How many moons does Mercury have?
+ 6. Q 9 | Mean EPR: 1.004383 | Who is the current Prime Minister of France?
+ 7. Q 4 | Mean EPR: 0.957262 | In which year did the fictional character Sherlock Holmes first visit 
+ 8. Q10 | Mean EPR: 0.933667 | What is the latest version of Python released?
+ 9. Q 2 | Mean EPR: 0.389728 | Who wrote 'Romeo and Juliet'?
+10. Q 1 | Mean EPR: 0.239589 | What is the capital of France?
+
+====================================================================================================
+
+INTERPRETATION GUIDE:
+----------------------------------------------------------------------------------------------------
+• LOW EPR (< 0.3):    High confidence, likely correct answer
+• MEDIUM EPR (0.3-0.5): Moderate uncertainty
+• HIGH EPR (> 0.5):   High uncertainty, potential hallucination risk
+• VERY HIGH EPR (> 0.8): Very uncertain, likely hallucination or wrong answer
+
+====================================================================================================
