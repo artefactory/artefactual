@@ -2,14 +2,13 @@
 
 import numpy as np
 from absl.testing import absltest, parameterized
-from hypothesis import given
-from hypothesis import strategies as st
-
 from artefactual.entropy.calculations import (
     entropy_from_logprobs,
     mean_entropy,
     token_entropy,
 )
+from hypothesis import given
+from hypothesis import strategies as st
 
 
 class EntropyCalculationsTest(parameterized.TestCase):
