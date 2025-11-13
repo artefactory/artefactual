@@ -32,13 +32,11 @@ def process_epr_scores(data: list[dict[str, Any]]) -> list[dict[str, Any]]:
     Returns a list of dictionaries containing question info and sorted scores.
     """
     processed_results = []
-
     for entry in data:
         # Extract relevant fields (assuming structure based on context)
         question = entry.get("question", "Unknown Question")
         # You might need to adjust these keys based on your actual JSON structure
         epr_score = entry.get("epr_score", 0.0)
-
         processed_results.append({
             "question": question,
             "epr_score": epr_score,

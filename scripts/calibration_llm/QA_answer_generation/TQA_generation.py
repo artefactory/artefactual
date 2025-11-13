@@ -1,20 +1,3 @@
-#!/usr/bin/env python3
-"""Demo script for the UncertaintyDetector class.
-
-This script demonstrates how to use the UncertaintyDetector to compute
-Entropy Production Rate (EPR) scores for language model outputs with vLLM.
-
-Usage:
-    python demo_uncertainty.py --model_checkpoint MODEL [--n_queries N] [--iterations I] [--number_logprobs K]
-
-Examples:
-    # Run with Mistral model on 5 queries
-    python demo_uncertainty.py --model_checkpoint mistralai/Mistral-7B-Instruct-v0.2 --n_queries 5
-
-    # Run with custom parameters
-    python demo_uncertainty.py --model_checkpoint MODEL --n_queries 10 --iterations 5 --number_logprobs 15
-"""
-
 import argparse
 import contextlib
 import gc
@@ -24,7 +7,6 @@ import os
 import sys
 from datetime import datetime, timezone
 
-import numpy as np
 import ray
 import torch
 from tqdm import tqdm
@@ -35,19 +17,20 @@ from vllm.distributed.parallel_state import (
 )
 from vllm.sampling_params import SamplingParams
 
-from artefactual.scoring.uncertainty import UncertaintyDetector
+# Add path to import UncertaintyDetector
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../../"))
+from entropyPackage.uncertainty_detector import UncertaintyDetector
 
 EPSILON = 1e-12
 seed = 42
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-
 # %% Parameters
-parser = argparse.ArgumentParser(description="Demo: Generate answers and compute EPR scores using UncertaintyDetector.")
+parser = argparse.ArgumentParser(description="Generate answers using an LLM.")
 parser.add_argument(
     "--iterations",
     type=int,
-    default=1,
+    default=10,
     help="Number of iterations for sampling.",
 )
 parser.add_argument(
@@ -59,14 +42,14 @@ parser.add_argument(
 parser.add_argument(
     "--n_queries",
     type=int,
-    default=5,
+    default=-1,
     help="Number of queries to process from the dataset.",
 )
 parser.add_argument(
     "--number_logprobs",
     type=int,
     default=15,
-    help="Number of log probabilities to request (K for UncertaintyDetector).",
+    help="Number of log probabilities to request.",
 )
 parser.add_argument(
     "--temperature",
@@ -74,12 +57,7 @@ parser.add_argument(
     default=1.0,
     help="Temperature for sampling.",
 )
-parser.add_argument(
-    "--model_checkpoint",
-    type=str,
-    default="mistralai/Ministral-8B-Instruct-2410",
-    help="Path to the Hugging Face model checkpoint.",
-)
+parser.add_argument("--model_checkpoint", type=str, help="Path to the Hugging Face model checkpoint.")
 parser.add_argument(
     "--tensor_parallel_size",
     type=int,
@@ -92,18 +70,6 @@ parser.add_argument(
     default=0.90,
     help="GPU memory utilization (0.0 to 1.0).",
 )
-parser.add_argument(
-    "--data_path",
-    type=str,
-    default="sample-qa-data.json",
-    help="Path to the question-answer JSON file.",
-)
-parser.add_argument(
-    "--output_dir",
-    type=str,
-    default="generation_test",
-    help="Directory to save output JSON files.",
-)
 
 args = parser.parse_args()
 
@@ -114,23 +80,20 @@ number_logprobs = args.number_logprobs
 temperature = args.temperature
 tensor_parallel_size = args.tensor_parallel_size
 gpu_memory_utilization = args.gpu_memory_utilization
+
 checkpoint = args.model_checkpoint
-data_path = args.data_path
-output_dir = args.output_dir
 
 max_new_tokens = 200
 top_p = 1
 
-temperatures = [temperature]  # Can extend for temperature scaling
-
-
-# %% Setup logging
+temperatures = [1]  # extend the list for temperature scaling.
+# %% Load the LLM instance
 
 log_dir = os.path.join("logs")
 os.makedirs(log_dir, exist_ok=True)
 
 tz = timezone.utc
-log_filename = f"demo_uncertainty_{datetime.now(tz).strftime('%Y%m%d_%H%M%S')}.log"
+log_filename = f"answer_generation_{datetime.now(tz).strftime('%Y%m%d_%H%M%S')}.log"
 log_filepath = os.path.join(log_dir, log_filename)
 
 # Configure logging to both file and console
@@ -152,7 +115,6 @@ if "/" in checkpoint:
     name = checkpoint.split("/")[-1]
 else:
     name = checkpoint.split(".")[-1]
-
 logging.info(f"Using model checkpoint: {checkpoint}")
 logging.info(f"Model name: {name}")
 
@@ -167,6 +129,7 @@ if checkpoint in {"mistralai/Ministral-8B-Instruct-2410", "mistralai/Mistral-Sma
         tensor_parallel_size=tensor_parallel_size,
         gpu_memory_utilization=gpu_memory_utilization,
     )
+
 else:
     llm = LLM(
         model=checkpoint,
@@ -180,17 +143,17 @@ uncertainty_detector = UncertaintyDetector(K=number_logprobs)
 logging.info(f"Initialized UncertaintyDetector with K={number_logprobs}")
 
 
-# %% Load dataset
-
-
-def load_tqa_from_json(input_file: str):
-    """Load the QA data from a JSON file.
+# %% Load the TQA dataset
+def load_tqa_from_json(
+    input_file="trivia_qa.json",
+):
+    """Load the pack data from a JSON file.
 
     Args:
         input_file (str): Path to the JSON file
 
     Returns:
-        list: List of (question, question_id, short_answer, answer_aliases) tuples
+        list: List of (question, answer) tuples
     """
     try:
         with open(input_file, encoding="utf-8") as f:
@@ -217,11 +180,10 @@ def load_tqa_from_json(input_file: str):
         return []
 
 
-# %% Utility functions
+# %% Bytes to string conversion
 
 
 def convert_bytes_to_str(obj):
-    """Convert bytes objects to strings recursively in nested structures."""
     if isinstance(obj, bytes):
         try:
             return obj.decode("utf-8")
@@ -235,8 +197,11 @@ def convert_bytes_to_str(obj):
     return obj
 
 
+# %% Clear memory
+
+
 def clear_gpu_memory(llm: LLM) -> None:
-    """Clear GPU memory after model usage."""
+    # Delete the llm object and free the memory
     destroy_model_parallel()
     destroy_distributed_environment()
     del llm
@@ -245,35 +210,25 @@ def clear_gpu_memory(llm: LLM) -> None:
     gc.collect()
     torch.cuda.empty_cache()
     ray.shutdown()
-    logging.info("Successfully deleted the llm pipeline and freed the GPU memory.")
+    print("Successfully deleted the llm pipeline and freed the GPU memory.")
 
 
-# %% Main processing loop
+# %% Main function
 
 if __name__ == "__main__":
-    for temp in temperatures:
+    for temperature in temperatures:
         sampling_params = SamplingParams(
             n=iterations,
             max_tokens=max_new_tokens,
-            temperature=temp,
+            temperature=temperature,
             top_p=top_p,
             top_k=top_k_sampling,
             seed=seed,
             logprobs=number_logprobs,
         )
 
-        logging.info("=" * 80)
-        logging.info("DEMO: Uncertainty Detection with UncertaintyDetector")
-        logging.info("=" * 80)
-        logging.info(f"Parameters: iterations={iterations}, K={number_logprobs}, temperature={temp}")
-        logging.info("")
-
-        logging.info("Loading QA dataset...")
-        pack = load_tqa_from_json(data_path)
-
-        if not pack:
-            logging.error("Failed to load data. Exiting.")
-            sys.exit(1)
+        logging.info("Loading QA pack...")
+        pack = load_tqa_from_json("/data/workspace/charles/artefactual_data/web_question_qa.json")
 
         # Create the complete data structure before writing
         output_data = {
@@ -281,27 +236,23 @@ if __name__ == "__main__":
                 "generator_model": checkpoint,
                 "retriever": "NONE",
                 "date": f"{datetime.now(tz)}",
-                "temperature": temp,
+                "temperature": temperature,
                 "top_k_sampling": top_k_sampling,
                 "top_p": top_p,
                 "n_queries": n_queries,
                 "iterations": iterations,
                 "number_logprobs": number_logprobs,
-                "uncertainty_detector_K": number_logprobs,
             },
             "results": [],
         }
 
-        logging.info(f"Processing {min(n_queries, len(pack))} queries...")
-        logging.info("")
-
         for query, query_id, ans, aliases in tqdm(pack[:n_queries]):
-            PROMPT_MODEL = f"""You are a useful assistant that helps finding short and
-            precise answers for a given query or question.
-            Please keep your output AS SHORT AND CONCISE AS POSSIBLE.
-            Here is the query:
-            {query}
-            """
+            PROMPT_MODEL = f"""You are a useful assistant that help finding short and precise answers for a given query or question.
+                Please keep your output AS SHORT AND CONSICE AS POSSIBLE.
+                Here is the query :
+                {query}
+                """
+            #  If you don't know the answer, please return : "NONE".
             messages = [{"role": "user", "content": PROMPT_MODEL}]
             logging.info(f"Processing query: {query}")
             timestamp = datetime.now(tz)
@@ -312,6 +263,8 @@ if __name__ == "__main__":
                 messages=messages,
                 sampling_params=sampling_params,
                 use_tqdm=False,
+                # chat_template="/home/cmoslonka/artefactual/qwen3_nonthinking.jinja" if "qwen3" in checkpoint.lower() else None,
+                # chat_template_kwargs={"enable_thinking": False},
             )
 
             # Extract all generated texts
@@ -321,17 +274,13 @@ if __name__ == "__main__":
             delta_time = (datetime.now(tz) - timestamp).total_seconds()
             logging.info(f"Model generation completed in {delta_time:.2f} seconds (for {iterations} runs)")
 
-            # === UNCERTAINTY DETECTION ===
-            logging.info("Computing EPR scores with UncertaintyDetector...")
-            timestamp_epr = datetime.now(tz)
-
-            mock_outputs = [type("obj", (object,), {"outputs": [outputs[0].outputs[k]]})() for k in range(iterations)]
-
-            # Compute all EPR scores in a single, more efficient call
-            epr_scores_list, all_token_scores = uncertainty_detector.fit(mock_outputs, return_tokens=True)
-
-            # Extract detailed logprobs directly from vLLM outputs and compute EPR for each
+            # Extract detailed logprobs directly from vLLM outputs
             full_info_list = []
+
+            # Compute EPR scores for all outputs
+            epr_scores, token_epr_scores = uncertainty_detector.compute_epr(outputs, return_tokens=True)
+            logging.info(f"Computed EPR scores: {epr_scores}")
+
             for k in range(iterations):
                 # Extract detailed logprobs from vLLM output
                 token_logprobs_raw = outputs[0].outputs[k].logprobs
@@ -352,27 +301,9 @@ if __name__ == "__main__":
                     "answer_text": outputs[0].outputs[k].text,
                     "cumulative_logprob": outputs[0].outputs[k].cumulative_logprob,
                     "detailed_logprobs": detailed_logprobs,
-                    "epr_score": float(epr_scores_list[k]),
-                    "token_epr": all_token_scores[k].tolist(),
+                    "epr_score": float(epr_scores[k]),
+                    "token_epr": token_epr_scores[k].tolist(),
                 })
-
-            delta_epr = (datetime.now(tz) - timestamp_epr).total_seconds()
-            logging.info(f"EPR computation completed in {delta_epr:.4f} seconds")
-            logging.info(f"EPR scores: {epr_scores_list}")
-
-            # Compute EPR statistics
-            epr_stats = {
-                "mean": float(np.mean(epr_scores_list)),
-                "std": float(np.std(epr_scores_list)),
-                "min": float(np.min(epr_scores_list)),
-                "max": float(np.max(epr_scores_list)),
-                "median": float(np.median(epr_scores_list)),
-            }
-            logging.info(
-                f"EPR statistics: mean={epr_stats['mean']:.4f}, std={epr_stats['std']:.4f}, "
-                f"min={epr_stats['min']:.4f}, max={epr_stats['max']:.4f}"
-            )
-            logging.info("")
 
             result_entry = {
                 "query": query,
@@ -381,25 +312,21 @@ if __name__ == "__main__":
                 "answer_aliases": aliases,
                 "generated_answers": [{str(i): text} for i, text in enumerate(list_outputs_text)],
                 "full_info": full_info_list,
-                "epr_statistics": epr_stats,
             }
             result_entry = convert_bytes_to_str(result_entry)
             output_data["results"].append(result_entry)
 
         # Write the complete data structure to file
-        os.makedirs(output_dir, exist_ok=True)
-        output_file = os.path.join(output_dir, f"DEMO_{name}_{temp}_{n_queries}_with_EPR.json")
+        output_file = (
+            f"/home/gjeannin/artefactual/generation_test/WQA_{name}_{temperature}_{n_queries}_with_logprobs_NNTEST.json"
+        )
         logging.info(f"Writing results to {output_file}")
+
+        # Convert any bytes objects to strings before JSON serialization
 
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(output_data, f, ensure_ascii=False, indent=4)
 
-        logging.info("✓ Results saved successfully!")
-
     torch.cuda.empty_cache()
     clear_gpu_memory(llm)
     logging.info("Memory cleared.")
-    logging.info("")
-    logging.info("=" * 80)
-    logging.info("DEMO COMPLETED SUCCESSFULLY!")
-    logging.info("=" * 80)
