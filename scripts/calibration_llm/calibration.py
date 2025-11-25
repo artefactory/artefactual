@@ -21,10 +21,10 @@ import numpy as np
 from sklearn.metrics import precision_recall_fscore_support
 from tqdm import tqdm
 
+from artefactual.scoring.epr import EPR
+
 # Add the project root to the path to allow importing from 'artefactual'
 sys.path.append(str(Path(__file__).parent.parent.parent))
-
-from src.artefactual.uncertainty import EPR
 
 
 # The uncertainty detector expects a specific structure (RequestOutput protocol).
