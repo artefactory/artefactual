@@ -6,9 +6,8 @@ import hypothesis.extra.numpy as hnp
 import hypothesis.strategies as st
 import numpy as np
 from absl.testing import absltest, parameterized
-from hypothesis import given
-
 from artefactual.scoring.methods import ScoringMethod, score_fn
+from hypothesis import given
 
 N_TEST_SAMPLES = 200
 

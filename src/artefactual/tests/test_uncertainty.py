@@ -4,7 +4,6 @@ from dataclasses import dataclass
 
 import numpy as np
 import pytest
-
 from artefactual.uncertainty import UncertaintyDetector
 
 # ============================================================================
