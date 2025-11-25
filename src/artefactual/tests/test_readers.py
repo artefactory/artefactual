@@ -5,11 +5,10 @@ import tempfile
 from typing import Any
 
 from absl.testing import absltest, parameterized
+from artefactual.data.readers import join_samples, read_file
 from etils import epath
 from hypothesis import given
 from hypothesis import strategies as st
-
-from artefactual.data.readers import join_samples, read_file
 
 
 class ReadersTest(parameterized.TestCase):

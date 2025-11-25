@@ -4,13 +4,12 @@ from dataclasses import dataclass
 
 import numpy as np
 from absl.testing import absltest, parameterized
-from hypothesis import given
-from hypothesis import strategies as st
-
 from artefactual.scoring.logprobs import (
     extract_logprobs,
     process_logprobs,
 )
+from hypothesis import given
+from hypothesis import strategies as st
 
 
 @dataclass

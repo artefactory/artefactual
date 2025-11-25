@@ -27,6 +27,7 @@ from datetime import datetime, timezone
 import numpy as np
 import ray
 import torch
+from artefactual.uncertainty import UncertaintyDetector
 from tqdm import tqdm
 from vllm import LLM
 from vllm.distributed.parallel_state import (
@@ -34,8 +35,6 @@ from vllm.distributed.parallel_state import (
     destroy_model_parallel,
 )
 from vllm.sampling_params import SamplingParams
-
-from artefactual.uncertainty import UncertaintyDetector
 
 EPSILON = 1e-12
 seed = 42

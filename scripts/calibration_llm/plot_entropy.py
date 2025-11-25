@@ -20,10 +20,9 @@ extract the temperature from the filename
 import dataclasses
 
 from absl import app, logging
+from artefactual.data.readers import read_file
 from beartype import beartype
 from etils import eapp, edc, epath
-
-from artefactual.data.readers import read_file
 
 
 @beartype
