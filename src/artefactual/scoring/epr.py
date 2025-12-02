@@ -5,6 +5,7 @@ from beartype import beartype
 from numpy.typing import NDArray
 
 from artefactual.data.data_model import Completion
+from artefactual.features.entropy_contributions import compute_entropy_contributions
 from artefactual.scoring.uncertainty_detector import UncertaintyDetector
 
 
@@ -50,7 +51,7 @@ class EPR(UncertaintyDetector):
 
             # Compute entropy contributions in a vectorized manner
             # Input shape: (num_tokens, K)
-            s_kj = self._entropy_contributions(logprobs_list)
+            s_kj = compute_entropy_contributions(logprobs_list, self.k)
 
             # Token-level EPR: sum across K
             token_epr = s_kj.sum(axis=1)  # shape (num_tokens,)
