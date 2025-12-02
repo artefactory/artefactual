@@ -33,7 +33,7 @@ class GenerationConfig(BaseModel):
 
     model_path: str = "mistralai/Ministral-8B-Instruct-2410"
     number_logprobs: int = 15
-    iterations: int = 2
+    iterations: int = 1
     top_k_sampling: int = 50
     n_queries: int = -1
     temperature: float = 0.6
