@@ -195,3 +195,5 @@ pyrightconfig.json
 wandb/
 requirements.txt
 uv.lock
+outputs/
+perso.py
