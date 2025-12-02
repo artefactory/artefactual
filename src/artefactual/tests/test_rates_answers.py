@@ -209,3 +209,23 @@ def test_rate_answers_invalid_items_skipped(mock_init_llm):
     # Only q1 should be processed
     assert len(df) == 1
     assert df.index[0] == "q1"
+
+
+def test_rate_answers_no_extractable_text():
+    """Test that answers without extractable text (only epr_score) are skipped."""
+    input_data = {
+        "results": [
+            {
+                "query_id": "q1",
+                "query": "query1",
+                "expected_answers": ["exp1"],
+                "generated_answers": [{"epr_score": 0.1}],  # No text key
+            }
+        ]
+    }
+    with patch("builtins.open", mock_open(read_data=json.dumps(input_data))):
+        config = RatingConfig(input_file="dummy.json")
+        df = rate_answers(config)
+    # No extractable text means empty DataFrame
+    assert isinstance(df, pd.DataFrame)
+    assert df.empty
