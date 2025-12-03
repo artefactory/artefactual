@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Sequence
 
 import numpy as np
@@ -6,10 +7,39 @@ from numpy.typing import NDArray
 
 from artefactual.data.data_model import Completion
 from artefactual.scoring.uncertainty_detector import UncertaintyDetector
+from artefactual.utils.calibration import load_calibration
 
 
 class EPR(UncertaintyDetector):
     """Computes Entropy Production Rate (EPR) from model completions."""
+
+    def __init__(self, model: str | None = None, k: int = 15) -> None:
+        """
+        Initialize the EPR scorer.
+        Args:
+            model: Optional model name or path to load calibration coefficients.
+                   If None, raw EPR scores are returned (uncalibrated).
+            k: Number of top log probabilities to consider (default: 15).
+        """
+        super().__init__(k=k)
+        self.intercept = 0.0
+        self.coefficient = 1.0
+        self.is_calibrated = False
+
+        if model:
+            try:
+                calibration_data = load_calibration(model)
+                self.intercept = calibration_data.get("intercept", 0.0)
+                coeffs = calibration_data.get("coefficients", {})
+                # EPR uses a single coefficient for the mean entropy
+                self.coefficient = coeffs.get("mean_entropy", 1.0)
+                self.is_calibrated = True
+            except ValueError:
+                warnings.warn(
+                    f"Could not load calibration for model '{model}'. Proceeding with uncalibrated scores.",
+                    UserWarning,
+                    stacklevel=2,
+                )
 
     @beartype
     def compute(
@@ -38,7 +68,14 @@ class EPR(UncertaintyDetector):
         for completion in completions:
             token_logprobs_dict = completion.token_logprobs
             if not token_logprobs_dict:
-                seq_scores.append(0.0)
+                # If no tokens, apply calibration logic as in main block
+                if self.is_calibrated:
+                    linear_score = self.coefficient * 0.0 + self.intercept
+                    score = 1.0 / (1.0 + np.exp(-linear_score))
+                else:
+                    score = 0.0
+                seq_scores.append(score)
+
                 if return_per_token_scores:
                     token_scores.append(np.array([], dtype=np.float32))
                 continue
@@ -57,7 +94,16 @@ class EPR(UncertaintyDetector):
 
             # Sequence-level EPR: mean of tokens
             seq_epr = float(token_epr.mean()) if token_epr.size > 0 else 0.0
-            seq_scores.append(seq_epr)
+
+            # Apply calibration if available
+            if self.is_calibrated:
+                # Linear transformation: alpha * EPR + beta
+                linear_score = self.coefficient * seq_epr + self.intercept
+                # Sigmoid calibration: P(hallucination) = sigmoid(linear_score)
+                calibrated_score = 1.0 / (1.0 + np.exp(-linear_score))
+                seq_scores.append(float(calibrated_score))
+            else:
+                seq_scores.append(seq_epr)
 
             if return_per_token_scores:
                 token_scores.append(token_epr)
