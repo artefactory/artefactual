@@ -4,28 +4,18 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
-    { name = "Hicham Randrianarivo", email = "hicham.randrianarivo@gmail.com" },
+    { name = "Hicham Randrianarivo", email = "hicham.randrianarivo@artefact.com" },
 ]
 requires-python = ">=3.10,<3.12"
 dependencies = [
     "absl-py>=2.1.0",
     "beartype>=0.19.0",
-    "etils[eapp,edc,enp,epath,epy,etqdm,etree]>=1.11.0",
-    "keras-hub>=0.18.1",
-    "keras>3",
     "scikit-learn>=1.6.0",
-    "tensorflow-datasets>=4.9.7",
-    "jax[cuda12]; platform_system != 'Darwin'",
-    "jax; platform_system == 'Darwin'",
-    "clu>=0.0.12",
-    "tensorflow-cpu<2.18; platform_system != 'Darwin'",
-    "tensorflow<2.18; platform_system == 'Darwin'",
-    "transformers>=4.50.3",
     "ray>=2.50.1",
-    "torch>=2.8.0",
-    "tqdm>=4.67.1",
-    "vllm>=0.11.0",
     "matplotlib>=3.9.0",
+    "vllm>=0.12.0 ; sys_platform != 'darwin'",
+    "torch>=2.9.0",
+    "pydantic>=2.12.5",
 ]
 
 [project.scripts]
