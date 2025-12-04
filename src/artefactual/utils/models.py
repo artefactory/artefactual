@@ -1,12 +1,11 @@
 from vllm import LLM
 
 
-def init_llm(model_path: str, seed: int, tensor_parallel_size: int) -> LLM:
+def init_llm(model_path: str, seed: int) -> LLM:
     if model_path.startswith("mistralai/"):
         llm = LLM(
             model=model_path,
             seed=seed,
-            tensor_parallel_size=tensor_parallel_size,
             tokenizer_mode="mistral",
             load_format="mistral",
             config_format="mistral",
@@ -14,7 +13,6 @@ def init_llm(model_path: str, seed: int, tensor_parallel_size: int) -> LLM:
     else:
         llm = LLM(
             model=model_path,
-            tensor_parallel_size=tensor_parallel_size,
         )
     return llm
 

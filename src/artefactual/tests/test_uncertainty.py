@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 import numpy as np
 import pytest
+from vllm import RequestOutput
 
-from artefactual.data.data_model import Completion
 from artefactual.features.entropy_contributions import compute_entropy_contributions
 from artefactual.scoring.epr import EPR
 from artefactual.scoring.uncertainty_detector import UncertaintyDetector
@@ -22,17 +22,33 @@ class MockLogprob:
     logprob: float
 
 
-def create_completion(token_logprobs: list[dict[str, float]]) -> Completion:
-    """Create a Completion object from token logprobs.
+@dataclass
+class MockCompletionOutput:
+    """Mock completion output that mimics vLLM's CompletionOutput."""
 
-    Args:
-        token_logprobs: List of dicts mapping tokens to logprob values
+    logprobs: list[dict[str, "MockLogprob"]] | None
 
-    Returns:
-        Completion object
-    """
-    token_logprobs_dict = {i: list(lp.values()) for i, lp in enumerate(token_logprobs)}
-    return Completion(token_logprobs=token_logprobs_dict)
+
+class MockRequestOutput(RequestOutput):
+    """Mock request output that mimics vLLM's RequestOutput."""
+
+    def __init__(self, outputs: list[MockCompletionOutput]):
+        self.outputs = outputs
+
+
+def create_request_output(logprobs_sequences: list[list[dict[str, float]]]) -> list[MockRequestOutput]:
+    """Create a mock RequestOutput object from a list of logprob sequences."""
+    mock_completion_outputs = []
+    for seq in logprobs_sequences:
+        if not seq:  # Handle empty sequences
+            mock_completion_outputs.append(MockCompletionOutput(logprobs=None))
+            continue
+
+        mock_logprobs_list = []
+        for token_logprobs in seq:
+            mock_logprobs_list.append({k: MockLogprob(v) for k, v in token_logprobs.items()})
+        mock_completion_outputs.append(MockCompletionOutput(logprobs=mock_logprobs_list))
+    return [MockRequestOutput(outputs=mock_completion_outputs)]
 
 
 # ============================================================================
@@ -197,13 +213,15 @@ def test_compute_epr_single_output():
     """Test EPR computation with a single output."""
     detector = EPR(k=3)
 
-    logprobs = [
-        {"A": -0.5, "B": -1.5, "C": -2.5},
-        {"D": -0.3, "E": -1.2, "F": -2.1},
+    logprobs_seq = [
+        [
+            {"A": -0.5, "B": -1.5, "C": -2.5},
+            {"D": -0.3, "E": -1.2, "F": -2.1},
+        ]
     ]
-    completion = create_completion(logprobs)
+    request_output = create_request_output(logprobs_seq)
 
-    scores = detector.compute([completion], return_per_token_scores=False)
+    scores = detector.compute(request_output, return_per_token_scores=False)
     assert len(scores) == 1
     assert isinstance(scores[0], float)
     assert scores[0] >= 0
@@ -213,13 +231,14 @@ def test_compute_epr_multiple_outputs():
     """Test EPR computation with multiple outputs."""
     detector = EPR(k=3)
 
-    completions = [
-        create_completion([{"A": -0.5, "B": -1.5}, {"C": -0.3, "D": -1.2}]),
-        create_completion([{"E": -1.0, "F": -2.0}, {"G": -0.8, "H": -1.8}]),
-        create_completion([{"I": -0.2, "J": -1.5}, {"K": -0.5, "L": -2.0}]),
+    logprobs_seqs = [
+        [{"A": -0.5, "B": -1.5}, {"C": -0.3, "D": -1.2}],
+        [{"E": -1.0, "F": -2.0}, {"G": -0.8, "H": -1.8}],
+        [{"I": -0.2, "J": -1.5}, {"K": -0.5, "L": -2.0}],
     ]
+    request_output = create_request_output(logprobs_seqs)
 
-    scores = detector.compute(completions, return_per_token_scores=False)
+    scores = detector.compute(request_output, return_per_token_scores=False)
     assert len(scores) == 3
     assert all(isinstance(s, float) for s in scores)
     assert all(s >= 0 for s in scores)
@@ -229,13 +248,15 @@ def test_compute_epr_with_token_scores():
     """Test EPR computation with per-token scores."""
     detector = EPR(k=3)
 
-    logprobs = [
-        {"A": -0.5, "B": -1.5, "C": -2.5},
-        {"D": -0.3, "E": -1.2, "F": -2.1},
+    logprobs_seq = [
+        [
+            {"A": -0.5, "B": -1.5, "C": -2.5},
+            {"D": -0.3, "E": -1.2, "F": -2.1},
+        ]
     ]
-    completion = create_completion(logprobs)
+    request_output = create_request_output(logprobs_seq)
 
-    seq_scores, token_scores = detector.compute([completion], return_per_token_scores=True)
+    seq_scores, token_scores = detector.compute(request_output, return_per_token_scores=True)
 
     assert len(seq_scores) == 1
     assert len(token_scores) == 1
@@ -266,10 +287,10 @@ def test_compute_epr_output_without_logprobs():
     """Test EPR computation with output that has no logprobs."""
     detector = EPR(k=3)
 
-    # Create completion with empty logprobs
-    completion = Completion(token_logprobs={})
+    # Create output with no logprobs
+    request_output = create_request_output([[]])
 
-    scores = detector.compute([completion], return_per_token_scores=False)
+    scores = detector.compute(request_output, return_per_token_scores=False)
     assert len(scores) == 1
     assert scores[0] == 0.0
 
@@ -290,11 +311,8 @@ def test_compute_epr_high_vs_low_confidence():
         {"F": -1.7, "G": -1.7, "H": -1.7, "I": -1.7, "J": -1.7},
     ]
 
-    high_conf_completion = create_completion(high_conf_logprobs)
-    low_conf_completion = create_completion(low_conf_logprobs)
-
-    scores = detector.compute([high_conf_completion, low_conf_completion], return_per_token_scores=False)
-
+    request_output = create_request_output([high_conf_logprobs, low_conf_logprobs])
+    scores = detector.compute(request_output, return_per_token_scores=False)
     # Low confidence should have higher EPR score
     assert scores[1] > scores[0]
 
@@ -338,11 +356,11 @@ def test_numerical_stability():
 
     # Test with very small and very large (negative) logprobs
     extreme_logprobs = [
-        {"A": -0.00001, "B": -0.001, "C": -50.0, "D": -100.0, "E": -500.0},
+        [{"A": -0.00001, "B": -0.001, "C": -50.0, "D": -100.0, "E": -500.0}],
     ]
 
-    completion = create_completion(extreme_logprobs)
-    scores = detector.compute([completion], return_per_token_scores=False)
+    request_output = create_request_output(extreme_logprobs)
+    scores = detector.compute(request_output, return_per_token_scores=False)
 
     # Should produce valid score, not NaN or inf
     assert not np.isnan(scores[0])
@@ -354,12 +372,14 @@ def test_compute_epr_multiple_completions_in_one_request():
     """Test EPR computation when a single request has multiple completions (n > 1)."""
     detector = EPR(k=3)
 
-    # Create two completions
-    completion1 = create_completion([{"A": -0.5, "B": -1.5}])
-    completion2 = create_completion([{"C": -0.3, "D": -1.2}])
+    logprobs_seqs = [
+        [{"A": -0.5, "B": -1.5}],
+        [{"C": -0.3, "D": -1.2}],
+    ]
+    request_output = create_request_output(logprobs_seqs)
 
     # Should return scores for BOTH completions
-    seq_scores, token_scores = detector.compute([completion1, completion2], return_per_token_scores=True)
+    seq_scores, token_scores = detector.compute(request_output, return_per_token_scores=True)
 
     # Verify we get results for both completions
     assert len(seq_scores) == 2, "Should return EPR for both completions"

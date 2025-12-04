@@ -1,11 +1,12 @@
 import warnings
-from collections.abc import Sequence
 
 import numpy as np
 from beartype import beartype
 from numpy.typing import NDArray
+from vllm import RequestOutput
 
 from artefactual.data.data_model import Completion
+from artefactual.features.data_processing import process_logprobs
 from artefactual.features.entropy_contributions import compute_entropy_contributions
 from artefactual.scoring.uncertainty_detector import UncertaintyDetector
 from artefactual.utils.calibration import load_calibration
@@ -45,7 +46,7 @@ class EPR(UncertaintyDetector):
     @beartype
     def compute(
         self,
-        completions: Sequence[Completion],
+        outputs: list[RequestOutput],
         *,
         return_per_token_scores: bool = False,
     ) -> list[float] | tuple[list[float], list[NDArray[np.floating]]]:
@@ -60,11 +61,15 @@ class EPR(UncertaintyDetector):
             - Optionally (if return_per_token_scores=True),
               a tuple of (seq_scores, per_token_scores).
         """
-        if not completions:
+        if not outputs:
             return []
 
         seq_scores: list[float] = []
         token_scores: list[NDArray[np.floating]] = []
+
+        iterations = len(outputs[0].outputs)
+        completions_data = process_logprobs(outputs, iterations)
+        completions = [Completion(token_logprobs=data) for data in completions_data]
 
         for completion in completions:
             token_logprobs_dict = completion.token_logprobs

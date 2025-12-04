@@ -19,7 +19,6 @@ class RatingConfig(BaseModel):
 
     judge_model_path: str = "mistralai/Ministral-8B-Instruct-2410"
     input_file: str
-    tensor_parallel_size: int = 1
     temperature: float = 0.0
     max_tokens: int = 10
     seed: int = 42
@@ -127,7 +126,6 @@ def _generate_judgments(messages_list: list, config: RatingConfig) -> list:
     llm = init_llm(
         model_path=config.judge_model_path,
         seed=config.seed,
-        tensor_parallel_size=config.tensor_parallel_size,
     )
     sampling_params = SamplingParams(temperature=config.temperature, max_tokens=config.max_tokens)
     logger.info(f"Generating judgments for {len(messages_list)} answers...")
