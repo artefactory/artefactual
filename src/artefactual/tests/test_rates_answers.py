@@ -103,7 +103,7 @@ def test_prepare_judgment_messages():
 
 
 # Test rate_answers
-@patch("artefactual.calibration.rates_answer.init_llm")
+@patch("artefactual.calibration.rates_answers.init_llm")
 def test_rate_answers(mock_init_llm):
     # Mock LLM
     mock_llm = MagicMock()
@@ -176,7 +176,7 @@ def test_rate_answers_empty_results():
     assert df.empty
 
 
-@patch("artefactual.calibration.rates_answer.init_llm")
+@patch("artefactual.calibration.rates_answers.init_llm")
 def test_rate_answers_invalid_items_skipped(mock_init_llm):
     # Mock LLM
     mock_llm = MagicMock()
