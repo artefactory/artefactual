@@ -198,3 +198,4 @@ requirements.txt
 uv.lock
 outputs/
 perso.py
+.context/
