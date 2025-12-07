@@ -20,10 +20,13 @@ repos:
    - id: jupytext
      args: [--sync, pipe]
 -  repo: https://github.com/astral-sh/ruff-pre-commit
-   rev: v0.12.2
+   rev: v0.14.8
    hooks:
-   -   id: ruff
+   -   id: ruff-check
+       types_or: [python, pyi]
+       args: [--fix]
    -   id: ruff-format
+       types_or: [python, pyi]
 - repo: https://github.com/astral-sh/uv-pre-commit
   rev: 0.7.20
   hooks:
@@ -31,11 +34,6 @@ repos:
       args: [--output-file, requirements.txt, pyproject.toml]
       files: ^pyproject.toml$
       language_version: python3.11
--  repo: https://github.com/asottile/pyupgrade
-   rev: v3.20.0
-   hooks:
-   -   id: pyupgrade
-       args: [--py310-plus]
 - repo: https://github.com/compilerla/conventional-pre-commit
   rev: v4.2.0
   hooks:
@@ -52,3 +50,13 @@ repos:
   hooks:
     - id: codespell
       files: \.(py|md)$
+- repo: local
+  hooks:
+    - id: ty
+      name: ty check
+      entry: >
+        uvx ty check src/artefactual
+        --ignore=unresolved-import
+        --output-format=concise
+      language: python
+      files: ^src/artefactual/
