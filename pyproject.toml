@@ -60,6 +60,8 @@ dev = [
     "pytype>=2024.10.11",
     "jupyterlab>=4.3.5",
     "hypothesis>=6.127.8",
+    "ruff>=0.14.8",
+    "ty>=0.0.1a32",
 ]
 
 [tool.codespell]
@@ -69,7 +71,13 @@ ignore-words-list = "rouge,ans"
 preview = true
 target-version = "py310"
 line-length = 120
-exclude = ["demo_uncertainty_notebook.ipynb", "create_sample_data.py"]
+output-format = "concise"
+extend-exclude = [
+    "demo_uncertainty_notebook.ipynb",
+    "demo.ipynb",
+    "demo_uncertainty.py",
+    "scripts/**/*",
+]
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -77,39 +85,73 @@ docstring-code-line-length = 80
 
 [tool.ruff.lint]
 select = [
-    "A",
-    "ARG",
-    "B",
-    "C",
-    "DTZ",
-    "E",
-    "EM",
-    "F",
-    "FBT",
-    "I",
-    "ICN",
-    "ISC",
-    "N",
-    "PLC",
-    "PLE",
-    "PLR",
-    "PLW",
-    "Q",
-    "RUF",
-    "S",
-    "T",
-    "TID",
-    "UP",
-    "W",
-    "YTT",
+    "A",   # builtins abuse (pep8-naming + flake8-builtins)
+    "ARG", # unused arguments
+    "B",   # bugbear correctness warnings
+    "BLE", # blind/overbroad excepts
+    "C",   # complexity checks
+    "DTZ", # naive datetime usage
+    "E",   # pycodestyle errors
+    "EM",  # error message construction
+    "F",   # pyflakes correctness
+    "FBT", # boolean traps
+    "I",   # import sorting
+    "ICN", # import conventions
+    "ISC", # implicit string concatenation
+    "LOG", # logging format/usage
+    "N",   # naming
+    "PTH", # prefer pathlib over os.path
+    "PLE", # pylint errors
+    "PIE", # pie comprehensions / misc correctness
+    "RET", # return statement consistency
+    "RUF", # Ruff-specific rules
+    "S",   # security (bandit)
+    "SIM", # simplify overcomplicated code
+    "SLF", # private/protected member access
+    "T",   # type hints
+    "T10", # debug statements
+    "T20", # print statements
+    "TID", # tidy imports
+    "TRY", # safer exception handling
+    "UP",  # pyupgrade
+    "W",   # pycodestyle warnings
+    "FURB",# refurb refactors
+]
+extend-select = [
+    "ANN201", # public functions must have return type
+    "ANN205", # staticmethod must have return type
+    "ANN206", # classmethod must have return type
+    "PLR0911", # too many return statements
+    "PLR0912", # too many branches
+    "PLR0913", # too many arguments
+    "PLR0915", # too many statements
+    "PLR1722", # consider using sys.exit over exit/quit
 ]
 
-ignore = ["ISC001", "F811"]
+ignore = [
+    "ISC001",
+    "F811",
+    "SIM117",    # low-signal simplify cases
+    "SIM300",    # low-signal simplify cases
+    "RUF009",    # docstring param order (style)
+    # Formatter conflicts (Ruff docs)
+    "W191",      # tab indentation
+    "E111",      # indentation with invalid multiple
+    "E114",      # indentation with invalid multiple (comment)
+    "E117",      # over-indented
+    "ISC002",    # multi-line implicit string concat (formatter handles)
+    # Bandit: keep only Jinja-template-related ignores
+    "S701", "S702", "S704",
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
 
 [tool.ruff.lint.per-file-ignores]
 "**/scripts/*" = [
     "INP001",
     "T201",
+    "T20",
     "PLR0917",
     "PLR0913",
     "RUF009",
@@ -118,11 +160,18 @@ ignore = ["ISC001", "F811"]
     "PLR0914",
     "A004",
 ]
-"**/tests/**/*" = ["PLC1901", "PLR2004", "PLR6301", "S", "TID252"]
+"**/tests/**/*" = [
+    "PLC1901",
+    "PLR2004",
+    "PLR6301",
+    "S",
+    "TID252",
+    "ANN",  # allow untyped returns in tests
+]
 "docs/notebooks/**/*" = ["INP001", "T201", "A004", "E501"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["argimi"]
+known-first-party = ["artefactual"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
@@ -207,3 +256,14 @@ disable = ["pyi-error"]
 
 # Don't report errors.
 report_errors = true
+
+[tool.ty]
+
+[tool.ty.terminal]
+output-format = "concise"
+
+[tool.ty.src]
+exclude = ["tests/", "scripts", "examples"]
+
+[tool.ty.rules]
+unresolved-import = "ignore"
