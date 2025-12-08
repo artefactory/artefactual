@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 from artefactual.data.data_model import Completion
 from artefactual.features.entropy_contributions import compute_entropy_contributions
 from artefactual.scoring.uncertainty_detector import UncertaintyDetector
-from artefactual.utils.weights import load_weights
+from artefactual.utils.io import load_weights
 
 
 class WEPR(UncertaintyDetector):

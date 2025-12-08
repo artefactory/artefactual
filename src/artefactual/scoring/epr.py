@@ -9,7 +9,7 @@ from artefactual.data.data_model import Completion
 from artefactual.features.data_processing import process_logprobs
 from artefactual.features.entropy_contributions import compute_entropy_contributions
 from artefactual.scoring.uncertainty_detector import UncertaintyDetector
-from artefactual.utils.calibration import load_calibration
+from artefactual.utils.io import load_calibration
 
 
 class EPR(UncertaintyDetector):
