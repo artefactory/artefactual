@@ -55,14 +55,14 @@ def _setup_logging(*, log_to_file: bool) -> None:
         logging.getLogger("").setLevel(logging.INFO)
 
 
-def _process_results(query_data, outputs, iterations: int, *, show_logprobs: bool = False) -> dict:
+def _process_results(query_data, outputs, iterations: int, epr_scorer: EPR, *, show_logprobs: bool = False) -> dict:
     """Process outputs and compute EPR scores."""
     query, query_id, expected_answer, answer_aliases = query_data
     list_outputs_text = [output.text for output in outputs[0].outputs]
     expected_answers = [expected_answer, *answer_aliases]
 
     # Compute EPR score
-    epr_scores = EPR.compute(outputs)
+    epr_scores = epr_scorer.compute(outputs)
 
     # Add EPR scores to the generated_answers list
     generated_answers_with_scores = []
@@ -100,6 +100,10 @@ def generate_entropy_dataset(
 
     torch.cuda.empty_cache()
 
+    logger.info(f"CUDA_VISIBLE_DEVICES: {os.environ.get('CUDA_VISIBLE_DEVICES')}")
+    logger.info(f"Torch CUDA is available: {torch.cuda.is_available()}")
+    logger.info(f"Torch CUDA device count: {torch.cuda.device_count()}")
+
     model_name = get_model_name(config.model_path)
     logger.info(f"Model name: {model_name}")
 
@@ -130,6 +134,8 @@ def generate_entropy_dataset(
     # Prepare all messages for processing
     all_messages = prepare_messages(pack_to_process)
 
+    epr_scorer = EPR()
+
     results = []
     logger.info(f"Generating responses for {len(all_messages)} queries...")
     for i, messages in enumerate(tqdm(all_messages)):
@@ -141,8 +147,9 @@ def generate_entropy_dataset(
         query_data = pack_to_process[i]
         result = _process_results(
             query_data,
-            [outputs],
+            outputs,
             config.iterations,
+            epr_scorer,
         )
         results.append(result)
     logger.info("Generation complete.")
