@@ -14,11 +14,11 @@ from pydantic import BaseModel
 from tqdm import tqdm
 from vllm import LLM, SamplingParams
 
-from artefactual.features.data_processing import prepare_messages, process_logprobs
-from artefactual.scoring.epr import EPR
+from artefactual.calibration.helpers.memory import clear_gpu_memory
+from artefactual.calibration.helpers.models import get_model_name, init_llm
+from artefactual.preprocessing.vllm_parser import prepare_messages, process_logprobs
+from artefactual.scoring.entropy_methods.epr import EPR
 from artefactual.utils.io import convert_bytes_to_str, load_tqa_from_json, save_to_json
-from artefactual.utils.memory import clear_gpu_memory
-from artefactual.utils.models import get_model_name, init_llm
 
 logger = logging.getLogger(__name__)
 

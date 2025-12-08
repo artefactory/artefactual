@@ -1,4 +1,4 @@
-from artefactual.features.data_processing import process_logprobs
+from artefactual.preprocessing.vllm_parser import process_logprobs
 
 
 # Mocks to simulate vLLM structures

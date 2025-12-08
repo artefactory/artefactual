@@ -6,9 +6,9 @@ from numpy.typing import NDArray
 from vllm import RequestOutput
 
 from artefactual.data.data_model import Completion
-from artefactual.features.data_processing import process_logprobs
-from artefactual.features.entropy_contributions import compute_entropy_contributions
-from artefactual.scoring.uncertainty_detector import UncertaintyDetector
+from artefactual.preprocessing.vllm_parser import process_logprobs
+from artefactual.scoring.entropy_methods.entropy_contributions import compute_entropy_contributions
+from artefactual.scoring.entropy_methods.uncertainty_detector import UncertaintyDetector
 from artefactual.utils.io import load_calibration
 
 

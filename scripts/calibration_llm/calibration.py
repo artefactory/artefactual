@@ -21,7 +21,7 @@ import numpy as np
 from sklearn.metrics import precision_recall_fscore_support
 from tqdm import tqdm
 
-from artefactual.scoring.epr import EPR
+from artefactual.scoring.entropy_methods.epr import EPR
 
 # Add the project root to the path to allow importing from 'artefactual'
 sys.path.append(str(Path(__file__).parent.parent.parent))

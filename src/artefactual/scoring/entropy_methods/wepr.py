@@ -5,8 +5,8 @@ from beartype import beartype
 from numpy.typing import NDArray
 
 from artefactual.data.data_model import Completion
-from artefactual.features.entropy_contributions import compute_entropy_contributions
-from artefactual.scoring.uncertainty_detector import UncertaintyDetector
+from artefactual.scoring.entropy_methods.entropy_contributions import compute_entropy_contributions
+from artefactual.scoring.entropy_methods.uncertainty_detector import UncertaintyDetector
 from artefactual.utils.io import load_weights
 
 

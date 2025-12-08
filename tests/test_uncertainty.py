@@ -6,9 +6,9 @@ import numpy as np
 import pytest
 from vllm import RequestOutput
 
-from artefactual.features.entropy_contributions import compute_entropy_contributions
-from artefactual.scoring.epr import EPR
-from artefactual.scoring.uncertainty_detector import UncertaintyDetector
+from artefactual.scoring.entropy_methods.entropy_contributions import compute_entropy_contributions
+from artefactual.scoring.entropy_methods.epr import EPR
+from artefactual.scoring.entropy_methods.uncertainty_detector import UncertaintyDetector
 
 # ============================================================================
 # Test Fixtures and Mock Objects
