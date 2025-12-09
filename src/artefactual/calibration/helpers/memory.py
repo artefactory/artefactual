@@ -10,6 +10,8 @@ from vllm.distributed.parallel_state import (
     destroy_model_parallel,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def clear_gpu_memory(llm: LLM) -> None:
     """
@@ -27,8 +29,9 @@ def clear_gpu_memory(llm: LLM) -> None:
     destroy_distributed_environment()
     del llm
     with contextlib.suppress(AssertionError):
-        torch.distributed.destroy_process_group()
+        if hasattr(torch.distributed, "destroy_process_group"):
+            torch.distributed.destroy_process_group()
     gc.collect()
     torch.cuda.empty_cache()
     ray.shutdown()
-    logging.info("Successfully deleted the llm pipeline and freed the GPU memory.")
+    logger.info("Successfully deleted the llm pipeline and freed the GPU memory.")

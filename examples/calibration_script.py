@@ -1,5 +1,4 @@
 import logging
-import os
 import sys
 from pathlib import Path
 
@@ -23,14 +22,14 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 
-def run_pipeline():
+def run_pipeline() -> None:
     # Define paths
     workspace_root = current_dir.parent
     input_data_path = workspace_root / "sample_qa_data.json"
     output_dir = workspace_root / "outputs"
 
     # Ensure output directory exists
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # Configuration
     model_path = "mistralai/Ministral-8B-Instruct-2410"

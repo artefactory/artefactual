@@ -4,8 +4,10 @@ import logging
 from pathlib import Path
 from typing import Any
 
+logger = logging.getLogger(__name__)
 
-def save_to_json(data: dict[str, Any] | list[dict[str, Any]], output_file: str):
+
+def save_to_json(data: dict[str, Any] | list[dict[str, Any]], output_file: str) -> None:
     """Save data to a JSON file.
 
     Supports two common use cases:
@@ -13,20 +15,19 @@ def save_to_json(data: dict[str, Any] | list[dict[str, Any]], output_file: str):
     - Item-level outputs: A list of individual item dicts
 
     Args:
-        data (dict[str, Any] | list[dict[str, Any]]): Data to save. Can be either:
-            - A dict containing dataset-level information (metadata, results, etc.)
-            - A list of dicts representing individual items
-        output_file (str): Path to the output JSON file.
+        data: Data to save (dict or list of dicts).
+        output_file: Path to the output JSON file.
     """
+    output_path = Path(output_file)
     try:
-        with open(output_file, "w", encoding="utf-8") as f:
+        with output_path.open("w", encoding="utf-8") as f:
             json.dump(data, f, indent=4)
         if isinstance(data, list):
-            logging.info(f"Saved {len(data)} items to {output_file}")
+            logger.info("Saved %d items to %s", len(data), output_path)
         else:
-            logging.info(f"Saved dataset to {output_file}")
-    except OSError as e:
-        logging.error(f"Error writing to {output_file}: {e}")
+            logger.info("Saved dataset to %s", output_path)
+    except OSError:
+        logger.exception("Error writing to %s", output_path)
 
 
 def load_tqa_from_json(
@@ -40,10 +41,18 @@ def load_tqa_from_json(
     Returns:
         list: List of (question, answer) tuples
     """
+    input_path = Path(input_file)
     try:
-        with open(input_file, encoding="utf-8") as f:
+        with input_path.open(encoding="utf-8") as f:
             json_data = json.load(f)
+    except FileNotFoundError:
+        logger.exception("File not found: %s", input_path)
+        return []
+    except json.JSONDecodeError:
+        logger.exception("Error decoding JSON from %s", input_path)
+        return []
 
+    try:
         # Convert dictionaries back to tuples
         pack_data = [
             (
@@ -54,20 +63,15 @@ def load_tqa_from_json(
             )
             for item in json_data
         ]
-        logging.info(f"Loaded {len(pack_data)} question-answer pairs from {input_file}")
-        return pack_data
-    except FileNotFoundError:
-        logging.error(f"File not found: {input_file}")
-        return []
-    except json.JSONDecodeError:
-        logging.error(f"Error decoding JSON from {input_file}")
-        return []
-    except KeyError as e:
-        logging.error(f"Missing key in JSON data: {e}")
+    except KeyError:
+        logger.exception("Missing key in JSON data")
         return []
 
+    logger.info("Loaded %s question-answer pairs from %s", len(pack_data), input_path)
+    return pack_data
 
-def convert_bytes_to_str(obj):
+
+def convert_bytes_to_str(obj: Any) -> Any:
     """Recursively convert bytes to strings in a nested structure.
 
     Args:
@@ -79,8 +83,8 @@ def convert_bytes_to_str(obj):
     if isinstance(obj, bytes):
         try:
             return obj.decode("utf-8")
-        except Exception as e:
-            logging.error(f"Error decoding bytes: {e}")
+        except UnicodeDecodeError:
+            logger.exception("Error decoding bytes")
             return "ERROR"
     elif isinstance(obj, dict):
         return {key: convert_bytes_to_str(value) for key, value in obj.items()}
@@ -125,7 +129,7 @@ def load_weights(identifier: str) -> dict[str, float]:
     local_path = Path(identifier)
     if local_path.is_file():
         try:
-            with open(local_path, encoding="utf-8") as f:
+            with Path(local_path).open(encoding="utf-8") as f:
                 return json.load(f)
         except json.JSONDecodeError as err:
             msg = f"The file at '{identifier}' is not valid JSON."
@@ -175,7 +179,7 @@ def load_calibration(identifier: str) -> dict[str, float]:
     local_path = Path(identifier)
     if local_path.is_file():
         try:
-            with open(local_path, encoding="utf-8") as f:
+            with Path(local_path).open(encoding="utf-8") as f:
                 return json.load(f)
         except json.JSONDecodeError as err:
             msg = f"The file at '{identifier}' is not valid JSON."

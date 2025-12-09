@@ -18,8 +18,4 @@ def init_llm(model_path: str, seed: int) -> LLM:
 
 
 def get_model_name(model_path: str) -> str:
-    if "/" in model_path:
-        model_name = model_path.rsplit("/", maxsplit=1)[-1]
-    else:
-        model_name = model_path.rsplit(".", maxsplit=1)[-1]
-    return model_name
+    return model_path.rsplit("/", maxsplit=1)[-1] if "/" in model_path else model_path.rsplit(".", maxsplit=1)[-1]

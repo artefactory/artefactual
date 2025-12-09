@@ -77,9 +77,7 @@ def is_openai_responses_api(outputs: Any) -> bool:
         return True
     if isinstance(outputs, dict) and outputs.get("object") == "response":
         return True
-    if hasattr(outputs, "output") or (isinstance(outputs, dict) and "output" in outputs):
-        return True
-    return False
+    return hasattr(outputs, "output") or (isinstance(outputs, dict) and "output" in outputs)
 
 
 def process_openai_responses_api(response: Any) -> list[dict[int, list[float]]]:
@@ -121,6 +119,5 @@ def _parse_token_entry(token_entry: Any) -> list[float]:
             if k_logprob is not None:
                 logprobs.append(float(k_logprob))
         return logprobs
-    else:
-        m_logprob = _get_val(token_entry, "logprob")
-        return [float(m_logprob)] if m_logprob is not None else []
+    m_logprob = _get_val(token_entry, "logprob")
+    return [float(m_logprob)] if m_logprob is not None else []
