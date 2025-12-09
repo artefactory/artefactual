@@ -1,16 +1,17 @@
-import os
 import sys
+from pathlib import Path
 
 from vllm import LLM, SamplingParams
 
 # Add src to path so we can import artefactual if not installed
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
+_current_dir = Path(__file__).resolve().parent
+sys.path.append(str(_current_dir.parent / "src"))
 
-from artefactual.scoring.entropy_methods.epr import EPR
-from artefactual.scoring.entropy_methods.wepr import WEPR
+from artefactual.scoring.entropy_methods.epr import EPR  # noqa: E402
+from artefactual.scoring.entropy_methods.wepr import WEPR  # noqa: E402
 
 
-def vllm_example():
+def vllm_example() -> None:
     # ==========================================
     # OPTION 1: vLLM Example
     # ==========================================
@@ -36,12 +37,12 @@ def vllm_example():
     print(f"Token Scores (first seq): {token_scores[0]}")  # noqa: T201
 
     # Compute WEPR
-    weights_path = os.path.join(os.path.dirname(__file__), "..", "src", "artefactual", "data", "weights_ministral.json")
-    wepr = WEPR(model=weights_path)
+    weights_path = _current_dir.parent / "src" / "artefactual" / "data" / "weights_ministral.json"
+    wepr = WEPR(model=str(weights_path))
     wepr.compute(outputs)
 
 
-def openai_example():
+def openai_example() -> None:
     # ==========================================
     # OPTION 2: OpenAI Example (Mocked)
     # ==========================================
@@ -91,8 +92,8 @@ def openai_example():
     scores = epr.compute(mock_response)
     print(f"EPR Score: {scores[0]}")  # noqa: T201
 
-    weights_path = os.path.join(os.path.dirname(__file__), "..", "src", "artefactual", "data", "weights_ministral.json")
-    wepr = WEPR(model=weights_path)
+    weights_path = _current_dir.parent / "src" / "artefactual" / "data" / "weights_ministral.json"
+    wepr = WEPR(model=str(weights_path))
     wepr.compute(mock_response)
 
 

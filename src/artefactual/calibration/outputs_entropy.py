@@ -8,7 +8,6 @@ Uses VLLM API to generate outputs and process log probabilities.
 """
 
 import logging
-import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -46,10 +45,10 @@ class GenerationConfig(BaseModel):
 def _setup_logging(*, log_to_file: bool) -> None:
     """Configure logging to file if requested."""
     if log_to_file:
-        log_dir = "logs"
-        os.makedirs(log_dir, exist_ok=True)
+        log_dir = Path("logs")
+        log_dir.mkdir(parents=True, exist_ok=True)
         log_filename = f"generation_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.log"
-        log_filepath = os.path.join(log_dir, log_filename)
+        log_filepath = log_dir / log_filename
         file_handler = logging.FileHandler(log_filepath)
         file_handler.setLevel(logging.INFO)
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -148,9 +147,10 @@ def generate_entropy_dataset(
     pack = load_tqa_from_json(str(input_path))
 
     # Define output file path once
-    input_dataset_name = str(input_path).rsplit("/", maxsplit=1)[-1].rsplit(".")[0]
-    output_file = os.path.join(output_path, f"{input_dataset_name}_{model_name}_entropy.json")
-    os.makedirs(output_path, exist_ok=True)
+    input_dataset_name = Path(input_path).stem
+    output_dir = Path(output_path)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file = output_dir / f"{input_dataset_name}_{model_name}_entropy.json"
 
     pack_to_process = pack if config.n_queries == -1 else pack[: config.n_queries]
 
@@ -196,10 +196,10 @@ def generate_entropy_dataset(
 
     # Save the entire dataset to the JSON file once after the loop
     logger.info(f"Saving results to {output_file}")
-    save_to_json(raw_data, output_file)
+    save_to_json(raw_data, str(output_file))
 
     clear_gpu_memory(llm)
-    return Path(output_file)
+    return output_file
 
 
 if __name__ == "__main__":

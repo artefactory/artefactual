@@ -83,7 +83,8 @@ def train_calibration(input_file: str | Path, output_file: str | Path) -> None:
     # The EPR class expects 'mean_entropy' for the single coefficient.
     weights = {"intercept": intercept, "coefficients": {"mean_entropy": coef}}
 
-    with open(output_file, "w", encoding="utf-8") as f:
+    output_path = Path(output_file)
+    with output_path.open("w", encoding="utf-8") as f:
         json.dump(weights, f, indent=4)
     logger.info(f"Saved weights to {output_file}")
 
@@ -97,6 +98,6 @@ if __name__ == "__main__":
 
     try:
         train_calibration(args.input_file, args.output_file)
-    except Exception as e:
-        logger.error(f"Calibration failed: {e}")
+    except ValueError:
+        logger.exception("Calibration failed")
         sys.exit(1)

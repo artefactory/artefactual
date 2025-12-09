@@ -1,7 +1,7 @@
 import argparse
 import json
 import logging
-import os
+import pathlib
 import sys
 from pathlib import Path
 from typing import Any
@@ -72,11 +72,13 @@ def _parse_judgment(text: str) -> bool | None:
 
 def _load_results(input_file: str | Path) -> list[dict]:
     """Load results from the input JSON file."""
+    # FIXME: input_file should already be a Path; avoid converting inside this function.
+    input_path = pathlib.Path(input_file)
     try:
-        with open(input_file, encoding="utf-8") as f:
+        with input_path.open(encoding="utf-8") as f:
             raw_data = json.load(f)
     except FileNotFoundError:
-        logger.error(f"Input file not found: {input_file}")
+        logger.exception("Input file not found: %s", input_path)
         return []
     results = raw_data.get("results", [])
     if not results:
@@ -139,12 +141,15 @@ def _create_results_dataframe(outputs: list, metadata_list: list) -> pd.DataFram
     for i, output in enumerate(outputs):
         judgment_text = output.outputs[0].text
         judgment = _parse_judgment(judgment_text)
-        final_data.append({**metadata_list[i], "judgment": judgment})
+        final_data.append({
+            "query_id": metadata_list[i]["query_id"],
+            "uncertainty_score": metadata_list[i]["uncertainty_score"],
+            "judgment": judgment,
+        })
 
     df = pd.DataFrame(final_data)
     if not df.empty:
         df.set_index("query_id", inplace=True)
-        df = df[["uncertainty_score", "judgment"]]
     return df
 
 
@@ -186,7 +191,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if os.path.exists(args.input_file):
+    input_path = pathlib.Path(args.input_file)
+    if input_path.exists():
         config = RatingConfig(input_file=args.input_file, judge_model_path=args.model_path)
         df = rate_answers(config)
         logger.info("Rated answers head:\n%s", df.head(10))

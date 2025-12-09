@@ -6,6 +6,7 @@ This script shows the expected format for input data and creates a small test da
 """
 
 import json
+import pathlib
 
 # Example dataset with question-answer pairs
 # Mix of easy questions and hallucination-prone questions
@@ -31,7 +32,10 @@ sample_data = [
         "answer_aliases": ["Unknown", "impossible to know", "cannot be determined", "no one knows"],
     },
     {
-        "question": "In which year did the fictional character Sherlock Holmes first visit the real city of Paris according to the original stories?",
+        "question": (
+            "In which year did the fictional character Sherlock Holmes first visit the real city of Paris "
+            "according to the original stories?"
+        ),
         "question_id": "q004_hallucination",
         "short_answer": "Never explicitly stated/unclear",
         "answer_aliases": ["unclear", "not stated", "unknown", "never mentioned"],
@@ -77,6 +81,6 @@ sample_data = [
 ]
 
 # Save to file
-output_file = "sample_qa_data.json"
-with open(output_file, "w", encoding="utf-8") as f:
+output_file = pathlib.Path("sample_qa_data.json")
+with output_file.open("w", encoding="utf-8") as f:
     json.dump(sample_data, f, ensure_ascii=False, indent=2)

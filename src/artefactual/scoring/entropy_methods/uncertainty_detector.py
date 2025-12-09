@@ -39,7 +39,6 @@ class UncertaintyDetector(ABC):
         Returns:
             The computed sequence-level scores.
         """
-        pass
 
     @abstractmethod
     def compute_token_scores(self, inputs: Any) -> list[NDArray[np.floating]]:
@@ -52,7 +51,6 @@ class UncertaintyDetector(ABC):
         Returns:
             The computed token-level scores.
         """
-        pass
 
     @staticmethod
     def _parse_outputs(outputs: Any) -> list[dict[int, list[float]]]:

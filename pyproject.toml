@@ -57,7 +57,6 @@ dev = [
     "outlines>=0.1.11",
     "pudb>=2024.1.3",
     "pydantic>=2.10.6",
-    "pytype>=2024.10.11",
     "jupyterlab>=4.3.5",
     "hypothesis>=6.127.8",
     "ruff>=0.14.8",
@@ -182,80 +181,6 @@ mark-parentheses = false
 
 [tool.jupytext]
 cell_markers = '"""'
-
-[tool.pytype]
-# Space-separated list of files or directories to exclude.
-exclude = ["**/*_test.py", "**/test_*.py"]
-
-# Space-separated list of files or directories to process.
-inputs = ["."]
-
-# Keep going past errors to analyze as many files as possible.
-keep_going = false
-
-# Run N jobs in parallel. When 'auto' is used, this will be equivalent to the
-# number of CPUs on the host system.
-jobs = 4
-
-# All pytype output goes here.
-output = ".pytype"
-
-# Bind 'self' in methods with non-transparent decorators. This flag is temporary
-# and will be removed once this behavior is enabled by default.
-bind_decorated_methods = true
-
-# Don't allow None to match bool. This flag is temporary and will be removed
-# once this behavior is enabled by default.
-none_is_not_bool = true
-
-# Enable parameter count checks for overriding methods with renamed arguments.
-# This flag is temporary and will be removed once this behavior is enabled by
-# default.
-overriding_renamed_parameter_count_checks = true
-
-# Variables initialized as None retain their None binding. This flag is
-# temporary and will be removed once this behavior is enabled by default.
-strict_none_binding = false
-
-# Support the third-party fiddle library. This flag is temporary and will be
-# removed once this behavior is enabled by default.
-use_fiddle_overlay = false
-
-# Opt-in: Do not allow Any as a return type.
-no_return_any = false
-
-# Opt-in: Require decoration with @typing.override when overriding a method or
-# nested class attribute of a parent class.
-require_override_decorator = true
-
-# Experimental: Infer precise return types even for invalid function calls.
-precise_return = true
-
-# Experimental: Solve unknown types to label with structural types.
-# Enabling this seems to disable typechecking
-protocols = false
-
-# Experimental: Only load submodules that are explicitly imported.
-strict_import = true
-
-# Experimental: Enable exhaustive checking of function parameter types.
-strict_parameter_checks = true
-
-# Experimental: Emit errors for comparisons between incompatible primitive
-# types.
-strict_primitive_comparisons = true
-
-# Experimental: Check that variables are defined in all possible code paths.
-strict_undefined_checks = true
-
-# Experimental: FOR TESTING ONLY. Use pytype/rewrite/.
-use_rewrite = false
-
-# Space-separated list of error names to ignore.
-disable = ["pyi-error"]
-
-# Don't report errors.
-report_errors = true
 
 [tool.ty]
 

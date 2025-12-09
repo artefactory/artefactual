@@ -18,15 +18,14 @@ class WEPR(UncertaintyDetector):
             model: Either a built-in model name or a local file path to load weights from.
         """
         weights_data = load_weights(model)
-        self.intercept = weights_data.get("intercept", 0.0)
-        coeffs = weights_data.get("coefficients", {})
+        self.intercept = float(weights_data.get("intercept", 0.0))
+        coeffs_raw = weights_data.get("coefficients", {})
+        coeffs: dict[str, float] = coeffs_raw if isinstance(coeffs_raw, dict) else {}
 
         # Determine k from the coefficients (assuming keys like "mean_rank_15")
         # We look for the maximum rank index present in the coefficients
         ranks = [
-            int(key.split("_")[-1])
-            for key in coeffs.keys()
-            if key.startswith("mean_rank_") and key.split("_")[-1].isdigit()
+            int(key.split("_")[-1]) for key in coeffs if key.startswith("mean_rank_") and key.split("_")[-1].isdigit()
         ]
         k = max(ranks) if ranks else 15
 
@@ -40,7 +39,7 @@ class WEPR(UncertaintyDetector):
             self.mean_weights[i - 1] = coeffs.get(f"mean_rank_{i}", 0.0)
             self.max_weights[i - 1] = coeffs.get(f"max_rank_{i}", 0.0)
 
-    def _compute_impl(  # noqa: PLR0914
+    def _compute_impl(
         self,
         outputs: Any,
     ) -> tuple[list[float], list[NDArray[np.floating]]]:
