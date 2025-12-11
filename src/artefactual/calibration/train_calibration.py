@@ -10,6 +10,7 @@ import argparse
 import json
 import logging
 import sys
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 MIN_CLASSES_FOR_TRAINING = 2
 
 
-def train_calibration(input_file: str, output_file: str) -> None:
+def train_calibration(input_file: str | Path, output_file: str | Path) -> None:
     """
     Train a logistic regression model to calibrate uncertainty scores.
 
@@ -29,23 +30,19 @@ def train_calibration(input_file: str, output_file: str) -> None:
         output_file: Path to save the calibration weights (JSON).
     """
     # Load data
-    try:
-        df = pd.read_csv(input_file)
-    except Exception as e:
-        logger.error(f"Failed to load input file: {e}")
-        sys.exit(1)
+    df = pd.read_csv(input_file)
 
     if "uncertainty_score" not in df.columns or "judgment" not in df.columns:
-        logger.error("Input file must contain 'uncertainty_score' and 'judgment' columns.")
-        sys.exit(1)
+        msg = "Input file must contain 'uncertainty_score' and 'judgment' columns."
+        raise ValueError(msg)
 
     # Filter valid data
     # judgment can be True/False/None.
     df = df.dropna(subset=["judgment"])
 
     if df.empty:
-        logger.error("No valid data found (all judgments are None or file is empty).")
-        sys.exit(1)
+        msg = "No valid data found (all judgments are None or file is empty)."
+        raise ValueError(msg)
 
     # Convert judgment to target
     # We want to model P(hallucination), so target=1 if judgment is False (incorrect),
@@ -61,14 +58,13 @@ def train_calibration(input_file: str, output_file: str) -> None:
     df["target"] = df["judgment"].apply(parse_judgment_to_target)
 
     # Drop any rows where parsing failed
+    df = df.dropna(subset=["target"])
     x = df[["uncertainty_score"]].values
     y = df["target"].values
 
     if len(np.unique(y)) < MIN_CLASSES_FOR_TRAINING:
-        logger.error("Need both positive (False) and negative (True) judgments to train.")
-        sys.exit(1)
-
-    logger.info(f"Training on {len(df)} samples.")
+        msg = "Need both positive (False) and negative (True) judgments to train."
+        raise ValueError(msg)
 
     logger.info(f"Training on {len(df)} samples.")
 
@@ -85,13 +81,9 @@ def train_calibration(input_file: str, output_file: str) -> None:
     # The EPR class expects 'mean_entropy' for the single coefficient.
     weights = {"intercept": intercept, "coefficients": {"mean_entropy": coef}}
 
-    try:
-        with open(output_file, "w", encoding="utf-8") as f:
-            json.dump(weights, f, indent=4)
-        logger.info(f"Saved weights to {output_file}")
-    except Exception as e:
-        logger.error(f"Failed to save output file: {e}")
-        sys.exit(1)
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(weights, f, indent=4)
+    logger.info(f"Saved weights to {output_file}")
 
 
 if __name__ == "__main__":
@@ -101,4 +93,8 @@ if __name__ == "__main__":
     parser.add_argument("--output_file", type=str, required=True, help="Path to save output JSON weights")
     args = parser.parse_args()
 
-    train_calibration(args.input_file, args.output_file)
+    try:
+        train_calibration(args.input_file, args.output_file)
+    except Exception as e:
+        logger.error(f"Calibration failed: {e}")
+        sys.exit(1)

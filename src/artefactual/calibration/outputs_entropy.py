@@ -3,11 +3,14 @@ Generate a dataset with entropy scores for model outputs.
 
 This script generates responses from a language model for a given dataset and
 computes entropy-based uncertainty metrics for each generation.
+
+Uses VLLM API to generate outputs and process log probabilities.
 """
 
 import logging
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 
 import torch
 from pydantic import BaseModel
@@ -16,7 +19,7 @@ from vllm import LLM, SamplingParams
 
 from artefactual.calibration.helpers.memory import clear_gpu_memory
 from artefactual.calibration.helpers.models import get_model_name, init_llm
-from artefactual.preprocessing.vllm_parser import prepare_messages, process_logprobs
+from artefactual.preprocessing.vllm_parser import process_logprobs
 from artefactual.scoring.entropy_methods.epr import EPR
 from artefactual.utils.io import convert_bytes_to_str, load_tqa_from_json, save_to_json
 
@@ -83,26 +86,46 @@ def _process_results(query_data, outputs, iterations: int, epr_scorer: EPR, *, s
     return convert_bytes_to_str(data)
 
 
+def _prepare_messages(pack: list[tuple[str, str, str, list[str]]]) -> list[list[dict[str, str]]]:
+    """
+    Prepare messages for generation from a pack of data.
+
+    Args:
+        pack (list[tuple[str, str, str, list[str]]]): List of tuples containing (query, query_id, answer, aliases).
+
+    Returns:
+        list[list[dict[str, str]]]: List of message lists suitable for chat models.
+    """
+    all_messages = []
+    for query, _, _, _ in pack:
+        prompt = (
+            "You are a useful assistant that help finding short and precise answers for a given query or question.\n"
+            "Please keep your output AS SHORT AND CONCISE AS POSSIBLE.\n"
+            f"Here is the query :\n{query}"
+        )
+        all_messages.append([{"role": "user", "content": prompt}])
+    return all_messages
+
+
 def generate_entropy_dataset(
-    input_path: str,
-    output_path: str,
+    input_path: str | Path,
+    output_path: str | Path,
     config: GenerationConfig,
-) -> None:
+) -> Path:
     """
     Generate a dataset with entropy scores for model outputs.
 
     Args:
-        input_path (str): Path to the input dataset.
-        output_path (str): Path to save the output dataset.
+        input_path (str | Path): Path to the input dataset.
+        output_path (str | Path): Path to save the output dataset.
         config (GenerationConfig): Configuration parameters.
+
+    Returns:
+        Path: The path to the generated output file.
     """
     _setup_logging(log_to_file=config.log_to_file)
 
     torch.cuda.empty_cache()
-
-    logger.info(f"CUDA_VISIBLE_DEVICES: {os.environ.get('CUDA_VISIBLE_DEVICES')}")
-    logger.info(f"Torch CUDA is available: {torch.cuda.is_available()}")
-    logger.info(f"Torch CUDA device count: {torch.cuda.device_count()}")
 
     model_name = get_model_name(config.model_path)
     logger.info(f"Model name: {model_name}")
@@ -122,17 +145,17 @@ def generate_entropy_dataset(
         logprobs=config.number_logprobs,
     )
 
-    pack = load_tqa_from_json(input_path)
+    pack = load_tqa_from_json(str(input_path))
 
     # Define output file path once
-    input_dataset_name = input_path.rsplit("/", maxsplit=1)[-1].rsplit(".")[0]
+    input_dataset_name = str(input_path).rsplit("/", maxsplit=1)[-1].rsplit(".")[0]
     output_file = os.path.join(output_path, f"{input_dataset_name}_{model_name}_entropy.json")
     os.makedirs(output_path, exist_ok=True)
 
     pack_to_process = pack if config.n_queries == -1 else pack[: config.n_queries]
 
     # Prepare all messages for processing
-    all_messages = prepare_messages(pack_to_process)
+    all_messages = _prepare_messages(pack_to_process)
 
     epr_scorer = EPR()
 
@@ -175,6 +198,7 @@ def generate_entropy_dataset(
     save_to_json(raw_data, output_file)
 
     clear_gpu_memory(llm)
+    return Path(output_file)
 
 
 if __name__ == "__main__":

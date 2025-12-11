@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import sys
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -18,7 +19,7 @@ class RatingConfig(BaseModel):
     """Configuration for answer rating."""
 
     judge_model_path: str = "mistralai/Ministral-8B-Instruct-2410"
-    input_file: str
+    input_file: str | Path
     temperature: float = 0.0
     max_tokens: int = 10
     seed: int = 42
@@ -69,7 +70,7 @@ def _parse_judgment(text: str) -> bool | None:
     return None
 
 
-def _load_results(input_file: str) -> list[dict]:
+def _load_results(input_file: str | Path) -> list[dict]:
     """Load results from the input JSON file."""
     try:
         with open(input_file, encoding="utf-8") as f:

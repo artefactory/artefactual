@@ -1,7 +1,7 @@
 from vllm import RequestOutput
 
 
-def process_logprobs(outputs: list[RequestOutput], iterations: int) -> list[dict[int, list[float]]]:
+def process_vllm_logprobs(outputs: list[RequestOutput], iterations: int) -> list[dict[int, list[float]]]:
     """
     Processes log probabilities from vllm.chat outputs for a given number of iterations.
     Args:
@@ -33,24 +33,3 @@ def process_logprobs(outputs: list[RequestOutput], iterations: int) -> list[dict
         all_sequences.append(seq)
 
     return all_sequences
-
-
-def prepare_messages(pack: list[tuple[str, str, str, list[str]]]) -> list[list[dict[str, str]]]:
-    """
-    Prepare messages for generation from a pack of data.
-
-    Args:
-        pack (list[tuple[str, str, str, list[str]]]): List of tuples containing (query, query_id, answer, aliases).
-
-    Returns:
-        list[list[dict[str, str]]]: List of message lists suitable for chat models.
-    """
-    all_messages = []
-    for query, _, _, _ in pack:
-        prompt = (
-            "You are a useful assistant that help finding short and precise answers for a given query or question.\n"
-            "Please keep your output AS SHORT AND CONSICE AS POSSIBLE.\n"
-            f"Here is the query :\n{query}"
-        )
-        all_messages.append([{"role": "user", "content": prompt}])
-    return all_messages

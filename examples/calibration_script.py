@@ -46,7 +46,7 @@ def run_pipeline():
         number_logprobs=15,
     )
 
-    generate_entropy_dataset(input_path=str(input_data_path), output_path=str(output_dir), config=gen_config)
+    generate_entropy_dataset(input_path=input_data_path, output_path=output_dir, config=gen_config)
 
     # Determine the output file name from Step 1
     # Logic matches outputs_entropy.py: {input_dataset_name}_{model_name}_entropy.json
@@ -56,15 +56,14 @@ def run_pipeline():
 
     if not entropy_output_file.exists():
         logger.error(f"Expected entropy output file not found: {entropy_output_file}")
-        sys.exit(1)
+        msg = f"Expected entropy output file not found: {entropy_output_file}"
+        raise FileNotFoundError(msg)
 
     logger.info(f"Entropy dataset generated at: {entropy_output_file}")
 
     # --- Step 2: Rate Answers ---
     logger.info("=== Step 2: Rating Answers ===")
-    rating_config = RatingConfig(
-        input_file=str(entropy_output_file), judge_model_path=judge_model_path, temperature=0.0
-    )
+    rating_config = RatingConfig(input_file=entropy_output_file, judge_model_path=judge_model_path, temperature=0.0)
 
     df_judgments = rate_answers(rating_config)
 
@@ -80,7 +79,7 @@ def run_pipeline():
     logger.info("=== Step 3: Training Calibration ===")
     calibration_weights_file = output_dir / f"calibration_weights_{model_name}.json"
 
-    train_calibration(input_file=str(judgment_output_file), output_file=str(calibration_weights_file))
+    train_calibration(input_file=judgment_output_file, output_file=calibration_weights_file)
     logger.info(f"Calibration weights saved to {calibration_weights_file}")
     logger.info("=== Pipeline Complete ===")
 
