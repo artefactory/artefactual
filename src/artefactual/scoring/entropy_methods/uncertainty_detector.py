@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Protocol, runtime_checkable
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -10,13 +10,6 @@ from artefactual.preprocessing.openai_parser import (
     process_openai_responses_api,
 )
 from artefactual.preprocessing.vllm_parser import process_vllm_logprobs
-
-
-@runtime_checkable
-class LogProb(Protocol):
-    """A protocol for an object with a log probability."""
-
-    logprob: float
 
 
 class UncertaintyDetector(ABC):

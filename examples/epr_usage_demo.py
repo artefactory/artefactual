@@ -7,6 +7,7 @@ from vllm import LLM, SamplingParams
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 from artefactual.scoring.entropy_methods.epr import EPR
+from artefactual.scoring.entropy_methods.wepr import WEPR
 
 
 def vllm_example():
@@ -33,6 +34,11 @@ def vllm_example():
     token_scores = epr.compute_token_scores(outputs)
     print(f"Sequence Scores: {seq_scores}")  # noqa: T201
     print(f"Token Scores (first seq): {token_scores[0]}")  # noqa: T201
+
+    # Compute WEPR
+    weights_path = os.path.join(os.path.dirname(__file__), "..", "src", "artefactual", "data", "weights_ministral.json")
+    wepr = WEPR(model=weights_path)
+    wepr.compute(outputs)
 
 
 def openai_example():
@@ -84,6 +90,10 @@ def openai_example():
     epr = EPR()
     scores = epr.compute(mock_response)
     print(f"EPR Score: {scores[0]}")  # noqa: T201
+
+    weights_path = os.path.join(os.path.dirname(__file__), "..", "src", "artefactual", "data", "weights_ministral.json")
+    wepr = WEPR(model=weights_path)
+    wepr.compute(mock_response)
 
 
 if __name__ == "__main__":
