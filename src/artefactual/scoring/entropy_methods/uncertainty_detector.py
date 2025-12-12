@@ -1,4 +1,12 @@
-from typing import Protocol, runtime_checkable
+from abc import ABC, abstractmethod
+from typing import Any, Protocol, runtime_checkable
+
+from artefactual.preprocessing.openai_parser import (
+    is_openai_responses_api,
+    process_openai_chat_completion,
+    process_openai_responses_api,
+)
+from artefactual.preprocessing.vllm_parser import process_vllm_logprobs
 
 
 @runtime_checkable
@@ -8,7 +16,7 @@ class LogProb(Protocol):
     logprob: float
 
 
-class UncertaintyDetector:
+class UncertaintyDetector(ABC):
     """A base class for uncertainty detection methods."""
 
     def __init__(self, k: int = 15) -> None:
@@ -23,3 +31,52 @@ class UncertaintyDetector:
             msg = f"k must be positive, got {k}"
             raise ValueError(msg)
         self.k = k
+
+    @abstractmethod
+    def compute(self, inputs: Any) -> list[float]:
+        """
+        Compute sequence-level uncertainty scores from inputs.
+
+        Args:
+            inputs: The inputs to process (e.g. completions or model outputs).
+
+        Returns:
+            The computed sequence-level scores.
+        """
+        pass
+
+    @abstractmethod
+    def compute_token_scores(self, inputs: Any) -> list[Any]:
+        """
+        Compute token-level uncertainty scores from inputs.
+
+        Args:
+            inputs: The inputs to process (e.g. completions or model outputs).
+
+        Returns:
+            The computed token-level scores.
+        """
+        pass
+
+    @staticmethod
+    def _parse_outputs(outputs: Any) -> list[dict[int, list[float]]]:
+        """Parse different output formats to extract logprobs."""
+        # vLLM parser
+        if isinstance(outputs, list) and len(outputs) > 0 and hasattr(outputs[0], "outputs"):
+            iterations = len(outputs[0].outputs)
+            return process_vllm_logprobs(outputs, iterations)
+
+        # B. OpenAI parser for classic ChatCompletion
+        if hasattr(outputs, "choices") or (isinstance(outputs, dict) and "choices" in outputs):
+            choices = outputs.choices if hasattr(outputs, "choices") else outputs["choices"]
+            return process_openai_chat_completion(outputs, iterations=len(choices))
+
+        # C. OpenAI parser for Responses API
+        if is_openai_responses_api(outputs):
+            return process_openai_responses_api(outputs)
+
+        msg = (
+            f"Unsupported output format: {type(outputs).__name__}. "
+            "Expected vLLM RequestOutput, OpenAI ChatCompletion, or OpenAI Responses object."
+        )
+        raise TypeError(msg)

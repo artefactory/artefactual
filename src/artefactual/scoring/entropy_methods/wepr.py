@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 from beartype import beartype
@@ -40,26 +40,18 @@ class WEPR(UncertaintyDetector):
             self.mean_weights[i - 1] = coeffs.get(f"mean_rank_{i}", 0.0)
             self.max_weights[i - 1] = coeffs.get(f"max_rank_{i}", 0.0)
 
-    @beartype
-    def compute(
+    def _compute_impl(
         self,
-        completions: Sequence[Completion],
-        *,
-        return_per_token_scores: bool = False,
-    ) -> list[float] | tuple[list[float], list[NDArray[np.floating]]]:
+        outputs: Any,
+    ) -> tuple[list[float], list[NDArray[np.floating]]]:
         """
-        Compute WEPR-based uncertainty scores from a sequence of completions.
-        Args:
-            completions: A list of completions, where each completion is a list of tokens,
-                         and each token is a list of its top-K log probabilities.
-                         Shape: (num_completions, num_tokens, num_logprobs)
-        Returns:
-            - List of sequence-level WEPR scores.
-            - Optionally (if return_per_token_scores=True),
-              a tuple of (seq_scores, per_token_scores).
+        Internal implementation to compute WEPR scores.
         """
-        if not completions:
-            return []
+        if not outputs:
+            return [], []
+
+        completions_data = self._parse_outputs(outputs)
+        completions = [Completion(token_logprobs=data) for data in completions_data]
 
         seq_scores: list[float] = []
         token_scores: list[NDArray[np.floating]] = []
@@ -69,8 +61,7 @@ class WEPR(UncertaintyDetector):
             if not token_logprobs_dict:
                 # If no tokens, return the intercept (or 0.0)
                 seq_scores.append(self.intercept)
-                if return_per_token_scores:
-                    token_scores.append(np.array([], dtype=np.float32))
+                token_scores.append(np.array([], dtype=np.float32))
                 continue
 
             # Convert to a 2D numpy array for vectorized processing
@@ -102,10 +93,37 @@ class WEPR(UncertaintyDetector):
             calibrated_seq_score = 1.0 / (1.0 + np.exp(-sentence_wepr))
             seq_scores.append(float(calibrated_seq_score))
 
-            if return_per_token_scores:
-                # Also apply sigmoid to token scores for consistency
-                # P(token_hallucination) = sigmoid(S_beta)
-                calibrated_token_scores = 1.0 / (1.0 + np.exp(-token_wepr))
-                token_scores.append(calibrated_token_scores)
+            # Also apply sigmoid to token scores for consistency
+            # P(token_hallucination) = sigmoid(S_beta)
+            calibrated_token_scores = 1.0 / (1.0 + np.exp(-token_wepr))
+            token_scores.append(calibrated_token_scores)
 
-        return (seq_scores, token_scores) if return_per_token_scores else seq_scores
+        return seq_scores, token_scores
+
+    @beartype
+    def compute(self, outputs: Any) -> list[float]:
+        """
+        Compute WEPR-based uncertainty scores from a sequence of completions.
+        Args:
+            outputs: Model outputs. Can be:
+                     - List of vLLM RequestOutput objects.
+                     - OpenAI ChatCompletion object (or dict).
+                     - OpenAI Responses object (or dict).
+        Returns:
+            List of sequence-level WEPR scores.
+        """
+        return self._compute_impl(outputs)[0]
+
+    @beartype
+    def compute_token_scores(self, outputs: Any) -> list[NDArray[np.floating]]:
+        """
+        Compute token-level WEPR scores from a sequence of completions.
+        Args:
+            outputs: Model outputs. Can be:
+                     - List of vLLM RequestOutput objects.
+                     - OpenAI ChatCompletion object (or dict).
+                     - OpenAI Responses object (or dict).
+        Returns:
+            List of token-level WEPR scores (numpy arrays).
+        """
+        return self._compute_impl(outputs)[1]

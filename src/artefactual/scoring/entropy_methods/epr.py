@@ -6,12 +6,6 @@ from beartype import beartype
 from numpy.typing import NDArray
 
 from artefactual.data.data_model import Completion
-from artefactual.preprocessing.openai_parser import (
-    is_openai_responses_api,
-    process_openai_chat_completion,
-    process_openai_responses_api,
-)
-from artefactual.preprocessing.vllm_parser import process_vllm_logprobs
 from artefactual.scoring.entropy_methods.entropy_contributions import compute_entropy_contributions
 from artefactual.scoring.entropy_methods.uncertainty_detector import UncertaintyDetector
 from artefactual.utils.io import load_calibration
@@ -55,31 +49,15 @@ class EPR(UncertaintyDetector):
                     stacklevel=2,
                 )
 
-    @beartype
-    def compute(
+    def _compute_impl(
         self,
         outputs: Any,
-        *,
-        return_per_token_scores: bool = False,
-    ) -> list[float] | tuple[list[float], list[NDArray[np.floating]]]:
+    ) -> tuple[list[float], list[NDArray[np.floating]]]:
         """
-        Compute EPR-based uncertainty scores from a sequence of completions.
-
-        Args:
-            outputs: Model outputs. Can be:
-                     - List of vLLM RequestOutput objects.
-                     - OpenAI ChatCompletion object (or dict).
-                     - OpenAI Responses object (or dict).
-            return_per_token_scores: If True, returns a tuple of (sequence_scores, token_scores).
-
-        Returns:
-            List of sequence-level EPR scores, or a tuple if return_per_token_scores is True.
-
-        Raises:
-            TypeError: If the output format is not supported.
+        Internal implementation to compute EPR scores.
         """
         if not outputs:
-            return []
+            return [], []
 
         completions_data = self._parse_outputs(outputs)
 
@@ -95,8 +73,6 @@ class EPR(UncertaintyDetector):
             # Handle empty case
             if not token_logprobs_dict:
                 seq_scores.append(self._get_default_score())
-                if return_per_token_scores:
-                    token_scores.append(np.array([], dtype=np.float32))
                 continue
 
             # Prepare vectorized data
@@ -112,38 +88,39 @@ class EPR(UncertaintyDetector):
             # Mean over sequence (Sequence EPR)
             seq_epr = float(token_epr.mean()) if token_epr.size > 0 else 0.0
 
-            # Calibration
             seq_scores.append(self._apply_calibration(seq_epr))
 
-            if return_per_token_scores:
-                token_scores.append(token_epr)
+            token_scores.append(token_epr)
 
-        if return_per_token_scores:
-            return seq_scores, token_scores
-        return seq_scores
+        return seq_scores, token_scores
 
-    @staticmethod
-    def _parse_outputs(outputs: Any) -> list[dict[int, list[float]]]:
-        """Parse different output formats to extract logprobs."""
-        # vLLM parser
-        if isinstance(outputs, list) and len(outputs) > 0 and hasattr(outputs[0], "outputs"):
-            iterations = len(outputs[0].outputs)
-            return process_vllm_logprobs(outputs, iterations)
+    @beartype
+    def compute(self, outputs: Any) -> list[float]:
+        """
+        Compute EPR-based uncertainty scores from a sequence of completions.
+        Args:
+            outputs: Model outputs. Can be:
+                     - List of vLLM RequestOutput objects.
+                     - OpenAI ChatCompletion object (or dict).
+                     - OpenAI Responses object (or dict).
+        Returns:
+            List of sequence-level EPR scores.
+        """
+        return self._compute_impl(outputs)[0]
 
-        # B. OpenAI parser for classic ChatCompletion
-        if hasattr(outputs, "choices") or (isinstance(outputs, dict) and "choices" in outputs):
-            choices = outputs.choices if hasattr(outputs, "choices") else outputs["choices"]
-            return process_openai_chat_completion(outputs, iterations=len(choices))
-
-        # C. OpenAI parser for Responses API
-        if is_openai_responses_api(outputs):
-            return process_openai_responses_api(outputs)
-
-        msg = (
-            f"Unsupported output format: {type(outputs).__name__}. "
-            "Expected vLLM RequestOutput, OpenAI ChatCompletion, or OpenAI Responses object."
-        )
-        raise TypeError(msg)
+    @beartype
+    def compute_token_scores(self, outputs: Any) -> list[NDArray[np.floating]]:
+        """
+        Compute token-level EPR scores from a sequence of completions.
+        Args:
+            outputs: Model outputs. Can be:
+                     - List of vLLM RequestOutput objects.
+                     - OpenAI ChatCompletion object (or dict).
+                     - OpenAI Responses object (or dict).
+        Returns:
+            List of token-level EPR scores (numpy arrays).
+        """
+        return self._compute_impl(outputs)[1]
 
     def _get_default_score(self) -> float:
         """Returns the default score (calibrated or not)."""
