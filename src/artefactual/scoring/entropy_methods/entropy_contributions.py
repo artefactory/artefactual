@@ -41,16 +41,9 @@ def compute_entropy_contributions(logprobs: NDArray[np.floating] | Sequence[Any]
     # Convert to probabilities (logprobs are in natural log, base e)
     probs = np.exp(logprobs)
 
-    # Normalize top-K probs to sum to 1 along the K dimension (axis=1)
-    probs_sum = probs.sum(axis=1, keepdims=True)
-    # Avoid division by zero for tokens with no logprobs
-    probs_sum[probs_sum == 0] = 1.0
-    probs /= probs_sum
-
-    # Calculate entropy contributions in bits (use log2)
-    # s = -p * log2(p), with special handling for p=0
+    # Calculate entropy contributions in nats (use log_e)
     with np.errstate(divide="ignore", invalid="ignore"):
-        s = -probs * np.log2(probs + EPSILON)
+        s = -probs * logprobs
     s = np.nan_to_num(s, nan=0.0, posinf=0.0, neginf=0.0)
 
     # Pad or truncate to k elements along the K dimension (axis=1)
