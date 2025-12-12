@@ -40,7 +40,7 @@ class WEPR(UncertaintyDetector):
             self.mean_weights[i - 1] = coeffs.get(f"mean_rank_{i}", 0.0)
             self.max_weights[i - 1] = coeffs.get(f"max_rank_{i}", 0.0)
 
-    def _compute_impl(
+    def _compute_impl(  # noqa: PLR0914
         self,
         outputs: Any,
     ) -> tuple[list[float], list[NDArray[np.floating]]]:
@@ -59,8 +59,9 @@ class WEPR(UncertaintyDetector):
         for completion in completions:
             token_logprobs_dict = completion.token_logprobs
             if not token_logprobs_dict:
-                # If no tokens, return the intercept (or 0.0)
-                seq_scores.append(self.intercept)
+                # If no tokens, return the calibrated baseline probability
+                baseline_prob = 1.0 / (1.0 + np.exp(-self.intercept))  # Sigmoid of intercept
+                seq_scores.append(baseline_prob)
                 token_scores.append(np.array([], dtype=np.float32))
                 continue
 

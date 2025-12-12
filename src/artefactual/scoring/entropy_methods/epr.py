@@ -73,6 +73,7 @@ class EPR(UncertaintyDetector):
             # Handle empty case
             if not token_logprobs_dict:
                 seq_scores.append(self._get_default_score())
+                token_scores.append(np.array([], dtype=np.float32))
                 continue
 
             # Prepare vectorized data
