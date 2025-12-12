@@ -29,7 +29,8 @@ def vllm_example():
     print(f"EPR Scores: {scores}")  # noqa: T201
 
     # Detailed scores (per token)
-    seq_scores, token_scores = epr.compute(outputs, return_per_token_scores=True)
+    seq_scores = epr.compute(outputs)
+    token_scores = epr.compute_token_scores(outputs)
     print(f"Sequence Scores: {seq_scores}")  # noqa: T201
     print(f"Token Scores (first seq): {token_scores[0]}")  # noqa: T201
 
@@ -86,5 +87,5 @@ def openai_example():
 
 
 if __name__ == "__main__":
-    # vllm_example()
-    openai_example()
+    vllm_example()
+    # openai_example()
