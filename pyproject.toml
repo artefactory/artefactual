@@ -5,7 +5,8 @@ description = "Add your description here"
 readme = "README.md"
 authors = [
     { name = "Hicham Randrianarivo", email = "hicham.randrianarivo@artefact.com" },
-    { name = "Gauthier Jeannin", email = "gauthier.jeannin@artefact.com" }
+    { name = "Gauthier Jeannin", email = "gauthier.jeannin@artefact.com" },
+    { name = "Charles Moslonka", email = "charles.moslonka@artefact.com" },
 ]
 requires-python = ">=3.10,<3.12"
 dependencies = [
