@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Any, Protocol, runtime_checkable
 
+import numpy as np
+from numpy.typing import NDArray
+
 from artefactual.preprocessing.openai_parser import (
     is_openai_responses_api,
     process_openai_chat_completion,
@@ -46,7 +49,7 @@ class UncertaintyDetector(ABC):
         pass
 
     @abstractmethod
-    def compute_token_scores(self, inputs: Any) -> list[Any]:
+    def compute_token_scores(self, inputs: Any) -> list[NDArray[np.floating]]:
         """
         Compute token-level uncertainty scores from inputs.
 

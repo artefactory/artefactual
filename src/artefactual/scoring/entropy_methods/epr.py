@@ -87,6 +87,7 @@ class EPR(UncertaintyDetector):
             token_epr = s_kj.sum(axis=1)
 
             # Mean over sequence (Sequence EPR)
+            # Make sure to cast to float !
             seq_epr = float(token_epr.mean()) if token_epr.size > 0 else 0.0
 
             seq_scores.append(self._apply_calibration(seq_epr))
