@@ -81,11 +81,12 @@ def convert_bytes_to_str(obj):
 
 # calibration and weights loading utilities
 # For now the model map stays here, but could be moved to a config file later ?
+# Note: Inconsistent naming exists in original files (phi4 vs phi_4)
 MODEL_WEIGHT_MAP = {
     "tiiuae/Falcon3-10B-Instruct": "weights_falcon3.json",
     "mistralai/Mistral-Small-3.1-24B-Instruct-2503": "weights_mistral_small.json",
     "mistralai/Ministral-8B-Instruct-2410": "weights_ministral.json",
-    "microsoft/phi-4": "weights_phi4.json",
+    "microsoft/phi-4": "weights_phi4.json",  # Note: No underscore, unlike calibration_phi_4.json
 }
 
 
