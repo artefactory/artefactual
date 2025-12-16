@@ -19,7 +19,7 @@ from vllm import LLM, SamplingParams
 
 from artefactual.calibration.helpers.memory import clear_gpu_memory
 from artefactual.calibration.helpers.models import get_model_name, init_llm
-from artefactual.preprocessing.vllm_parser import process_logprobs
+from artefactual.preprocessing.vllm_parser import process_vllm_logprobs
 from artefactual.scoring.entropy_methods.epr import EPR
 from artefactual.utils.io import convert_bytes_to_str, load_tqa_from_json, save_to_json
 
@@ -58,7 +58,7 @@ def _setup_logging(*, log_to_file: bool) -> None:
         logging.getLogger("").setLevel(logging.INFO)
 
 
-def _process_results(query_data, outputs, iterations: int, epr_scorer: EPR, *, show_logprobs: bool = False) -> dict:
+def _process_results(query_data, outputs, epr_scorer: EPR, *, show_logprobs: bool = False) -> dict:
     """Process outputs and compute EPR scores."""
     query, query_id, expected_answer, answer_aliases = query_data
     list_outputs_text = [output.text for output in outputs[0].outputs]
@@ -81,7 +81,7 @@ def _process_results(query_data, outputs, iterations: int, epr_scorer: EPR, *, s
 
     if show_logprobs:
         # Compute per inner token top_k logprobs
-        token_logprob_list: list[dict[int, list[float]]] = process_logprobs(outputs, iterations)
+        token_logprob_list: list[dict[int, list[float]]] = process_vllm_logprobs(outputs[0].outputs)
         data["token_logprobs"] = token_logprob_list
     return convert_bytes_to_str(data)
 
@@ -171,7 +171,6 @@ def generate_entropy_dataset(
         result = _process_results(
             query_data,
             outputs,
-            config.iterations,
             epr_scorer,
         )
         results.append(result)

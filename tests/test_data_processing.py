@@ -18,14 +18,15 @@ class MockRequestOutput:
 
 
 def test_process_vllm_logprobs_empty_input():
-    """Test with empty outputs list."""
-    assert process_vllm_logprobs([], 1) == []
+    """Test with empty completions list."""
+    assert process_vllm_logprobs([]) == []
 
 
 def test_process_vllm_logprobs_empty_outputs_list():
-    """Test with RequestOutput containing empty outputs."""
-    mock_req = MockRequestOutput(outputs=[])
-    assert process_vllm_logprobs([mock_req], 1) == []
+    """Test with completions containing no logprobs."""
+    # Test with a completion that has None logprobs
+    comp_out = MockCompletionOutput(logprobs=None)
+    assert process_vllm_logprobs([comp_out]) == [{}]
 
 
 def test_process_vllm_logprobs_basic_functionality():
@@ -45,10 +46,8 @@ def test_process_vllm_logprobs_basic_functionality():
     completion_output0 = MockCompletionOutput(logprobs=logprobs_seq0)
     completion_output1 = MockCompletionOutput(logprobs=logprobs_seq1)
 
-    request_output = MockRequestOutput(outputs=[completion_output0, completion_output1])
-
-    # Run function
-    result = process_vllm_logprobs([request_output], iterations=2)
+    # Run function - now passing completions directly instead of RequestOutput
+    result = process_vllm_logprobs([completion_output0, completion_output1])
 
     # Assertions
     assert len(result) == 2
@@ -66,22 +65,26 @@ def test_process_vllm_logprobs_basic_functionality():
     assert seq1 == {}
 
 
-def test_process_vllm_logprobs_iterations_parameter():
-    """Test that iterations parameter limits the processing."""
+def test_process_vllm_logprobs_max_completions_parameter():
+    """Test that max_completions parameter limits the processing."""
     token0_topk = {1: MockLogprob(-1.0)}
     logprobs_seq = [token0_topk]
 
     comp_out = MockCompletionOutput(logprobs=logprobs_seq)
-    # 3 outputs available
-    req_out = MockRequestOutput(outputs=[comp_out, comp_out, comp_out])
+    # 3 completions available
+    completions = [comp_out, comp_out, comp_out]
 
-    # Only ask for 1 iteration
-    result = process_vllm_logprobs([req_out], iterations=1)
+    # Only ask for 1 completion
+    result = process_vllm_logprobs(completions, max_completions=1)
     assert len(result) == 1
 
-    # Ask for 2 iterations
-    result = process_vllm_logprobs([req_out], iterations=2)
+    # Ask for 2 completions
+    result = process_vllm_logprobs(completions, max_completions=2)
     assert len(result) == 2
+
+    # Process all completions (default behavior)
+    result = process_vllm_logprobs(completions)
+    assert len(result) == 3
 
 
 def test_process_vllm_logprobs_missing_logprobs_in_sequence():
@@ -90,10 +93,63 @@ def test_process_vllm_logprobs_missing_logprobs_in_sequence():
     comp_out_none = MockCompletionOutput(logprobs=None)
     comp_out_empty = MockCompletionOutput(logprobs=[])
 
-    req_out = MockRequestOutput(outputs=[comp_out_none, comp_out_empty])
+    completions = [comp_out_none, comp_out_empty]
 
-    result = process_vllm_logprobs([req_out], iterations=2)
+    result = process_vllm_logprobs(completions)
 
     assert len(result) == 2
     assert result[0] == {}
     assert result[1] == {}
+
+
+def test_process_vllm_logprobs_no_index_error_with_large_max():
+    """Test that requesting more completions than available doesn't raise IndexError."""
+    token0_topk = {1: MockLogprob(-1.0)}
+    logprobs_seq = [token0_topk]
+    comp_out = MockCompletionOutput(logprobs=logprobs_seq)
+
+    # Only 2 completions available
+    completions = [comp_out, comp_out]
+
+    # Request more than available - should not raise IndexError
+    result = process_vllm_logprobs(completions, max_completions=10)
+
+    # Should only return what's available
+    assert len(result) == 2
+
+
+def test_process_vllm_logprobs_processes_all_by_default():
+    """Test that all completions are processed when max_completions is not specified."""
+    token0_topk = {1: MockLogprob(-1.0)}
+    logprobs_seq = [token0_topk]
+    comp_out = MockCompletionOutput(logprobs=logprobs_seq)
+
+    # 5 completions available
+    completions = [comp_out] * 5
+
+    # Should process all completions when max_completions is not specified
+    result = process_vllm_logprobs(completions)
+    assert len(result) == 5
+
+
+def test_process_vllm_logprobs_batched_results_not_dropped():
+    """Test that batched request outputs are not silently ignored."""
+    # Create 3 different completions with different logprobs to verify they're all processed
+    token0_topk_1 = {1: MockLogprob(-1.0)}
+    token0_topk_2 = {2: MockLogprob(-2.0)}
+    token0_topk_3 = {3: MockLogprob(-3.0)}
+
+    comp_out1 = MockCompletionOutput(logprobs=[token0_topk_1])
+    comp_out2 = MockCompletionOutput(logprobs=[token0_topk_2])
+    comp_out3 = MockCompletionOutput(logprobs=[token0_topk_3])
+
+    completions = [comp_out1, comp_out2, comp_out3]
+
+    result = process_vllm_logprobs(completions)
+
+    # All three completions should be processed
+    assert len(result) == 3
+    # Verify each has unique data
+    assert result[0][0] == [-1.0]
+    assert result[1][0] == [-2.0]
+    assert result[2][0] == [-3.0]
