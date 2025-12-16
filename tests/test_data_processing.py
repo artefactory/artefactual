@@ -18,12 +18,12 @@ class MockRequestOutput:
 
 
 def test_process_vllm_logprobs_empty_input():
-    """Test with empty completions list."""
+    """Test behavior when an empty sequence of CompletionOutput objects is provided."""
     assert process_vllm_logprobs([]) == []
 
 
-def test_process_vllm_logprobs_empty_outputs_list():
-    """Test with completions containing no logprobs."""
+def test_process_vllm_logprobs_none_logprobs():
+    """Test with completion containing None logprobs."""
     # Test with a completion that has None logprobs
     comp_out = MockCompletionOutput(logprobs=None)
     assert process_vllm_logprobs([comp_out]) == [{}]
