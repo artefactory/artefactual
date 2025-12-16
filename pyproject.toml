@@ -69,7 +69,7 @@ ignore-words-list = "rouge,ans"
 preview = true
 target-version = "py310"
 line-length = 120
-exclude = ["demo_uncertainty_notebook.ipynb", "create_sample_data.py"]
+exclude = ["demo_uncertainty_notebook.ipynb", "examples/create_sample_data.py"]
 
 [tool.ruff.format]
 docstring-code-format = true
