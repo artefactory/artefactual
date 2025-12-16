@@ -30,9 +30,15 @@ def process_vllm_logprobs(outputs: list["RequestOutput"], iterations: int) -> li
             continue
 
         for token_idx, token_topk_log_dict in enumerate(token_logprobs):
-            topk_logprobs_list = [inner_token.logprob for inner_token in token_topk_log_dict.values()]
-
-            seq[token_idx] = topk_logprobs_list
+            # token_idx is the position in the sequence
+            # token_topk_log_dict is a dict of top-K logprobs for that token,
+            # where the first item is the sampled token. (rank can be > k)
+            topk_logprobs_with_rank = [
+                (inner_token.logprob, inner_token.rank) for inner_token in token_topk_log_dict.values()
+            ]
+            # Sort by rank (ascending)
+            sorted_topk = sorted(topk_logprobs_with_rank, key=lambda x: x[1], reverse=False)
+            seq[token_idx] = [logp for (logp, rank) in sorted_topk]
 
         all_sequences.append(seq)
 

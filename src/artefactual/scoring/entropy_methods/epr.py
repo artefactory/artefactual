@@ -93,16 +93,16 @@ class EPR(UncertaintyDetector):
             # Vectorized Entropy Calculation
             s_kj = compute_entropy_contributions(logprobs_list, self.k)
 
-            # Sum over K (Token EPR)
-            token_epr = s_kj.sum(axis=1)
+            # mean over rank K (Token EPR)
+            token_epr = np.mean(s_kj, axis=1)  # shape = sequence length
 
             # Mean over sequence (Sequence EPR)
             # Make sure to cast to float !
-            seq_epr = float(token_epr.mean()) if token_epr.size > 0 else 0.0
+            seq_epr = float(np.mean(token_epr)) if token_epr.size > 0 else 0.0
 
             seq_scores.append(self._apply_calibration(seq_epr))
 
-            token_scores.append(token_epr)
+            token_scores.append(self._apply_calibration(token_epr))
 
         return seq_scores, token_scores
 
