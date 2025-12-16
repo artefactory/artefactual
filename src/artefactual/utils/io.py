@@ -5,17 +5,26 @@ from pathlib import Path
 from typing import Any
 
 
-def save_to_json(data: list[dict[str, Any]], output_file: str):
+def save_to_json(data: dict[str, Any] | list[dict[str, Any]], output_file: str):
     """Save data to a JSON file.
 
+    Supports two common use cases:
+    - Dataset-level outputs: A single dict with metadata and results (e.g., entropy datasets)
+    - Item-level outputs: A list of individual item dicts
+
     Args:
-        data (list[dict[str, Any]]): Data to save.
+        data (dict[str, Any] | list[dict[str, Any]]): Data to save. Can be either:
+            - A dict containing dataset-level information (metadata, results, etc.)
+            - A list of dicts representing individual items
         output_file (str): Path to the output JSON file.
     """
     try:
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4)
-        logging.info(f"Saved {len(data)} items to {output_file}")
+        if isinstance(data, list):
+            logging.info(f"Saved {len(data)} items to {output_file}")
+        else:
+            logging.info(f"Saved dataset to {output_file}")
     except OSError as e:
         logging.error(f"Error writing to {output_file}: {e}")
 
