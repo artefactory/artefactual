@@ -405,3 +405,14 @@ def test_compute_epr_multiple_completions_in_one_request():
     # Each completion should have token-level scores
     assert len(token_scores[0]) > 0, "First completion should have token scores"
     assert len(token_scores[1]) > 0, "Second completion should have token scores"
+
+
+def test_compute_epr_request_output_with_empty_outputs_list():
+    """Test EPR computation when outputs[0].outputs is an empty list."""
+    detector = EPR(k=3)
+
+    # Create a MockRequestOutput with an empty outputs list
+    mock_request_output = MockRequestOutput(outputs=[])
+
+    scores = detector.compute([mock_request_output])
+    assert len(scores) == 0, "Should return empty list when outputs[0].outputs is empty"

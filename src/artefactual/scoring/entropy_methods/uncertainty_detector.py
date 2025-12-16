@@ -59,6 +59,8 @@ class UncertaintyDetector(ABC):
         """Parse different output formats to extract logprobs."""
         # vLLM parser
         if isinstance(outputs, list) and len(outputs) > 0 and hasattr(outputs[0], "outputs"):
+            if not outputs[0].outputs:
+                return []
             iterations = len(outputs[0].outputs)
             return process_vllm_logprobs(outputs, iterations)
 

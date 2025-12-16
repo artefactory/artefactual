@@ -18,7 +18,7 @@ class TokenLogprob(BaseModel):
 class Completion(BaseModel):
     """Represents a single generated completion as a sequence of token logprobs."""
 
-    token_logprobs: dict[int, Sequence[float]]  # Mapping from token position to top-K logprobs
+    token_logprobs: dict[int, list[float]]  # Mapping from token position to top-K logprobs
 
 
 class Result(BaseModel):
