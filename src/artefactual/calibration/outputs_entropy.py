@@ -178,6 +178,7 @@ def generate_entropy_dataset(
     logger.info("Generation complete.")
 
     # Create the complete data structure
+    # This is a dataset-level output containing metadata and results
     raw_data = {
         "metadata": {
             "generator_model": config.model_path,
