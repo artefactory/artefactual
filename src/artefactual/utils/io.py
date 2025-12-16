@@ -155,7 +155,7 @@ MODEL_CALIBRATION_MAP = {
     "tiiuae/Falcon3-10B-Instruct": "calibration_falcon3.json",
     "mistralai/Mistral-Small-3.1-24B-Instruct-2503": "calibration_mistral_small.json",
     "mistralai/Ministral-8B-Instruct-2410": "calibration_ministral.json",
-    "microsoft/phi-4": "calibration_phi4.json",
+    "microsoft/phi-4": "calibration_phi_4.json",
     # Add other models here as needed
 }
 
