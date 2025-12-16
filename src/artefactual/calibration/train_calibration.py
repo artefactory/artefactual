@@ -42,7 +42,6 @@ def train_calibration(input_file: str | Path, output_file: str | Path) -> None:
     # Filter valid data
     # judgment can be True/False/None.
     df = df.dropna(subset=["judgment"])
-    rows_after_judgment_filter = len(df)
 
     if df.empty:
         msg = "No valid data found (all judgments are None or file is empty)."

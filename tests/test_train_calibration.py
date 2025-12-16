@@ -1,5 +1,6 @@
 """Tests for train_calibration.py script."""
 
+import json
 import tempfile
 from pathlib import Path
 
@@ -32,8 +33,6 @@ def test_train_calibration_valid_data():
         # Verify output file exists and has the expected format
         output_path = Path(output_file)
         assert output_path.exists()
-
-        import json
 
         with open(output_file) as f:
             weights = json.load(f)
