@@ -82,12 +82,14 @@ class WEPR(UncertaintyDetector):
             logprobs_list = [token_logprobs_dict[i] for i in sorted_indices]
 
             # Compute entropy contributions in a vectorized manner
-            # Input shape: (num_tokens, K)
+            # Input shape: (num_tokens_in_sequence, K)
             s_kj = compute_entropy_contributions(logprobs_list, self.k)
 
-            # Token-level WEPR (S_beta): weighted sum across K using mean_weights + intercept
-            # Eq (7): S_beta = beta_0 + sum(beta_k * s_kj)
-            token_wepr = s_kj @ self.mean_weights + self.intercept
+            # Token-level WEPR (S_beta): weighted sum across K using mean_weights
+            # S_beta = sum(beta_k * s_kj) + beta_0
+            token_wepr = np.zeros(s_kj.shape[0], dtype=np.float32)
+            for token_pos in range(s_kj.shape[0]):
+                token_wepr[token_pos] = np.dot(s_kj[token_pos, :], self.mean_weights) + self.intercept
 
             # Sequence-level WEPR (Eq 8):
             # 1. Average of token scores S_beta
@@ -96,7 +98,7 @@ class WEPR(UncertaintyDetector):
             # 2. Weighted sum of max contributions per rank
             # Max over tokens for each rank: (K,)
             max_contributions_per_rank = np.max(s_kj, axis=0)
-            max_term = max_contributions_per_rank @ self.max_weights
+            max_term = np.dot(max_contributions_per_rank, self.max_weights)
 
             sentence_wepr = mean_term + max_term
 

@@ -10,9 +10,7 @@ EPSILON = 1e-12
 
 @beartype
 def compute_entropy_contributions(logprobs: NDArray[np.floating] | Sequence[Any], k: int) -> NDArray[np.floating]:
-    """
-    Compute entropic contributions s_kj = -p_k log2(p_k) for top-K logprobs using vectorized operations.
-
+    """Compute entropic contributions s_kj = -p_k log(p_k) for top-K logprobs using vectorized operations.
     Args:
         logprobs: A 2D array of shape (num_tokens, num_logprobs) containing log probabilities.
         k: Number of top log probabilities to consider per token.
