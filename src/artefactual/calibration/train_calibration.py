@@ -59,6 +59,8 @@ def train_calibration(input_file: str | Path, output_file: str | Path) -> None:
 
     # Drop any rows where parsing failed
     df = df.dropna(subset=["target"])
+    # Cast to int to ensure numeric dtype for np.unique and model training
+    df["target"] = df["target"].astype(int)
     x = df[["uncertainty_score"]].values
     y = df["target"].values
 
