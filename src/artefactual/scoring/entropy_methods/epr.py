@@ -39,8 +39,19 @@ class EPR(UncertaintyDetector):
             try:
                 calibration_data = load_calibration(model)
                 self.intercept = calibration_data.get("intercept", 0.0)
-                coeffs = calibration_data.get("coefficients", {})
-                self.coefficient = coeffs.get("mean_entropy", 1.0)
+                coeffs_raw = calibration_data.get("coefficients", {})
+
+                # Guard against non-dict inputs for coefficients
+                if not isinstance(coeffs_raw, dict):
+                    warnings.warn(
+                        f"Expected 'coefficients' to be a mapping, got {type(coeffs_raw).__name__}. "
+                        "Using default coefficient.",
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                    self.coefficient = 1.0
+                else:
+                    self.coefficient = coeffs_raw.get("mean_entropy", 1.0)
                 self.is_calibrated = True
             except ValueError:
                 warnings.warn(
