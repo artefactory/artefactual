@@ -1,10 +1,11 @@
 """Unit tests for the UncertaintyDetector class."""
 
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 import pytest
-from vllm import RequestOutput
+from numpy.typing import NDArray
 
 from artefactual.scoring.entropy_methods.entropy_contributions import compute_entropy_contributions
 from artefactual.scoring.entropy_methods.epr import EPR
@@ -29,11 +30,11 @@ class MockCompletionOutput:
     logprobs: list[dict[str, "MockLogprob"]] | None
 
 
-class MockRequestOutput(RequestOutput):
+@dataclass
+class MockRequestOutput:
     """Mock request output that mimics vLLM's RequestOutput."""
 
-    def __init__(self, outputs: list[MockCompletionOutput]):
-        self.outputs = outputs
+    outputs: list[MockCompletionOutput]
 
 
 def create_request_output(logprobs_sequences: list[list[dict[str, float]]]) -> list[MockRequestOutput]:
@@ -51,6 +52,16 @@ def create_request_output(logprobs_sequences: list[list[dict[str, float]]]) -> l
     return [MockRequestOutput(outputs=mock_completion_outputs)]
 
 
+class ConcreteUncertaintyDetector(UncertaintyDetector):
+    """Concrete implementation of UncertaintyDetector for testing."""
+
+    def compute(self, inputs: Any) -> list[float]:  # noqa: ARG002
+        return []
+
+    def compute_token_scores(self, inputs: Any) -> list[NDArray[np.floating]]:  # noqa: ARG002
+        return []
+
+
 # ============================================================================
 # Test Initialization
 # ============================================================================
@@ -58,23 +69,23 @@ def create_request_output(logprobs_sequences: list[list[dict[str, float]]]) -> l
 
 def test_init_default():
     """Test initialization with default parameters."""
-    detector = UncertaintyDetector()
+    detector = ConcreteUncertaintyDetector()
     assert detector.k == 15
 
 
 def test_init_custom_k():
     """Test initialization with custom K value."""
-    detector = UncertaintyDetector(k=10)
+    detector = ConcreteUncertaintyDetector(k=10)
     assert detector.k == 10
 
 
 def test_init_invalid_k():
     """Test that initialization fails with invalid K values."""
     with pytest.raises(ValueError, match="k must be positive"):
-        UncertaintyDetector(k=0)
+        ConcreteUncertaintyDetector(k=0)
 
     with pytest.raises(ValueError, match="k must be positive"):
-        UncertaintyDetector(k=-5)
+        ConcreteUncertaintyDetector(k=-5)
 
 
 # ============================================================================
@@ -84,7 +95,7 @@ def test_init_invalid_k():
 
 def test_entropy_contributions_empty():
     """Test entropy contributions with empty input."""
-    detector = UncertaintyDetector(k=5)
+    detector = ConcreteUncertaintyDetector(k=5)
     result = compute_entropy_contributions([], detector.k)
     assert result.shape == (0, 5)
     assert np.allclose(result, 0.0)
@@ -92,7 +103,7 @@ def test_entropy_contributions_empty():
 
 def test_entropy_contributions_single_token():
     """Test entropy contributions with a single token."""
-    detector = UncertaintyDetector(k=3)
+    detector = ConcreteUncertaintyDetector(k=3)
 
     # Create logprobs for one token with 3 candidates
     # Using probabilities that should give known entropy values
@@ -106,7 +117,7 @@ def test_entropy_contributions_single_token():
 
 def test_entropy_contributions_uniform_distribution():
     """Test entropy contributions with uniform distribution (max entropy)."""
-    detector = UncertaintyDetector(k=4)
+    detector = ConcreteUncertaintyDetector(k=4)
 
     # Uniform distribution: all probabilities equal
     # log(1/4) = -1.386 (natural log)
@@ -122,7 +133,7 @@ def test_entropy_contributions_uniform_distribution():
 
 def test_entropy_contributions_deterministic():
     """Test entropy contributions with deterministic distribution (min entropy)."""
-    detector = UncertaintyDetector(k=3)
+    detector = ConcreteUncertaintyDetector(k=3)
 
     # Deterministic: one probability near 1, others near 0
     logprobs = [{"A": -0.001, "B": -10.0, "C": -10.0}]
@@ -136,7 +147,7 @@ def test_entropy_contributions_deterministic():
 
 def test_entropy_contributions_padding():
     """Test that contributions are padded when fewer than K candidates."""
-    detector = UncertaintyDetector(k=10)
+    detector = ConcreteUncertaintyDetector(k=10)
 
     # Only 3 candidates, should be padded to 10
     logprobs = [{"A": -0.5, "B": -1.5, "C": -2.5}]
@@ -149,7 +160,7 @@ def test_entropy_contributions_padding():
 
 def test_entropy_contributions_truncation():
     """Test that contributions are truncated when more than K candidates."""
-    detector = UncertaintyDetector(k=3)
+    detector = ConcreteUncertaintyDetector(k=3)
 
     # 5 candidates, should be truncated to 3
     logprobs = [{"A": -0.5, "B": -1.0, "C": -1.5, "D": -2.0, "E": -2.5}]
@@ -160,7 +171,7 @@ def test_entropy_contributions_truncation():
 
 def test_entropy_contributions_multiple_tokens():
     """Test entropy contributions with multiple tokens."""
-    detector = UncertaintyDetector(k=3)
+    detector = ConcreteUncertaintyDetector(k=3)
 
     logprobs = [
         {"A": -0.5, "B": -1.5, "C": -2.5},
@@ -176,7 +187,7 @@ def test_entropy_contributions_multiple_tokens():
 
 def test_entropy_contributions_with_logprob_objects():
     """Test entropy contributions with LogProbValue objects."""
-    detector = UncertaintyDetector(k=3)
+    detector = ConcreteUncertaintyDetector(k=3)
 
     # Use MockLogprob objects instead of floats
     logprobs = [
@@ -190,7 +201,7 @@ def test_entropy_contributions_with_logprob_objects():
 
 def test_entropy_contributions_empty_dict():
     """Test entropy contributions with empty dictionary in sequence."""
-    detector = UncertaintyDetector(k=3)
+    detector = ConcreteUncertaintyDetector(k=3)
 
     logprobs = [
         {"A": -0.5, "B": -1.5, "C": -2.5},
@@ -221,7 +232,7 @@ def test_compute_epr_single_output():
     ]
     request_output = create_request_output(logprobs_seq)
 
-    scores = detector.compute(request_output, return_per_token_scores=False)
+    scores = detector.compute(request_output)
     assert len(scores) == 1
     assert isinstance(scores[0], float)
     assert scores[0] >= 0
@@ -238,7 +249,7 @@ def test_compute_epr_multiple_outputs():
     ]
     request_output = create_request_output(logprobs_seqs)
 
-    scores = detector.compute(request_output, return_per_token_scores=False)
+    scores = detector.compute(request_output)
     assert len(scores) == 3
     assert all(isinstance(s, float) for s in scores)
     assert all(s >= 0 for s in scores)
@@ -256,7 +267,8 @@ def test_compute_epr_with_token_scores():
     ]
     request_output = create_request_output(logprobs_seq)
 
-    seq_scores, token_scores = detector.compute(request_output, return_per_token_scores=True)
+    seq_scores = detector.compute(request_output)
+    token_scores = detector.compute_token_scores(request_output)
 
     assert len(seq_scores) == 1
     assert len(token_scores) == 1
@@ -279,7 +291,7 @@ def test_compute_epr_output_without_completions():
     detector = EPR(k=3)
 
     # Empty list of completions
-    scores = detector.compute([], return_per_token_scores=False)
+    scores = detector.compute([])
     assert len(scores) == 0
 
 
@@ -290,7 +302,7 @@ def test_compute_epr_output_without_logprobs():
     # Create output with no logprobs
     request_output = create_request_output([[]])
 
-    scores = detector.compute(request_output, return_per_token_scores=False)
+    scores = detector.compute(request_output)
     assert len(scores) == 1
     assert scores[0] == 0.0
 
@@ -312,7 +324,7 @@ def test_compute_epr_high_vs_low_confidence():
     ]
 
     request_output = create_request_output([high_conf_logprobs, low_conf_logprobs])
-    scores = detector.compute(request_output, return_per_token_scores=False)
+    scores = detector.compute(request_output)
     # Low confidence should have higher EPR score
     assert scores[1] > scores[0]
 
@@ -324,7 +336,7 @@ def test_compute_epr_high_vs_low_confidence():
 
 def test_entropy_contributions_zero_probabilities():
     """Test that zero probabilities are handled correctly."""
-    detector = UncertaintyDetector(k=3)
+    detector = ConcreteUncertaintyDetector(k=3)
 
     # Extreme case: very low probabilities
     logprobs = [{"A": -0.001, "B": -100.0, "C": -100.0}]
@@ -338,7 +350,7 @@ def test_entropy_contributions_zero_probabilities():
 
 def test_entropy_contributions_mixed_types():
     """Test entropy contributions with mixed float and LogProbValue objects."""
-    detector = UncertaintyDetector(k=3)
+    detector = ConcreteUncertaintyDetector(k=3)
 
     # Mix floats and MockLogprob objects
     logprobs = [
@@ -360,7 +372,7 @@ def test_numerical_stability():
     ]
 
     request_output = create_request_output(extreme_logprobs)
-    scores = detector.compute(request_output, return_per_token_scores=False)
+    scores = detector.compute(request_output)
 
     # Should produce valid score, not NaN or inf
     assert not np.isnan(scores[0])
@@ -379,7 +391,8 @@ def test_compute_epr_multiple_completions_in_one_request():
     request_output = create_request_output(logprobs_seqs)
 
     # Should return scores for BOTH completions
-    seq_scores, token_scores = detector.compute(request_output, return_per_token_scores=True)
+    seq_scores = detector.compute(request_output)
+    token_scores = detector.compute_token_scores(request_output)
 
     # Verify we get results for both completions
     assert len(seq_scores) == 2, "Should return EPR for both completions"
