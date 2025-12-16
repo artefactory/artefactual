@@ -1,5 +1,5 @@
 import warnings
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from beartype import beartype
@@ -21,12 +21,12 @@ class EPR(UncertaintyDetector):
     - OpenAI Responses API (new 'output' format)
     """
 
-    def __init__(self, model: str | None = None, k: int = 15) -> None:
+    def __init__(self, pretrained_model_name_or_path: str | None = None, k: int = 15) -> None:
         """
         Initialize the EPR scorer.
 
         Args:
-            model: Optional model name or path to load calibration coefficients.
+            pretrained_model_name_or_path: Optional model name or path to load calibration coefficients.
                    If None, raw EPR scores are returned (uncalibrated).
             k: Number of top log probabilities to consider (default: 15).
         """
@@ -35,17 +35,26 @@ class EPR(UncertaintyDetector):
         self.coefficient = 1.0
         self.is_calibrated = False
 
-        if model:
+        if pretrained_model_name_or_path:
             try:
+<<<<<<< HEAD
                 calibration_data = load_calibration(model)
                 self.intercept = float(calibration_data.get("intercept", 0.0))
                 coeffs_raw = calibration_data.get("coefficients", {})
                 coeffs: dict[str, float] = coeffs_raw if isinstance(coeffs_raw, dict) else {}
                 self.coefficient = float(coeffs.get("mean_entropy", 1.0))
+=======
+                calibration_data: dict[str, Any] = load_calibration(pretrained_model_name_or_path)
+                self.intercept: float = calibration_data.get("intercept", 0.0)
+                coeffs: dict[str, int | float] = cast(dict[str, float], calibration_data.get("coefficients", {}))
+                self.coefficient: float = coeffs.get("mean_entropy", 1.0)
+>>>>>>> c831203 (chore: change argument name to match transformers)
                 self.is_calibrated = True
             except ValueError:
                 warnings.warn(
-                    f"Could not load calibration for model '{model}'. Proceeding with uncalibrated scores.",
+                    f"""
+                    Could not load calibration for '{pretrained_model_name_or_path}'.
+                    Proceeding with uncalibrated scores.""",
                     UserWarning,
                     stacklevel=2,
                 )
