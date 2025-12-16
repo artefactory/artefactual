@@ -36,9 +36,13 @@ def train_calibration(input_file: str | Path, output_file: str | Path) -> None:
         msg = "Input file must contain 'uncertainty_score' and 'judgment' columns."
         raise ValueError(msg)
 
+    total_rows = len(df)
+    logger.info(f"Loaded {total_rows} rows from {input_file}")
+
     # Filter valid data
     # judgment can be True/False/None.
     df = df.dropna(subset=["judgment"])
+    rows_after_judgment_filter = len(df)
 
     if df.empty:
         msg = "No valid data found (all judgments are None or file is empty)."
@@ -59,6 +63,19 @@ def train_calibration(input_file: str | Path, output_file: str | Path) -> None:
 
     # Drop any rows where parsing failed
     df = df.dropna(subset=["target"])
+
+    if df.empty:
+        dropped = total_rows
+        msg = f"No valid judgments found after parsing. Dropped all {dropped} rows. Expected 'True' or 'False' in judgment column."
+        raise ValueError(msg)
+
+    kept_rows = len(df)
+    dropped_rows = total_rows - kept_rows
+    logger.info(f"Kept {kept_rows} rows, dropped {dropped_rows} rows (malformed or missing judgments)")
+
+    # Cast target to int for type safety
+    df["target"] = df["target"].astype(int)
+
     x = df[["uncertainty_score"]].values
     y = df["target"].values
 
@@ -66,7 +83,7 @@ def train_calibration(input_file: str | Path, output_file: str | Path) -> None:
         msg = "Need both positive (False) and negative (True) judgments to train."
         raise ValueError(msg)
 
-    logger.info(f"Training on {len(df)} samples.")
+    logger.info(f"Training on {kept_rows} samples.")
 
     # Train Logistic Regression
     clf = LogisticRegression(random_state=42)
