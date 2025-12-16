@@ -36,8 +36,7 @@ def vllm_example():
     print(f"Token Scores (first seq): {token_scores[0]}")  # noqa: T201
 
     # Compute WEPR
-    weights_path = os.path.join(os.path.dirname(__file__), "..", "src", "artefactual", "data", "weights_ministral.json")
-    wepr = WEPR(model=weights_path)
+    wepr = WEPR(model="mistralai/Ministral-8B-Instruct-2410")
     wepr.compute(outputs)
 
 
@@ -91,8 +90,7 @@ def openai_example():
     scores = epr.compute(mock_response)
     print(f"EPR Score: {scores[0]}")  # noqa: T201
 
-    weights_path = os.path.join(os.path.dirname(__file__), "..", "src", "artefactual", "data", "weights_ministral.json")
-    wepr = WEPR(model=weights_path)
+    wepr = WEPR(model="mistralai/Ministral-8B-Instruct-2410")
     wepr.compute(mock_response)
 
 

@@ -1,4 +1,3 @@
-import importlib.resources
 import json
 import logging
 from pathlib import Path
@@ -82,12 +81,27 @@ def convert_bytes_to_str(obj):
 
 # calibration and weights loading utilities
 # For now the model map stays here, but could be moved to a config file later ?
+# Note: Inconsistent naming exists in original files (phi4 vs phi_4)
 MODEL_WEIGHT_MAP = {
     "tiiuae/Falcon3-10B-Instruct": "weights_falcon3.json",
     "mistralai/Mistral-Small-3.1-24B-Instruct-2503": "weights_mistral_small.json",
     "mistralai/Ministral-8B-Instruct-2410": "weights_ministral.json",
-    "microsoft/phi-4": "weights_phi4.json",
+    "microsoft/phi-4": "weights_phi4.json",  # Note: No underscore, unlike calibration_phi_4.json
 }
+
+
+def _get_assets_dir() -> Path:
+    """
+    Get the path to the assets directory.
+    
+    Returns:
+        Path to the assets/data directory in the repository root.
+    """
+    # Start from this file's location and go up to find the repository root
+    # src/artefactual/utils/io.py -> src/artefactual/utils -> src/artefactual -> src -> repo_root
+    repo_root = Path(__file__).parent.parent.parent.parent
+    assets_dir = repo_root / "assets" / "data"
+    return assets_dir
 
 
 def load_weights(identifier: str) -> dict[str, float]:
@@ -108,8 +122,14 @@ def load_weights(identifier: str) -> dict[str, float]:
     # 1. Check if it matches a built-in model name (The Registry)
     if identifier in MODEL_WEIGHT_MAP:
         filename = MODEL_WEIGHT_MAP[identifier]
-        package_files = importlib.resources.files("artefactual.data")
-        with package_files.joinpath(filename).open("r", encoding="utf-8") as f:
+        assets_dir = _get_assets_dir()
+        weights_file = assets_dir / filename
+        
+        if not weights_file.exists():
+            msg = f"Weights file not found: {weights_file}"
+            raise ValueError(msg)
+        
+        with open(weights_file, encoding="utf-8") as f:
             return json.load(f)
 
     # 2. Check if it is a valid path to a user file on disk
@@ -136,7 +156,7 @@ MODEL_CALIBRATION_MAP = {
     "tiiuae/Falcon3-10B-Instruct": "calibration_falcon3.json",
     "mistralai/Mistral-Small-3.1-24B-Instruct-2503": "calibration_mistral_small.json",
     "mistralai/Ministral-8B-Instruct-2410": "calibration_ministral.json",
-    "microsoft/phi-4": "calibration_phi4.json",
+    "microsoft/phi-4": "calibration_phi_4.json",
     # Add other models here as needed
 }
 
@@ -158,8 +178,14 @@ def load_calibration(identifier: str) -> dict[str, float]:
     # 1. Check if it matches a built-in model name (The Registry)
     if identifier in MODEL_CALIBRATION_MAP:
         filename = MODEL_CALIBRATION_MAP[identifier]
-        package_files = importlib.resources.files("artefactual.data")
-        with package_files.joinpath(filename).open("r", encoding="utf-8") as f:
+        assets_dir = _get_assets_dir()
+        calibration_file = assets_dir / filename
+        
+        if not calibration_file.exists():
+            msg = f"Calibration file not found: {calibration_file}"
+            raise ValueError(msg)
+        
+        with open(calibration_file, encoding="utf-8") as f:
             return json.load(f)
 
     # 2. Check if it is a valid path to a user file on disk
