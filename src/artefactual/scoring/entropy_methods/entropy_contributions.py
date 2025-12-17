@@ -39,7 +39,7 @@ def compute_entropy_contributions(logprobs: NDArray[np.floating] | Sequence[Any]
     # Convert to probabilities (logprobs are in natural log, base e)
     probs = np.exp(logprobs)
 
-    # Calculate entropy contributions in nats (use log_e)
+    # Calculate entropy contributions: s = -p * log(p) = -exp(logp) * logp (logprobs are natural logs)
     with np.errstate(divide="ignore", invalid="ignore"):
         s = -probs * logprobs
     s = np.nan_to_num(s, nan=0.0, posinf=0.0, neginf=0.0)

@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from artefactual.calibration.train_calibration import train_calibration
+from artefactual.calibration import train_calibration
 
 
 def test_train_calibration_basic():

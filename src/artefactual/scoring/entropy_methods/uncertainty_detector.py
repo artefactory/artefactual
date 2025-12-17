@@ -4,12 +4,12 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
-from artefactual.preprocessing.openai_parser import (
+from artefactual.preprocessing import (
     is_openai_responses_api,
     process_openai_chat_completion,
     process_openai_responses_api,
+    process_vllm_logprobs,
 )
-from artefactual.preprocessing.vllm_parser import process_vllm_logprobs
 
 
 class UncertaintyDetector(ABC):

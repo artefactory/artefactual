@@ -1,10 +1,11 @@
-from artefactual.preprocessing.vllm_parser import process_vllm_logprobs
+from artefactual.preprocessing import process_vllm_logprobs
 
 
 # Mocks to simulate vLLM structures
 class MockLogprob:
-    def __init__(self, logprob):
+    def __init__(self, logprob, rank=1):
         self.logprob = logprob
+        self.rank = rank
 
 
 class MockCompletionOutput:

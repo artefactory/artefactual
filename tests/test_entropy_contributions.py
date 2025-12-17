@@ -1,6 +1,6 @@
 import numpy as np
 
-from artefactual.scoring.entropy_methods.entropy_contributions import compute_entropy_contributions
+from artefactual.scoring import compute_entropy_contributions
 
 
 class MockLogprob:
