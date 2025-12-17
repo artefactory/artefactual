@@ -56,13 +56,22 @@ class EPR(UncertaintyDetector):
     ) -> tuple[list[float], list[NDArray[np.floating]]]:
         """
         Internal implementation to compute EPR scores.
+
+        Args:
+            outputs: Model outputs. Can be:
+                     - List of vLLM RequestOutput objects.
+                     - OpenAI ChatCompletion object (or dict).
+                     - OpenAI Responses object (or dict).
+
+        Returns:
+            A tuple containing:
+            - List of sequence-level EPR scores.
+            - List of token-level EPR scores (numpy arrays).
         """
         if not outputs:
             return [], []
 
         completions_data = self._parse_outputs(outputs)
-
-        # --- 2. COMPUTATION (Logic Core) ---
 
         completions = [Completion(token_logprobs=data) for data in completions_data]
         seq_scores: list[float] = []
@@ -101,11 +110,13 @@ class EPR(UncertaintyDetector):
     def compute(self, outputs: Any) -> list[float]:
         """
         Compute EPR-based uncertainty scores from a sequence of completions.
+
         Args:
             outputs: Model outputs. Can be:
                      - List of vLLM RequestOutput objects.
                      - OpenAI ChatCompletion object (or dict).
                      - OpenAI Responses object (or dict).
+
         Returns:
             List of sequence-level EPR scores.
         """
@@ -115,25 +126,40 @@ class EPR(UncertaintyDetector):
     def compute_token_scores(self, outputs: Any) -> list[NDArray[np.floating]]:
         """
         Compute token-level EPR scores from a sequence of completions.
+
         Args:
             outputs: Model outputs. Can be:
                      - List of vLLM RequestOutput objects.
                      - OpenAI ChatCompletion object (or dict).
                      - OpenAI Responses object (or dict).
+
         Returns:
             List of token-level EPR scores (numpy arrays).
         """
         return self._compute_impl(outputs)[1]
 
     def _get_default_score(self) -> float:
-        """Returns the default score (calibrated or not)."""
+        """
+        Returns the default score (calibrated or not).
+
+        Returns:
+            The default score.
+        """
         if self.is_calibrated:
             # sigmoid(intercept)
             return 1.0 / (1.0 + np.exp(-self.intercept))
         return 0.0
 
     def _apply_calibration(self, raw_epr: float) -> float:
-        """Applies logistic calibration."""
+        """
+        Applies logistic calibration.
+
+        Args:
+            raw_epr: The raw EPR score.
+
+        Returns:
+            The calibrated score.
+        """
         if self.is_calibrated:
             linear_score = self.coefficient * raw_epr + self.intercept
             return 1.0 / (1.0 + np.exp(-linear_score))

@@ -33,13 +33,14 @@ def save_to_json(data: dict[str, Any] | list[dict[str, Any]], output_file: str) 
 def load_tqa_from_json(
     input_file: str,
 ) -> list[tuple[str, str, str, list[str]]]:
-    """Load the pack data from a JSON file.
+    """
+    Load the pack data from a JSON file.
 
     Args:
         input_file (str): Path to the JSON file
 
     Returns:
-        list: List of (question, answer) tuples
+        List of (question, question_id, short_answer, answer_aliases) tuples.
     """
     input_path = Path(input_file)
     try:
@@ -94,7 +95,6 @@ def convert_bytes_to_str(obj: Any) -> Any:
 
 
 # calibration and weights loading utilities
-# For now the model map stays here, but could be moved to a config file later ?
 MODEL_WEIGHT_MAP = {
     "tiiuae/Falcon3-10B-Instruct": "weights_falcon3.json",
     "mistralai/Mistral-Small-3.1-24B-Instruct-2503": "weights_mistral_small.json",

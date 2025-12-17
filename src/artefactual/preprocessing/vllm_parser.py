@@ -7,12 +7,13 @@ if TYPE_CHECKING:
 def process_vllm_logprobs(outputs: list["RequestOutput"], iterations: int) -> list[dict[int, list[float]]]:
     """
     Processes log probabilities from vllm.chat outputs for a given number of iterations.
+
     Args:
         outputs (list[RequestOutput]): A list containing model output objects, each with log probability data.
         iterations (int): The number of iterations to process, corresponding to the number of output sequences.
     Returns:
         list[dict[int, list[float]]]: A list of dictionaries mapping token indices to lists of log probs
-                                      for each token in the sequence.
+        for each token in the sequence.
     """
 
     if not outputs or not outputs[0].outputs:
