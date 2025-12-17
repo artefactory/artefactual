@@ -14,6 +14,7 @@ class WEPR(UncertaintyDetector):
     def __init__(self, model: str) -> None:
         """
         Initialize the WEPR scorer with weights loaded from the specified source.
+
         Args:
             model: Either a built-in model name or a local file path to load weights from.
         """
@@ -45,6 +46,17 @@ class WEPR(UncertaintyDetector):
     ) -> tuple[list[float], list[NDArray[np.floating]]]:
         """
         Internal implementation to compute WEPR scores.
+
+        Args:
+            outputs: Model outputs. Can be:
+                     - List of vLLM RequestOutput objects.
+                     - OpenAI ChatCompletion object (or dict).
+                     - OpenAI Responses object (or dict).
+
+        Returns:
+            A tuple containing:
+            - List of sequence-level WEPR scores.
+            - List of token-level WEPR scores (numpy arrays).
         """
         if not outputs:
             return [], []
@@ -104,11 +116,13 @@ class WEPR(UncertaintyDetector):
     def compute(self, outputs: Any) -> list[float]:
         """
         Compute WEPR-based uncertainty scores from a sequence of completions.
+
         Args:
             outputs: Model outputs. Can be:
                      - List of vLLM RequestOutput objects.
                      - OpenAI ChatCompletion object (or dict).
                      - OpenAI Responses object (or dict).
+
         Returns:
             List of sequence-level WEPR scores.
         """
@@ -118,11 +132,13 @@ class WEPR(UncertaintyDetector):
     def compute_token_scores(self, outputs: Any) -> list[NDArray[np.floating]]:
         """
         Compute token-level WEPR scores from a sequence of completions.
+
         Args:
             outputs: Model outputs. Can be:
                      - List of vLLM RequestOutput objects.
                      - OpenAI ChatCompletion object (or dict).
                      - OpenAI Responses object (or dict).
+
         Returns:
             List of token-level WEPR scores (numpy arrays).
         """

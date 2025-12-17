@@ -2,6 +2,16 @@ from vllm import LLM
 
 
 def init_llm(model_path: str, seed: int) -> LLM:
+    """
+    Initialize a vLLM LLM instance.
+
+    Args:
+        model_path: Path to the model or model identifier.
+        seed: Random seed for initialization.
+
+    Returns:
+        An initialized LLM object.
+    """
     if model_path.startswith("mistralai/"):
         llm = LLM(
             model=model_path,

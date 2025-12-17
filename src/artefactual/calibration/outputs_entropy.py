@@ -18,7 +18,7 @@ from vllm import LLM, SamplingParams
 
 from artefactual.calibration.helpers.memory import clear_gpu_memory
 from artefactual.calibration.helpers.models import get_model_name, init_llm
-from artefactual.preprocessing.vllm_parser import process_logprobs
+from artefactual.preprocessing.vllm_parser import process_vllm_logprobs
 from artefactual.scoring.entropy_methods.epr import EPR
 from artefactual.utils.io import convert_bytes_to_str, load_tqa_from_json, save_to_json
 
@@ -58,7 +58,19 @@ def _setup_logging(*, log_to_file: bool) -> None:
 
 
 def _process_results(query_data, outputs, iterations: int, epr_scorer: EPR, *, show_logprobs: bool = False) -> dict:
-    """Process outputs and compute EPR scores."""
+    """
+    Process outputs and compute EPR scores.
+
+    Args:
+        query_data: Tuple containing (query, query_id, expected_answer, answer_aliases).
+        outputs: The outputs from the LLM.
+        iterations: Number of iterations.
+        epr_scorer: The EPR scorer instance.
+        show_logprobs: Whether to include token logprobs in the result.
+
+    Returns:
+        A dictionary containing the processed results.
+    """
     query, query_id, expected_answer, answer_aliases = query_data
     list_outputs_text = [output.text for output in outputs[0].outputs]
     expected_answers = [expected_answer, *answer_aliases]
@@ -80,7 +92,7 @@ def _process_results(query_data, outputs, iterations: int, epr_scorer: EPR, *, s
 
     if show_logprobs:
         # Compute per inner token top_k logprobs
-        token_logprob_list: list[dict[int, list[float]]] = process_logprobs(outputs, iterations)
+        token_logprob_list: list[dict[int, list[float]]] = process_vllm_logprobs(outputs, iterations)
         data["token_logprobs"] = token_logprob_list
     return convert_bytes_to_str(data)
 
@@ -91,7 +103,6 @@ def _prepare_messages(pack: list[tuple[str, str, str, list[str]]]) -> list[list[
 
     Args:
         pack (list[tuple[str, str, str, list[str]]]): List of tuples containing (query, query_id, answer, aliases).
-
     Returns:
         list[list[dict[str, str]]]: List of message lists suitable for chat models.
     """
@@ -118,7 +129,6 @@ def generate_entropy_dataset(
         input_path (str | Path): Path to the input dataset.
         output_path (str | Path): Path to save the output dataset.
         config (GenerationConfig): Configuration parameters.
-
     Returns:
         Path: The path to the generated output file.
     """

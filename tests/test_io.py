@@ -20,7 +20,7 @@ def test_save_to_json_with_list():
 
         # Verify file was created and contains correct data
         assert output_file.exists()
-        with open(output_file, encoding="utf-8") as f:
+        with Path(output_file).open(encoding="utf-8") as f:
             loaded_data = json.load(f)
         assert loaded_data == data
 
@@ -45,7 +45,7 @@ def test_save_to_json_with_dict():
 
         # Verify file was created and contains correct data
         assert output_file.exists()
-        with open(output_file, encoding="utf-8") as f:
+        with Path(output_file).open(encoding="utf-8") as f:
             loaded_data = json.load(f)
         assert loaded_data == data
 
@@ -87,7 +87,7 @@ def test_save_to_json_entropy_output_format():
 
         # Verify file was created and contains correct data
         assert output_file.exists()
-        with open(output_file, encoding="utf-8") as f:
+        with Path(output_file).open(encoding="utf-8") as f:
             loaded_data = json.load(f)
 
         # Verify structure

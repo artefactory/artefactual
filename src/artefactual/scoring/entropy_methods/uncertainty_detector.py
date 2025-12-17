@@ -16,10 +16,13 @@ class UncertaintyDetector(ABC):
     """A base class for uncertainty detection methods."""
 
     def __init__(self, k: int = 15) -> None:
-        """Initialize the uncertainty detector.
+        """
+        Initialize the uncertainty detector.
+
         Args:
             k: Number of top log probabilities to consider per token.
                Must be positive. Default is 15.
+
         Raises:
             ValueError: If k is not positive
         """
@@ -54,7 +57,21 @@ class UncertaintyDetector(ABC):
 
     @staticmethod
     def _parse_outputs(outputs: Any) -> list[dict[int, list[float]]]:
-        """Parse different output formats to extract logprobs."""
+        """
+        Parse different output formats to extract logprobs.
+
+        Args:
+            outputs: Model outputs. Can be:
+                     - List of vLLM RequestOutput objects.
+                     - OpenAI ChatCompletion object (or dict).
+                     - OpenAI Responses object (or dict).
+
+        Returns:
+            List of dictionaries mapping token indices to lists of log probs.
+
+        Raises:
+            TypeError: If the output format is not supported.
+        """
         # vLLM parser
         if isinstance(outputs, list) and len(outputs) > 0 and hasattr(outputs[0], "outputs"):
             if not outputs[0].outputs:
@@ -62,12 +79,12 @@ class UncertaintyDetector(ABC):
             iterations = len(outputs[0].outputs)
             return process_vllm_logprobs(outputs, iterations)
 
-        # B. OpenAI parser for classic ChatCompletion
+        # OpenAI parser for classic ChatCompletion
         if hasattr(outputs, "choices") or (isinstance(outputs, dict) and "choices" in outputs):
             choices = outputs.choices if hasattr(outputs, "choices") else outputs["choices"]
             return process_openai_chat_completion(outputs, iterations=len(choices))
 
-        # C. OpenAI parser for Responses API
+        # OpenAI parser for Responses API
         if is_openai_responses_api(outputs):
             return process_openai_responses_api(outputs)
 

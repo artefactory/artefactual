@@ -2,7 +2,17 @@ from typing import Any
 
 
 def _get_val(obj: Any, key: str, default: Any = None) -> Any:
-    """Helper to safely get a value from an object attribute or dict key."""
+    """
+    Safely retrieves a value from an object attribute or a dictionary key.
+
+    Args:
+        obj (Any): The object or dictionary to retrieve the value from.
+        key (str): The attribute name or dictionary key to look up.
+        default (Any, optional): The value to return if the key or attribute is not found. Defaults to None.
+
+    Returns:
+        Any: The retrieved value or the default value.
+    """
     if hasattr(obj, key):
         return getattr(obj, key)
     if isinstance(obj, dict):
@@ -11,7 +21,15 @@ def _get_val(obj: Any, key: str, default: Any = None) -> Any:
 
 
 def _extract_logprobs_from_token(token_data: Any) -> list[float]:
-    """Extracts logprobs from a single token's data."""
+    """
+    Extracts log probabilities from a single token's data structure.
+
+    Args:
+        token_data (Any): The data structure containing token information, expected to have 'top_logprobs'.
+
+    Returns:
+        list[float]: A list of log probability values extracted from the token data.
+    """
     top_logprobs = _get_val(token_data, "top_logprobs", [])
 
     if not top_logprobs:
@@ -26,7 +44,15 @@ def _extract_logprobs_from_token(token_data: Any) -> list[float]:
 
 
 def _process_single_choice(choice: Any) -> dict[int, list[float]]:
-    """Processes logprobs for a single choice object."""
+    """
+    Processes log probabilities for a single choice object from the API response.
+
+    Args:
+        choice (Any): The choice object containing log probability information.
+
+    Returns:
+        dict[int, list[float]]: A dictionary mapping token indices to lists of log probabilities.
+    """
     seq = {}
 
     logprobs_obj = _get_val(choice, "logprobs")
@@ -48,11 +74,14 @@ def _process_single_choice(choice: Any) -> dict[int, list[float]]:
 def process_openai_chat_completion(response: Any, iterations: int) -> list[dict[int, list[float]]]:
     """
     Processes log probabilities from OpenAI Chat Completion (classic 'choices' format).
+
     Args:
-        response: The response object or dictionary from OpenAI API (ChatCompletion).
-        iterations: The number of iterations to process.
+        response (Any): The response object or dictionary from OpenAI API (ChatCompletion).
+        iterations (int): The number of iterations (choices) to process.
+
     Returns:
-        list[dict[int, list[float]]]: A list of dictionaries mapping token indices to lists of log probs.
+        list[dict[int, list[float]]]: A list of dictionaries, where each dictionary maps token indices to lists of
+        log probabilities for a sequence.
     """
     choices = _get_val(response, "choices", [])
     if not choices:
@@ -68,11 +97,16 @@ def process_openai_chat_completion(response: Any, iterations: int) -> list[dict[
     return all_sequences
 
 
-# --- The rest of your code remains unchanged ---
-
-
 def is_openai_responses_api(outputs: Any) -> bool:
-    """Detects the signature of the new OpenAI Responses API."""
+    """
+    Detects if the output follows the signature of the new OpenAI Responses API.
+
+    Args:
+        outputs (Any): The output object or dictionary to inspect.
+
+    Returns:
+        bool: True if the output matches the OpenAI Responses API signature, False otherwise.
+    """
     if hasattr(outputs, "object") and outputs.object == "response":
         return True
     if isinstance(outputs, dict) and outputs.get("object") == "response":
@@ -82,8 +116,16 @@ def is_openai_responses_api(outputs: Any) -> bool:
 
 def process_openai_responses_api(response: Any) -> list[dict[int, list[float]]]:
     """
-    Parser for the 'client.responses.create' API.
-    Structure: response.output -> [item] -> item.content -> [part] -> part.logprobs
+    Parses the response from the 'client.responses.create' API to extract log probabilities.
+
+    Structure expected: response.output -> [item] -> item.content -> [part] -> part.logprobs
+
+    Args:
+        response (Any): The response object from the OpenAI Responses API.
+
+    Returns:
+        list[dict[int, list[float]]]: A list of dictionaries, where each dictionary maps token indices to lists of log
+        probabilities for a sequence.
     """
     extracted_batch = []
     output_list = _get_val(response, "output", [])
@@ -109,7 +151,15 @@ def process_openai_responses_api(response: Any) -> list[dict[int, list[float]]]:
 
 
 def _parse_token_entry(token_entry: Any) -> list[float]:
-    """Parses a single token entry from OpenAI response to extract logprobs."""
+    """
+    Parses a single token entry from an OpenAI response to extract log probabilities.
+
+    Args:
+        token_entry (Any): The token entry object containing log probability data.
+
+    Returns:
+        list[float]: A list of log probabilities associated with the token.
+    """
     top_k = _get_val(token_entry, "top_logprobs", [])
 
     if top_k:
