@@ -4,8 +4,10 @@ permissions:
   pull-requests: write
 
 on:
+  push:
+    branches: [main]  # run when pushing to main
   pull_request:
-    branches: [main]  # run only for PRs targeting main (merge gate)
+    branches: [main]  # run on PRs targeting main
   workflow_dispatch:
 
 jobs:
@@ -33,13 +35,8 @@ jobs:
             pre-commit-3-${{ runner.os }}-
             pre-commit-3-
 
-      - name: Configure SKIP for non-main (skip Ruff on PRs/branches)
-        run: |
-          if [ "${{ github.event_name }}" != "push" ] || [ "${{ github.ref }}" != "refs/heads/main" ]; then
-            echo "SKIP=no-commit-to-branch,ruff-check,ruff-format" >> "$GITHUB_ENV"
-          else
-            echo "SKIP=no-commit-to-branch" >> "$GITHUB_ENV"
-          fi
+      - name: Configure SKIP for pre-commit hooks
+        run: echo "SKIP=no-commit-to-branch" >> "$GITHUB_ENV"
 
       - name: Run pre-commit using uvx
         run: uvx --with pre-commit-uv pre-commit run --all-files

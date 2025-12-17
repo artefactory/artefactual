@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
@@ -15,12 +15,12 @@ repos:
     -   id: mixed-line-ending
 
 -  repo: https://github.com/mwouts/jupytext
-   rev: v1.17.2
+   rev: v1.19.0.dev0
    hooks:
    - id: jupytext
      args: [--sync, pipe]
 -  repo: https://github.com/astral-sh/ruff-pre-commit
-   rev: v0.14.8
+   rev: v0.14.9
    hooks:
    -   id: ruff-check
        types_or: [python, pyi]
@@ -28,14 +28,14 @@ repos:
    -   id: ruff-format
        types_or: [python, pyi]
 - repo: https://github.com/astral-sh/uv-pre-commit
-  rev: 0.7.20
+  rev: 0.9.18
   hooks:
     - id: pip-compile
       args: [--output-file, requirements.txt, pyproject.toml]
       files: ^pyproject.toml$
       language_version: python3.11
 - repo: https://github.com/compilerla/conventional-pre-commit
-  rev: v4.2.0
+  rev: v4.3.0
   hooks:
     - id: conventional-pre-commit
       stages: [commit-msg]
