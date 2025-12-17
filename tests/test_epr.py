@@ -3,7 +3,7 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from artefactual.scoring.entropy_methods.epr import EPR
+from artefactual.scoring import EPR
 
 # Calibration data from src/artefactual/data/calibration_ministral.json
 CALIBRATION_DATA = {"intercept": -2.9149738672340084, "coefficients": {"mean_entropy": 58.16536593597155}}
@@ -17,22 +17,24 @@ def mock_load_calibration():
 
 
 def test_epr_initialization_uncalibrated():
-    epr = EPR()
-    assert not epr.is_calibrated
-    assert epr.intercept == 0.0
-    assert epr.coefficient == 1.0
+    with pytest.raises(ValueError, match="Failed to load calibration"):
+        EPR()
 
 
 def test_epr_initialization_calibrated(mock_load_calibration):
-    epr = EPR(model="test_model")
+    epr = EPR(pretrained_model_name_or_path="test_model")
     assert epr.is_calibrated
     assert epr.intercept == CALIBRATION_DATA["intercept"]
     assert epr.coefficient == CALIBRATION_DATA["coefficients"]["mean_entropy"]
     mock_load_calibration.assert_called_once_with("test_model")
 
 
-def test_epr_compute_uncalibrated():
-    epr = EPR()
+@patch("artefactual.scoring.entropy_methods.epr.load_calibration")
+def test_epr_compute_uncalibrated(mock_load):
+    # Mock identity calibration
+    mock_load.return_value = {"intercept": 0.0, "coefficients": {"mean_entropy": 1.0}}
+    epr = EPR("dummy")
+    epr.is_calibrated = False  # Force uncalibrated to test raw entropy
 
     # Mock output: 1 completion, 1 token, 1 logprob
     # logprob = -1.0 -> p = 0.3678 -> s = -0.3678 * -1.0 = 0.3678
@@ -46,8 +48,9 @@ def test_epr_compute_uncalibrated():
     assert np.isclose(scores[0], expected_entropy, rtol=1e-5)
 
 
-def test_epr_compute_calibrated():
-    epr = EPR(model="test_model")
+def test_epr_compute_calibrated(mock_load_calibration):
+    epr = EPR(pretrained_model_name_or_path="test_model")
+    mock_load_calibration.assert_called_with("test_model")
 
     # Mock output: 1 completion, 1 token, 1 logprob
     # logprob = -1.0 -> entropy ≈ 0.367879
@@ -68,8 +71,9 @@ def test_epr_compute_calibrated():
     assert np.isclose(scores[0], expected_score, rtol=1e-5)
 
 
-def test_epr_compute_token_scores_calibrated():
-    epr = EPR(model="test_model")
+def test_epr_compute_token_scores_calibrated(mock_load_calibration):
+    epr = EPR(pretrained_model_name_or_path="test_model")
+    mock_load_calibration.assert_called_with("test_model")
 
     # Mock output: 1 completion, 2 tokens
     # Token 0: logprob -1.0 -> entropy ≈ 0.367879
@@ -95,8 +99,9 @@ def test_epr_compute_token_scores_calibrated():
     assert np.isclose(token_scores[0][1], expected_1, rtol=1e-5)
 
 
-def test_epr_empty_completion_calibrated():
-    epr = EPR(model="test_model")
+def test_epr_empty_completion_calibrated(mock_load_calibration):
+    epr = EPR(pretrained_model_name_or_path="test_model")
+    mock_load_calibration.assert_called_with("test_model")
 
     # Mock output: 1 completion, 0 tokens
     mock_parsed = [{}]
@@ -113,12 +118,16 @@ def test_epr_empty_completion_calibrated():
     assert np.isclose(scores[0], expected_score, rtol=1e-5)
 
 
-def test_epr_compute_specific_values_from_notebook():
+@patch("artefactual.scoring.entropy_methods.epr.load_calibration")
+def test_epr_compute_specific_values_from_notebook(mock_load):
     """
     Test EPR computation with specific values from a vLLM example.
     Verifies exact entropy values for 2 tokens and their mean.
     """
-    epr = EPR(k=15)  # Ensure k=15 matches the data
+    # Mock identity calibration
+    mock_load.return_value = {"intercept": 0.0, "coefficients": {"mean_entropy": 1.0}}
+    epr = EPR("dummy", k=15)  # Ensure k=15 matches the data
+    epr.is_calibrated = False  # Force uncalibrated to test raw entropy
 
     # Data from notebook
     token1_logprobs = [
@@ -179,3 +188,11 @@ def test_epr_compute_specific_values_from_notebook():
 
         expected_seq = 1.4661989738417134
         assert np.isclose(seq_scores[0], expected_seq, rtol=1e-5)
+
+
+def test_epr_initialization_failure():
+    with patch(
+        "artefactual.scoring.entropy_methods.epr.load_calibration", side_effect=ValueError("Calibration not found")
+    ):
+        with pytest.raises(ValueError, match="Calibration not found"):
+            EPR(pretrained_model_name_or_path="invalid_model")

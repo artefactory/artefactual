@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from beartype import beartype
@@ -20,7 +20,7 @@ class WEPR(UncertaintyDetector):
         """
         weights_data = load_weights(pretrained_model_name_or_path)
         self.intercept = weights_data.get("intercept", 0.0)
-        coeffs = weights_data.get("coefficients", {})
+        coeffs = cast(dict[str, float], weights_data.get("coefficients", {}))
 
         # Determine k from the coefficients (assuming keys like "mean_rank_15")
         # We look for the maximum rank index present in the coefficients
@@ -86,9 +86,7 @@ class WEPR(UncertaintyDetector):
 
             # Token-level WEPR (S_beta): weighted sum across K using mean_weights
             # S_beta = sum(beta_k * s_kj) + beta_0
-            token_wepr = np.zeros(s_kj.shape[0], dtype=np.float32)
-            for token_pos in range(s_kj.shape[0]):
-                token_wepr[token_pos] = np.dot(s_kj[token_pos, :], self.mean_weights) + self.intercept
+            token_wepr = s_kj @ self.mean_weights + self.intercept
 
             # Sequence-level WEPR (Eq 8):
             # 1. Average of token scores S_beta
@@ -97,7 +95,7 @@ class WEPR(UncertaintyDetector):
             # 2. Weighted sum of max contributions per rank
             # Max over tokens for each rank: (K,)
             max_contributions_per_rank = np.max(s_kj, axis=0)
-            max_term = np.dot(max_contributions_per_rank, self.max_weights)
+            max_term = max_contributions_per_rank @ self.max_weights
 
             sentence_wepr = mean_term + max_term
 

@@ -1,7 +1,7 @@
-"""Scoring module for artefactual library.
+"""Entropy methods package exports.
 
-This module re-exports commonly used scoring classes and helpers so they can be
-imported from `artefactual.scoring` instead of deep submodules.
+Expose commonly used functions and classes at the package level so users
+don't need to import from deep submodules.
 """
 
 from artefactual.scoring.entropy_methods.entropy_contributions import compute_entropy_contributions

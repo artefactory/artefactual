@@ -7,8 +7,7 @@ from vllm import LLM, SamplingParams
 _current_dir = Path(__file__).resolve().parent
 sys.path.append(str(_current_dir.parent / "src"))
 
-from artefactual.scoring.entropy_methods.epr import EPR  # noqa: E402
-from artefactual.scoring.entropy_methods.wepr import WEPR  # noqa: E402
+from artefactual.scoring import EPR, WEPR  # noqa: E402
 
 
 def vllm_example() -> None:

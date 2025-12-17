@@ -1,3 +1,5 @@
 """Data loading and processing utilities for artefactual."""
 
-__all__ = []
+from artefactual.data.data_model import Completion, Result, TokenLogprob
+
+__all__ = ["Completion", "Result", "TokenLogprob"]

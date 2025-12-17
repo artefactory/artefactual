@@ -2,18 +2,24 @@
 
 from dataclasses import dataclass
 from typing import Any
+from unittest.mock import patch
 
 import numpy as np
 import pytest
 from numpy.typing import NDArray
 
-from artefactual.scoring.entropy_methods.entropy_contributions import compute_entropy_contributions
-from artefactual.scoring.entropy_methods.epr import EPR
-from artefactual.scoring.entropy_methods.uncertainty_detector import UncertaintyDetector
+from artefactual.scoring import EPR, UncertaintyDetector, compute_entropy_contributions
 
 # ============================================================================
 # Test Fixtures and Mock Objects
 # ============================================================================
+
+
+@pytest.fixture
+def mock_calibration():
+    with patch("artefactual.scoring.entropy_methods.epr.load_calibration") as mock:
+        mock.return_value = {"intercept": 0.0, "coefficients": {"mean_entropy": 1.0}}
+        yield mock
 
 
 @dataclass
@@ -21,6 +27,7 @@ class MockLogprob:
     """Mock logprob object that mimics vLLM's Logprob structure."""
 
     logprob: float
+    rank: int = 1
 
 
 @dataclass
@@ -220,9 +227,10 @@ def test_entropy_contributions_empty_dict():
 # ============================================================================
 
 
-def test_compute_epr_single_output():
+def test_compute_epr_single_output(mock_calibration):
     """Test EPR computation with a single output."""
-    detector = EPR(k=3)
+    _ = mock_calibration
+    detector = EPR("dummy", k=3)
 
     logprobs_seq = [
         [
@@ -238,9 +246,10 @@ def test_compute_epr_single_output():
     assert scores[0] >= 0
 
 
-def test_compute_epr_multiple_outputs():
+def test_compute_epr_multiple_outputs(mock_calibration):
     """Test EPR computation with multiple outputs."""
-    detector = EPR(k=3)
+    _ = mock_calibration
+    detector = EPR("dummy", k=3)
 
     logprobs_seqs = [
         [{"A": -0.5, "B": -1.5}, {"C": -0.3, "D": -1.2}],
@@ -255,9 +264,10 @@ def test_compute_epr_multiple_outputs():
     assert all(s >= 0 for s in scores)
 
 
-def test_compute_epr_with_token_scores():
+def test_compute_epr_with_token_scores(mock_calibration):
     """Test EPR computation with per-token scores."""
-    detector = EPR(k=3)
+    _ = mock_calibration
+    detector = EPR("dummy", k=3)
 
     logprobs_seq = [
         [
@@ -278,26 +288,30 @@ def test_compute_epr_with_token_scores():
     assert np.all(token_scores[0] >= 0)
 
 
-def test_compute_epr_empty_outputs():
+def test_compute_epr_empty_outputs(mock_calibration):
     """Test that EPR computation fails with empty outputs."""
-    detector = EPR()
+    _ = mock_calibration
+    detector = EPR("dummy")
 
     scores = detector.compute([])
     assert scores == []
 
 
-def test_compute_epr_output_without_completions():
+def test_compute_epr_output_without_completions(mock_calibration):
     """Test EPR computation with output that has no completions."""
-    detector = EPR(k=3)
+    _ = mock_calibration
+    detector = EPR("dummy", k=3)
 
     # Empty list of completions
     scores = detector.compute([])
     assert len(scores) == 0
 
 
-def test_compute_epr_output_without_logprobs():
+def test_compute_epr_output_without_logprobs(mock_calibration):
     """Test EPR computation with output that has no logprobs."""
-    detector = EPR(k=3)
+    _ = mock_calibration
+    detector = EPR("dummy", k=3)
+    detector.is_calibrated = False
 
     # Create output with no logprobs
     request_output = create_request_output([[]])
@@ -307,9 +321,10 @@ def test_compute_epr_output_without_logprobs():
     assert scores[0] == 0.0
 
 
-def test_compute_epr_high_vs_low_confidence():
+def test_compute_epr_high_vs_low_confidence(mock_calibration):
     """Test that EPR distinguishes between high and low confidence outputs."""
-    detector = EPR(k=5)
+    _ = mock_calibration
+    detector = EPR("dummy", k=5)
 
     # High confidence: one dominant probability
     high_conf_logprobs = [
@@ -362,9 +377,10 @@ def test_entropy_contributions_mixed_types():
     assert np.all(result >= 0)
 
 
-def test_numerical_stability():
+def test_numerical_stability(mock_calibration):
     """Test numerical stability with extreme values."""
-    detector = EPR(k=5)
+    _ = mock_calibration
+    detector = EPR("dummy", k=5)
 
     # Test with very small and very large (negative) logprobs
     extreme_logprobs = [
@@ -380,9 +396,10 @@ def test_numerical_stability():
     assert scores[0] >= 0
 
 
-def test_compute_epr_multiple_completions_in_one_request():
+def test_compute_epr_multiple_completions_in_one_request(mock_calibration):
     """Test EPR computation when a single request has multiple completions (n > 1)."""
-    detector = EPR(k=3)
+    _ = mock_calibration
+    detector = EPR("dummy", k=3)
 
     logprobs_seqs = [
         [{"A": -0.5, "B": -1.5}],
@@ -407,9 +424,10 @@ def test_compute_epr_multiple_completions_in_one_request():
     assert len(token_scores[1]) > 0, "Second completion should have token scores"
 
 
-def test_compute_epr_request_output_with_empty_outputs_list():
+def test_compute_epr_request_output_with_empty_outputs_list(mock_calibration):
     """Test EPR computation when outputs[0].outputs is an empty list."""
-    detector = EPR(k=3)
+    _ = mock_calibration
+    detector = EPR("dummy", k=3)
 
     # Create a MockRequestOutput with an empty outputs list
     mock_request_output = MockRequestOutput(outputs=[])
