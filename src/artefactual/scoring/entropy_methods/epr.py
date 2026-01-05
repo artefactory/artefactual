@@ -46,9 +46,10 @@ class EPR(UncertaintyDetector):
             msg = f"Failed to load calibration for '{pretrained_model_name_or_path}': {exc}"
             raise ValueError(msg) from exc
 
-        self.intercept = calibration_data.get("intercept", 0.0)
-        coeffs: dict[str, float] = cast(dict[str, float], calibration_data.get("coefficients", {}))
-        self.coefficient = coeffs.get("mean_entropy", 1.0)
+        self.intercept = float(calibration_data.get("intercept", 0.0))
+        coeffs_raw = calibration_data.get("coefficients", {})
+        coeffs: dict[str, float] = coeffs_raw if isinstance(coeffs_raw, dict) else {}
+        self.coefficient = float(coeffs.get("mean_entropy", 1.0))
         self.is_calibrated = True
 
     def _compute_impl(
