@@ -61,7 +61,7 @@ from artefactual.scoring import EPR, WEPR
 
 # Use precomputed calibration (model keys are defined in the registry)
 epr = EPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")
-wepr = WEPR("mistralai/Ministral-8B-Instruct-2410")
+wepr = WEPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")
 
 # Example: using an OpenAI Responses-like structure (minimal illustrative example)
 fake_responses = {
