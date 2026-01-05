@@ -16,8 +16,8 @@ def mock_load_calibration():
         yield mock
 
 
-def test_epr_initialization_uncalibrated():
-    with pytest.raises(ValueError, match="Failed to load calibration"):
+def test_epr_initialization_no_path():
+    with pytest.raises(ValueError, match="pretrained_model_name_or_path is required"):
         EPR()
 
 
