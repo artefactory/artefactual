@@ -18,17 +18,17 @@ The library includes pre-computed calibration coefficients and weights for a set
 - **Minimal (core) install** — For most users who only want to compute EPR/WEPR using the precomputed files shipped in the package:
 
 ```bash
-pip install -r requirements.txt
+uv sync
 # or for editable development install:
-pip install -e .
+uv pip install -e .
 ```
 
 - **With calibration (full) install** — If you plan to run the calibration pipeline or train WEPR/EPR coefficients, install the `calibration` extra to pull heavier ML tooling and platform-specific dependencies:
 
 ```bash
-pip install -e '.[calibration]'
+uv pip install -e '.[calibration]'
 # or non-editable:
-pip install '.[calibration]'
+uv pip install '.[calibration]'
 ```
 
 *Note*: Typical packages included in this installation method are `scikit-learn` (training), `vllm` (model generation), `ray` (optional distributed processing), `pandas`, `numpy`, and `tqdm`. Installing these may require system-level libraries or CUDA support depending on your environment.

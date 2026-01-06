@@ -1,4 +1,3 @@
-import warnings
 from typing import Any
 
 import numpy as np
@@ -21,34 +20,37 @@ class EPR(UncertaintyDetector):
     - OpenAI Responses API (new 'output' format)
     """
 
-    def __init__(self, model: str | None = None, k: int = 15) -> None:
+    def __init__(self, pretrained_model_name_or_path: str | None = None, k: int = 15) -> None:
         """
         Initialize the EPR scorer.
 
         Args:
-            model: Optional model name or path to load calibration coefficients.
-                   If None, raw EPR scores are returned (uncalibrated).
+            pretrained_model_name_or_path: Model name or path to load calibration coefficients.
+                   This argument is required — an error is raised if it is missing or invalid.
             k: Number of top log probabilities to consider (default: 15).
+        Raises:
+            ValueError: If `pretrained_model_name_or_path` is not provided or calibration cannot be loaded.
         """
         super().__init__(k=k)
         self.intercept = 0.0
         self.coefficient = 1.0
         self.is_calibrated = False
 
-        if model:
-            try:
-                calibration_data = load_calibration(model)
-                self.intercept = float(calibration_data.get("intercept", 0.0))
-                coeffs_raw = calibration_data.get("coefficients", {})
-                coeffs: dict[str, float] = coeffs_raw if isinstance(coeffs_raw, dict) else {}
-                self.coefficient = float(coeffs.get("mean_entropy", 1.0))
-                self.is_calibrated = True
-            except ValueError:
-                warnings.warn(
-                    f"Could not load calibration for model '{model}'. Proceeding with uncalibrated scores.",
-                    UserWarning,
-                    stacklevel=2,
-                )
+        if pretrained_model_name_or_path is None:
+            msg = "pretrained_model_name_or_path is required"
+            raise ValueError(msg)
+
+        try:
+            calibration_data: dict[str, Any] = load_calibration(pretrained_model_name_or_path)
+        except Exception as exc:
+            msg = f"Failed to load calibration for '{pretrained_model_name_or_path}': {exc}"
+            raise ValueError(msg) from exc
+
+        self.intercept = float(calibration_data.get("intercept", 0.0))
+        coeffs_raw = calibration_data.get("coefficients", {})
+        coeffs: dict[str, float] = coeffs_raw if isinstance(coeffs_raw, dict) else {}
+        self.coefficient = float(coeffs.get("mean_entropy", 1.0))
+        self.is_calibrated = True
 
     def _compute_impl(
         self,
@@ -93,16 +95,16 @@ class EPR(UncertaintyDetector):
             # Vectorized Entropy Calculation
             s_kj = compute_entropy_contributions(logprobs_list, self.k)
 
-            # Sum over K (Token EPR)
-            token_epr = s_kj.sum(axis=1)
+            # sum over rank K (Token EPR)
+            token_epr = np.sum(s_kj, axis=1)  # shape = (num_tokens_in_sequence)
 
             # Mean over sequence (Sequence EPR)
             # Make sure to cast to float !
-            seq_epr = float(token_epr.mean()) if token_epr.size > 0 else 0.0
+            seq_epr = float(np.mean(token_epr)) if token_epr.size > 0 else 0.0
 
             seq_scores.append(self._apply_calibration(seq_epr))
 
-            token_scores.append(token_epr)
+            token_scores.append(self._apply_calibration(token_epr))
 
         return seq_scores, token_scores
 
@@ -150,15 +152,20 @@ class EPR(UncertaintyDetector):
             return 1.0 / (1.0 + np.exp(-self.intercept))
         return 0.0
 
-    def _apply_calibration(self, raw_epr: float) -> float:
+    def _apply_calibration(self, raw_epr: float | NDArray[np.floating]) -> float | NDArray[np.floating]:
         """
-        Applies logistic calibration.
-
+        Apply logistic calibration to a raw EPR score or array of scores.
+        The calibration uses a linear transformation followed by a sigmoid:
+            calibrated = sigmoid(coefficient * raw_epr + intercept)
+        If ``self.is_calibrated`` is ``False``, the input is returned unchanged.
         Args:
-            raw_epr: The raw EPR score.
-
+            raw_epr: Raw EPR value(s). May be a single float (sequence-level score)
+                or a NumPy array of floats (token-level scores). NumPy broadcasting
+                is used so the calibration is applied element-wise to arrays.
         Returns:
-            The calibrated score.
+            A calibrated score with the same shape as ``raw_epr``:
+            - If ``raw_epr`` is a float, returns a single calibrated float.
+            - If ``raw_epr`` is an NDArray, returns an NDArray of calibrated scores.
         """
         if self.is_calibrated:
             linear_score = self.coefficient * raw_epr + self.intercept

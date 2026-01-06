@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from beartype import beartype
@@ -11,17 +11,16 @@ from artefactual.utils.io import load_weights
 
 
 class WEPR(UncertaintyDetector):
-    def __init__(self, model: str) -> None:
+    def __init__(self, pretrained_model_name_or_path: str) -> None:
         """
         Initialize the WEPR scorer with weights loaded from the specified source.
 
         Args:
-            model: Either a built-in model name or a local file path to load weights from.
+            pretrained_model_name_or_path: Either a built-in model name or a local file path to load weights from.
         """
-        weights_data = load_weights(model)
-        self.intercept = float(weights_data.get("intercept", 0.0))
-        coeffs_raw = weights_data.get("coefficients", {})
-        coeffs: dict[str, float] = coeffs_raw if isinstance(coeffs_raw, dict) else {}
+        weights_data = load_weights(pretrained_model_name_or_path)
+        self.intercept = weights_data.get("intercept", 0.0)
+        coeffs = cast(dict[str, float], weights_data.get("coefficients", {}))
 
         # Determine k from the coefficients (assuming keys like "mean_rank_15")
         # We look for the maximum rank index present in the coefficients
@@ -82,11 +81,11 @@ class WEPR(UncertaintyDetector):
             logprobs_list = [token_logprobs_dict[i] for i in sorted_indices]
 
             # Compute entropy contributions in a vectorized manner
-            # Input shape: (num_tokens, K)
+            # Input shape: (num_tokens_in_sequence, K)
             s_kj = compute_entropy_contributions(logprobs_list, self.k)
 
-            # Token-level WEPR (S_beta): weighted sum across K using mean_weights + intercept
-            # Eq (7): S_beta = beta_0 + sum(beta_k * s_kj)
+            # Token-level WEPR (S_beta): weighted sum across K using mean_weights
+            # S_beta = sum(beta_k * s_kj) + beta_0
             token_wepr = s_kj @ self.mean_weights + self.intercept
 
             # Sequence-level WEPR (Eq 8):

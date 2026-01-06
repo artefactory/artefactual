@@ -10,17 +10,17 @@ Uses VLLM API to generate outputs and process log probabilities.
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 import torch
 from pydantic import BaseModel
 from tqdm import tqdm
 from vllm import LLM, SamplingParams
 
-from artefactual.calibration.helpers.memory import clear_gpu_memory
-from artefactual.calibration.helpers.models import get_model_name, init_llm
-from artefactual.preprocessing.vllm_parser import process_vllm_logprobs
-from artefactual.scoring.entropy_methods.epr import EPR
-from artefactual.utils.io import convert_bytes_to_str, load_tqa_from_json, save_to_json
+from artefactual.calibration import clear_gpu_memory, get_model_name, init_llm
+from artefactual.preprocessing import process_vllm_logprobs
+from artefactual.scoring import EPR
+from artefactual.utils import convert_bytes_to_str, load_tqa_from_json, save_to_json
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,9 @@ def _setup_logging(*, log_to_file: bool) -> None:
         logging.getLogger("").setLevel(logging.INFO)
 
 
-def _process_results(query_data, outputs, iterations: int, epr_scorer: EPR, *, show_logprobs: bool = False) -> dict:
+def _process_results(
+    query_data, outputs, iterations: int, epr_scorer: EPR, *, show_logprobs: bool = False
+) -> dict[str, Any]:
     """
     Process outputs and compute EPR scores.
 

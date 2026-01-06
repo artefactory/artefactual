@@ -140,7 +140,7 @@ def test_rate_answers(mock_init_llm):
         ]
     }
 
-    with patch("builtins.open", mock_open(read_data=json.dumps(input_data))):
+    with patch("pathlib.Path.open", mock_open(read_data=json.dumps(input_data))):
         config = RatingConfig(input_file="dummy.json")
         df = rate_answers(config)
 
@@ -202,7 +202,7 @@ def test_rate_answers_invalid_items_skipped(mock_init_llm):
         ]
     }
 
-    with patch("builtins.open", mock_open(read_data=json.dumps(input_data))):
+    with patch("pathlib.Path.open", mock_open(read_data=json.dumps(input_data))):
         config = RatingConfig(input_file="dummy.json")
         df = rate_answers(config)
 
