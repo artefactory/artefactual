@@ -61,6 +61,7 @@ dev = [
     "hypothesis>=6.127.8",
     "ruff>=0.14.8",
     "ty>=0.0.1a32",
+    "pre-commit>=4.0.0",
 ]
 
 [tool.codespell]

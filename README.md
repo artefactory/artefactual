@@ -13,17 +13,17 @@ The library includes pre-computed calibration coefficients and weights for a set
 - **Minimal (core) install** — For most users who only want to compute EPR/WEPR using the precomputed files shipped in the package:
 
 ```bash
-pip install -r requirements.txt
+uv sync
 # or for editable development install:
-pip install -e .
+uv pip install -e .
 ```
 
 - **With calibration (full) install** — If you plan to run the calibration pipeline or train WEPR/EPR coefficients, install the `calibration` extra to pull heavier ML tooling and platform-specific dependencies:
 
 ```bash
-pip install -e '.[calibration]'
+uv pip install -e '.[calibration]'
 # or non-editable:
-pip install '.[calibration]'
+uv pip install '.[calibration]'
 ```
 
 Notes:
@@ -49,20 +49,19 @@ Notes:
 1) Install
 
 ```bash
-pip install -r requirements.txt
+uv sync
 # or (for development):
-pip install -e .
+uv pip install -e .
 ```
 
 2) Basic usage (sequence-level scores)
 
 ```python
-from artefactual.scoring.entropy_methods.epr import EPR
-from artefactual.scoring.entropy_methods.wepr import WEPR
+from artefactual.scoring import EPR, WEPR
 
 # Use precomputed calibration (model keys are defined in the registry)
-epr = EPR(model="mistralai/Ministral-8B-Instruct-2410")
-wepr = WEPR("mistralai/Ministral-8B-Instruct-2410")
+epr = EPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")
+wepr = WEPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")
 
 # Example: using an OpenAI Responses-like structure (minimal illustrative example)
 fake_responses = {
@@ -94,24 +93,24 @@ print("WEPR sequence scores:", seq_scores_wepr)
 ```
 
 Notes:
-- `EPR(model=...)` attempts to load calibration coefficients via `artefactual.utils.io.load_calibration` and will silently fall back to uncalibrated raw EPR scores if calibration is not found.
-- `WEPR(model)` requires a weight source (either a known model key from the registry or a local JSON file) and will raise a `ValueError` if weights cannot be found.
+- `EPR(pretrained_model_name_or_path=...)` attempts to load calibration coefficients via `artefactual.utils.io.load_calibration`.
+- `WEPR(pretrained_model_name_or_path)` requires a weight source (either a known model key from the registry or a local JSON file) and will raise a `ValueError` if weights cannot be found.
 
 **Registry / Precomputed files**
 
 Artefactual ships a small registry which maps canonical model identifiers to precomputed JSON files. These mappings are available in `src/artefactual/utils/io.py` under `MODEL_WEIGHT_MAP` and `MODEL_CALIBRATION_MAP`.
 
-You can pass one of those strings directly to `EPR` or `WEPR` constructors (e.g., `EPR(model="mistralai/Ministral-8B-Instruct-2410")`). Under the hood the package reads `src/artefactual/data/<file>.json` via `importlib.resources`.
+You can pass one of those strings directly to `EPR` or `WEPR` constructors (e.g., `EPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")`). Under the hood the package reads `src/artefactual/data/<file>.json` via `importlib.resources`.
 
 If you prefer to provide a custom calibration or weight file, pass a filesystem path (e.g., `WEPR('/path/to/my_weights.json')`). See `artefactual.utils.io.load_weights` and `load_calibration` for the exact behavior.
 
 **API Reference (minimal)**
 
-- `EPR(model: Optional[str] = None, k: int = 15)`
-  - `compute(outputs) -> list[float]` — Returns sequence-level EPR scores (calibrated to probabilities if `model` was provided and calibration was found).
+- `EPR(pretrained_model_name_or_path: str, k: int = 15)`
+  - `compute(outputs) -> list[float]` — Returns sequence-level EPR scores (calibrated to probabilities).
   - `compute_token_scores(outputs) -> list[np.ndarray]` — Token-level EPR contributions.
 
-- `WEPR(model: str)`
+- `WEPR(pretrained_model_name_or_path: str)`
   - `compute(outputs) -> list[float]` — Sequence-level calibrated WEPR probabilities.
   - `compute_token_scores(outputs) -> list[np.ndarray]` — Token-level calibrated probabilities.
 

@@ -10,7 +10,7 @@ import pandas as pd
 from pydantic import BaseModel, ValidationError
 from vllm import SamplingParams
 
-from artefactual.calibration.helpers.models import init_llm
+from artefactual.calibration import init_llm
 
 logger = logging.getLogger(__name__)
 

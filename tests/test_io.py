@@ -4,7 +4,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from artefactual.utils.io import save_to_json
+from artefactual.utils import save_to_json
 
 
 def test_save_to_json_with_list():
