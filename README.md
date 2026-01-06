@@ -1,4 +1,4 @@
-**Why Artefactual?**
+# Artefactual
 
 Artefactual is a lightweight Python package for measuring model hallucination risk using entropy-based metrics. It is:
 
@@ -13,9 +13,7 @@ The package provides two primary uncertainty detectors:
 
 The library includes pre-computed calibration coefficients and weights for a set of popular models so data scientists can use EPR/WEPR out-of-the-box without running a calibration pipeline.
 
-**Installation**
-
-1) Install
+## Installation
 
 - **Minimal (core) install** — For most users who only want to compute EPR/WEPR using the precomputed files shipped in the package:
 
@@ -33,9 +31,9 @@ pip install -e '.[calibration]'
 pip install '.[calibration]'
 ```
 
-Note: Typical packages included in this installation method are `scikit-learn` (training), `vllm` (model generation), `ray` (optional distributed processing), `pandas`, `numpy`, and `tqdm`. Installing these may require system-level libraries or CUDA support depending on your environment.
+*Note*: Typical packages included in this installation method are `scikit-learn` (training), `vllm` (model generation), `ray` (optional distributed processing), `pandas`, `numpy`, and `tqdm`. Installing these may require system-level libraries or CUDA support depending on your environment.
 
-2) Basic usage (sequence-level scores)
+## Basic usage (sequence-level scores)
 
 ```python
 # Example: using an OpenAI Responses-like structure (minimal illustrative example)
@@ -56,7 +54,7 @@ fake_responses = {
 }
 ```
 
-EPR example:
+### EPR example:
 
 ```python
 from artefactual.scoring.entropy_methods.epr import EPR
@@ -73,7 +71,7 @@ token_scores_epr = epr.compute_token_scores(fake_responses)
 print("EPR sequence scores:", seq_scores_epr)
 ```
 
-WEPR example:
+### WEPR example:
 
 ```python
 from artefactual.scoring.entropy_methods.wepr import WEPR
@@ -90,24 +88,22 @@ token_scores_wepr = wepr.compute_token_scores(fake_responses)
 print("WEPR sequence scores:", seq_scores_wepr)
 ```
 
-Notes:
+*Notes*:
 - `EPR(model=...)` attempts to load calibration coefficients via `artefactual.utils.io.load_calibration` and will silently fall back to uncalibrated raw EPR scores if calibration is not found.
 - `WEPR(model)` requires a weight source (either a known model key from the registry or a local JSON file) and will raise a `ValueError` if weights cannot be found.
 - Both `EPR.compute(...)` and `WEPR.compute(...)` return lists because the methods accept batch-style inputs (the top-level structure may contain multiple response objects). If you pass a single response object you'll receive a single-element list — index the first element (for example, `seq_scores_epr[0]` or `seq_scores_wepr[0]`) to obtain a single float probability.
 
 
 
-**Contents**
+## Contents
 
-- **`src/artefactual/scoring/entropy_methods/epr.py`** — EPR implementation with `EPR.compute(...)` and `EPR.compute_token_scores(...)`.
-- **`src/artefactual/scoring/entropy_methods/wepr.py`** — WEPR implementation with `WEPR.compute(...)` and `WEPR.compute_token_scores(...)`.
-- **`src/artefactual/utils/io.py`** — convenience loaders `load_weights(...)` and `load_calibration(...)` and internal registry mapping model ids to JSON files.
-- **Precomputed data**: see `src/artefactual/data/*.json` (e.g. `weights_ministral.json`, `calibration_ministral.json`).
-- **Examples**: `examples/epr_usage_demo.py` and `examples/calibration_script.py` demonstrate usage and the calibration pipeline.
+### Examples
+
+ Some examples and dummy scripts are available, such as `examples/epr_usage_demo.py` and `examples/calibration_script.py`, that demonstrate basic usage and the calibration pipeline.
 
 
 
-**Registry / Precomputed files**
+### Registry / Precomputed files
 
 Artefactual ships a small registry which maps canonical model identifiers to precomputed JSON files. These mappings are available in `src/artefactual/utils/io.py` under `MODEL_WEIGHT_MAP` and `MODEL_CALIBRATION_MAP`.
 
@@ -115,12 +111,7 @@ You can pass one of those strings directly to `EPR` or `WEPR` constructors (e.g.
 
 If you prefer to provide a custom calibration or weight file, pass a filesystem path (e.g., `WEPR('/path/to/my_weights.json')`). See `artefactual.utils.io.load_weights` and `load_calibration` for the exact behavior.
 
-**Examples and Convenience Files**
-
-- `examples/epr_usage_demo.py`: a small demonstration of computing EPR on sample inputs.
-- `sample_qa_data.json` and `outputs/sample_qa_data_Ministral-8B-Instruct-2410_entropy.json`: example data and exported results used for demonstrations and tests.
-
-**Advanced: Calibration pipeline (for deep usage)**
+### Advanced: Calibration pipeline (for deep usage)
 
 The calibration pipeline in this package produces the `weights_*.json` and `calibration_*.json` files used to turn raw entropy scores into calibrated probabilities. The implemented flow (all modules live under `src/artefactual/calibration`) is:
 
@@ -141,16 +132,28 @@ The calibration pipeline in this package produces the `weights_*.json` and `cali
 
 5. Add the produced `weights_*.json` or `calibration_*.json` to the package data registry (or point `EPR`/`WEPR` at the local file) so `EPR(model=...)` / `WEPR(...)` can load the calibration when scoring.
 
-Important notes for calibration:
+*Important notes for calibration*:
 
 - The pipeline requires to use a LLM-as-a-judge, which can be chosen by the user (default is "mistralai/Ministral-8B-Instruct-2410").
 - WEPR training learns multiple coefficient groups (e.g., `mean_rank_i` and `max_rank_i`) while EPR calibration is a single-intercept plus mean-entropy coefficient.
 - See the modules under `src/artefactual/calibration` for implementation details and plotting utilities.
 
-**Testing**
+## Citation
 
-Run the package tests using pytest:
+If you consider `artefactual` or any of its feature useful for your research, consider citing our paper, accepted for publication at ECIR 2026:
 
-```bash
-pytest -q
 ```
+@misc{moslonka2025learnedhallucinationdetectionblackbox,
+      title={Learned Hallucination Detection in Black-Box LLMs using Token-level Entropy Production Rate},
+      author={Charles Moslonka and Hicham Randrianarivo and Arthur Garnier and Emmanuel Malherbe},
+      year={2025},
+      eprint={2509.04492},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2509.04492},
+}
+```
+
+## License
+
+The use of this software is under the MIT license, with no limitation of usage, including for commercial applications.
