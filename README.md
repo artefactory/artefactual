@@ -1,14 +1,19 @@
+# Artefactual
 
-**Artefactual**
+Artefactual is a lightweight Python package for measuring model hallucination risk using entropy-based metrics. It is:
 
-Artefactual is a lightweight Python package for measuring model hallucination risk using entropy-based metrics. It provides two primary uncertainty detectors:
+- **Practical**: Precomputed calibration for several model families is included in `src/artefactual/data` and can be used by model name.
+- **Flexible**: Works with vLLM, OpenAI Chat Completions, and the OpenAI Responses API formats.
+- **Detailed outputs**: Compute both sequence-level and token-level uncertainty scores to power downstream pipelines (e.g., answer filtering, reranking, human-in-the-loop triggers).
+
+The package provides two primary uncertainty detectors:
 
 - **EPR (Entropy Production Rate)**: a token- and sequence-level entropy-based metric exposing raw and (optionally) calibrated probabilities.
 - **WEPR (Weighted EPR)**: a calibrated, learned weighted combination of entropy contributions yielding sequence- and token-level probabilities of hallucination.
 
 The library includes pre-computed calibration coefficients and weights for a set of popular models so data scientists can use EPR/WEPR out-of-the-box without running a calibration pipeline.
 
-**Installation**
+## Installation
 
 - **Minimal (core) install** — For most users who only want to compute EPR/WEPR using the precomputed files shipped in the package:
 
@@ -26,43 +31,11 @@ uv pip install -e '.[calibration]'
 uv pip install '.[calibration]'
 ```
 
-Notes:
-- The `calibration` extra is defined in `pyproject.toml` under `[project.optional-dependencies]` and includes packages such as `scikit-learn`, `ray`, `matplotlib`, `vllm` (platform-gated), and `torch`.
-- If you only need the included precomputed calibration/weights files in `src/artefactual/data`, the minimal install is sufficient and much lighter.
+*Note*: Typical packages included in this installation method are `scikit-learn` (training), `vllm` (model generation), `ray` (optional distributed processing), `pandas`, `numpy`, and `tqdm`. Installing these may require system-level libraries or CUDA support depending on your environment.
 
-**Why Artefactual?**
-
-- **Practical**: Precomputed calibration for several model families is included in `src/artefactual/data` and can be used by model name.
-- **Flexible**: Works with vLLM, OpenAI Chat Completions, and the OpenAI Responses API formats.
-- **Detailed outputs**: Compute both sequence-level and token-level uncertainty scores to power downstream pipelines (e.g., answer filtering, reranking, human-in-the-loop triggers).
-
-**Contents**
-
-- **`src/artefactual/scoring/entropy_methods/epr.py`** — EPR implementation with `EPR.compute(...)` and `EPR.compute_token_scores(...)`.
-- **`src/artefactual/scoring/entropy_methods/wepr.py`** — WEPR implementation with `WEPR.compute(...)` and `WEPR.compute_token_scores(...)`.
-- **`src/artefactual/utils/io.py`** — convenience loaders `load_weights(...)` and `load_calibration(...)` and internal registry mapping model ids to JSON files.
-- **Precomputed data**: see `src/artefactual/data/*.json` (e.g. `weights_ministral.json`, `calibration_ministral.json`).
-- **Examples**: `examples/epr_usage_demo.py` and `examples/calibration_script.py` demonstrate usage and the calibration pipeline.
-
-**Quick Start**
-
-1) Install
-
-```bash
-uv sync
-# or (for development):
-uv pip install -e .
-```
-
-2) Basic usage (sequence-level scores)
+## Basic usage (sequence-level scores)
 
 ```python
-from artefactual.scoring import EPR, WEPR
-
-# Use precomputed calibration (model keys are defined in the registry)
-epr = EPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")
-wepr = WEPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")
-
 # Example: using an OpenAI Responses-like structure (minimal illustrative example)
 fake_responses = {
 	"object": "response",
@@ -79,76 +52,108 @@ fake_responses = {
 		}
 	]
 }
+```
+
+### EPR example:
+
+```python
+from artefactual.scoring.entropy_methods.epr import EPR
+
+# Use precomputed calibration (model keys are defined in the registry)
+epr = EPR(model="mistralai/Ministral-8B-Instruct-2410")
 
 # Compute sequence-level calibrated probabilities (list of floats)
 seq_scores_epr = epr.compute(fake_responses)
-seq_scores_wepr = wepr.compute(fake_responses)
 
 # Compute token-level scores (list of numpy arrays)
 token_scores_epr = epr.compute_token_scores(fake_responses)
-token_scores_wepr = wepr.compute_token_scores(fake_responses)
 
 print("EPR sequence scores:", seq_scores_epr)
+```
+
+### WEPR example:
+
+```python
+from artefactual.scoring.entropy_methods.wepr import WEPR
+
+# WEPR requires a weight source (model key or local weights file)
+wepr = WEPR("mistralai/Ministral-8B-Instruct-2410")
+
+# Compute sequence-level calibrated probabilities (list of floats)
+seq_scores_wepr = wepr.compute(fake_responses)
+
+# Compute token-level scores (list of numpy arrays)
+token_scores_wepr = wepr.compute_token_scores(fake_responses)
+
 print("WEPR sequence scores:", seq_scores_wepr)
 ```
 
-Notes:
-- `EPR(pretrained_model_name_or_path=...)` attempts to load calibration coefficients via `artefactual.utils.io.load_calibration`.
-- `WEPR(pretrained_model_name_or_path)` requires a weight source (either a known model key from the registry or a local JSON file) and will raise a `ValueError` if weights cannot be found.
+*Notes*:
+- `EPR(model=...)` attempts to load calibration coefficients via `artefactual.utils.io.load_calibration` and will silently fall back to uncalibrated raw EPR scores if calibration is not found.
+- `WEPR(model)` requires a weight source (either a known model key from the registry or a local JSON file) and will raise a `ValueError` if weights cannot be found.
+- Both `EPR.compute(...)` and `WEPR.compute(...)` return lists because the methods accept batch-style inputs (the top-level structure may contain multiple response objects). If you pass a single response object you'll receive a single-element list — index the first element (for example, `seq_scores_epr[0]` or `seq_scores_wepr[0]`) to obtain a single float probability.
 
-**Registry / Precomputed files**
+
+
+## Contents
+
+### Examples
+
+ Some examples and dummy scripts are available, such as `examples/epr_usage_demo.py` and `examples/calibration_script.py`, that demonstrate basic usage and the calibration pipeline.
+
+
+
+### Registry / Precomputed files
 
 Artefactual ships a small registry which maps canonical model identifiers to precomputed JSON files. These mappings are available in `src/artefactual/utils/io.py` under `MODEL_WEIGHT_MAP` and `MODEL_CALIBRATION_MAP`.
 
-You can pass one of those strings directly to `EPR` or `WEPR` constructors (e.g., `EPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")`). Under the hood the package reads `src/artefactual/data/<file>.json` via `importlib.resources`.
+You can pass one of those strings directly to `EPR` or `WEPR` constructors (e.g., `EPR(model="mistralai/Ministral-8B-Instruct-2410")`). Under the hood the package reads `src/artefactual/data/<file>.json` via `importlib.resources`.
 
 If you prefer to provide a custom calibration or weight file, pass a filesystem path (e.g., `WEPR('/path/to/my_weights.json')`). See `artefactual.utils.io.load_weights` and `load_calibration` for the exact behavior.
 
-**API Reference (minimal)**
+### Advanced: Calibration pipeline (for deep usage)
 
-- `EPR(pretrained_model_name_or_path: str, k: int = 15)`
-  - `compute(outputs) -> list[float]` — Returns sequence-level EPR scores (calibrated to probabilities).
-  - `compute_token_scores(outputs) -> list[np.ndarray]` — Token-level EPR contributions.
+The calibration pipeline in this package produces the `weights_*.json` and `calibration_*.json` files used to turn raw entropy scores into calibrated probabilities. The implemented flow (all modules live under `src/artefactual/calibration`) is:
 
-- `WEPR(pretrained_model_name_or_path: str)`
-  - `compute(outputs) -> list[float]` — Sequence-level calibrated WEPR probabilities.
-  - `compute_token_scores(outputs) -> list[np.ndarray]` — Token-level calibrated probabilities.
+1. Prepare a QA dataset of question/answers (e.g., `web_question_qa.json`) containing entries like:
 
-Current supported input formats (the library will auto-detect):
+   {
+	   "question": "where is roswell area 51?",
+	   "question_id": "d204f08c-fbcb-41cb-8e55-ee3879d68eea",
+	   "short_answer": "Roswell",
+	   "answer_aliases": []
+   }
 
-- vLLM `RequestOutput` lists
-- OpenAI classic ChatCompletion (`choices` with `logprobs`)
-- OpenAI Responses API (`object: "response"`, `output` with `content` parts containing `logprobs`)
+2. Run the generation utility `src/artefactual/calibration/outputs_entropy.py` to produce a JSON dataset that includes EPR/WEPR scores for each generated answer (this JSON contains `generated_answers` entries with an `epr_score`/`wepr_score` field).
 
-For exact parsing rules see `src/artefactual/preprocessing/openai_parser.py` and `src/artefactual/preprocessing/vllm_parser.py`.
+3. Use `src/artefactual/calibration/rates_answers.py` to have a judge LLM label each generated answer as `True`/`False` (correct/incorrect). This script produces a pandas DataFrame (or CSV) where each row contains `uncertainty_score` (EPR/WEPR) and `judgment` (the target).
 
-**Examples and Convenience Files**
+4. Train a calibration model by running `src/artefactual/calibration/train_calibration.py` on the DataFrame/CSV. This fits a logistic regression mapping uncertainty scores to probabilities and saves the resulting weights JSON (intercept and coefficient(s)).
 
-- `examples/epr_usage_demo.py`: a small demonstration of computing EPR on sample inputs.
-- `sample_qa_data.json` and `outputs/sample_qa_data_Ministral-8B-Instruct-2410_entropy.json`: example data and exported results used for demonstrations and tests.
+5. Add the produced `weights_*.json` or `calibration_*.json` to the package data registry (or point `EPR`/`WEPR` at the local file) so `EPR(model=...)` / `WEPR(...)` can load the calibration when scoring.
 
-**Advanced: Calibration pipeline (for deep usage)**
+*Important notes for calibration*:
 
-The package includes a calibration pipeline for generating the `weights_*.json` and `calibration_*.json` files. This is intended for users who want to train new WEPR/EPR coefficients for a custom model or dataset. The pipeline is non-trivial and is documented here at a high level; see `scripts/calibration_llm` for runnable scripts.
+- The pipeline requires to use a LLM-as-a-judge, which can be chosen by the user (default is "mistralai/Ministral-8B-Instruct-2410").
+- WEPR training learns multiple coefficient groups (e.g., `mean_rank_i` and `max_rank_i`) while EPR calibration is a single-intercept plus mean-entropy coefficient.
+- See the modules under `src/artefactual/calibration` for implementation details and plotting utilities.
 
-High-level steps:
+## Citation
 
-1. Generate a dataset of outputs with full top-K logprobs per token from your target model (vLLM or OpenAI Responses API). The scripts expect a structure that preserves, for each generated token, the top-K `logprob` values.
-2. Run the `scripts/calibration_llm/generate_responses.py` script to create evaluation outputs for a calibration dataset.
-3. Extract entropy contributions and dataset-level features using `scripts/calibration_llm/entropic_scoring.py`.
-4. Fit logistic/linear calibration models using `scripts/calibration_llm/calibration.py` and `scripts/calibration_llm/score_responses.py`. This will produce JSON weight files of the same shape as the ones stored under `src/artefactual/data`.
-5. Add the produced `weights_*.json` or `calibration_*.json` to the package data registry and optionally create a PR to include it upstream.
+If you consider `artefactual` or any of its feature useful for your research, consider citing our paper, accepted for publication at ECIR 2026:
 
-Important notes for calibration:
-
-- The calibration pipeline assumes access to ground-truth labels (e.g., binary hallucination labels at sequence or token level) to learn the mapping from entropy features to probabilities.
-- WEPR training learns two sets of coefficients: `mean_rank_i` (for per-token contributions) and `max_rank_i` (for sequence-level max contributions). EPR calibration is a simpler scalar intercept + single coefficient for mean entropy.
-- See `scripts/calibration_llm/plot_calibration.py` and `scripts/calibration_llm/plot_entropy.py` for visualization utilities used during development.
-
-**Testing**
-
-Run the package tests using pytest:
-
-```bash
-pytest -q
 ```
+@misc{moslonka2025learnedhallucinationdetectionblackbox,
+      title={Learned Hallucination Detection in Black-Box LLMs using Token-level Entropy Production Rate},
+      author={Charles Moslonka and Hicham Randrianarivo and Arthur Garnier and Emmanuel Malherbe},
+      year={2025},
+      eprint={2509.04492},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2509.04492},
+}
+```
+
+## License
+
+The use of this software is under the MIT license, with no limitation of usage, including for commercial applications.

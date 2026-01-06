@@ -194,7 +194,6 @@ pyrightconfig.json
 **/*.json
 !src/artefactual/data/**/*.json
 wandb/
-requirements.txt
 uv.lock
 outputs/
 perso.py
