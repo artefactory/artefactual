@@ -17,10 +17,11 @@ from pydantic import BaseModel
 from tqdm import tqdm
 from vllm import LLM, SamplingParams
 
-from artefactual.calibration import clear_gpu_memory, get_model_name, init_llm
+from artefactual.calibration.utils.io import convert_bytes_to_str, load_tqa_from_json, save_to_json
+from artefactual.calibration.utils.memory import clear_gpu_memory
+from artefactual.calibration.utils.models import get_model_name, init_llm
 from artefactual.preprocessing import process_vllm_logprobs
 from artefactual.scoring import EPR
-from artefactual.utils import convert_bytes_to_str, load_tqa_from_json, save_to_json
 
 logger = logging.getLogger(__name__)
 
@@ -212,12 +213,3 @@ def generate_entropy_dataset(
 
     clear_gpu_memory(llm)
     return output_file
-
-
-if __name__ == "__main__":
-    config = GenerationConfig()
-    generate_entropy_dataset(
-        input_path="/home/gjeannin/artefactual/sample_qa_data.json",
-        output_path="outputs/",
-        config=config,
-    )

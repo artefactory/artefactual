@@ -6,10 +6,8 @@ trains a logistic regression model, and saves the coefficients in a JSON format 
 for loading into the EPR scorer.
 """
 
-import argparse
 import json
 import logging
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -87,17 +85,3 @@ def train_calibration(input_file: str | Path, output_file: str | Path) -> None:
     with output_path.open("w", encoding="utf-8") as f:
         json.dump(weights, f, indent=4)
     logger.info(f"Saved weights to {output_file}")
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    parser = argparse.ArgumentParser(description="Train calibration weights.")
-    parser.add_argument("--input_file", type=str, required=True, help="Path to input CSV from rates_answers.py")
-    parser.add_argument("--output_file", type=str, required=True, help="Path to save output JSON weights")
-    args = parser.parse_args()
-
-    try:
-        train_calibration(args.input_file, args.output_file)
-    except ValueError:
-        logger.exception("Calibration failed")
-        sys.exit(1)

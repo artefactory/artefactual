@@ -1,8 +1,5 @@
-import argparse
 import json
 import logging
-import pathlib
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -10,7 +7,7 @@ import pandas as pd
 from pydantic import BaseModel, ValidationError
 from vllm import SamplingParams
 
-from artefactual.calibration import init_llm
+from artefactual.calibration.utils.models import init_llm
 
 logger = logging.getLogger(__name__)
 
@@ -72,8 +69,7 @@ def _parse_judgment(text: str) -> bool | None:
 
 def _load_results(input_file: str | Path) -> list[dict]:
     """Load results from the input JSON file."""
-    # FIXME: input_file should already be a Path; avoid converting inside this function.
-    input_path = pathlib.Path(input_file)
+    input_path = Path(input_file)
     try:
         with input_path.open(encoding="utf-8") as f:
             raw_data = json.load(f)
@@ -174,32 +170,3 @@ def rate_answers(config: RatingConfig) -> pd.DataFrame:
 
     outputs = _generate_judgments(messages_list, config)
     return _create_results_dataframe(outputs, metadata_list)
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-
-    parser = argparse.ArgumentParser(description="Rate answers using a judge LLM.")
-    parser.add_argument("--input_file", type=str, required=True, help="Path to the input JSON file.")
-    parser.add_argument(
-        "--model_path",
-        type=str,
-        default="mistralai/Ministral-8B-Instruct-2410",
-        help="Path to the judge model.",
-    )
-    parser.add_argument("--output_file", type=str, help="Path to save the output DataFrame (CSV).")
-
-    args = parser.parse_args()
-
-    input_path = pathlib.Path(args.input_file)
-    if input_path.exists():
-        config = RatingConfig(input_file=args.input_file, judge_model_path=args.model_path)
-        df = rate_answers(config)
-        logger.info("Rated answers head:\n%s", df.head(10))
-        logger.info(f"Total rated: {len(df)}")
-        if args.output_file:
-            df.to_csv(args.output_file)
-            logger.info(f"Saved results to {args.output_file}")
-    else:
-        logger.error(f"Input file {args.input_file} not found.")
-        sys.exit(1)
