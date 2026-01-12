@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import cast
 
 import numpy as np
 from beartype import beartype
@@ -41,27 +41,23 @@ class WEPR(UncertaintyDetector):
 
     def _compute_impl(
         self,
-        outputs: Any,
+        parsed_logprobs: list[dict[int, list[float]]],
     ) -> tuple[list[float], list[NDArray[np.floating]]]:
         """
         Internal implementation to compute WEPR scores.
 
         Args:
-            outputs: Model outputs. Can be:
-                     - List of vLLM RequestOutput objects.
-                     - OpenAI ChatCompletion object (or dict).
-                     - OpenAI Responses object (or dict).
+            parsed_logprobs: Parsed log probabilities.
 
         Returns:
             A tuple containing:
             - List of sequence-level WEPR scores.
             - List of token-level WEPR scores (numpy arrays).
         """
-        if not outputs:
+        if not parsed_logprobs:
             return [], []
 
-        completions_data = self._parse_outputs(outputs)
-        completions = [Completion(token_logprobs=data) for data in completions_data]
+        completions = [Completion(token_logprobs=data) for data in parsed_logprobs]
 
         seq_scores: list[float] = []
         token_scores: list[NDArray[np.floating]] = []
@@ -112,33 +108,27 @@ class WEPR(UncertaintyDetector):
         return seq_scores, token_scores
 
     @beartype
-    def compute(self, outputs: Any) -> list[float]:
+    def compute(self, parsed_logprobs: list[dict[int, list[float]]]) -> list[float]:
         """
         Compute WEPR-based uncertainty scores from a sequence of completions.
 
         Args:
-            outputs: Model outputs. Can be:
-                     - List of vLLM RequestOutput objects.
-                     - OpenAI ChatCompletion object (or dict).
-                     - OpenAI Responses object (or dict).
+            parsed_logprobs: Parsed log probabilities.
 
         Returns:
             List of sequence-level WEPR scores.
         """
-        return self._compute_impl(outputs)[0]
+        return self._compute_impl(parsed_logprobs)[0]
 
     @beartype
-    def compute_token_scores(self, outputs: Any) -> list[NDArray[np.floating]]:
+    def compute_token_scores(self, parsed_logprobs: list[dict[int, list[float]]]) -> list[NDArray[np.floating]]:
         """
         Compute token-level WEPR scores from a sequence of completions.
 
         Args:
-            outputs: Model outputs. Can be:
-                     - List of vLLM RequestOutput objects.
-                     - OpenAI ChatCompletion object (or dict).
-                     - OpenAI Responses object (or dict).
+            parsed_logprobs: Parsed log probabilities.
 
         Returns:
             List of token-level WEPR scores (numpy arrays).
         """
-        return self._compute_impl(outputs)[1]
+        return self._compute_impl(parsed_logprobs)[1]
