@@ -1,3 +1,4 @@
+import warnings
 from typing import Any
 
 import numpy as np
@@ -26,10 +27,10 @@ class EPR(UncertaintyDetector):
 
         Args:
             pretrained_model_name_or_path: Model name or path to load calibration coefficients.
-                   This argument is required — an error is raised if it is missing or invalid.
+                   If not provided, the scorer returns raw uncalibrated scores and issues a warning.
             k: Number of top log probabilities to consider (default: 15).
         Raises:
-            ValueError: If `pretrained_model_name_or_path` is not provided or calibration cannot be loaded.
+            ValueError: If calibration cannot be loaded from the provided valid path.
         """
         super().__init__(k=k)
         self.intercept = 0.0
@@ -37,8 +38,13 @@ class EPR(UncertaintyDetector):
         self.is_calibrated = False
 
         if pretrained_model_name_or_path is None:
-            msg = "pretrained_model_name_or_path is required"
-            raise ValueError(msg)
+            warnings.warn(
+                "EPR is currently not calibrated. "
+                "To enable calibration, please specify a `pretrained_model_name_or_path`.",
+                UserWarning,
+                stacklevel=2,
+            )
+            return
 
         try:
             calibration_data: dict[str, Any] = load_calibration(pretrained_model_name_or_path)
@@ -102,9 +108,11 @@ class EPR(UncertaintyDetector):
             # Make sure to cast to float !
             seq_epr = float(np.mean(token_epr)) if token_epr.size > 0 else 0.0
 
-            seq_scores.append(self._apply_calibration(seq_epr))
-
-            token_scores.append(self._apply_calibration(token_epr))
+            if self.is_calibrated:
+                seq_epr = self._apply_calibration(seq_epr)
+                token_epr = self._apply_calibration(token_epr)
+            seq_scores.append(seq_epr)
+            token_scores.append(token_epr)
 
         return seq_scores, token_scores
 
@@ -157,7 +165,7 @@ class EPR(UncertaintyDetector):
         Apply logistic calibration to a raw EPR score or array of scores.
         The calibration uses a linear transformation followed by a sigmoid:
             calibrated = sigmoid(coefficient * raw_epr + intercept)
-        If ``self.is_calibrated`` is ``False``, the input is returned unchanged.
+
         Args:
             raw_epr: Raw EPR value(s). May be a single float (sequence-level score)
                 or a NumPy array of floats (token-level scores). NumPy broadcasting
@@ -167,7 +175,5 @@ class EPR(UncertaintyDetector):
             - If ``raw_epr`` is a float, returns a single calibrated float.
             - If ``raw_epr`` is an NDArray, returns an NDArray of calibrated scores.
         """
-        if self.is_calibrated:
-            linear_score = self.coefficient * raw_epr + self.intercept
-            return 1.0 / (1.0 + np.exp(-linear_score))
-        return raw_epr
+        linear_score = self.coefficient * raw_epr + self.intercept
+        return 1.0 / (1.0 + np.exp(-linear_score))

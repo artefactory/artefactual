@@ -17,8 +17,11 @@ def mock_load_calibration():
 
 
 def test_epr_initialization_no_path():
-    with pytest.raises(ValueError, match="pretrained_model_name_or_path is required"):
-        EPR()
+    with pytest.warns(UserWarning, match="EPR is currently not calibrated"):
+        epr = EPR()
+        assert not epr.is_calibrated
+        assert epr.intercept == 0.0
+        assert epr.coefficient == 1.0
 
 
 def test_epr_initialization_calibrated(mock_load_calibration):
@@ -29,12 +32,10 @@ def test_epr_initialization_calibrated(mock_load_calibration):
     mock_load_calibration.assert_called_once_with("test_model")
 
 
-@patch("artefactual.scoring.entropy_methods.epr.load_calibration")
-def test_epr_compute_uncalibrated(mock_load):
-    # Mock identity calibration
-    mock_load.return_value = {"intercept": 0.0, "coefficients": {"mean_entropy": 1.0}}
-    epr = EPR("dummy")
-    epr.is_calibrated = False  # Force uncalibrated to test raw entropy
+def test_epr_compute_uncalibrated():
+    # Initialize with no path -> uncalibrated
+    with pytest.warns(UserWarning, match="EPR is currently not calibrated"):
+        epr = EPR()
 
     # Mock output: 1 completion, 1 token, 1 logprob
     # logprob = -1.0 -> p = 0.3678 -> s = -0.3678 * -1.0 = 0.3678
