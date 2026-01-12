@@ -3,11 +3,12 @@ from pathlib import Path
 
 from vllm import LLM, SamplingParams
 
+from artefactual.preprocessing import parse_model_outputs
+from artefactual.scoring import EPR, WEPR
+
 # Add src to path so we can import artefactual if not installed
 _current_dir = Path(__file__).resolve().parent
 sys.path.append(str(_current_dir.parent / "src"))
-
-from artefactual.scoring import EPR, WEPR  # noqa: E402
 
 
 def vllm_example() -> None:
@@ -25,20 +26,22 @@ def vllm_example() -> None:
     outputs = llm.generate(prompts, sampling_params)
 
     # Compute EPR
-    epr = EPR()
-    scores = epr.compute(outputs)
+    epr = EPR()  # initialize with default calibration
+    parsed_logprobs = parse_model_outputs(outputs)  # parse the outputs to get logprobs
+
+    scores = epr.compute(parsed_logprobs)
     print(f"EPR Scores: {scores}")  # noqa: T201
 
     # Detailed scores (per token)
-    seq_scores = epr.compute(outputs)
-    token_scores = epr.compute_token_scores(outputs)
+    seq_scores = epr.compute(parsed_logprobs)
+    token_scores = epr.compute_token_scores(parsed_logprobs)
     print(f"Sequence Scores: {seq_scores}")  # noqa: T201
     print(f"Token Scores (first seq): {token_scores[0]}")  # noqa: T201
 
     # Compute WEPR
     weights_path = _current_dir.parent / "src" / "artefactual" / "data" / "weights_ministral.json"
-    wepr = WEPR(model=str(weights_path))
-    wepr.compute(outputs)
+    wepr = WEPR(pretrained_model_name_or_path=str(weights_path))
+    wepr.compute(parsed_logprobs)
 
 
 def openai_example() -> None:
@@ -88,12 +91,13 @@ def openai_example() -> None:
 
     print("\nRunning EPR on Mock OpenAI Response...")  # noqa: T201
     epr = EPR()
-    scores = epr.compute(mock_response)
+    mock_logprobs = parse_model_outputs(mock_response)
+    scores = epr.compute(mock_logprobs)  # parse the outputs to get logprobs
     print(f"EPR Score: {scores[0]}")  # noqa: T201
 
     weights_path = _current_dir.parent / "src" / "artefactual" / "data" / "weights_ministral.json"
-    wepr = WEPR(model=str(weights_path))
-    wepr.compute(mock_response)
+    wepr = WEPR(pretrained_model_name_or_path=str(weights_path))
+    wepr.compute(mock_logprobs)
 
 
 if __name__ == "__main__":

@@ -57,16 +57,18 @@ fake_responses = {
 ### EPR example:
 
 ```python
-from artefactual.scoring.entropy_methods.epr import EPR
+from artefactual.preprocessing import parse_model_outputs
+from artefactual.scoring import EPR
 
 # Use precomputed calibration (model keys are defined in the registry)
-epr = EPR(model="mistralai/Ministral-8B-Instruct-2410")
+epr = EPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")
 
 # Compute sequence-level calibrated probabilities (list of floats)
-seq_scores_epr = epr.compute(fake_responses)
+parsed_logprobs = parse_model_outputs(response) # extract logprobs from the output
+seq_scores_epr = epr.compute(parsed_logprobs)
 
 # Compute token-level scores (list of numpy arrays)
-token_scores_epr = epr.compute_token_scores(fake_responses)
+token_scores_epr = epr.compute_token_scores(parsed_logprobs)
 
 print("EPR sequence scores:", seq_scores_epr)
 ```
@@ -74,23 +76,24 @@ print("EPR sequence scores:", seq_scores_epr)
 ### WEPR example:
 
 ```python
-from artefactual.scoring.entropy_methods.wepr import WEPR
+from artefactual.scoring import WEPR
 
 # WEPR requires a weight source (model key or local weights file)
-wepr = WEPR("mistralai/Ministral-8B-Instruct-2410")
+wepr = WEPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")
 
 # Compute sequence-level calibrated probabilities (list of floats)
-seq_scores_wepr = wepr.compute(fake_responses)
+parsed_logprobs = parse_model_outputs(response)
+seq_scores_wepr = wepr.compute(parsed_logprobs)
 
 # Compute token-level scores (list of numpy arrays)
-token_scores_wepr = wepr.compute_token_scores(fake_responses)
+token_scores_wepr = wepr.compute_token_scores(parsed_logprobs)
 
 print("WEPR sequence scores:", seq_scores_wepr)
 ```
 
 *Notes*:
-- `EPR(model=...)` attempts to load calibration coefficients via `artefactual.utils.io.load_calibration` and will silently fall back to uncalibrated raw EPR scores if calibration is not found.
-- `WEPR(model)` requires a weight source (either a known model key from the registry or a local JSON file) and will raise a `ValueError` if weights cannot be found.
+- `EPR(pretrained_model_name_or_path=...)` attempts to load calibration coefficients via `artefactual.utils.io.load_calibration` and will silently fall back to uncalibrated raw EPR scores if calibration is not found.
+- `WEPR(pretrained_model_name_or_path)` requires a weight source (either a known model key from the registry or a local JSON file) and will raise a `ValueError` if weights cannot be found.
 - Both `EPR.compute(...)` and `WEPR.compute(...)` return lists because the methods accept batch-style inputs (the top-level structure may contain multiple response objects). If you pass a single response object you'll receive a single-element list — index the first element (for example, `seq_scores_epr[0]` or `seq_scores_wepr[0]`) to obtain a single float probability.
 
 ### Further Examples
@@ -106,7 +109,7 @@ When possible, we strongly recommend to use calibrated detectors, so that output
 
 Artefactual ships a small registry which maps canonical model identifiers to precomputed JSON files. These mappings are available in `src/artefactual/utils/io.py` under `MODEL_WEIGHT_MAP` and `MODEL_CALIBRATION_MAP`.
 
-You can pass one of those strings directly to `EPR` or `WEPR` constructors (e.g., `EPR(model="mistralai/Ministral-8B-Instruct-2410")`). Under the hood the package reads `src/artefactual/data/<file>.json` via `importlib.resources`.
+You can pass one of those strings directly to `EPR` or `WEPR` constructors (e.g., `EPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")`). Under the hood the package reads `src/artefactual/data/<file>.json` via `importlib.resources`.
 
 If you prefer to provide a custom calibration or weight file, pass a filesystem path (e.g., `WEPR('/path/to/my_weights.json')`). See `artefactual.utils.io.load_weights` and `load_calibration` for the exact behavior.
 
@@ -129,7 +132,7 @@ The calibration pipeline in this package produces the `weights_*.json` and `cali
 
 4. Train a calibration model by running `src/artefactual/calibration/train_calibration.py` on the DataFrame/CSV. This fits a logistic regression mapping uncertainty scores to probabilities and saves the resulting weights JSON (intercept and coefficient(s)).
 
-5. Add the produced `weights_*.json` or `calibration_*.json` to the package data registry (or point `EPR`/`WEPR` at the local file) so `EPR(model=...)` / `WEPR(...)` can load the calibration when scoring.
+5. Add the produced `weights_*.json` or `calibration_*.json` to the package data registry (or point `EPR`/`WEPR` at the local file) so `EPR(pretrained_model_name_or_path=...)` / `WEPR(...)` can load the calibration when scoring.
 
 *Important notes for calibration*:
 
