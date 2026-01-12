@@ -93,15 +93,14 @@ print("WEPR sequence scores:", seq_scores_wepr)
 - `WEPR(model)` requires a weight source (either a known model key from the registry or a local JSON file) and will raise a `ValueError` if weights cannot be found.
 - Both `EPR.compute(...)` and `WEPR.compute(...)` return lists because the methods accept batch-style inputs (the top-level structure may contain multiple response objects). If you pass a single response object you'll receive a single-element list — index the first element (for example, `seq_scores_epr[0]` or `seq_scores_wepr[0]`) to obtain a single float probability.
 
-
-
-## Contents
-
-### Examples
+### Further Examples
 
  Some examples and dummy scripts are available, such as `examples/epr_usage_demo.py` and `examples/calibration_script.py`, that demonstrate basic usage and the calibration pipeline.
 
 
+## Calibration logic
+
+When possible, we strongly recommend to use calibrated detectors, so that outputs can be interpreted as probabilities. We describe below how to load existing weights, or to run the full pipeline on a new model and/or corpus.
 
 ### Registry / Precomputed files
 
