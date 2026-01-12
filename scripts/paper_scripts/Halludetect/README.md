@@ -33,7 +33,7 @@ Merges the calculated features with `judgment` labels from a separate file.
 
 **Usage:**
 ```bash
-python merge_features_proba.py \
+python ../common/merge_features_proba.py \
     "outputs/features.json" \
     "path/to/judged_data.jsonl" \
     "outputs/training_data.json"
