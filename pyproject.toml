@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.scripts]
-artefactual = "artefactual:main"
+artefactual = "artefactual.__main__:main"
 
 [project.optional-dependencies]
 hub = ["huggingface-hub>=0.27.0", "keras-hub>=0.18.1", "safetensors>=0.4.5"]
