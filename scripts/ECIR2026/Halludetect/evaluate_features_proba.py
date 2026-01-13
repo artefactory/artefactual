@@ -5,7 +5,6 @@ import sys
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score, roc_auc_score
-from sklearn.preprocessing import StandardScaler
 from sklearn.utils import resample
 from tqdm import tqdm
 
@@ -84,9 +83,7 @@ def evaluate_with_bootstrap(X, y, n_iterations=1000):
             continue
 
         X_train, y_train = X[train_indices], y[train_indices]
-        X_train = StandardScaler().fit_transform(X_train)
         X_test, y_test = X[oob_indices], y[oob_indices]
-        X_test = StandardScaler().fit_transform(X_test)
 
         # Initialize and train the model
         model = LogisticRegression(penalty=None, max_iter=1000)

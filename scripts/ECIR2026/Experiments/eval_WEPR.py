@@ -8,7 +8,6 @@ import pandas as pd
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score, precision_recall_curve, roc_auc_score
-from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 
 # Suppress convergence warnings from scikit-learn for cleaner output
@@ -100,7 +99,6 @@ def evaluate_with_pretrained_model(X, y, feature_cols, model_coeffs_file, plot_p
     model.intercept_ = np.array([model_params["intercept"]])
     model.coef_ = np.array([[model_params["coefficients"][fn] for fn in feature_cols]])
 
-    X = StandardScaler().fit_transform(X)
     print("Evaluating model on the full dataset...")
     y_probs = model.predict_proba(X)[:, 1]
 

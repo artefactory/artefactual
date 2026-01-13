@@ -35,25 +35,6 @@ uv pip install '.[calibration]'
 
 ## Basic usage (sequence-level scores)
 
-```python
-# Example: using an OpenAI Responses-like structure (minimal illustrative example)
-fake_responses = {
-	"object": "response",
-	"output": [
-		{
-			"content": [
-				{
-					"logprobs": [
-						{"top_logprobs": [{"logprob": -0.1}, {"logprob": -2.3}]},
-						{"top_logprobs": [{"logprob": -0.05}, {"logprob": -3.1}]}
-					]
-				}
-			]
-		}
-	]
-}
-```
-
 ### EPR example:
 
 ```python
@@ -89,6 +70,27 @@ seq_scores_wepr = wepr.compute(parsed_logprobs)
 token_scores_wepr = wepr.compute_token_scores(parsed_logprobs)
 
 print("WEPR sequence scores:", seq_scores_wepr)
+```
+
+In both examples, the `response` object can have the following structure :
+
+```python
+# Example: using an OpenAI Responses-like structure (minimal illustrative example)
+response = {
+	"object": "response",
+	"output": [
+		{
+			"content": [
+				{
+					"logprobs": [
+						{"top_logprobs": [{"logprob": -0.1}, {"logprob": -2.3}]},
+						{"top_logprobs": [{"logprob": -0.05}, {"logprob": -3.1}]}
+					]
+				}
+			]
+		}
+	]
+}
 ```
 
 *Notes*:
