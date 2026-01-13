@@ -5,12 +5,12 @@ Each format is handled by a dedicated parser function, defined in their respecti
 
 from typing import Any
 
-from artefactual.preprocessing import (
+from artefactual.preprocessing.openai_parser import (
     is_openai_responses_api,
     process_openai_chat_completion,
     process_openai_responses_api,
-    process_vllm_logprobs,
 )
+from artefactual.preprocessing.vllm_parser import process_vllm_logprobs
 
 
 def parse_model_outputs(outputs: Any) -> list[dict[int, list[float]]]:
