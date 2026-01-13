@@ -20,7 +20,7 @@ repos:
    - id: jupytext
      args: [--sync, pipe]
 -  repo: https://github.com/astral-sh/ruff-pre-commit
-   rev: v0.14.9
+   rev: v0.14.11
    hooks:
    -   id: ruff-check
        types_or: [python, pyi]
@@ -28,7 +28,7 @@ repos:
    -   id: ruff-format
        types_or: [python, pyi]
 - repo: https://github.com/astral-sh/uv-pre-commit
-  rev: 0.9.18
+  rev: 0.9.24
   hooks:
     - id: pip-compile
       args: [--output-file, requirements.txt, pyproject.toml]
