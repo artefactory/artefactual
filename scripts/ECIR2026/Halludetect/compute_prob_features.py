@@ -1,10 +1,10 @@
 import argparse
 import json
 import math
-import sys
+import pathlib
 
 
-def calculate_features(full_info):
+def calculate_features(full_info) -> dict | None:
     """
     Calculates the four features (mtp, avgtp, Mpd, mps) for a single generated answer,
     assuming the first token in each logprob list is the one that was sampled.
@@ -24,7 +24,7 @@ def calculate_features(full_info):
     deviations = []
     spreads_approx = []
 
-    for i, candidates in enumerate(detailed_logprobs):
+    for candidates in detailed_logprobs:
         if not candidates:
             # print(f"Warning: Empty candidate list at token position {i}.")
             continue
@@ -88,7 +88,7 @@ def calculate_features(full_info):
     }
 
 
-def main():
+def main() -> None:
     """
     Main function to read the input JSON, process it, and write the output JSON.
     """
@@ -103,7 +103,7 @@ def main():
     print(f"Reading data from '{input_filename}'...")
 
     try:
-        with open(input_filename, encoding="utf-8") as f:
+        with pathlib.Path(input_filename).open(encoding="utf-8") as f:
             data = json.load(f)
     except FileNotFoundError:
         print(f"Error: Input file '{input_filename}' not found.")
@@ -133,7 +133,7 @@ def main():
     print(f"Writing {len(output_data)} results to '{output_filename}'...")
 
     try:
-        with open(output_filename, "w", encoding="utf-8") as f:
+        with pathlib.Path(output_filename).open("w", encoding="utf-8") as f:
             json.dump(output_data, f, indent=4)
         print("Done!")
     except OSError:

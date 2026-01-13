@@ -16,7 +16,7 @@ warnings.filterwarnings("ignore", category=ConvergenceWarning)
 SEED = 42
 
 
-def train_and_evaluate_with_bootstrap(X, y, n_repetitions=1):
+def train_and_evaluate_with_bootstrap(X, y, n_repetitions=1000):
     """
     Trains and evaluates a logistic regression model using bootstrap validation.
 
@@ -200,7 +200,7 @@ def main():
 
         model_output = {
             "intercept": mean_intercept,
-            "coefficients": dict(zip(feature_cols, mean_coefs, strict=False)), # type: ignore
+            "coefficients": dict(zip(feature_cols, mean_coefs, strict=False)),  # type: ignore
         }
 
         try:

@@ -7,8 +7,6 @@ import pandas as pd
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score, roc_auc_score
-from sklearn.preprocessing import StandardScaler
-
 from tqdm import tqdm
 
 # Suppress convergence warnings from scikit-learn for cleaner output
@@ -52,7 +50,6 @@ def train_and_evaluate_with_bootstrap(X, y, n_repetitions=1000):
 
         X_train, y_train = X.iloc[train_indices], y.iloc[train_indices]
         X_test, y_test = X.iloc[test_indices], y.iloc[test_indices]
-
 
         model = LogisticRegression(penalty=None, max_iter=1000)
         model.fit(X_train, y_train)
@@ -101,7 +98,7 @@ def evaluate_with_pretrained_model(X, y, feature_cols, model_coeffs_file):
     return pr_auc, roc_auc
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Train or evaluate a logistic regression model with bootstrap.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,

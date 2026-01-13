@@ -1,9 +1,11 @@
 import argparse
 import json
+import logging
 import math
+import pathlib
 
 
-def calculate_entropic_features(input_file_path, output_file_path):
+def calculate_entropic_features(input_file_path: str, output_file_path: str) -> None:
     """
     Reads LLM output, calculates mean, max, and min entropic contributions
     for each of the top 15 token ranks, and saves the results as features.
@@ -12,14 +14,15 @@ def calculate_entropic_features(input_file_path, output_file_path):
         input_file_path (str): The path to the input JSON file.
         output_file_path (str): The path where the output JSON will be saved.
     """
+    logger = logging.getLogger(__name__)
     try:
-        with open(input_file_path, "r", encoding="utf-8") as f:
+        with pathlib.Path(input_file_path).open("r", encoding="utf-8") as f:
             data = json.load(f)
     except FileNotFoundError:
-        print(f'Error: Input file not found at "{input_file_path}"')
+        logger.exception(f'Input file not found at "{input_file_path}"')
         return
     except json.JSONDecodeError:
-        print(f'Error: Could not decode JSON from "{input_file_path}"')
+        logger.exception(f'Could not decode JSON from "{input_file_path}"')
         return
 
     final_results = []
@@ -40,21 +43,19 @@ def calculate_entropic_features(input_file_path, output_file_path):
 
                     if rank is not None and logprob is not None and 1 <= rank <= 15:
                         p = math.exp(logprob)
+                        # Entropic contribution formula
                         contribution = -p * logprob
                         rank_contributions[rank].append(contribution)
 
         # Create a dictionary for the flattened output
         query_output = {"query_id": query_id}
-        list_maximum = []
-        list_minimum = []
+
         # Calculate mean, max, and min for each rank and add them to the output
         for rank, contributions in rank_contributions.items():
             if contributions:
                 mean_val = sum(contributions) / len(contributions)
                 max_val = max(contributions)
-                list_maximum.append(max_val)
                 min_val = min(contributions)
-                list_minimum.append(min_val)
             else:
                 # If a rank never appeared, its stats are 0
                 mean_val = 0.0
@@ -65,19 +66,28 @@ def calculate_entropic_features(input_file_path, output_file_path):
             query_output[f"mean_rank_{rank}"] = mean_val
             query_output[f"max_rank_{rank}"] = max_val
             query_output[f"min_rank_{rank}"] = min_val
-        # query_output["max"] = max(list_maximum)
-        # query_output["min"] = min(list_minimum)
 
         final_results.append(query_output)
 
-    with open(output_file_path, "w", encoding="utf-8") as f:
-        json.dump(final_results, f, indent=4)
+    try:
+        with pathlib.Path(output_file_path).open("w", encoding="utf-8") as f:
+            json.dump(final_results, f, indent=4)
 
-    print(f"Successfully processed {len(final_results)} queries.")
-    print(f"Output saved to \"{output_file_path}\"")
+        # Use info level for success messages
+        logger.info(f"Successfully processed {len(final_results)} queries.")
+        logger.info(f"Output saved to \"{output_file_path}\"")
+
+    except OSError:
+        logger.exception("Failed to write output file.")
 
 
 if __name__ == "__main__":
+    # Configure the logging system
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(levelname)s: %(message)s'
+    )
+
     parser = argparse.ArgumentParser(
         description="Calculate mean, max, and min entropic contributions from LLM logprobs.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
