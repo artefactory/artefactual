@@ -184,6 +184,18 @@ max-complexity = 10
     "ANN",  # allow untyped returns in tests
 ]
 "docs/notebooks/**/*" = ["INP001", "T201", "A004", "E501"]
+"**/*.ipynb" = [
+    "T201",    # print statements allowed in notebooks
+    "T203",    # pprint statements allowed in notebooks
+    "ANN",     # type annotations not required in notebooks
+    "B905",    # zip() without strict is fine in notebooks
+    "E501",    # line length relaxed in notebooks
+    "PLR2004", # magic values allowed in notebooks
+    "S101",    # assert allowed in notebooks
+    "ERA001",  # commented-out code allowed in notebooks
+    "F401",    # unused imports allowed (often for demo/exploration)
+    "INP001",  # implicit namespace package
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["artefactual"]
