@@ -8,7 +8,7 @@ authors = [
     { name = "Gauthier Jeannin", email = "gauthier.jeannin@artefact.com" },
     { name = "Charles Moslonka", email = "charles.moslonka@artefact.com" },
 ]
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.10,<3.14"
 dependencies = [
     "absl-py>=2.1.0",
     "beartype>=0.19.0",
@@ -18,7 +18,7 @@ dependencies = [
 
 [project.optional-dependencies]
 hub = ["huggingface-hub>=0.27.0", "keras-hub>=0.18.1", "safetensors>=0.4.5"]
-test = ["hypothesis>=6.127.8"]
+test = ["hypothesis>=6.127.8", "pytest>=8.0.0"]
 calibration = [
     "scikit-learn>=1.6.0",
     "ray>=2.50.1",
