@@ -1,6 +1,6 @@
 [project]
 name = "artefactual"
-version = "0.1.0"
+version = "2026.01.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -75,6 +75,8 @@ dev = [
     "ruff>=0.14.8",
     "ty>=0.0.1a32",
     "pre-commit>=4.0.0",
+    "bump-my-version>=0.28.0",
+    "git-cliff>=2.12.0",
 ]
 
 [tool.codespell]
@@ -206,3 +208,33 @@ exclude = ["tests/", "scripts", "examples"]
 
 [tool.ty.rules]
 unresolved-import = "ignore"
+
+[tool.bump-my-version]
+current_version = "2026.01.0"
+parse = """(?x)
+    (?P<release>
+        (?:[1-9][0-9]{3})\\.     # YYYY.
+        (?:1[0-2]|0[1-9])        # 0M
+    )
+    \\.(?P<patch>\\d+)           # .patch
+"""
+serialize = ["{release}.{patch}"]
+commit = true
+tag = true
+tag_name = "v{new_version}"
+
+[tool.bump-my-version.parts.release]
+calver_format = "{YYYY}.{0M}"
+
+[tool.bump-my-version.parts.patch]
+first_value = "0"
+
+[[tool.bump-my-version.files]]
+filename = "pyproject.toml"
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'
+
+[[tool.bump-my-version.files]]
+filename = "src/artefactual/__init__.py"
+search = '__version__ = "{current_version}"'
+replace = '__version__ = "{new_version}"'

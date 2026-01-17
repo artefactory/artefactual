@@ -1,0 +1,62 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*'  # Matches v2026.01.0, v2026.01.1, etc.
+
+permissions:
+  contents: read
+  id-token: write  # Required for TestPyPI trusted publishing
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/artefactual
+    env:
+      TAG_NAME: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - uses: astral-sh/setup-uv@61cb8a9741eeb8a550a1b8544337180c0fc8476b  # v7.2.0
+        with:
+          enable-cache: true
+
+      - name: Get version from code
+        id: version
+        run: |
+          CODE_VERSION=$(uvx bump-my-version show current_version)
+          TAG_VERSION="${TAG_NAME#v}"  # Remove 'v' prefix
+          echo "code_version=$CODE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag_version=$TAG_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Validate version matches tag
+        env:
+          CODE_VERSION: ${{ steps.version.outputs.code_version }}
+          TAG_VERSION: ${{ steps.version.outputs.tag_version }}
+        run: |
+          if [ "$CODE_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Version mismatch: code=$CODE_VERSION, tag=$TAG_VERSION"
+            exit 1
+          fi
+          echo "Version validated: $CODE_VERSION"
+
+      - name: Build package
+        run: uv build
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@106e0b0b7c337fa67ed433972f777c6357f78598  # v1.13.0
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          print-hash: true
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/

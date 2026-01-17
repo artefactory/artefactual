@@ -1,0 +1,60 @@
+[remote.github]
+owner = "artefactory"
+repo = "artefactual"
+
+[changelog]
+header = ""
+body = """
+{%- macro remote_url() -%}
+  https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
+{%- endmacro -%}
+
+{% macro print_commit(commit) -%}
+    - {% if commit.scope %}*({{ commit.scope }})* {% endif %}\
+        {{ commit.message | upper_first }}\
+        {% if commit.github.username %} by @{{ commit.github.username }}{% endif %}\
+        in [#{{ commit.github.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.github.pr_number }})
+{% endmacro -%}
+
+{% if version %}\
+    ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+    ## [Unreleased]
+{% endif %}\
+
+{%- set pr_commits = commits | filter(attribute="github.pr_number") %}
+{% for group, group_commits in pr_commits | group_by(attribute="group") %}
+    ### {{ group | striptags | trim | upper_first }}
+    {% for commit in group_commits %}
+        {{ self::print_commit(commit=commit) }}
+    {%- endfor %}
+{% endfor %}
+
+{%- if github.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
+### New Contributors
+{% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
+* @{{ contributor.username }} made their first contribution\
+    {%- if contributor.pr_number %} in [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}){% endif %}
+{% endfor %}
+{%- endif %}
+"""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+commit_preprocessors = [
+    { pattern = '\\(#([0-9]+)\\)', replace = "" },
+]
+commit_parsers = [
+    { message = "^feat", group = "<!-- 0 -->Features" },
+    { message = "^fix", group = "<!-- 1 -->Bug Fixes" },
+    { message = "^doc", group = "<!-- 2 -->Documentation" },
+    { message = "^perf", group = "<!-- 3 -->Performance" },
+    { message = "^refactor", group = "<!-- 4 -->Refactoring" },
+    { message = "^test", group = "<!-- 5 -->Testing" },
+    { message = "^chore\\(release\\)", skip = true },
+    { message = "^chore|^ci", group = "<!-- 6 -->Miscellaneous" },
+]
+tag_pattern = "v?[0-9]{4}\\.[0-9]{2}\\.[0-9]+"
+sort_commits = "oldest"
