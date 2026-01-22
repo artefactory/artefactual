@@ -40,7 +40,7 @@ def _extract_logprobs_from_token(token_data: Any) -> list[float]:
         val = _get_val(item, "logprob")
         if val is not None:
             probs.append(float(val))
-    return probs
+    return sorted(probs, reverse=True)  # Sort in descending order : highest logprob first
 
 
 def _process_single_choice(choice: Any) -> dict[int, list[float]]:
@@ -168,6 +168,6 @@ def _parse_token_entry(token_entry: Any) -> list[float]:
             k_logprob = _get_val(k, "logprob")
             if k_logprob is not None:
                 logprobs.append(float(k_logprob))
-        return logprobs
+        return sorted(logprobs, reverse=True)  # Sort in descending order : highest logprob first
     m_logprob = _get_val(token_entry, "logprob")
     return [float(m_logprob)] if m_logprob is not None else []
