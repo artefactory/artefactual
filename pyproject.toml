@@ -34,7 +34,7 @@ Issues = "https://github.com/artefactory/artefactual/issues"
 
 [project.optional-dependencies]
 hub = ["huggingface-hub>=0.27.0", "keras-hub>=0.18.1", "safetensors>=0.4.5"]
-test = ["hypothesis>=6.127.8", "pytest>=8.0.0"]
+test = ["hypothesis>=6.127.8", "pytest>=8.0.0", "pytest-cov>=6.0.0"]
 calibration = [
     "scikit-learn>=1.6.0",
     "ray>=2.50.1",
