@@ -43,6 +43,9 @@ repos:
 - repo: https://github.com/nbQA-dev/nbQA
   rev: 1.9.1
   hooks:
+    - id: nbqa-ruff
+      args: [--fix]
+    - id: nbqa-ruff-format
     - id: nbqa-pyupgrade
       args: [--py310-plus]
 - repo: https://github.com/codespell-project/codespell
