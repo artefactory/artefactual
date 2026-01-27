@@ -94,6 +94,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/_autosummary/
 
 # PyBuilder
 .pybuilder/
@@ -198,3 +199,6 @@ uv.lock
 outputs/
 perso.py
 .context/
+
+# MyST build outputs
+_build
