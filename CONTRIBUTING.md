@@ -23,6 +23,7 @@ The `<type>` must be one of the following:
 
 * **build**: Changes that affect the build system or external dependencies
 * **ci**: Changes to our CI configuration files and scripts
+* **chore**: Changes to the build process or auxiliary tools
 * **docs**: Documentation only changes
 * **feat**: A new feature
 * **fix**: A bug fix
@@ -52,41 +53,40 @@ This project uses [CalVer](https://calver.org/) versioning with the format `YYYY
 Releases are triggered by pushing a version tag.
 
 1. **Bump version (creates commit + tag):**
-```bash
-# For a patch release (e.g., 2026.01.0 -> 2026.01.1)
-uvx bump-my-version bump patch
+    ```bash
+    # For a patch release (e.g., 2026.01.0 -> 2026.01.1)
+    uvx bump-my-version bump patch
 
-# For a new month's release (e.g., 2025.12.5 -> 2026.01.0)
-uvx bump-my-version bump release
+    # For a new month's release (e.g., 2025.12.5 -> 2026.01.0)
+    uvx bump-my-version bump release
 
-```
+    ```
 
-
-* `patch`: Same month → increment patch (2026.01.0 → 2026.01.1)
-* `release`: New month → reset patch (2025.12.5 → 2026.01.0)
+    * `patch`: Same month → increment patch (2026.01.0 → 2026.01.1)
+    * `release`: New month → reset patch (2025.12.5 → 2026.01.0)
 
 
 2. **Push branch for PR (optional, for testing):**
-```bash
-git push origin your-branch-name
-gh pr create --title "chore(release): X.Y.Z" --body "Version bump"
+    ```bash
+    git push origin your-branch-name
+    gh pr create --title "chore(release): X.Y.Z" --body "Version bump"
 
-```
+    ```
 
 
 3. **Push the version tag:**
-```bash
-git push origin vX.Y.Z
+    ```bash
+    git push origin vX.Y.Z
 
-```
+    ```
 
-The tag push triggers the release workflow which:
+    The tag push triggers the release workflow which:
 
-* Validates version in code matches the tag
-* Generates changelog with git-cliff
-* Builds the package
-* Creates GitHub release with artifacts
-* Triggers PyPI publishing
+    * Validates version in code matches the tag
+    * Generates changelog with git-cliff
+    * Builds the package
+    * Creates GitHub release with artifacts
+    * Triggers PyPI publishing
 
 ### Local Changelog Preview
 

@@ -49,12 +49,14 @@ commit_preprocessors = [
 commit_parsers = [
     { message = "^feat", group = "<!-- 0 -->Features" },
     { message = "^fix", group = "<!-- 1 -->Bug Fixes" },
-    { message = "^doc", group = "<!-- 2 -->Documentation" },
+    { message = "^docs", group = "<!-- 2 -->Documentation" },
     { message = "^perf", group = "<!-- 3 -->Performance" },
     { message = "^refactor", group = "<!-- 4 -->Refactoring" },
+    { message = "^style", skip = true },
     { message = "^test", group = "<!-- 5 -->Testing" },
+    { message = "^build", group = "<!-- 6 -->Build" },
     { message = "^chore\\(release\\)", skip = true },
-    { message = "^chore|^ci", group = "<!-- 6 -->Miscellaneous" },
+    { message = "^chore|^ci", group = "<!-- 7 -->Miscellaneous" },
 ]
 tag_pattern = "v?[0-9]{4}\\.[0-9]{2}\\.[0-9]+"
 sort_commits = "oldest"
