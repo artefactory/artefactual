@@ -13,12 +13,11 @@ from artefactual.utils.io import load_calibration
 
 class EPR(UncertaintyDetector):
     """
-    Computes Entropy Production Rate (EPR) from model completions.
-
-    Supports:
-    - vLLM (RequestOutput)
-    - OpenAI Chat Completions (classic 'choices' format)
-    - OpenAI Responses API (new 'output' format)
+    Computes Entropy Production Rate (EPR) from model log probabilities.
+    EPR quantifies uncertainty based on the entropy of the model's predicted token distributions.
+    It calculates the entropy contributions of the top K predicted tokens at each position
+    and averages these contributions over the sequence to produce a sequence-level uncertainty score.
+    You can parse raw model outputs using the `parse_model_outputs` method from `artefactual.preprocessing`.
     """
 
     def __init__(self, pretrained_model_name_or_path: str | None = None, k: int = 15) -> None:
