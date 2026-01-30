@@ -30,33 +30,21 @@ class MockLogprob:
     rank: int = 1
 
 
-@dataclass
-class MockCompletionOutput:
-    """Mock completion output that mimics vLLM's CompletionOutput."""
-
-    logprobs: list[dict[str, "MockLogprob"]] | None
-
-
-@dataclass
-class MockRequestOutput:
-    """Mock request output that mimics vLLM's RequestOutput."""
-
-    outputs: list[MockCompletionOutput]
-
-
-def create_request_output(logprobs_sequences: list[list[dict[str, float]]]) -> list[MockRequestOutput]:
-    """Create a mock RequestOutput object from a list of logprob sequences."""
-    mock_completion_outputs = []
+def create_parsed_logprobs(logprobs_sequences: list[list[dict[str, float | Any]]]) -> list[dict[int, list[float]]]:
+    """Create parsed logprobs from a list of logprob sequences."""
+    parsed_output = []
     for seq in logprobs_sequences:
-        if not seq:  # Handle empty sequences
-            mock_completion_outputs.append(MockCompletionOutput(logprobs=None))
-            continue
-
-        mock_logprobs_list = []
-        for token_logprobs in seq:
-            mock_logprobs_list.append({k: MockLogprob(v) for k, v in token_logprobs.items()})
-        mock_completion_outputs.append(MockCompletionOutput(logprobs=mock_logprobs_list))
-    return [MockRequestOutput(outputs=mock_completion_outputs)]
+        seq_dict = {}
+        for i, token_logprobs in enumerate(seq):
+            values = []
+            for v in token_logprobs.values():
+                if hasattr(v, "logprob"):
+                    values.append(v.logprob)
+                else:
+                    values.append(v)
+            seq_dict[i] = values
+        parsed_output.append(seq_dict)
+    return parsed_output
 
 
 class ConcreteUncertaintyDetector(UncertaintyDetector):
@@ -238,9 +226,9 @@ def test_compute_epr_single_output(mock_calibration):
             {"D": -0.3, "E": -1.2, "F": -2.1},
         ]
     ]
-    request_output = create_request_output(logprobs_seq)
+    parsed_logprobs = create_parsed_logprobs(logprobs_seq)
 
-    scores = detector.compute(request_output)
+    scores = detector.compute(parsed_logprobs)
     assert len(scores) == 1
     assert isinstance(scores[0], float)
     assert scores[0] >= 0
@@ -256,9 +244,9 @@ def test_compute_epr_multiple_outputs(mock_calibration):
         [{"E": -1.0, "F": -2.0}, {"G": -0.8, "H": -1.8}],
         [{"I": -0.2, "J": -1.5}, {"K": -0.5, "L": -2.0}],
     ]
-    request_output = create_request_output(logprobs_seqs)
+    parsed_logprobs = create_parsed_logprobs(logprobs_seqs)
 
-    scores = detector.compute(request_output)
+    scores = detector.compute(parsed_logprobs)
     assert len(scores) == 3
     assert all(isinstance(s, float) for s in scores)
     assert all(s >= 0 for s in scores)
@@ -275,10 +263,10 @@ def test_compute_epr_with_token_scores(mock_calibration):
             {"D": -0.3, "E": -1.2, "F": -2.1},
         ]
     ]
-    request_output = create_request_output(logprobs_seq)
+    parsed_logprobs = create_parsed_logprobs(logprobs_seq)
 
-    seq_scores = detector.compute(request_output)
-    token_scores = detector.compute_token_scores(request_output)
+    seq_scores = detector.compute(parsed_logprobs)
+    token_scores = detector.compute_token_scores(parsed_logprobs)
 
     assert len(seq_scores) == 1
     assert len(token_scores) == 1
@@ -314,9 +302,9 @@ def test_compute_epr_output_without_logprobs(mock_calibration):
     detector.is_calibrated = False
 
     # Create output with no logprobs
-    request_output = create_request_output([[]])
+    parsed_logprobs = create_parsed_logprobs([[]])
 
-    scores = detector.compute(request_output)
+    scores = detector.compute(parsed_logprobs)
     assert len(scores) == 1
     assert scores[0] == 0.0
 
@@ -338,8 +326,8 @@ def test_compute_epr_high_vs_low_confidence(mock_calibration):
         {"F": -1.7, "G": -1.7, "H": -1.7, "I": -1.7, "J": -1.7},
     ]
 
-    request_output = create_request_output([high_conf_logprobs, low_conf_logprobs])
-    scores = detector.compute(request_output)
+    parsed_logprobs = create_parsed_logprobs([high_conf_logprobs, low_conf_logprobs])
+    scores = detector.compute(parsed_logprobs)
     # Low confidence should have higher EPR score
     assert scores[1] > scores[0]
 
@@ -387,8 +375,8 @@ def test_numerical_stability(mock_calibration):
         [{"A": -0.00001, "B": -0.001, "C": -50.0, "D": -100.0, "E": -500.0}],
     ]
 
-    request_output = create_request_output(extreme_logprobs)
-    scores = detector.compute(request_output)
+    parsed_logprobs = create_parsed_logprobs(extreme_logprobs)
+    scores = detector.compute(parsed_logprobs)
 
     # Should produce valid score, not NaN or inf
     assert not np.isnan(scores[0])
@@ -405,11 +393,11 @@ def test_compute_epr_multiple_completions_in_one_request(mock_calibration):
         [{"A": -0.5, "B": -1.5}],
         [{"C": -0.3, "D": -1.2}],
     ]
-    request_output = create_request_output(logprobs_seqs)
+    parsed_logprobs = create_parsed_logprobs(logprobs_seqs)
 
     # Should return scores for BOTH completions
-    seq_scores = detector.compute(request_output)
-    token_scores = detector.compute_token_scores(request_output)
+    seq_scores = detector.compute(parsed_logprobs)
+    token_scores = detector.compute_token_scores(parsed_logprobs)
 
     # Verify we get results for both completions
     assert len(seq_scores) == 2, "Should return EPR for both completions"
@@ -422,15 +410,3 @@ def test_compute_epr_multiple_completions_in_one_request(mock_calibration):
     # Each completion should have token-level scores
     assert len(token_scores[0]) > 0, "First completion should have token scores"
     assert len(token_scores[1]) > 0, "Second completion should have token scores"
-
-
-def test_compute_epr_request_output_with_empty_outputs_list(mock_calibration):
-    """Test EPR computation when outputs[0].outputs is an empty list."""
-    _ = mock_calibration
-    detector = EPR("dummy", k=3)
-
-    # Create a MockRequestOutput with an empty outputs list
-    mock_request_output = MockRequestOutput(outputs=[])
-
-    scores = detector.compute([mock_request_output])
-    assert len(scores) == 0, "Should return empty list when outputs[0].outputs is empty"
