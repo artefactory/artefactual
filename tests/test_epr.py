@@ -41,8 +41,7 @@ def test_epr_compute_uncalibrated():
     # logprob = -1.0 -> p = 0.3678 -> s = -0.3678 * -1.0 = 0.3678
     mock_parsed = [{0: [-1.0]}]  # 1 token at index 0 with logprob -1.0
 
-    with patch.object(EPR, "_parse_outputs", return_value=mock_parsed):
-        scores = epr.compute("dummy_input")
+    scores = epr.compute(mock_parsed)
 
     assert len(scores) == 1
     expected_entropy = -np.exp(-1.0) * -1.0  # ≈ 0.367879
@@ -57,8 +56,7 @@ def test_epr_compute_calibrated(mock_load_calibration):
     # logprob = -1.0 -> entropy ≈ 0.367879
     mock_parsed = [{0: [-1.0]}]
 
-    with patch.object(EPR, "_parse_outputs", return_value=mock_parsed):
-        scores = epr.compute("dummy_input")
+    scores = epr.compute(mock_parsed)
 
     assert len(scores) == 1
 
@@ -81,8 +79,7 @@ def test_epr_compute_token_scores_calibrated(mock_load_calibration):
     # Token 1: logprob -0.5 -> entropy ≈ 0.303265
     mock_parsed = [{0: [-1.0], 1: [-0.5]}]
 
-    with patch.object(EPR, "_parse_outputs", return_value=mock_parsed):
-        token_scores = epr.compute_token_scores("dummy_input")
+    token_scores = epr.compute_token_scores(mock_parsed)
 
     assert len(token_scores) == 1
     assert len(token_scores[0]) == 2
@@ -107,8 +104,7 @@ def test_epr_empty_completion_calibrated(mock_load_calibration):
     # Mock output: 1 completion, 0 tokens
     mock_parsed = [{}]
 
-    with patch.object(EPR, "_parse_outputs", return_value=mock_parsed):
-        scores = epr.compute("dummy_input")
+    scores = epr.compute(mock_parsed)
 
     assert len(scores) == 1
 
@@ -170,25 +166,24 @@ def test_epr_compute_specific_values_from_notebook(mock_load):
     # Mock parsed output: 1 completion, 2 tokens
     mock_parsed = [{0: token1_logprobs, 1: token2_logprobs}]
 
-    with patch.object(EPR, "_parse_outputs", return_value=mock_parsed):
-        # Check token scores
-        token_scores = epr.compute_token_scores("dummy_input")
-        assert len(token_scores) == 1
-        assert len(token_scores[0]) == 2
+    # Check token scores
+    token_scores = epr.compute_token_scores(mock_parsed)
+    assert len(token_scores) == 1
+    assert len(token_scores[0]) == 2
 
-        # Expected values provided by user
-        expected_token1 = 1.5737461103163657
-        expected_token2 = 1.3586518373670613
+    # Expected values provided by user
+    expected_token1 = 1.5737461103163657
+    expected_token2 = 1.3586518373670613
 
-        assert np.isclose(token_scores[0][0], expected_token1, rtol=1e-5)
-        assert np.isclose(token_scores[0][1], expected_token2, rtol=1e-5)
+    assert np.isclose(token_scores[0][0], expected_token1, rtol=1e-5)
+    assert np.isclose(token_scores[0][1], expected_token2, rtol=1e-5)
 
-        # Check sequence score (mean)
-        seq_scores = epr.compute("dummy_input")
-        assert len(seq_scores) == 1
+    # Check sequence score (mean)
+    seq_scores = epr.compute(mock_parsed)
+    assert len(seq_scores) == 1
 
-        expected_seq = 1.4661989738417134
-        assert np.isclose(seq_scores[0], expected_seq, rtol=1e-5)
+    expected_seq = 1.4661989738417134
+    assert np.isclose(seq_scores[0], expected_seq, rtol=1e-5)
 
 
 def test_epr_initialization_failure():
