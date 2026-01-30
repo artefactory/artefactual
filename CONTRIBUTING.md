@@ -69,14 +69,14 @@ Releases are triggered by pushing a version tag.
 2. **Push branch for PR (optional, for testing):**
     ```bash
     git push origin your-branch-name
-    gh pr create --title "chore(release): X.Y.Z" --body "Version bump"
+    gh pr create --title "chore(release): YYYY.MM.PATCH" --body "Version bump"
 
     ```
 
 
 3. **Push the version tag:**
     ```bash
-    git push origin vX.Y.Z
+    git push origin vYYYY.MM.PATCH
 
     ```
 
