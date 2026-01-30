@@ -58,35 +58,31 @@ class EPR(UncertaintyDetector):
         self.coefficient = float(coeffs.get("mean_entropy", 1.0))
         self.is_calibrated = True
 
-    def _compute_impl(
+    def _compute_raw_token_scores(
         self,
         parsed_logprobs: list[dict[int, list[float]]],
-    ) -> tuple[list[float], list[NDArray[np.floating]]]:
+    ) -> list[NDArray[np.floating]]:
         """
-        Internal implementation to compute EPR scores.
+        Internal implementation to compute raw token-level EPR scores.
 
         Args:
             parsed_logprobs: Parsed log probabilities.
 
         Returns:
-            A tuple containing:
-            - List of sequence-level EPR scores.
-            - List of token-level EPR scores (numpy arrays).
+            List of raw token-level EPR scores (numpy arrays).
         """
         if not parsed_logprobs:
-            return [], []
+            return []
 
         completions = [Completion(token_logprobs=data) for data in parsed_logprobs]
-        seq_scores: list[float] = []
-        token_scores: list[NDArray[np.floating]] = []
+        raw_token_scores: list[NDArray[np.floating]] = []
 
         for completion in completions:
             token_logprobs_dict = completion.token_logprobs
 
             # Handle empty case
             if not token_logprobs_dict:
-                seq_scores.append(self._get_default_score())
-                token_scores.append(np.array([], dtype=np.float32))
+                raw_token_scores.append(np.array([], dtype=np.float32))
                 continue
 
             # Prepare vectorized data
@@ -98,23 +94,15 @@ class EPR(UncertaintyDetector):
 
             # sum over rank K (Token EPR)
             token_epr = np.sum(s_kj, axis=1)  # shape = (num_tokens_in_sequence)
+            raw_token_scores.append(token_epr)
 
-            # Mean over sequence (Sequence EPR)
-            # Make sure to cast to float !
-            seq_epr = float(np.mean(token_epr)) if token_epr.size > 0 else 0.0
-
-            if self.is_calibrated:
-                seq_epr = self._apply_calibration(seq_epr)
-                token_epr = self._apply_calibration(token_epr)
-            seq_scores.append(seq_epr)
-            token_scores.append(token_epr)
-
-        return seq_scores, token_scores
+        return raw_token_scores
 
     @beartype
     def compute(self, parsed_logprobs: list[dict[int, list[float]]]) -> list[float]:
         """
-        Compute EPR-based uncertainty scores from a sequence of completions.
+        Compute EPR-based uncertainty scores from parsed log probabilities.
+        You can parse raw model outputs using the `parse_model_outputs`method from `artefactual.preprocessing`.
 
         Args:
             parsed_logprobs: Parsed log probabilities.
@@ -122,12 +110,27 @@ class EPR(UncertaintyDetector):
         Returns:
             List of sequence-level EPR scores.
         """
-        return self._compute_impl(parsed_logprobs)[0]
+        raw_token_scores = self._compute_raw_token_scores(parsed_logprobs)
+        seq_scores: list[float] = []
+
+        for token_epr in raw_token_scores:
+            if token_epr.size == 0:
+                seq_scores.append(self._get_default_score())
+                continue
+
+            # Mean over sequence (Sequence EPR)
+            seq_epr = float(np.mean(token_epr))
+            if self.is_calibrated:
+                seq_epr = self._apply_calibration(seq_epr)  # type: ignore
+            seq_scores.append(seq_epr)
+
+        return seq_scores
 
     @beartype
     def compute_token_scores(self, parsed_logprobs: list[dict[int, list[float]]]) -> list[NDArray[np.floating]]:
         """
-        Compute token-level EPR scores from a sequence of completions.
+        Compute token-level EPR scores from parsed logprobs.
+        You can parse raw model outputs using the `parse_model_outputs`method from `artefactual.preprocessing`.
 
         Args:
             parsed_logprobs: Parsed log probabilities.
@@ -135,7 +138,15 @@ class EPR(UncertaintyDetector):
         Returns:
             List of token-level EPR scores (numpy arrays).
         """
-        return self._compute_impl(parsed_logprobs)[1]
+        raw_token_scores = self._compute_raw_token_scores(parsed_logprobs)
+        token_scores: list[NDArray[np.floating]] = []
+
+        for token_epr in raw_token_scores:
+            if token_epr.size > 0 and self.is_calibrated:
+                token_epr = self._apply_calibration(token_epr)
+            token_scores.append(token_epr)
+
+        return token_scores
 
     def _get_default_score(self) -> float:
         """
