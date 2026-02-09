@@ -8,7 +8,11 @@ import numpy as np
 import pytest
 from numpy.typing import NDArray
 
-from artefactual.scoring import EPR, UncertaintyDetector, compute_entropy_contributions
+from artefactual.scoring import (
+    EPR,
+    LogProbUncertaintyDetector,
+    compute_entropy_contributions,
+)
 
 # ============================================================================
 # Test Fixtures and Mock Objects
@@ -47,7 +51,7 @@ def create_parsed_logprobs(logprobs_sequences: list[list[dict[str, float | Any]]
     return parsed_output
 
 
-class ConcreteUncertaintyDetector(UncertaintyDetector):
+class ConcreteUncertaintyDetector(LogProbUncertaintyDetector):
     """Concrete implementation of UncertaintyDetector for testing."""
 
     def compute(self, inputs: Any) -> list[float]:  # noqa: ARG002

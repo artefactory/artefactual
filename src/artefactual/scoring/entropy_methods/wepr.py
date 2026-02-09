@@ -6,11 +6,11 @@ from numpy.typing import NDArray
 
 from artefactual.data.data_model import Completion
 from artefactual.scoring.entropy_methods.entropy_contributions import compute_entropy_contributions
-from artefactual.scoring.entropy_methods.uncertainty_detector import UncertaintyDetector
+from artefactual.scoring.uncertainty_detector import LogProbUncertaintyDetector
 from artefactual.utils.io import load_weights
 
 
-class WEPR(UncertaintyDetector):
+class WEPR(LogProbUncertaintyDetector):
     """
     Computes Weighted Entropy Production Rate (WEPR) from model log probabilities.
     WEPR extends EPR by applying learned weights to the entropy contributions based on their ranks.

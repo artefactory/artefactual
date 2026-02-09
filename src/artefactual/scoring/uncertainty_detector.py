@@ -8,6 +8,22 @@ from numpy.typing import NDArray
 class UncertaintyDetector(ABC):
     """A base class for uncertainty detection methods."""
 
+    @abstractmethod
+    def compute(self, inputs: Any) -> list[float]:
+        """
+        Compute sequence-level uncertainty scores from inputs.
+
+        Args:
+            inputs: The inputs to process (e.g. completions or model outputs).
+
+        Returns:
+            The computed sequence-level scores.
+        """
+
+
+class LogProbUncertaintyDetector(UncertaintyDetector):
+    """A base class for uncertainty detection methods based on logprobs."""
+
     def __init__(self, k: int = 15) -> None:
         """
         Initialize the uncertainty detector.
@@ -23,18 +39,6 @@ class UncertaintyDetector(ABC):
             msg = f"k must be positive, got {k}"
             raise ValueError(msg)
         self.k = k
-
-    @abstractmethod
-    def compute(self, inputs: Any) -> list[float]:
-        """
-        Compute sequence-level uncertainty scores from inputs.
-
-        Args:
-            inputs: The inputs to process (e.g. completions or model outputs).
-
-        Returns:
-            The computed sequence-level scores.
-        """
 
     @abstractmethod
     def compute_token_scores(self, inputs: Any) -> list[NDArray[np.floating]]:

@@ -7,11 +7,11 @@ from numpy.typing import NDArray
 
 from artefactual.data.data_model import Completion
 from artefactual.scoring.entropy_methods.entropy_contributions import compute_entropy_contributions
-from artefactual.scoring.entropy_methods.uncertainty_detector import UncertaintyDetector
+from artefactual.scoring.uncertainty_detector import LogProbUncertaintyDetector
 from artefactual.utils.io import load_calibration
 
 
-class EPR(UncertaintyDetector):
+class EPR(LogProbUncertaintyDetector):
     """
     Computes Entropy Production Rate (EPR) from model log probabilities.
     EPR quantifies uncertainty based on the entropy of the model's predicted token distributions.
