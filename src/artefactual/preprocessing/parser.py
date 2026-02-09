@@ -5,10 +5,13 @@ Each format is handled by a dedicated parser function, defined in their respecti
 
 from typing import Any
 
+from numpy.typing import NDArray
+
 from artefactual.preprocessing.openai_parser import (
     is_openai_responses_api,
     process_openai_chat_completion,
     process_openai_responses_api,
+    sampled_tokens_logprobs,
 )
 from artefactual.preprocessing.vllm_parser import process_vllm_logprobs
 
@@ -50,3 +53,17 @@ def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
         "Expected vLLM RequestOutput, OpenAI ChatCompletion, or OpenAI Responses object."
     )
     raise TypeError(msg)
+
+
+def parse_token_probabilities(outputs: Any) -> NDArray:
+    """
+    A wrapper function to parse token probabilities from various output formats.
+
+    Args:
+        outputs: Model outputs in various formats.
+    Returns:
+        NDArray of token probabilities.
+    """
+    if is_openai_responses_api(outputs):
+        return sampled_tokens_logprobs(outputs)
+    return None

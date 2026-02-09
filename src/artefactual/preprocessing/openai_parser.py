@@ -1,5 +1,8 @@
 from typing import Any
 
+import numpy as np
+from numpy.typing import NDArray
+
 
 def _get_val(obj: Any, key: str, default: Any = None) -> Any:
     """
@@ -171,3 +174,63 @@ def _parse_token_entry(token_entry: Any) -> list[float]:
         return sorted(logprobs, reverse=True)  # Sort in descending order : highest logprob first
     m_logprob = _get_val(token_entry, "logprob")
     return [float(m_logprob)] if m_logprob is not None else []
+
+
+def sampled_tokens_logprobs_responses_api(response: Any) -> NDArray | None:
+    """
+    Retrieves the log probabilities of the sampled tokens from a response following the OpenAI Responses API format.
+
+    Args:
+        response (Any): The response object from the OpenAI Responses API.
+
+    Returns:
+        NDArray | None: A Numpy array of the log probabilities of the sampled tokens, or None if not found.
+    """
+    len_output = len(response.output[0].content[0].logprobs)
+    sampled_probs = []
+    for i in range(len_output):
+        token_entry = response.output[0].content[0].logprobs[i]
+        logprob = _get_val(token_entry, "logprob")
+        if logprob is not None:
+            sampled_probs.append(float(logprob))
+    return np.array(sampled_probs)
+
+
+def sampled_tokens_logprobs_chat_completion(response: Any) -> NDArray | None:
+    """
+    Retrieves the log probabilities of the sampled tokens from a response following the OpenAI Chat Completion format.
+
+    Args:
+        response (Any): The response object from the OpenAI Chat Completion API.
+
+    Returns:
+        NDArray | None: A Numpy array of the log probabilities of the sampled tokens, or None if not found.
+    """
+    logprobs_obj = _get_val(response.choices[0], "logprobs")
+    if not logprobs_obj:
+        return None
+    token_logprobs = _get_val(logprobs_obj, "content", [])
+    len_output = len(token_logprobs)
+    sampled_probs = []
+    for i in range(len_output):
+        token_data = token_logprobs[i]
+        logprob = _get_val(token_data, "logprob")  # The actually sampled token logprob, the others are in top_logprobs
+        if logprob is not None:
+            sampled_probs.append(float(logprob))
+    return np.array(sampled_probs)
+
+
+def sampled_tokens_logprobs(response: Any) -> NDArray | None:
+    """
+    Retrieves the log probabilities of the sampled tokens from the response.
+
+    Args:
+        response (Any): The response object or dictionary from OpenAI API.
+
+    Returns:
+        NDArray | None: A Numpy array of the log probabilities of
+        the sampled tokens, or None if not found.
+    """
+    if is_openai_responses_api(response):
+        return sampled_tokens_logprobs_responses_api(response)
+    return sampled_tokens_logprobs_chat_completion(response)
