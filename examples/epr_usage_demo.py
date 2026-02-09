@@ -3,7 +3,7 @@ from pathlib import Path
 
 from vllm import LLM, SamplingParams
 
-from artefactual.preprocessing import parse_model_outputs
+from artefactual.preprocessing import parse_top_logprobs
 from artefactual.scoring import EPR, WEPR
 
 # Add src to path so we can import artefactual if not installed
@@ -27,7 +27,7 @@ def vllm_example() -> None:
 
     # Compute EPR
     epr = EPR()  # initialize with default calibration
-    parsed_logprobs = parse_model_outputs(outputs)  # parse the outputs to get logprobs
+    parsed_logprobs = parse_top_logprobs(outputs)  # parse the outputs to get logprobs
 
     scores = epr.compute(parsed_logprobs)
     print(f"EPR Scores: {scores}")  # noqa: T201
@@ -91,7 +91,7 @@ def openai_example() -> None:
 
     print("\nRunning EPR on Mock OpenAI Response...")  # noqa: T201
     epr = EPR()
-    mock_logprobs = parse_model_outputs(mock_response)
+    mock_logprobs = parse_top_logprobs(mock_response)
     scores = epr.compute(mock_logprobs)  # parse the outputs to get logprobs
     print(f"EPR Score: {scores[0]}")  # noqa: T201
 

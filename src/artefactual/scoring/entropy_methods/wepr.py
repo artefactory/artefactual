@@ -16,7 +16,7 @@ class WEPR(LogProbUncertaintyDetector):
     WEPR extends EPR by applying learned weights to the entropy contributions based on their ranks.
     It computes both mean-weighted and max-weighted contributions to produce a sequence-level uncertainty score.
     Token-level WEPR scores are also provided.
-    You can parse raw model outputs using the `parse_model_outputs` method from `artefactual.preprocessing`.
+    You can parse raw model outputs using the `parse_top_logprobs` method from `artefactual.preprocessing`.
     """
 
     def __init__(self, pretrained_model_name_or_path: str) -> None:
@@ -99,7 +99,7 @@ class WEPR(LogProbUncertaintyDetector):
     def compute(self, parsed_logprobs: list[dict[int, list[float]]]) -> list[float]:
         """
         Compute WEPR-based uncertainty scores from parsed log probabilities.
-        You can parse raw model outputs using the `parse_model_outputs` method from `artefactual.preprocessing`.
+        You can parse raw model outputs using the `parse_top_logprobs` method from `artefactual.preprocessing`.
 
         Args:
             parsed_logprobs: Parsed log probabilities.
@@ -137,7 +137,7 @@ class WEPR(LogProbUncertaintyDetector):
     def compute_token_scores(self, parsed_logprobs: list[dict[int, list[float]]]) -> list[NDArray[np.floating]]:
         """
         Compute token-level WEPR scores from parsed logprobs.
-        You can parse raw model outputs using the `parse_model_outputs` method from `artefactual.preprocessing`.
+        You can parse raw model outputs using the `parse_top_logprobs` method from `artefactual.preprocessing`.
 
         Args:
             parsed_logprobs: Parsed log probabilities.

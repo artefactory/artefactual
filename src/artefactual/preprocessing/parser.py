@@ -13,7 +13,7 @@ from artefactual.preprocessing.openai_parser import (
 from artefactual.preprocessing.vllm_parser import process_vllm_logprobs
 
 
-def parse_model_outputs(outputs: Any) -> list[dict[int, list[float]]]:
+def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
     """
     Parse different output formats to extract logprobs.
 
