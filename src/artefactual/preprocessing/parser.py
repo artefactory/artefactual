@@ -13,7 +13,7 @@ from artefactual.preprocessing.openai_parser import (
     process_openai_responses_api,
     sampled_tokens_logprobs,
 )
-from artefactual.preprocessing.vllm_parser import process_vllm_logprobs
+from artefactual.preprocessing.vllm_parser import process_vllm_top_logprobs
 
 
 def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
@@ -37,7 +37,7 @@ def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
         if not outputs[0].outputs:
             return []
         iterations = len(outputs[0].outputs)
-        return process_vllm_logprobs(outputs, iterations)
+        return process_vllm_top_logprobs(outputs, iterations)
 
     # OpenAI parser for classic ChatCompletion
     if hasattr(outputs, "choices") or (isinstance(outputs, dict) and "choices" in outputs):

@@ -5,7 +5,7 @@ if TYPE_CHECKING:
     from vllm import RequestOutput
 
 
-def process_vllm_logprobs(outputs: list["RequestOutput"], iterations: int) -> list[dict[int, list[float]]]:
+def process_vllm_top_logprobs(outputs: list["RequestOutput"], iterations: int) -> list[dict[int, list[float]]]:
     """
     Processes log probabilities from vllm.chat outputs for a given number of iterations.
 
