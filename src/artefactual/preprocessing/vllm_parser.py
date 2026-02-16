@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 def process_vllm_top_logprobs(outputs: list["RequestOutput"], iterations: int) -> list[dict[int, list[float]]]:
     """
-    Processes log probabilities from vllm.chat outputs for a given number of iterations.
+    Processes log probabilities from vllm `LLM.generate` (or `chat`) outputs for a given number of iterations.
 
     Args:
         outputs (list[RequestOutput]): A list containing model output objects, each with log probability data.
