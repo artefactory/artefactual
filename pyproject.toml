@@ -1,6 +1,6 @@
 [project]
 name = "artefactual"
-version = "2026.01.0"
+version = "2026.02.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -229,7 +229,7 @@ exclude = ["tests/", "scripts", "examples"]
 unresolved-import = "ignore"
 
 [tool.bumpversion]
-current_version = "2026.01.0"
+current_version = "2026.02.0"
 parse = """(?x)
     (?P<release>
         (?:[1-9][0-9]{3})\\.     # YYYY.
