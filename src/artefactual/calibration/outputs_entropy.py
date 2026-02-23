@@ -20,7 +20,7 @@ from vllm import LLM, SamplingParams
 from artefactual.calibration.utils.io import convert_bytes_to_str, load_tqa_from_json, save_to_json
 from artefactual.calibration.utils.memory import clear_gpu_memory
 from artefactual.calibration.utils.models import get_model_name, init_llm
-from artefactual.preprocessing import process_vllm_logprobs
+from artefactual.preprocessing import process_vllm_top_logprobs
 from artefactual.scoring import EPR
 
 logger = logging.getLogger(__name__)
@@ -95,7 +95,7 @@ def _process_results(
 
     if show_logprobs:
         # Compute per inner token top_k logprobs
-        token_logprob_list: list[dict[int, list[float]]] = process_vllm_logprobs(outputs, iterations)
+        token_logprob_list: list[dict[int, list[float]]] = process_vllm_top_logprobs(outputs, iterations)
         data["token_logprobs"] = token_logprob_list
     return convert_bytes_to_str(data)
 
