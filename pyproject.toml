@@ -228,7 +228,7 @@ exclude = ["tests/", "scripts", "examples"]
 [tool.ty.rules]
 unresolved-import = "ignore"
 
-[tool.bump-my-version]
+[tool.bumpversion]
 current_version = "2026.01.0"
 parse = """(?x)
     (?P<release>
@@ -242,18 +242,18 @@ commit = true
 tag = true
 tag_name = "v{new_version}"
 
-[tool.bump-my-version.parts.release]
+[tool.bumpversion.parts.release]
 calver_format = "{YYYY}.{0M}"
 
-[tool.bump-my-version.parts.patch]
+[tool.bumpversion.parts.patch]
 first_value = "0"
 
-[[tool.bump-my-version.files]]
+[[tool.bumpversion.files]]
 filename = "pyproject.toml"
 search = 'version = "{current_version}"'
 replace = 'version = "{new_version}"'
 
-[[tool.bump-my-version.files]]
+[[tool.bumpversion.files]]
 filename = "src/artefactual/__init__.py"
 search = '__version__ = "{current_version}"'
 replace = '__version__ = "{new_version}"'
