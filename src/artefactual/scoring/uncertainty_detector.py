@@ -55,7 +55,7 @@ class LogProbUncertaintyDetector(UncertaintyDetector):
 
 class SentenceProbabilityDetector(UncertaintyDetector):
     @abstractmethod
-    def compute_token_scores(self, inputs: NDArray[np.floating]) -> NDArray[np.floating]:
+    def compute_token_scores(self, inputs: NDArray[np.floating]) -> list[NDArray[np.floating]]:
         """
         Compute token-level uncertainty scores from sampled logprobs.
 

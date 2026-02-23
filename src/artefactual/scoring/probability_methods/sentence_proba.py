@@ -20,10 +20,10 @@ class SentenceProbabilityScorer(SentenceProbabilityDetector):
         Returns:
             The whole sentence probability.
         """
-        sentence_score = np.sum(inputs)
-        return np.exp(sentence_score).tolist()  # Convert log probability to probability
+        sentence_scores = [np.sum(seq) for seq in inputs]
+        return np.exp(sentence_scores).tolist()  # Convert log probability to probability
 
-    def compute_token_scores(self, inputs: NDArray[np.floating]) -> NDArray[np.floating]:
+    def compute_token_scores(self, inputs: NDArray[np.floating]) -> list[NDArray[np.floating]]:
         """
         Compute sentence-level probability scores by summing token log probabilities.
 
@@ -31,6 +31,6 @@ class SentenceProbabilityScorer(SentenceProbabilityDetector):
             inputs: A list of token log probabilities for each token in the sequence.
 
         Returns:
-            A numpy array of token-level probabilities.
+            A list of numpy arrays of token-level probabilities.
         """
-        return np.exp(inputs)
+        return [np.exp(seq) for seq in inputs]
