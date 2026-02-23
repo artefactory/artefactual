@@ -1,6 +1,8 @@
 import operator
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 if TYPE_CHECKING:
     from vllm import RequestOutput
 
@@ -44,3 +46,33 @@ def process_vllm_top_logprobs(outputs: list["RequestOutput"], iterations: int) -
         all_sequences.append(seq)
 
     return all_sequences
+
+
+def vllm_sampled_tokens_logprobs(outputs, iterations: int = 1) -> list[float]:
+    """
+    Extracts log probabilities of the sampled tokens from vLLM outputs.
+
+    Args:
+        outputs (list[RequestOutput]): A list containing model output objects, each with log probability data.
+        iterations (int) = 1: The number of iterations to process, corresponding to the number of output sequences.
+    Returns:
+        numpy.ndarray: A list of log probabilities for the sampled tokens in the sequence.
+    """
+    if not outputs or not outputs[0].outputs:
+        return np.array([])
+
+    sampled_logprobs = []
+
+    for i in range(iterations):
+        sampled_token_ids = outputs[0].outputs[i].token_ids  # The whole token ids infos
+        token_logprobs = outputs[0].outputs[i].logprobs  # The whole lobprobs infos
+        len_sentence = len(sampled_token_ids)
+        if not token_logprobs:
+            sampled_logprobs.append([])
+            continue
+
+        # Extract the log probability of the sampled token (the first item in the top-K dict)
+        sampled_token_logprobs = [token_logprobs[i][sampled_token_ids[i]].logprob for i in range(len_sentence)]
+        sampled_logprobs.append(sampled_token_logprobs)
+
+    return np.array(sampled_logprobs)

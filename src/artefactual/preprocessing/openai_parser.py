@@ -76,7 +76,7 @@ def _process_single_choice(choice: Any) -> dict[int, list[float]]:
 
 def process_openai_chat_completion(response: Any, iterations: int) -> list[dict[int, list[float]]]:
     """
-    Processes log probabilities from OpenAI Chat Completion (classic 'choices' format).
+    Processes top log probabilities from OpenAI Chat Completion (classic 'choices' format).
 
     Args:
         response (Any): The response object or dictionary from OpenAI API (ChatCompletion).
@@ -119,7 +119,7 @@ def is_openai_responses_api(outputs: Any) -> bool:
 
 def process_openai_responses_api(response: Any) -> list[dict[int, list[float]]]:
     """
-    Parses the response from the 'client.responses.create' API to extract log probabilities.
+    Parses the response from the 'client.responses.create' API to extract the top log probabilities.
 
     Structure expected: response.output -> [item] -> item.content -> [part] -> part.logprobs
 
@@ -196,7 +196,7 @@ def sampled_tokens_logprobs_responses_api(response: Any) -> NDArray | None:
     return np.array(sampled_probs)
 
 
-def sampled_tokens_logprobs_chat_completion(response: Any) -> NDArray | None:
+def sampled_tokens_logprobs_chat_completion_api(response: Any) -> NDArray | None:
     """
     Retrieves the log probabilities of the sampled tokens from a response following the OpenAI Chat Completion format.
 
@@ -218,19 +218,3 @@ def sampled_tokens_logprobs_chat_completion(response: Any) -> NDArray | None:
         if logprob is not None:
             sampled_probs.append(float(logprob))
     return np.array(sampled_probs)
-
-
-def sampled_tokens_logprobs(response: Any) -> NDArray | None:
-    """
-    Retrieves the log probabilities of the sampled tokens from the response.
-
-    Args:
-        response (Any): The response object or dictionary from OpenAI API.
-
-    Returns:
-        NDArray | None: A Numpy array of the log probabilities of
-        the sampled tokens, or None if not found.
-    """
-    if is_openai_responses_api(response):
-        return sampled_tokens_logprobs_responses_api(response)
-    return sampled_tokens_logprobs_chat_completion(response)

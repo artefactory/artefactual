@@ -5,15 +5,20 @@ Each format is handled by a dedicated parser function, defined in their respecti
 
 from typing import Any
 
+import numpy as np
 from numpy.typing import NDArray
 
 from artefactual.preprocessing.openai_parser import (
     is_openai_responses_api,
     process_openai_chat_completion,
     process_openai_responses_api,
-    sampled_tokens_logprobs,
+    sampled_tokens_logprobs_chat_completion_api,
+    sampled_tokens_logprobs_responses_api,
 )
-from artefactual.preprocessing.vllm_parser import process_vllm_top_logprobs
+from artefactual.preprocessing.vllm_parser import (
+    process_vllm_top_logprobs,
+    vllm_sampled_tokens_logprobs,
+)
 
 
 def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
@@ -55,15 +60,33 @@ def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
     raise TypeError(msg)
 
 
-def parse_token_probabilities(outputs: Any) -> NDArray:
+def parse_sampled_token_logprobs(outputs: Any) -> NDArray:
     """
     A wrapper function to parse token probabilities from various output formats.
+    First checks for vLLM format, then OpenAI ChatCompletion, and finally OpenAI Responses API.
 
     Args:
         outputs: Model outputs in various formats.
     Returns:
         NDArray of token probabilities.
     """
+    # Check for vLLM format
+    if isinstance(outputs, list) and len(outputs) > 0 and hasattr(outputs[0], "outputs"):
+        if not outputs[0].outputs:
+            return np.array([])
+        iterations = len(outputs[0].outputs)
+        return vllm_sampled_tokens_logprobs(outputs, iterations)  # already a numpy array
+
+    # Check for OpenAI ChatCompletion format
+    if hasattr(outputs, "choices") or (isinstance(outputs, dict) and "choices" in outputs):
+        return sampled_tokens_logprobs_chat_completion_api(outputs)
+
+    # Check for OpenAI Responses API format
     if is_openai_responses_api(outputs):
-        return sampled_tokens_logprobs(outputs)
-    return None
+        return sampled_tokens_logprobs_responses_api(outputs)
+
+    msg = (
+        f"Unsupported output format: {type(outputs).__name__}. "
+        "Expected vLLM RequestOutput, OpenAI ChatCompletion, or OpenAI Responses object."
+    )
+    raise TypeError(msg)
