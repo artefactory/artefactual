@@ -2,6 +2,7 @@ import operator
 from typing import TYPE_CHECKING
 
 import numpy as np
+from numpy.typing import NDArray
 
 if TYPE_CHECKING:
     from vllm import RequestOutput
@@ -48,7 +49,7 @@ def process_vllm_top_logprobs(outputs: list["RequestOutput"], iterations: int) -
     return all_sequences
 
 
-def vllm_sampled_tokens_logprobs(outputs, iterations: int = 1) -> list[float]:
+def vllm_sampled_tokens_logprobs(outputs: list["RequestOutput"], iterations: int = 1) -> NDArray:
     """
     Extracts log probabilities of the sampled tokens from vLLM outputs.
 
