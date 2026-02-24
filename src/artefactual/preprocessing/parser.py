@@ -60,7 +60,7 @@ def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
     raise TypeError(msg)
 
 
-def parse_sampled_token_logprobs(outputs: Any) -> NDArray | None:
+def parse_sampled_token_logprobs(outputs: Any) -> NDArray:
     """
     A wrapper function to parse token probabilities from various output formats.
     First checks for vLLM format, then OpenAI ChatCompletion, and finally OpenAI Responses API.
