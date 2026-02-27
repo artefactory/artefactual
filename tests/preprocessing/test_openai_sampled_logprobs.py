@@ -95,7 +95,7 @@ def _chat_completion_response(
             token_entry: dict = {"token": "<tok>", "logprob": lp, "bytes": []}
             if include_top_logprobs:
                 token_entry["top_logprobs"] = [
-                    {"token": "<top1>", "logprob": min(lp + top_logprob_offset, -1e-9), "bytes": []},
+                    {"token": "<top1>", "logprob": min(lp + top_logprob_offset, -1e-9), "bytes": []}, # Ensure top_logprob is negative and distinct
                     {"token": "<top2>", "logprob": lp - 1.0, "bytes": []},
                 ]
             content.append(token_entry)
