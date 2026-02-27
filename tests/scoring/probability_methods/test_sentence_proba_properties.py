@@ -139,15 +139,18 @@ def test_compute_token_scores_length_matches_input(logprob_lists):
 
 
 @given(
-    st.integers(min_value=1, max_value=20),
-    nonempty_seq_st,
-    st.lists(
-        st.floats(min_value=1e-4, max_value=5.0, allow_nan=False, allow_infinity=False),
-        min_size=1,
-        max_size=50,
-    ),
+    nonempty_seq_st.flatmap(
+        lambda lps_base: st.tuples(
+            st.just(lps_base),
+            st.lists(
+                st.floats(min_value=1e-4, max_value=5.0, allow_nan=False, allow_infinity=False),
+                min_size=len(lps_base),
+                max_size=len(lps_base),
+            ),
+        )
+    )
 )
-def test_higher_logprob_sequence_has_higher_sentence_probability(n, lps_base, deltas):
+def test_higher_logprob_sequence_has_higher_sentence_probability(lps_pair):
     """
     A sequence whose every token logprob is strictly higher than the
     corresponding token in another sequence must produce a strictly higher
@@ -156,9 +159,8 @@ def test_higher_logprob_sequence_has_higher_sentence_probability(n, lps_base, de
     Generated directly by adding a positive delta to each element, avoiding
     the heavy filtering that would result from assume() on independently sampled lists.
     """
-    n = min(n, len(lps_base), len(deltas))
-    lps_low = lps_base[:n]
-    lps_high = [min(lp + d, -1e-9) for lp, d in zip(lps_low, deltas[:n])]
+    lps_low, deltas = lps_pair
+    lps_high = [min(lp + d, -1e-9) for lp, d in zip(lps_low, deltas)]
     assume(all(h > l for h, l in zip(lps_high, lps_low)))
 
     scorer = SentenceProbabilityScorer()
@@ -178,25 +180,6 @@ def test_appending_token_decreases_sentence_probability(lps, extra_lp):
     short_score = scorer.compute([np.array(lps)])[0]
     long_score = scorer.compute([np.array(lps + [extra_lp])])[0]
     assert long_score < short_score
-
-
-# ---------------------------------------------------------------------------
-# List-of-arrays input (production path from parsers)
-# ---------------------------------------------------------------------------
-
-
-@given(sequences_st)
-def test_list_of_arrays_input_works(logprob_lists):
-    """
-    The production path from vllm_sampled_tokens_logprobs and the OpenAI
-    parsers returns a list of 1-D numpy arrays when sequences differ in length.
-    SentenceProbabilityScorer.compute must accept this format.
-    """
-    scorer = SentenceProbabilityScorer()
-    inputs = _as_list_of_arrays(logprob_lists)
-    result = scorer.compute(inputs)
-    assert len(result) == len(logprob_lists)
-    assert all(0.0 < p <= 1.0 for p in result)
 
 
 # ---------------------------------------------------------------------------

@@ -1,6 +1,13 @@
 import importlib.util
 
 import pytest
+from hypothesis import HealthCheck, settings
+
+settings.register_profile(
+    "default",
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
+settings.load_profile("default")
 
 VLLM_INSTALLED = importlib.util.find_spec("vllm") is not None
 

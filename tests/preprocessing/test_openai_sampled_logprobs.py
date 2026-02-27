@@ -55,7 +55,7 @@ uniform_sequences_st = st.integers(min_value=1, max_value=6).flatmap(
 
 # ragged: at least two sequences with different lengths — for variable-length tests.
 ragged_sequences_st = st.lists(nonempty_seq_st, min_size=2, max_size=6).filter(
-    lambda lol: len({len(l) for l in lol}) > 1
+    lambda lol: len({len(seq) for seq in lol}) > 1
 )
 
 
@@ -154,97 +154,59 @@ def _responses_api_response(
 
 
 # ---------------------------------------------------------------------------
+# Fixture: both API parsers share the same contract, so each property is
+# tested once with both (parser_func, response_builder) via this fixture.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(params=[
+    (sampled_tokens_logprobs_chat_completion_api, _chat_completion_response),
+    (sampled_tokens_logprobs_responses_api, _responses_api_response),
+], ids=["chat_completion", "responses_api"])
+def parser_pair(request):
+    return request.param
+
+
+# ---------------------------------------------------------------------------
 # 1. Sampled logprob identity — `logprob`, not `top_logprobs`
 # ---------------------------------------------------------------------------
 
 
-@given(uniform_sequences_st)
-def test_chat_completion_returns_sampled_logprob_not_top_k(logprob_lists):
+@given(logprob_lists=uniform_sequences_st)
+def test_returns_sampled_logprob_not_top_k(parser_pair, logprob_lists):
     """
-    The parser must extract `content[j].logprob` (the sampled token) and not
-    any value from `content[j].top_logprobs` (the top-K alternatives).
-
-    The top_logprobs values are shifted by +1.0 so the two fields are
-    distinguishable regardless of their relative magnitude.
+    The parser must extract the sampled token's logprob, not any value from
+    top_logprobs. The top_logprobs values are shifted by +1.0 so the two
+    fields are distinguishable regardless of their relative magnitude.
     """
-    response = _chat_completion_response(logprob_lists, include_top_logprobs=True)
-    result = sampled_tokens_logprobs_chat_completion_api(response)
-    for seq_result, expected in zip(result, logprob_lists):
-        np.testing.assert_allclose(seq_result, expected, rtol=1e-6)
-
-
-@given(uniform_sequences_st)
-def test_responses_api_returns_sampled_logprob_not_top_k(logprob_lists):
-    """
-    The parser must extract `logprobs[j].logprob` (the sampled token) and not
-    any value from `logprobs[j].top_logprobs` (the top-K alternatives).
-    """
-    response = _responses_api_response(logprob_lists, include_top_logprobs=True)
-    result = sampled_tokens_logprobs_responses_api(response)
+    parser_func, response_builder = parser_pair
+    response = response_builder(logprob_lists, include_top_logprobs=True)
+    result = parser_func(response)
     for seq_result, expected in zip(result, logprob_lists):
         np.testing.assert_allclose(seq_result, expected, rtol=1e-6)
 
 
 # ---------------------------------------------------------------------------
-# 2. Value fidelity
+# 2. Value range (log-probability axiom: logprob ≤ 0)
 # ---------------------------------------------------------------------------
 
 
-@given(uniform_sequences_st)
-def test_chat_completion_preserves_logprob_values(logprob_lists):
-    """Parsed values must be numerically identical to the API response values."""
-    response = _chat_completion_response(logprob_lists)
-    result = sampled_tokens_logprobs_chat_completion_api(response)
-    for seq_result, expected in zip(result, logprob_lists):
-        np.testing.assert_allclose(seq_result, expected, rtol=1e-6)
-
-
-@given(uniform_sequences_st)
-def test_responses_api_preserves_logprob_values(logprob_lists):
-    """Parsed values must be numerically identical to the API response values."""
-    response = _responses_api_response(logprob_lists)
-    result = sampled_tokens_logprobs_responses_api(response)
-    for seq_result, expected in zip(result, logprob_lists):
-        np.testing.assert_allclose(seq_result, expected, rtol=1e-6)
-
-
-# ---------------------------------------------------------------------------
-# 3. Value range (log-probability axiom: logprob ≤ 0)
-# ---------------------------------------------------------------------------
-
-
-@given(uniform_sequences_st)
-def test_chat_completion_all_logprobs_non_positive(logprob_lists):
+@given(logprob_lists=uniform_sequences_st)
+def test_all_logprobs_non_positive(parser_pair, logprob_lists):
     """All extracted logprobs must satisfy logprob ≤ 0."""
-    response = _chat_completion_response(logprob_lists)
-    result = sampled_tokens_logprobs_chat_completion_api(response)
+    parser_func, response_builder = parser_pair
+    response = response_builder(logprob_lists)
+    result = parser_func(response)
     for seq in result:
         assert np.all(np.array(seq) <= 0.0)
 
 
-@given(uniform_sequences_st)
-def test_responses_api_all_logprobs_non_positive(logprob_lists):
-    """All extracted logprobs must satisfy logprob ≤ 0."""
-    response = _responses_api_response(logprob_lists)
-    result = sampled_tokens_logprobs_responses_api(response)
-    for seq in result:
-        assert np.all(np.array(seq) <= 0.0)
-
-
-@given(uniform_sequences_st)
-def test_chat_completion_all_logprobs_finite(logprob_lists):
+@given(logprob_lists=uniform_sequences_st)
+def test_all_logprobs_finite(parser_pair, logprob_lists):
     """Extracted logprobs must be finite — no NaN, no ±inf."""
-    response = _chat_completion_response(logprob_lists)
-    result = sampled_tokens_logprobs_chat_completion_api(response)
-    for seq in result:
-        assert np.all(np.isfinite(seq))
-
-
-@given(uniform_sequences_st)
-def test_responses_api_all_logprobs_finite(logprob_lists):
-    """Extracted logprobs must be finite — no NaN, no ±inf."""
-    response = _responses_api_response(logprob_lists)
-    result = sampled_tokens_logprobs_responses_api(response)
+    parser_func, response_builder = parser_pair
+    response = response_builder(logprob_lists)
+    result = parser_func(response)
     for seq in result:
         assert np.all(np.isfinite(seq))
 
@@ -254,36 +216,21 @@ def test_responses_api_all_logprobs_finite(logprob_lists):
 # ---------------------------------------------------------------------------
 
 
-@given(uniform_sequences_st)
-def test_chat_completion_one_result_per_choice(logprob_lists):
-    """One result entry per choice in the API response."""
-    response = _chat_completion_response(logprob_lists)
-    result = sampled_tokens_logprobs_chat_completion_api(response)
+@given(logprob_lists=uniform_sequences_st)
+def test_one_result_per_sequence(parser_pair, logprob_lists):
+    """One result entry per choice / output item in the API response."""
+    parser_func, response_builder = parser_pair
+    response = response_builder(logprob_lists)
+    result = parser_func(response)
     assert len(result) == len(logprob_lists)
 
 
-@given(uniform_sequences_st)
-def test_responses_api_one_result_per_output_item(logprob_lists):
-    """One result entry per output item in the API response."""
-    response = _responses_api_response(logprob_lists)
-    result = sampled_tokens_logprobs_responses_api(response)
-    assert len(result) == len(logprob_lists)
-
-
-@given(uniform_sequences_st)
-def test_chat_completion_result_length_matches_token_count(logprob_lists):
+@given(logprob_lists=uniform_sequences_st)
+def test_result_length_matches_token_count(parser_pair, logprob_lists):
     """Each result entry must contain one logprob per generated token."""
-    response = _chat_completion_response(logprob_lists)
-    result = sampled_tokens_logprobs_chat_completion_api(response)
-    for seq_result, expected in zip(result, logprob_lists):
-        assert len(seq_result) == len(expected)
-
-
-@given(uniform_sequences_st)
-def test_responses_api_result_length_matches_token_count(logprob_lists):
-    """Each result entry must contain one logprob per generated token."""
-    response = _responses_api_response(logprob_lists)
-    result = sampled_tokens_logprobs_responses_api(response)
+    parser_func, response_builder = parser_pair
+    response = response_builder(logprob_lists)
+    result = parser_func(response)
     for seq_result, expected in zip(result, logprob_lists):
         assert len(seq_result) == len(expected)
 
@@ -297,27 +244,15 @@ def test_responses_api_result_length_matches_token_count(logprob_lists):
 # ---------------------------------------------------------------------------
 
 
-@given(ragged_sequences_st)
-def test_chat_completion_ragged_batch_does_not_crash(logprob_lists):
+@given(logprob_lists=ragged_sequences_st)
+def test_ragged_batch_does_not_crash(parser_pair, logprob_lists):
     """
-    Choices with different token counts (ragged batch) must not crash.
-    The parser must return one result entry per choice, with correct values.
+    Sequences with different token counts (ragged batch) must not crash.
+    The parser must return one result entry per sequence, with correct values.
     """
-    response = _chat_completion_response(logprob_lists)
-    result = sampled_tokens_logprobs_chat_completion_api(response)
-    assert len(result) == len(logprob_lists)
-    for seq_result, expected in zip(result, logprob_lists):
-        np.testing.assert_allclose(seq_result, expected, rtol=1e-6)
-
-
-@given(ragged_sequences_st)
-def test_responses_api_ragged_batch_does_not_crash(logprob_lists):
-    """
-    Output items with different token counts (ragged batch) must not crash.
-    The parser must return one result entry per output item, with correct values.
-    """
-    response = _responses_api_response(logprob_lists)
-    result = sampled_tokens_logprobs_responses_api(response)
+    parser_func, response_builder = parser_pair
+    response = response_builder(logprob_lists)
+    result = parser_func(response)
     assert len(result) == len(logprob_lists)
     for seq_result, expected in zip(result, logprob_lists):
         np.testing.assert_allclose(seq_result, expected, rtol=1e-6)

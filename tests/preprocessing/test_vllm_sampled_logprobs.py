@@ -111,11 +111,14 @@ def test_returns_sampled_token_logprob_not_alternative(tokens):
 
 
 @given(
-    st.integers(min_value=1, max_value=20),
-    st.lists(logprob_st, min_size=1, max_size=20),
-    st.lists(logprob_st, min_size=1, max_size=20),
+    st.integers(min_value=1, max_value=20).flatmap(
+        lambda n: st.tuples(
+            st.lists(logprob_st, min_size=n, max_size=n),
+            st.lists(logprob_st, min_size=n, max_size=n),
+        )
+    )
 )
-def test_each_iteration_uses_its_own_completion_output(n, lps0_raw, lps1_raw):
+def test_each_iteration_uses_its_own_completion_output(lps_pair):
     """
     With iterations=2 the function must pair each CompletionOutput with its
     own sequence index, not share logprobs across sequences.
@@ -126,8 +129,7 @@ def test_each_iteration_uses_its_own_completion_output(n, lps0_raw, lps1_raw):
     Both sequences are truncated to the same length `n` to isolate this
     concern from the separate ragged-array issue tested below.
     """
-    lps0 = (lps0_raw * n)[:n]
-    lps1 = (lps1_raw * n)[:n]
+    lps0, lps1 = lps_pair
 
     comp0 = _make_uniform_comp(lps0)
     comp1 = _make_uniform_comp(lps1)
@@ -198,15 +200,18 @@ def test_number_of_results_matches_iterations(n_seqs, seq_len):
 
 
 @given(
-    st.integers(min_value=1, max_value=10),
-    st.lists(logprob_st, min_size=1, max_size=10),
-    st.lists(
-        st.floats(min_value=1e-6, max_value=5.0, allow_nan=False, allow_infinity=False),
-        min_size=1,
-        max_size=10,
-    ),
+    st.lists(logprob_st, min_size=1, max_size=10).flatmap(
+        lambda lps_base: st.tuples(
+            st.just(lps_base),
+            st.lists(
+                st.floats(min_value=1e-6, max_value=5.0, allow_nan=False, allow_infinity=False),
+                min_size=len(lps_base),
+                max_size=len(lps_base),
+            ),
+        )
+    )
 )
-def test_higher_logprobs_produce_higher_sentence_score(n, lps_base, deltas):
+def test_higher_logprobs_produce_higher_sentence_score(lps_pair):
     """
     A sequence whose every token logprob is strictly higher than the
     corresponding token in another sequence must have a higher total
@@ -215,9 +220,8 @@ def test_higher_logprobs_produce_higher_sentence_score(n, lps_base, deltas):
     Generated directly: lps_high = lps_base + delta (element-wise) so the
     ordering is guaranteed without relying on assume() filtering.
     """
-    n = min(n, len(lps_base), len(deltas))
-    lps_low = lps_base[:n]
-    lps_high = [min(lp + d, -1e-9) for lp, d in zip(lps_low, deltas[:n])]
+    lps_low, deltas = lps_pair
+    lps_high = [min(lp + d, -1e-9) for lp, d in zip(lps_low, deltas)]
     assume(all(h > l for h, l in zip(lps_high, lps_low)))  # sanity guard only
 
     comp_high = _make_uniform_comp(lps_high)
