@@ -73,7 +73,7 @@ def vllm_sampled_tokens_logprobs(outputs: list["RequestOutput"], iterations: int
             continue
 
         # Extract the log probability of the sampled token (the first item in the top-K dict)
-        sampled_token_logprobs = [token_logprobs[i][sampled_token_ids[i]].logprob for i in range(len_sentence)]
+        sampled_token_logprobs = [token_logprobs[pos][sampled_token_ids[pos]].logprob for pos in range(len_sentence)]
         sampled_logprobs.append(sampled_token_logprobs)
 
     return np.array(sampled_logprobs)
