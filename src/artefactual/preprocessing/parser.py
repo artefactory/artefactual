@@ -70,7 +70,7 @@ def parse_sampled_token_logprobs(outputs: Any) -> list[NDArray]:
         list[NDArray]: A list of 1D numpy arrays, each containing the log probabilities
                        of the sampled tokens for one sequence.
     """
-    # Check for vLLM format
+    # Check for vLLM offline inference format
     if isinstance(outputs, list) and len(outputs) > 0 and hasattr(outputs[0], "outputs"):
         if not outputs[0].outputs:
             return []
