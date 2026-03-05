@@ -5,7 +5,6 @@ Each format is handled by a dedicated parser function, defined in their respecti
 
 from typing import Any
 
-import numpy as np
 from numpy.typing import NDArray
 
 from artefactual.preprocessing.openai_parser import (
@@ -60,7 +59,7 @@ def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
     raise TypeError(msg)
 
 
-def parse_sampled_token_logprobs(outputs: Any) -> NDArray:
+def parse_sampled_token_logprobs(outputs: Any) -> list[NDArray]:
     """
     A wrapper function to parse token probabilities from various output formats.
     First checks for vLLM format, then OpenAI ChatCompletion, and finally OpenAI Responses API.
@@ -68,14 +67,15 @@ def parse_sampled_token_logprobs(outputs: Any) -> NDArray:
     Args:
         outputs: Model outputs in various formats.
     Returns:
-        NDArray of token probabilities.
+        list[NDArray]: A list of 1D numpy arrays, each containing the log probabilities
+                       of the sampled tokens for one sequence.
     """
     # Check for vLLM format
     if isinstance(outputs, list) and len(outputs) > 0 and hasattr(outputs[0], "outputs"):
         if not outputs[0].outputs:
-            return np.array([])
+            return []
         iterations = len(outputs[0].outputs)
-        return vllm_sampled_tokens_logprobs(outputs, iterations)  # already a numpy array
+        return vllm_sampled_tokens_logprobs(outputs, iterations)
 
     # Check for OpenAI ChatCompletion format
     if hasattr(outputs, "choices") or (isinstance(outputs, dict) and "choices" in outputs):

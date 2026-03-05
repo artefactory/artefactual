@@ -11,12 +11,12 @@ class SentenceProbabilityScorer(SentenceProbabilityDetector):
     You can parse raw model outputs using the `parse_sampled_token_logprobs` method from `artefactual.preprocessing`.
     """
 
-    def compute(self, inputs: NDArray[np.floating]) -> list[float]:
+    def compute(self, inputs: list[NDArray[np.floating]]) -> list[float]:
         """
         Compute sentence-level probability scores by summing token log probabilities.
 
         Args:
-            inputs: A list of token log probabilities for each token in the sequence.
+            inputs: A list of 1D numpy arrays of token log probabilities, one per sequence.
         Returns:
             The whole sentence probability.
         """
@@ -26,7 +26,7 @@ class SentenceProbabilityScorer(SentenceProbabilityDetector):
         sentence_scores = [np.sum(seq) for seq in inputs]
         return np.exp(sentence_scores).tolist()  # Convert log probability to probability
 
-    def compute_token_scores(self, inputs: NDArray[np.floating]) -> list[NDArray[np.floating]]:
+    def compute_token_scores(self, inputs: list[NDArray[np.floating]]) -> list[NDArray[np.floating]]:
         """
         Compute sentence-level probability scores by summing token log probabilities.
 

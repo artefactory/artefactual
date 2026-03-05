@@ -49,7 +49,7 @@ def process_vllm_top_logprobs(outputs: list["RequestOutput"], iterations: int) -
     return all_sequences
 
 
-def vllm_sampled_tokens_logprobs(outputs: list["RequestOutput"], iterations: int = 1) -> NDArray:
+def vllm_sampled_tokens_logprobs(outputs: list["RequestOutput"], iterations: int = 1) -> list[NDArray]:
     """
     Extracts log probabilities of the sampled tokens from vLLM outputs.
 
@@ -57,23 +57,24 @@ def vllm_sampled_tokens_logprobs(outputs: list["RequestOutput"], iterations: int
         outputs (list[RequestOutput]): A list containing model output objects, each with log probability data.
         iterations (int) = 1: The number of iterations to process, corresponding to the number of output sequences.
     Returns:
-        numpy.ndarray: A list of log probabilities for the sampled tokens in the sequence.
+        list[NDArray]: A list of 1D numpy arrays, each containing the log probabilities
+                       of the sampled tokens for one sequence.
     """
     if not outputs or not outputs[0].outputs:
-        return np.array([])
+        return []
 
-    sampled_logprobs = []
+    sampled_logprobs: list[NDArray] = []
 
     for i in range(iterations):
         sampled_token_ids = outputs[0].outputs[i].token_ids  # The whole token ids infos
         token_logprobs = outputs[0].outputs[i].logprobs  # The whole lobprobs infos
         len_sentence = len(sampled_token_ids)
         if not token_logprobs:
-            sampled_logprobs.append([])
+            sampled_logprobs.append(np.array([]))
             continue
 
         # Extract the log probability of the sampled token (the first item in the top-K dict)
         sampled_token_logprobs = [token_logprobs[pos][sampled_token_ids[pos]].logprob for pos in range(len_sentence)]
-        sampled_logprobs.append(sampled_token_logprobs)
+        sampled_logprobs.append(np.array(sampled_token_logprobs))
 
-    return np.array(sampled_logprobs)
+    return sampled_logprobs
