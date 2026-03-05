@@ -6,8 +6,8 @@ from artefactual.scoring.probability_methods.sentence_proba import SentenceProba
 def test_sentence_probability_scorer_compute():
     scorer = SentenceProbabilityScorer()
 
-    # Test with 1D array of lists (multiple sentences of different lengths)
-    inputs = np.array([[-0.1, -0.2, -0.3], [-0.4, -0.5]], dtype=object)
+    # Test with list of 1D arrays (multiple sentences of different lengths)
+    inputs = [np.array([-0.1, -0.2, -0.3]), np.array([-0.4, -0.5])]
     result = scorer.compute(inputs)
 
     expected_sums = [-0.6, -0.9]
@@ -19,8 +19,8 @@ def test_sentence_probability_scorer_compute():
 def test_sentence_probability_scorer_compute_2d():
     scorer = SentenceProbabilityScorer()
 
-    # Test with 2D array (multiple sentences of same length)
-    inputs = np.array([[-0.1, -0.2], [-0.3, -0.4]])
+    # Test with list of 1D arrays (multiple sentences of same length)
+    inputs = [np.array([-0.1, -0.2]), np.array([-0.3, -0.4])]
     result = scorer.compute(inputs)
 
     expected_sums = [-0.3, -0.7]
@@ -32,7 +32,7 @@ def test_sentence_probability_scorer_compute_2d():
 def test_sentence_probability_scorer_compute_token_scores():
     scorer = SentenceProbabilityScorer()
 
-    inputs = np.array([[-0.1, -0.2, -0.3], [-0.4, -0.5]], dtype=object)
+    inputs = [np.array([-0.1, -0.2, -0.3]), np.array([-0.4, -0.5])]
     result = scorer.compute_token_scores(inputs)
 
     expected_probs = [np.exp(seq) for seq in inputs]
@@ -44,7 +44,7 @@ def test_sentence_probability_scorer_compute_token_scores():
 def test_sentence_probability_scorer_compute_token_scores_2d():
     scorer = SentenceProbabilityScorer()
 
-    inputs = np.array([[-0.1, -0.2], [-0.3, -0.4]])
+    inputs = [np.array([-0.1, -0.2]), np.array([-0.3, -0.4])]
     result = scorer.compute_token_scores(inputs)
 
     expected_probs = [np.exp(seq) for seq in inputs]
