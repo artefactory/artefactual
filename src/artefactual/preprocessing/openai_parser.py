@@ -176,22 +176,22 @@ def _parse_token_entry(token_entry: Any) -> list[float]:
     return [float(m_logprob)] if m_logprob is not None else []
 
 
-def sampled_tokens_logprobs_responses_api(response: Any) -> NDArray:
+def sampled_tokens_logprobs_responses_api(response: Any) -> list[NDArray]:
     """
     Retrieves the log probabilities of the sampled tokens from a response following the OpenAI Responses API format.
 
-    Iterates over all output items and returns a 2D array (one row per output item),
+    Iterates over all output items and returns a list of 1D arrays (one per output item),
     consistent with the vLLM counterpart.
 
     Args:
         response (Any): The response object from the OpenAI Responses API.
 
     Returns:
-        NDArray: A 2D Numpy array of shape (n_sequences, n_tokens) with the log probabilities
-                 of the sampled tokens.
+        list[NDArray]: A list of 1D numpy arrays, each containing the log probabilities
+                       of the sampled tokens for one output item.
     """
     output_list = _get_val(response, "output", [])
-    all_sampled: list[list[float]] = []
+    all_sampled: list[NDArray] = []
 
     for item in output_list:
         content_list = _get_val(item, "content", [])
@@ -204,27 +204,27 @@ def sampled_tokens_logprobs_responses_api(response: Any) -> NDArray:
                 logprob = _get_val(token_entry, "logprob")
                 if logprob is not None:
                     item_probs.append(float(logprob))
-        all_sampled.append(item_probs)
+        all_sampled.append(np.array(item_probs))
 
-    return np.array(all_sampled)
+    return all_sampled
 
 
-def sampled_tokens_logprobs_chat_completion_api(response: Any) -> NDArray:
+def sampled_tokens_logprobs_chat_completion_api(response: Any) -> list[NDArray]:
     """
     Retrieves the log probabilities of the sampled tokens from a response following the OpenAI Chat Completion format.
 
-    Iterates over all choices and returns a 2D array (one row per choice),
+    Iterates over all choices and returns a list of 1D arrays (one per choice),
     consistent with the vLLM counterpart.
 
     Args:
         response (Any): The response object from the OpenAI Chat Completion API.
 
     Returns:
-        NDArray: A 2D Numpy array of shape (n_choices, n_tokens) with the log probabilities
-                 of the sampled tokens.
+        list[NDArray]: A list of 1D numpy arrays, each containing the log probabilities
+                       of the sampled tokens for one choice.
     """
     choices = _get_val(response, "choices", [])
-    all_sampled: list[list[float]] = []
+    all_sampled: list[NDArray] = []
 
     for choice in choices:
         logprobs_obj = _get_val(choice, "logprobs")
@@ -235,6 +235,6 @@ def sampled_tokens_logprobs_chat_completion_api(response: Any) -> NDArray:
                 logprob = _get_val(token_data, "logprob")
                 if logprob is not None:
                     choice_probs.append(float(logprob))
-        all_sampled.append(choice_probs)
+        all_sampled.append(np.array(choice_probs))
 
-    return np.array(all_sampled)
+    return all_sampled
