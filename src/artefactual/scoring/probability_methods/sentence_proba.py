@@ -20,6 +20,9 @@ class SentenceProbabilityScorer(SentenceProbabilityDetector):
         Returns:
             The whole sentence probability.
         """
+        if any(len(seq) == 0 for seq in inputs):
+            no_logprob_error = "One or more sequences have no logprob data. Ensure logprobs are returned by the model."
+            raise ValueError(no_logprob_error)
         sentence_scores = [np.sum(seq) for seq in inputs]
         return np.exp(sentence_scores).tolist()  # Convert log probability to probability
 
