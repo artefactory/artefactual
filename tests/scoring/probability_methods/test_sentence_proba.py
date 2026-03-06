@@ -29,6 +29,25 @@ def test_sentence_probability_scorer_compute_2d():
     assert np.allclose(result, expected_probs)
 
 
+def test_sentence_probability_scorer_compute_empty_batch():
+    scorer = SentenceProbabilityScorer()
+    assert scorer.compute([]) == []
+
+
+def test_sentence_probability_scorer_compute_empty_sequence_returns_zero():
+    scorer = SentenceProbabilityScorer()
+    result = scorer.compute([np.array([])])
+    assert result == [0.0]
+
+
+def test_sentence_probability_scorer_compute_mixed_empty_and_non_empty():
+    scorer = SentenceProbabilityScorer()
+    inputs = [np.array([]), np.array([-0.1, -0.2])]
+    result = scorer.compute(inputs)
+    expected_probs = [0.0, float(np.exp(-0.3))]
+    assert np.allclose(result, expected_probs)
+
+
 def test_sentence_probability_scorer_compute_token_scores():
     scorer = SentenceProbabilityScorer()
 
