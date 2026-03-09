@@ -26,7 +26,7 @@ class SentenceProbabilityScorer(SentenceProbabilityDetector):
 
     def compute_token_scores(self, inputs: list[NDArray[np.floating]]) -> list[NDArray[np.floating]]:
         """
-        Compute sentence-level probability scores by summing token log probabilities.
+        Returns the sampled token probabilities (exponentiating token logprobs).
 
         Args:
             inputs: A list of token log probabilities for each token in the sequence.
