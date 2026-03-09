@@ -66,8 +66,8 @@ def vllm_sampled_tokens_logprobs(outputs: list["RequestOutput"], iterations: int
     sampled_logprobs: list[NDArray] = []
 
     for i in range(iterations):
-        sampled_token_ids = outputs[0].outputs[i].token_ids  # The whole token ids infos
-        token_logprobs = outputs[0].outputs[i].logprobs  # The whole lobprobs infos
+        sampled_token_ids = outputs[0].outputs[i].token_ids  # whole token ids infos
+        token_logprobs = outputs[0].outputs[i].logprobs  # whole logprobs infos
         len_sentence = len(sampled_token_ids)
         if not token_logprobs:
             sampled_logprobs.append(np.array([]))
