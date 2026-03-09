@@ -12,7 +12,7 @@ body = """
 {% macro print_commit(commit) -%}
     - {% if commit.scope %}*({{ commit.scope }})* {% endif %}\
         {{ commit.message | upper_first }}\
-        {% if commit.github.username %} by @{{ commit.github.username }}{% endif %}\
+        {% if commit.github.username %} by @{{ commit.github.username }}{% endif %} \
         in [#{{ commit.github.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.github.pr_number }})
 {% endmacro -%}
 
