@@ -100,7 +100,7 @@ response = {
 
 ### Further Examples
 
- Some examples and dummy scripts are available, such as `examples/epr_usage_demo.py` and `examples/calibration_script.py`, that demonstrate basic usage and the calibration pipeline.
+ Some examples and dummy scripts are available, such as `examples/epr_usage_demo.py` and `examples/calibration_script.py`, that demonstrate basic usage.
 
 
 ## Calibration logic
