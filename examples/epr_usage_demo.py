@@ -1,29 +1,19 @@
-import sys
-from pathlib import Path
-
-from vllm import LLM, SamplingParams
+from mock_vllm import load_json
 
 from artefactual.preprocessing import parse_top_logprobs
 from artefactual.scoring import EPR, WEPR
 
 # Add src to path so we can import artefactual if not installed
-_current_dir = Path(__file__).resolve().parent
-sys.path.append(str(_current_dir.parent / "src"))
 
 
-def vllm_example() -> None:
+def mock_vllm_example() -> None:
     # ==========================================
-    # OPTION 1: vLLM Example
+    # OPTION 1: Mocked vLLM Example
     # ==========================================
 
-    # # Initialize vLLM
-    llm = LLM(model="mistralai/Ministral-8B-Instruct-2410")
-    prompts = ["The capital of France is"]
-
-    sampling_params = SamplingParams(temperature=0.8, top_p=0.95, logprobs=15, max_tokens=20)
-
-    print("Running inference with vLLM...")  # noqa: T201
-    outputs = llm.generate(prompts, sampling_params)
+    fixture_path = "wepr_demo_responses.json"
+    print(f"Loading mock vLLM data from {fixture_path}...")  # noqa: T201
+    outputs = load_json(fixture_path)
 
     # Compute EPR
     epr = EPR()  # initialize with default calibration
@@ -39,7 +29,7 @@ def vllm_example() -> None:
     print(f"Token Scores (first seq): {token_scores[0]}")  # noqa: T201
 
     # Compute WEPR
-    weights_path = _current_dir.parent / "src" / "artefactual" / "data" / "weights_ministral.json"
+    weights_path = "weights_ministral.json"
     wepr = WEPR(pretrained_model_name_or_path=str(weights_path))
     wepr.compute(parsed_logprobs)
 
@@ -95,11 +85,11 @@ def openai_example() -> None:
     scores = epr.compute(mock_logprobs)  # parse the outputs to get logprobs
     print(f"EPR Score: {scores[0]}")  # noqa: T201
 
-    weights_path = _current_dir.parent / "src" / "artefactual" / "data" / "weights_ministral.json"
+    weights_path = "weights_ministral.json"
     wepr = WEPR(pretrained_model_name_or_path=str(weights_path))
     wepr.compute(mock_logprobs)
 
 
 if __name__ == "__main__":
-    vllm_example()
-    # openai_example()
+    mock_vllm_example()
+    openai_example()
