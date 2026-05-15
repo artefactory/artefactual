@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from mock_vllm import load_json
 
 from artefactual.preprocessing import parse_top_logprobs
@@ -11,7 +13,7 @@ def mock_vllm_example() -> None:
     # OPTION 1: Mocked vLLM Example
     # ==========================================
 
-    fixture_path = "wepr_demo_responses.json"
+    fixture_path = Path(__file__).parent / "wepr_demo_responses.json"
     print(f"Loading mock vLLM data from {fixture_path}...")  # noqa: T201
     outputs = load_json(fixture_path)
 
@@ -29,7 +31,7 @@ def mock_vllm_example() -> None:
     print(f"Token Scores (first seq): {token_scores[0]}")  # noqa: T201
 
     # Compute WEPR
-    weights_path = "weights_ministral.json"
+    weights_path = Path(__file__).parent / "weights_ministral.json"
     wepr = WEPR(pretrained_model_name_or_path=str(weights_path))
     wepr.compute(parsed_logprobs)
 
@@ -85,7 +87,7 @@ def openai_example() -> None:
     scores = epr.compute(mock_logprobs)  # parse the outputs to get logprobs
     print(f"EPR Score: {scores[0]}")  # noqa: T201
 
-    weights_path = "weights_ministral.json"
+    weights_path = Path(__file__).parent / "weights_ministral.json"
     wepr = WEPR(pretrained_model_name_or_path=str(weights_path))
     wepr.compute(mock_logprobs)
 

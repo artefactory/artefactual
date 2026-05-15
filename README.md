@@ -33,6 +33,16 @@ uv pip install '.[calibration]'
 
 *Note*: Typical packages included in this installation method are `scikit-learn` (training), `vllm` (model generation), `ray` (optional distributed processing), `pandas`, `numpy`, and `tqdm`. Installing these may require system-level libraries or CUDA support depending on your environment.
 
+## Quickstart
+
+To try the examples instantly (no GPU or model downloads required) run the following commands :
+
+```bash
+uv sync
+uv run python examples/epr_usage_demo.py
+uv run jupyter lab examples/wepr_demo.ipynb
+```
+
 ## Basic usage (sequence-level scores)
 
 ### EPR example:
@@ -100,8 +110,7 @@ response = {
 
 ### Further Examples
 
- Some examples and dummy scripts are available, such as `examples/epr_usage_demo.py` and `examples/calibration_script.py`, that demonstrate basic usage.
-
+ Some examples and dummy scripts are available, such as `examples/epr_usage_demo.py` and `examples/wepr_demo.ipynb`, that demonstrate basic usage.
 
 ## Calibration logic
 
