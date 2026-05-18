@@ -30,6 +30,7 @@ uv pip install -e '.[calibration]'
 # or non-editable:
 uv pip install '.[calibration]'
 ```
+*Mac users:* the calibration extra omits vllm (no Darwin wheels). Running the full calibration pipeline on Mac requires an alternative generation backend.
 
 *Note*: Typical packages included in this installation method are `scikit-learn` (training), `vllm` (model generation), `ray` (optional distributed processing), `pandas`, `numpy`, and `tqdm`. Installing these may require system-level libraries or CUDA support depending on your environment.
 
@@ -48,14 +49,14 @@ uv run jupyter lab examples/wepr_demo.ipynb
 ### EPR example:
 
 ```python
-from artefactual.preprocessing import parse_model_outputs
+from artefactual.preprocessing import parse_top_logprobs
 from artefactual.scoring import EPR
 
 # Use precomputed calibration (model keys are defined in the registry)
 epr = EPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")
 
 # Compute sequence-level calibrated probabilities (list of floats)
-parsed_logprobs = parse_model_outputs(response) # extract logprobs from the output
+parsed_logprobs = parse_top_logprobs(response) # extract logprobs from the output # response should be your OpenAI/vLLM output object
 seq_scores_epr = epr.compute(parsed_logprobs)
 
 # Compute token-level scores (list of numpy arrays)
@@ -63,6 +64,8 @@ token_scores_epr = epr.compute_token_scores(parsed_logprobs)
 
 print("EPR sequence scores:", seq_scores_epr)
 ```
+
+For a runnable demo run `examples/epr_usage_demo.py`.
 
 ### WEPR example:
 
@@ -73,7 +76,7 @@ from artefactual.scoring import WEPR
 wepr = WEPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")
 
 # Compute sequence-level calibrated probabilities (list of floats)
-parsed_logprobs = parse_model_outputs(response)
+parsed_logprobs = parse_top_logprobs(response) # response should be your OpenAI/vLLM output object
 seq_scores_wepr = wepr.compute(parsed_logprobs)
 
 # Compute token-level scores (list of numpy arrays)
@@ -81,11 +84,12 @@ token_scores_wepr = wepr.compute_token_scores(parsed_logprobs)
 
 print("WEPR sequence scores:", seq_scores_wepr)
 ```
+For a runnable demo run `examples/wepr_demo.ipynb`.
 
 In both examples, the `response` object can have the following structure :
 
 ```python
-# Example: using an OpenAI Responses-like structure (minimal illustrative example)
+# Example: using an OpenAI Responses-like structure (minimal illustrative example, not runnable)
 response = {
 	"object": "response",
 	"output": [
@@ -110,7 +114,9 @@ response = {
 
 ### Further Examples
 
- Some examples and dummy scripts are available, such as `examples/epr_usage_demo.py` and `examples/wepr_demo.ipynb`, that demonstrate basic usage.
+Some examples and dummy scripts are available :
+* `examples/epr_usage_demo.py` — EPR usage demo
+* `examples/wepr_demo.ipynb` — Jupyter notebook showcasing WEPR scoring
 
 ## Calibration logic
 
@@ -126,7 +132,11 @@ If you prefer to provide a custom calibration or weight file, pass a filesystem 
 
 ### Advanced: Calibration pipeline (for deep usage)
 
-The calibration pipeline in this package produces the `weights_*.json` and `calibration_*.json` files used to turn raw entropy scores into calibrated probabilities. The implemented flow (all modules live under `src/artefactual/calibration`) is:
+The calibration pipeline in this package produces the `weights_*.json` and `calibration_*.json` files used to turn raw entropy scores into calibrated probabilities.
+
+For an example of the implementation of this flow you can refer to the provided calibration script `scripts/calibration_llm/calibration_script.py`.
+
+The implemented flow (all modules live under `src/artefactual/calibration`) is:
 
 1. Prepare a QA dataset of question/answers (e.g., `web_question_qa.json`) containing entries like:
 
