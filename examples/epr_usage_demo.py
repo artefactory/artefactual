@@ -5,8 +5,6 @@ from mock_vllm import load_json
 from artefactual.preprocessing import parse_top_logprobs
 from artefactual.scoring import EPR, WEPR
 
-# Add src to path so we can import artefactual if not installed
-
 
 def mock_vllm_example() -> None:
     # ==========================================

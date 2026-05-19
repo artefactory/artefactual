@@ -50,6 +50,6 @@ class DemoRequestOutput:
 
 def load_json(path: Path) -> list[DemoRequestOutput]:
     """Read the fixture JSON file and return the list of mock RequestOutput objects."""
-    with Path(path).open() as f:
+    with path.open() as f:
         data = json.load(f)
     return [DemoRequestOutput.from_dict(item) for item in data["responses"]]
