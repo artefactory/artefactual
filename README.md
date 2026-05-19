@@ -56,7 +56,7 @@ from artefactual.scoring import EPR
 epr = EPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")
 
 # Compute sequence-level calibrated probabilities (list of floats)
-parsed_logprobs = parse_top_logprobs(response) # extract logprobs from the output # response should be your OpenAI/vLLM output object
+parsed_logprobs = parse_top_logprobs(response)  # response should be your OpenAI/vLLM output object
 seq_scores_epr = epr.compute(parsed_logprobs)
 
 # Compute token-level scores (list of numpy arrays)
