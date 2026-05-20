@@ -1,7 +1,10 @@
-from vllm import LLM
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from vllm import LLM
 
 
-def init_llm(model_path: str, seed: int) -> LLM:
+def init_llm(model_path: str, seed: int) -> "LLM":
     """
     Initialize a vLLM LLM instance.
 
@@ -12,6 +15,8 @@ def init_llm(model_path: str, seed: int) -> LLM:
     Returns:
         An initialized LLM object.
     """
+    from vllm import LLM
+
     if model_path.startswith("mistralai/"):
         llm = LLM(
             model=model_path,
