@@ -5,7 +5,15 @@ from typing import Any
 
 import pandas as pd
 from pydantic import BaseModel, ValidationError
-from vllm import SamplingParams
+
+try:
+    from vllm import SamplingParams
+except ImportError:
+
+    class SamplingParams:  # type: ignore[no-redef]
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            pass
+
 
 from artefactual.calibration.utils.models import init_llm
 
