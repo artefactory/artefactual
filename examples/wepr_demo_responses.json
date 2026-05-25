@@ -40,7 +40,7 @@
           "token_ids": [3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3010, 3011],
           "logprobs": [
             {
-              "3001": {"decoded_token": "Charles",   "logprob": -0.10, "rank": 1},
+              "3001": {"decoded_token": "Charles",   "logprob": -0.50, "rank": 1},
               "4001": {"decoded_token": "He",        "logprob": -2.10, "rank": 2},
               "4002": {"decoded_token": "The",       "logprob": -2.60, "rank": 3},
               "4003": {"decoded_token": "A",         "logprob": -3.20, "rank": 4},
@@ -75,7 +75,7 @@
               "4043": {"decoded_token": " Czech",    "logprob": -2.30, "rank": 5}
             },
             {
-              "3006": {"decoded_token": " researcher","logprob": -1.70, "rank": 1},
+              "3006": {"decoded_token": " singer","logprob": -1.70, "rank": 1},
               "4050": {"decoded_token": " engineer",  "logprob": -1.90, "rank": 2},
               "4051": {"decoded_token": " writer",    "logprob": -2.00, "rank": 3},
               "4052": {"decoded_token": " professor", "logprob": -2.10, "rank": 4},
