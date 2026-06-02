@@ -1,6 +1,8 @@
 from langfuse import Langfuse
-from artefactual.adapters.hallucination_detector import HallucinationDetector
+
 from artefactual.preprocessing import parse_top_logprobs
+from artefactual.scoring.hallucination_detector import HallucinationDetector
+
 
 class HallucinationEvaluator:
     def __init__(self, name: str, langfuse_client: Langfuse, detector: HallucinationDetector) -> None:
@@ -18,4 +20,3 @@ class HallucinationEvaluator:
             value=value,
         )
         return value
-
