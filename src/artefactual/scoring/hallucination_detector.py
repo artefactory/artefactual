@@ -1,5 +1,3 @@
-from sklearn.base import ClassifierMixin
-
 from artefactual.scoring import EPR, WEPR
 
 
