@@ -18,6 +18,6 @@ class HallucinationEvaluator:
             trace_id=trace_id,
             name=self.name,
             value=value,
-            score_id=f"{trace_id}-{value}",  # idempotency key
+            id=f"{trace_id}-{value}",  # idempotency key
         )
         return value
