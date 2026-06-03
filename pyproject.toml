@@ -43,7 +43,7 @@ calibration = [
     "torch>=2.9.0",
 ]
 adapters =[
-    "langfuse>=4.7.0",
+    "langfuse>=4.6.1",
     "python-dotenv>=1.2.2",
     "openai>=2.38.0",
 ]
