@@ -3,8 +3,8 @@ from sklearn.base import ClassifierMixin
 from artefactual.scoring import EPR, WEPR
 
 
-class HallucinationDetector(ClassifierMixin):
-    def predict_proba(self, parsed_logprobs) -> list[float]:
+class HallucinationDetector:
+    def predict_proba(self, parsed_logprobs: list[dict[int, list[float]]]) -> list[float]:
         raise NotImplementedError
 
 
