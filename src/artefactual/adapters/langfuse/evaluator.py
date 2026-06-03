@@ -1,7 +1,12 @@
-from langfuse import Langfuse
+from etils import epy
 
 from artefactual.preprocessing import parse_top_logprobs
 from artefactual.scoring.hallucination_detector import HallucinationDetector
+
+try:
+    from langfuse import Langfuse
+except ImportError as e:
+    epy.reraise(e, "Langfuse is not installed. Please install the 'langfuse' extra ")
 
 
 class HallucinationEvaluator:
