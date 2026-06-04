@@ -2,8 +2,8 @@ from pathlib import Path
 
 from mock_vllm import load_json
 
+from artefactual import EPR, WEPR
 from artefactual.preprocessing import parse_top_logprobs
-from artefactual.scoring import EPR, WEPR
 
 
 def mock_vllm_example() -> None:
