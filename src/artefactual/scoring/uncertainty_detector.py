@@ -69,6 +69,18 @@ class LogProbUncertaintyDetector(UncertaintyDetector):
 
 
 class SentenceProbabilityDetector(UncertaintyDetector):
+    def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+        warnings.warn(
+            "SentenceProbabilityDetector is deprecated and will be removed in a future version. "
+            "Note that SentenceProbabilityScorer operates on sampled token logprobs (list[NDArray]) "
+            "produced by parse_sampled_token_logprobs — which is a completely different input format "
+            "from EntropyFeatureExtractor. Please direct your code to use SentenceProbabilityScorer "
+            "as the maintained scorer for this specific use case until a scikit-learn native "
+            "replacement is provided.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+
     @abstractmethod
     def compute_token_scores(self, inputs: list[NDArray[np.floating]]) -> list[NDArray[np.floating]]:
         """
