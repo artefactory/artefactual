@@ -4,9 +4,11 @@ from artefactual.preprocessing.openai_parser import (
     process_openai_responses_api,
 )
 from artefactual.preprocessing.parser import parse_sampled_token_logprobs, parse_top_logprobs
+from artefactual.preprocessing.parser_wrapper import LogProbParser
 from artefactual.preprocessing.vllm_parser import process_vllm_top_logprobs
 
 __all__ = [
+    "LogProbParser",
     "is_openai_responses_api",
     "parse_sampled_token_logprobs",
     "parse_top_logprobs",
