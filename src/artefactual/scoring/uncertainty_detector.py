@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -7,6 +8,14 @@ from numpy.typing import NDArray
 
 class UncertaintyDetector(ABC):
     """A base class for uncertainty detection methods."""
+
+    def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+        warnings.warn(
+            "UncertaintyDetector is deprecated and will be removed in a future version. "
+            "Use EntropyFeatureExtractor and HallucinationDetector instead.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
 
     @abstractmethod
     def compute(self, inputs: Any) -> list[float]:
@@ -35,6 +44,12 @@ class LogProbUncertaintyDetector(UncertaintyDetector):
         Raises:
             ValueError: If k is not positive
         """
+        warnings.warn(
+            "LogProbUncertaintyDetector is deprecated and will be removed in a future version. "
+            "Use sklearn pipeline with EntropyFeatureExtractor and HallucinationDetector instead.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         if k <= 0:
             msg = f"k must be positive, got {k}"
             raise ValueError(msg)
