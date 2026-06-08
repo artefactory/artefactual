@@ -1,4 +1,3 @@
-import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 
 from artefactual import parse_top_logprobs
@@ -10,7 +9,7 @@ class LogProbParser(BaseEstimator, TransformerMixin):
 
     Because this transformer accepts non-standard list[dict] inputs
     by bypassing scikit-learn validation, cross-validation
-    must start from data that has already been parsed into numeric matrices.
+    must start from data that has already been parsed.
     """
 
     def __init__(self):
@@ -19,7 +18,7 @@ class LogProbParser(BaseEstimator, TransformerMixin):
     def fit(self, _x, _y=None) -> "LogProbParser":
         return self
 
-    def transform(self, x: list[dict]) -> np.ndarray:
+    def transform(self, x: list) -> list[dict[int, list[float]]]:
         return parse_top_logprobs(x)
 
     def _more_tags(self) -> dict[str, bool]:
