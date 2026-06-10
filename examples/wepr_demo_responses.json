@@ -75,7 +75,7 @@
               "4043": {"decoded_token": " Czech",    "logprob": -2.30, "rank": 5}
             },
             {
-              "3006": {"decoded_token": " singer","logprob": -1.70, "rank": 1},
+              "3006": {"decoded_token": " researcher","logprob": -1.70, "rank": 1},
               "4050": {"decoded_token": " engineer",  "logprob": -1.90, "rank": 2},
               "4051": {"decoded_token": " writer",    "logprob": -2.00, "rank": 3},
               "4052": {"decoded_token": " professor", "logprob": -2.10, "rank": 4},
