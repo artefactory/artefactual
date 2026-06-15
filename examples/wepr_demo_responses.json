@@ -36,7 +36,7 @@
       "prompt": "Who is Charles Moslonka ? Where was he born ? Please answer in two sentences.",
       "outputs": [
         {
-          "text": "Charles Moslonka is a French researcher born in Lyon in 1985.",
+          "text": "Charles Moslonka is a French singer born in Lyon in 1985.",
           "token_ids": [3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3010, 3011],
           "logprobs": [
             {
@@ -75,7 +75,7 @@
               "4043": {"decoded_token": " Czech",    "logprob": -2.30, "rank": 5}
             },
             {
-              "3006": {"decoded_token": " researcher","logprob": -1.70, "rank": 1},
+              "3006": {"decoded_token": " singer","logprob": -1.70, "rank": 1},
               "4050": {"decoded_token": " engineer",  "logprob": -1.90, "rank": 2},
               "4051": {"decoded_token": " writer",    "logprob": -2.00, "rank": 3},
               "4052": {"decoded_token": " professor", "logprob": -2.10, "rank": 4},
