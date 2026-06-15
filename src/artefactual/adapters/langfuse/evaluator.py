@@ -1,11 +1,14 @@
+from etils import epy
+
 from artefactual.preprocessing import parse_top_logprobs
 from artefactual.scoring.hallucination_detector import HallucinationDetector
 
 with epy.lazy_imports():
-  import langfuse
+    import langfuse
+
 
 class HallucinationEvaluator:
-    def __init__(self, name: str, langfuse_client: langfuse.Langfuse, detector: HallucinationDetector) -> None:
+    def __init__(self, name: str, langfuse_client: langfuse.Langfuse, detector: HallucinationDetector) -> None:  # type: ignore
         self.name = name
         self.langfuse = langfuse_client
         self.detector = detector
