@@ -4,49 +4,19 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from artefactual.scoring.entropy_methods.entropy_contributions import compute_entropy_contributions
 
 
-class EPRFeatureExtractor(BaseEstimator, TransformerMixin):
-    """
-    EPR feature extractor. Produces a feature matrix of shape (n_samples, 1).
-
-    For each sequence: sums entropy contributions across rank K per token to get
-    a per-token EPR score, then takes the mean across all tokens.
-
-    Accepts list[dict[int, list[float]]].
-    Bypasses sklearn array validation via _more_tags to handle this non-standard input.
-    """
-
+class FeatureExtractor(BaseEstimator, TransformerMixin):
     def __init__(self, k: int = 15) -> None:
         self.k = k
 
     def fit(self, _x, _y=None) -> "EPRFeatureExtractor":
         return self
 
-    def transform(self, x: list[dict[int, list[float]]]) -> np.ndarray:
-        features = []
-        for token_logprobs in x:
-            if not token_logprobs:
-                features.append(0.0)
-                continue
-            sorted_indices = sorted(token_logprobs.keys())
-            logprobs_list = [token_logprobs[i] for i in sorted_indices]
-            s_kj = compute_entropy_contributions(logprobs_list, self.k)  # (n_tokens, k)
-            features.append(np.mean(np.sum(s_kj, axis=1)))
-        return np.array(features, dtype=np.float32).reshape(-1, 1)  # (n_samples, 1)
-
-    def _more_tags(self) -> dict[str, bool]:
-        return {"no_validation": True}
-
-
-class WEPRFeatureExtractor(BaseEstimator, TransformerMixin):
-    """
-    WEPR feature extractor. Produces a feature matrix of shape (n_samples, 2 * k).
-    """
-
-    def __init__(self, k: int = 15) -> None:
-        self.k = k
-
-    def fit(self, _x, _y=None) -> "WEPRFeatureExtractor":
-        return self
+    @property
+    def fallback_value(self):
+        """
+        Subclasses must implement what to return if a sample is empty.
+        """
+        raise NotImplementedError
 
     def transform(self, x: list[dict[int, list[float]]]) -> np.ndarray:
         """
@@ -58,16 +28,35 @@ class WEPRFeatureExtractor(BaseEstimator, TransformerMixin):
         features = []
         for token_logprobs in x:
             if not token_logprobs:
-                features.append(np.zeros(2 * self.k, dtype=np.float32))
+                features.append(self.fallback_value)
                 continue
             sorted_indices = sorted(token_logprobs.keys())
             logprobs_list = [token_logprobs[i] for i in sorted_indices]
             s_kj = compute_entropy_contributions(logprobs_list, self.k)  # (n_tokens, k)
-            features.append(np.concatenate([np.mean(s_kj, axis=0), np.max(s_kj, axis=0)]))  # (2k,)
-        return np.array(features, dtype=np.float32)  # (n_samples, 2k)
+            features.append(self._reduce(s_kj))  # (2k,)
+        return np.vstack(features, dtype=np.float32)  # (n_samples, 2k)
 
     def _more_tags(self) -> dict[str, bool]:
-        """
-        Configures scikit-learn estimator tags to bypass default array conversion validation.
-        """
         return {"no_validation": True}
+
+
+class EPRFeatureExtractor(FeatureExtractor):
+    @property
+    def fallback_value(self):
+        return 0.0  # Scalar fallback
+
+    def _reduce(self, entropy_contributions):
+        return np.mean(np.sum(entropy_contributions, axis=1))
+
+
+class WEPRFeatureExtractor(FeatureExtractor):
+    """
+    WEPR feature extractor. Produces a feature matrix of shape (n_samples, 2 * k).
+    """
+
+    @property
+    def fallback_value(self):
+        return np.zeros(2 * self.k, dtype=np.float32)
+
+    def _reduce(self, entropy_contributions):
+        return np.concatenate([np.mean(entropy_contributions, axis=0), np.max(entropy_contributions, axis=0)])
