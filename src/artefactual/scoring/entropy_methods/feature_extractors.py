@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 
-from artefactual.scoring.entropy_methods.entropy_contributions import compute_entropy_contributions
+from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin
 
 
 class FeatureExtractor(BaseEstimator, TransformerMixin):
@@ -32,7 +32,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
                 continue
             sorted_indices = sorted(token_logprobs.keys())
             logprobs_list = [token_logprobs[i] for i in sorted_indices]
-            s_kj = compute_entropy_contributions(logprobs_list, self.k)  # (n_tokens, k)
+            s_kj = EntropyContributionsMixin.compute_entropy_contributions(logprobs_list, self.k)  # (n_tokens, k)
             features.append(self._reduce(s_kj))  # (2k,)
         return np.vstack(features, dtype=np.float32)  # (n_samples, 2k)
 
