@@ -89,7 +89,7 @@ class EPR(LogProbUncertaintyDetector):
             logprobs_list = [token_logprobs_dict[i] for i in sorted_indices]
 
             # Vectorized Entropy Calculation
-            s_kj = EntropyContributionsMixin.compute_entropy_contributions(logprobs_list, self.k)
+            s_kj = EntropyContributionsMixin.entropy_contributions(logprobs_list, self.k)
 
             # sum over rank K (Token EPR)
             token_epr = np.sum(s_kj, axis=1)  # shape = (num_tokens_in_sequence)
