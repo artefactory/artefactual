@@ -6,7 +6,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin
 
 
-class FeatureExtractor(BaseEstimator, TransformerMixin):
+class EntropyTransformer(BaseEstimator, TransformerMixin):
     def __init__(self, k: int = 15) -> None:
         self.k = k
 
@@ -42,7 +42,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
         return {"no_validation": True}
 
 
-class EPRFeatureExtractor(FeatureExtractor):
+class EPRFeatureExtractor(EntropyTransformer):
     @property
     def fallback_value(self) -> float:
         return 0.0  # Scalar fallback
@@ -51,7 +51,7 @@ class EPRFeatureExtractor(FeatureExtractor):
         return np.mean(np.sum(entropy_contributions, axis=1))
 
 
-class WEPRFeatureExtractor(FeatureExtractor):
+class WEPRFeatureExtractor(EntropyTransformer):
     """
     WEPR feature extractor. Produces a feature matrix of shape (n_samples, 2 * k).
     """
