@@ -9,16 +9,6 @@ from artefactual.scoring.entropy_methods.entropy_contributions import EntropyCon
 from artefactual.scoring.uncertainty_detector import LogProbUncertaintyDetector
 from artefactual.utils.io import load_weights
 
-"""
-class PretrainedLogisticRegression(LogisticRegression):
-    @classmethod
-    def from_pretrained(cls, pretrained_model_or_path: Path | str):
-        weights = load_weights(...)  # à remplacer avec skops
-
-        lr = cls(WEIGHTS, ...)
-        return lr
-"""
-
 
 class WEPR(LogProbUncertaintyDetector):
     """
