@@ -13,8 +13,9 @@ class EntropyContributionsMixin:
     Mixin that provides entropy contribution computation for top-K logprobs.
     """
 
+    @staticmethod
     @beartype
-    def compute_entropy_contributions(logprobs: NDArray[np.floating] | Sequence[Any], k: int) -> NDArray[np.floating]:
+    def entropy_contributions(logprobs: NDArray[np.floating] | Sequence[Any], k: int) -> NDArray[np.floating]:
         """Compute entropic contributions s_kj = -p_k log(p_k) for top-K logprobs using vectorized operations.
         Args:
             logprobs: A 2D array of shape (num_tokens, num_logprobs) containing log probabilities.
