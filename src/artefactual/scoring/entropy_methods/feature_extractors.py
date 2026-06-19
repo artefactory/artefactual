@@ -1,3 +1,5 @@
+from typing import NoReturn
+
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 
@@ -12,7 +14,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
         return self
 
     @property
-    def fallback_value(self):
+    def fallback_value(self) -> NoReturn:
         """
         Subclasses must implement what to return if a sample is empty.
         """
@@ -33,7 +35,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
             sorted_indices = sorted(token_logprobs.keys())
             logprobs_list = [token_logprobs[i] for i in sorted_indices]
             s_kj = EntropyContributionsMixin.compute_entropy_contributions(logprobs_list, self.k)  # (n_tokens, k)
-            features.append(self._reduce(s_kj))  # (2k,)
+            features.append(self.reduce(s_kj))  # (2k,)
         return np.vstack(features, dtype=np.float32)  # (n_samples, 2k)
 
     def _more_tags(self) -> dict[str, bool]:
@@ -42,10 +44,10 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
 
 class EPRFeatureExtractor(FeatureExtractor):
     @property
-    def fallback_value(self):
+    def fallback_value(self) -> float:
         return 0.0  # Scalar fallback
 
-    def _reduce(self, entropy_contributions):
+    def reduce(self, entropy_contributions) -> np.float32:
         return np.mean(np.sum(entropy_contributions, axis=1))
 
 
@@ -55,8 +57,8 @@ class WEPRFeatureExtractor(FeatureExtractor):
     """
 
     @property
-    def fallback_value(self):
+    def fallback_value(self) -> np.ndarray:
         return np.zeros(2 * self.k, dtype=np.float32)
 
-    def _reduce(self, entropy_contributions):
+    def reduce(self, entropy_contributions) -> np.ndarray:
         return np.concatenate([np.mean(entropy_contributions, axis=0), np.max(entropy_contributions, axis=0)])
