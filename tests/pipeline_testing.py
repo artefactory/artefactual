@@ -1,10 +1,7 @@
-import sys
 from pathlib import Path
 
 import numpy as np
 from sklearn.pipeline import Pipeline
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from artefactual.preprocessing.parser import LogProbParser
 from artefactual.scoring.entropy_methods.feature_extractors import EPRFeatureExtractor, WEPRFeatureExtractor
@@ -20,7 +17,7 @@ def epr_pipeline():
         ("features", EPRFeatureExtractor(k=15)),
         (
             "detector",
-            PretrainedLogisticRegression.from_pretrained("src/artefactual/data" / "calibration_ministral.json"),
+            PretrainedLogisticRegression.from_pretrained("src/artefactual/data/calibration_mistral_small.json"),
         ),
     ])
 
@@ -29,7 +26,7 @@ def wepr_pipeline():
     return Pipeline([
         ("parser", LogProbParser()),
         ("features", WEPRFeatureExtractor(k=15)),
-        ("detector", PretrainedLogisticRegression.from_pretrained("src/artefactual/data" / "weights_ministral.json")),
+        ("detector", PretrainedLogisticRegression.from_pretrained("src/artefactual/data/weights_mistral_small.json")),
     ])
 
 
@@ -42,6 +39,7 @@ def test_epr(epr_pipeline):
 
 
 epr_pipeline_instance = epr_pipeline()
+# print(test_epr(epr_pipeline_instance))
 
 
 def test_wepr(wepr_pipeline):
@@ -53,3 +51,4 @@ def test_wepr(wepr_pipeline):
 
 
 wepr_pipeline_instance = wepr_pipeline()
+# print(test_wepr(wepr_pipeline_instance))
