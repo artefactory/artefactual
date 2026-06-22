@@ -7,6 +7,7 @@ from typing import Any
 
 from numpy.typing import NDArray
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.utils import Tags
 
 from artefactual.preprocessing.openai_parser import (
     is_openai_responses_api,
@@ -39,12 +40,12 @@ class LogProbParser(BaseEstimator, TransformerMixin):
     def transform(self, x: list) -> list[dict[int, list[float]]]:
         return parse_top_logprobs(x)
 
-    def _more_tags(self) -> dict[str, bool]:
+    def __sklearn_tags__(self) -> Tags:
         """
         Bypasses strict scikit-learn array validation checks, allowing
         the transformer to accept a raw list of dictionaries.
         """
-        return {"no_validation": True}
+        return Tags(no_validation=True)
 
 
 def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:

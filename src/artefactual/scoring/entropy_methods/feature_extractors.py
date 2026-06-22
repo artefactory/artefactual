@@ -2,6 +2,7 @@ from typing import NoReturn
 
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.utils import Tags
 
 from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin
 
@@ -38,8 +39,12 @@ class EntropyTransformer(BaseEstimator, TransformerMixin):
             features.append(self.reduce(s_kj))  # (2k,)
         return np.vstack(features, dtype=np.float32)  # (n_samples, 2k)
 
-    def _more_tags(self) -> dict[str, bool]:
-        return {"no_validation": True}
+    def __sklearn_tags__(self) -> Tags:
+        """
+        Bypasses strict scikit-learn array validation checks, allowing
+        the transformer to accept a raw list of dictionaries.
+        """
+        return Tags(no_validation=True)
 
 
 class EPRFeatureExtractor(EntropyTransformer):
