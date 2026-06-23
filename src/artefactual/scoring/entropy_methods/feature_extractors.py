@@ -21,7 +21,7 @@ class EntropyTransformer(BaseEstimator, TransformerMixin):
         """
         raise NotImplementedError
 
-    def transform(self, x: list[dict[int, list[float]]]) -> np.ndarray:
+    def transform(self, x: np.ndarray) -> np.ndarray:
         """
         Transforms the input data into a feature matrix.
 
@@ -30,12 +30,7 @@ class EntropyTransformer(BaseEstimator, TransformerMixin):
         """
         features = []
         for token_logprobs in x:
-            if not token_logprobs:
-                features.append(self.fallback_value)
-                continue
-            sorted_indices = sorted(token_logprobs.keys())
-            logprobs_list = [token_logprobs[i] for i in sorted_indices]
-            s_kj = EntropyContributionsMixin.entropy_contributions(logprobs_list, self.k)  # (n_tokens, k)
+            s_kj = EntropyContributionsMixin.entropy_contributions(token_logprobs, self.k)  # (n_tokens, k)
             features.append(self.reduce(s_kj))  # (2k,)
         return np.vstack(features, dtype=np.float32)  # (n_samples, 2k)
 
