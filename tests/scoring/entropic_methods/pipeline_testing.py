@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.pipeline import Pipeline
 
 from artefactual.preprocessing.parser import LogProbParser
-from artefactual.scoring.entropy_methods.feature_extractors import EPRFeatureExtractor, WEPRFeatureExtractor
+from artefactual.scoring.entropy_methods.entropy_transformer import EPRFeatureExtractor, WEPRFeatureExtractor
 from artefactual.scoring.pretrained_regression import PretrainedLogisticRegression
 from examples.mock_vllm import load_json
 
