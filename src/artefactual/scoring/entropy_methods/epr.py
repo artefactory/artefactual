@@ -120,7 +120,7 @@ class EPR(LogProbUncertaintyDetector):
             # Mean over sequence (Sequence EPR)
             seq_epr = float(np.mean(token_epr))
             if self.is_calibrated:
-                seq_epr = self._apply_calibration(seq_epr)  # type: ignore
+                seq_epr = self._apply_calibration(seq_epr)
             seq_scores.append(seq_epr)
 
         return seq_scores
