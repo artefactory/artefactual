@@ -20,6 +20,9 @@ class EntropyTransformer(BaseEstimator, TransformerMixin):
         """
         raise NotImplementedError
 
+    def reduce(self, entropy_contributions) -> np.ndarray:
+        raise NotImplementedError
+
     def transform(self, x: list[dict[int, list[float]]]) -> np.ndarray:
         """
         Transforms the input data into a feature matrix.
@@ -47,7 +50,7 @@ class EPRFeatureExtractor(EntropyTransformer):
     def fallback_value(self) -> float:
         return 0.0  # Scalar fallback
 
-    def reduce(self, entropy_contributions) -> np.float32:
+    def reduce(self, entropy_contributions) -> np.ndarray:
         return np.mean(np.sum(entropy_contributions, axis=1))
 
 
