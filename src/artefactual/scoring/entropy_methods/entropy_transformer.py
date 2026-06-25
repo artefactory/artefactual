@@ -46,7 +46,7 @@ class EntropyTransformer(BaseEstimator, TransformerMixin, EntropyContributionsMi
         return self.reduction if callable(self.reduction) else STRATEGIES[self.reduction]
 
     def transform(self, x: np.ndarray) -> np.ndarray:  # (n, n_features)
-        s_kj = self.entropy_contributions(x, self.k)
+        s_kj = self.entropy_contributions(x)
         features = self.reduction_fn(s_kj, axis=1)
         empty = np.isnan(features).all(axis=1)  # token-less sequences → all-NaN row
         if empty.any():
@@ -59,6 +59,6 @@ class EntropyTransformer(BaseEstimator, TransformerMixin, EntropyContributionsMi
         return features
 
     def transform_tokens(self, x: np.ndarray) -> np.ndarray:  # (n, T, n_features)
-        s_kj = self.entropy_contributions(x, self.k)
+        s_kj = self.entropy_contributions(x)
         windows = np.expand_dims(s_kj, axis=2)  # (n, T, 1, k) — one 1-token window per token
         return self.reduction_fn(windows, axis=2)
