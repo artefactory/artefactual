@@ -17,12 +17,18 @@ for item in PARSED:
     assert isinstance(item, np.ndarray), "Each item in parsed output should be a dictionary"
 
 
-EPR_FEATURES = EntropyTransformer(k=5, reduction="epr").transform(PARSED)
-assert 0 < EPR_FEATURES.shape[0] < 15, f"Expected between 0 and 15 rows, but got {EPR_FEATURES.shape[0]}"
-assert EPR_FEATURES.shape[1] == 1, f"Expected 1 column (one per output), but got {EPR_FEATURES.shape[1]}"
-# print(f"EPR features: {EPR_FEATURES}")
+EPR_SEQUENCE_FEATURES = EntropyTransformer(k=5, reduction="epr").transform(PARSED)
+assert 0 < EPR_SEQUENCE_FEATURES.shape[0] < 15, "Expected between 0 and 15 rows"
+assert EPR_SEQUENCE_FEATURES.shape[1] == 1, "Expected 1 column (one per output)"
+# print(f"EPR sequence level features: {EPR_SEQUENCE_FEATURES}")
+
+EPR_TOKEN_FEATURES = EntropyTransformer(k=5, reduction="epr").transform_tokens(PARSED)
+# print(f"EPR token level features: {EPR_TOKEN_FEATURES}")
 
 
-WEPR_FEATURES = EntropyTransformer(k=5, reduction="wepr").transform(PARSED)
-# print(f"WEPR features: {WEPR_FEATURES}")
-# print(f"WEPR features shape: {WEPR_FEATURES.shape}")
+WEPR_SEQUENCE_FEATURES = EntropyTransformer(k=5, reduction="wepr").transform(PARSED)
+# print(f"WEPR sequence level features: {WEPR_SEQUENCE_FEATURES}")
+# print(f"WEPR features shape: {WEPR_SEQUENCE_FEATURES.shape}")
+
+WEPR_TOKEN_FEATURES = EntropyTransformer(k=5, reduction="wepr").transform_tokens(PARSED)
+# print(f"WEPR token level features: {WEPR_TOKEN_FEATURES}")
