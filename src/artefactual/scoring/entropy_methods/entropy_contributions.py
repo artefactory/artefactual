@@ -1,6 +1,3 @@
-from collections.abc import Mapping, Sequence
-from typing import Any
-
 import numpy as np
 from beartype import beartype
 from numpy.typing import NDArray
@@ -8,51 +5,32 @@ from numpy.typing import NDArray
 EPSILON = 1e-12
 
 
-@beartype
-def compute_entropy_contributions(logprobs: NDArray[np.floating] | Sequence[Any], k: int) -> NDArray[np.floating]:
-    """Compute entropic contributions s_kj = -p_k log(p_k) for top-K logprobs using vectorized operations.
-    Args:
-        logprobs: A 2D array of shape (num_tokens, num_logprobs) containing log probabilities.
-        k: Number of top log probabilities to consider per token.
-
-    Returns:
-        A 2D array of shape (num_tokens, K) containing entropy contributions.
+class EntropyContributionsMixin:
     """
-    if not isinstance(logprobs, np.ndarray):
-        if not logprobs:
-            logprobs = np.empty((0, 0), dtype=np.float32)
-        else:
-            # Handle potential ragged sequences by padding with -inf
-            max_len = max(len(row) for row in logprobs)
-            padded_logprobs = np.full((len(logprobs), max_len), -np.inf, dtype=np.float32)
-            for i, row in enumerate(logprobs):
-                if row:
-                    vals = list(row.values()) if isinstance(row, Mapping) else row
-                    # Handle objects with logprob attribute (e.g. vLLM Logprob objects)
-                    vals = [v.logprob if hasattr(v, "logprob") else v for v in vals]
-                    padded_logprobs[i, : len(vals)] = vals
-            logprobs = padded_logprobs
+    Mixin that provides entropy contribution computation for top-K logprobs.
+    """
 
-    if logprobs.size == 0:
-        return np.empty((0, k), dtype=np.float32)
+    @staticmethod
+    @beartype
+    def entropy_contributions(logprobs: NDArray[np.floating]) -> NDArray[np.floating]:
+        """Compute entropic contributions s_kj = -p_k log(p_k) for top-K logprobs using vectorized operations.
+        Args:
+            logprobs: A 2D array of shape (num_tokens, num_logprobs) containing log probabilities.
+            k: Number of top log probabilities to consider per token.
 
-    # Convert to probabilities (logprobs are in natural log, base e)
-    probs = np.exp(logprobs)
+        Returns:
+            A 2D array of shape (num_tokens, K) containing entropy contributions.
+        """
 
-    # Calculate entropy contributions: s = -p * log(p) = -exp(logp) * logp (logprobs are natural logs)
-    with np.errstate(divide="ignore", invalid="ignore"):
-        s = -probs * logprobs
-    s = np.nan_to_num(s, nan=0.0, posinf=0.0, neginf=0.0)
+        if logprobs.size == 0:
+            return np.empty_like(logprobs)
 
-    # Pad or truncate to k elements along the K dimension (axis=1)
-    num_tokens, num_logprobs = s.shape
-    if num_logprobs == k:
-        return s
+        # Enforce descending rank order along the rank axis.
+        logprobs = -np.sort(-logprobs, axis=-1)
 
-    s_kj = np.zeros((num_tokens, k), dtype=np.float32)
-    if num_logprobs < k:
-        s_kj[:, :num_logprobs] = s
-    else:  # num_logprobs > k
-        s_kj[:, :] = s[:, :k]
+        # Convert to probabilities (logprobs are in natural log, base e)
+        probs = np.exp(logprobs)
 
-    return s_kj
+        # Calculate entropy contributions: s = -p * log(p) = -exp(logp) * logp (logprobs are natural logs)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            return -probs * logprobs
