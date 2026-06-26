@@ -40,7 +40,6 @@ class LogProbParser(BaseEstimator, TransformerMixin):
 
     def transform(self, x: list) -> np.ndarray:
         parsed = parse_top_logprobs(x)
-        np.set_printoptions(suppress=True)
         if not parsed:
             return np.empty((0, 0, 0), dtype=np.float32)
 
