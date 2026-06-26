@@ -1,8 +1,9 @@
-import json
 from pathlib import Path
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
+
+from artefactual.utils.io import load_weights
 
 
 class PretrainedLogisticRegression(LogisticRegression):
@@ -18,9 +19,7 @@ class PretrainedLogisticRegression(LogisticRegression):
         Returns:
         PretrainedLogisticRegression : instance of the class pre-configured with the loaded weights
         """
-        pretrained_model_name_or_path = Path(pretrained_model_name_or_path)
-        with pretrained_model_name_or_path.open("r") as f:
-            weights = json.load(f)
+        weights = load_weights(pretrained_model_name_or_path)
 
         coeffs = weights["coefficients"]
 
