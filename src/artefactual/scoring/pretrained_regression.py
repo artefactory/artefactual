@@ -3,19 +3,9 @@ from pathlib import Path
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
-from sklearn.utils import Tags
 
 
 class PretrainedLogisticRegression(LogisticRegression):
-    def __sklearn_tags__(self) -> Tags:
-        """
-        Fetch the default LogisticRegression tags and override validation
-        to allow passing raw lists of dicts or custom inputs.
-        """
-        tags = super().__sklearn_tags__()
-        tags.no_validation = True
-        return tags
-
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path: Path | str) -> "PretrainedLogisticRegression":
         """
