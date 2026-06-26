@@ -32,9 +32,6 @@ class LogProbParser(BaseEstimator, TransformerMixin):
     must start from data that has already been parsed.
     """
 
-    def __init__(self):
-        pass
-
     def fit(self, _x, _y=None) -> "LogProbParser":
         return self
 
