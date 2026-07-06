@@ -171,3 +171,31 @@ def test_transform_rejects_out_of_domain(payload, data):
     content[t]["top_logprobs"][0]["logprob"] = bad
     with pytest.raises(ValueError, match="Invalid logprob"):
         LogProbParser().transform(payload)
+
+
+# Statelessness - transform without having called fit first should work
+def test_stateless():
+    parser = LogProbParser()
+    parser.transform({"choices": []})
+
+
+# Sklearn round-trip
+def test_sklearn_roundtrip():
+    from sklearn.base import clone
+
+    p = LogProbParser()
+    assert p.get_params() == {}
+    clone(p)
+
+
+# Edge cases
+def test_edge_cases():
+    class MockCompletionOutput:
+        logprobs = None
+
+    assert LogProbParser().transform([MockVLLMOutput(outputs=[])]).shape == (0, 0, 0)  # réponse vide
+    assert LogProbParser().transform([MockVLLMOutput(outputs=[MockCompletionOutput()])]).shape == (
+        1,
+        0,
+        0,
+    )  # réponse sans logprobs
