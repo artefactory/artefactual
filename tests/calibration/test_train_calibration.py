@@ -1,67 +1,42 @@
-import tempfile
+import json
 from pathlib import Path
 
-import pandas as pd
+import numpy as np
 import pytest
 
 from artefactual.calibration import train_calibration
+from artefactual.scoring.base_detector import BaseDetector
+
+FIXTURE_PATH = Path(__file__).parent.parent / "open_ai_responses.json"
 
 
-@pytest.mark.parametrize(
-    ("scores", "judgments"),
-    [
-        ([0.1, 0.2, 0.3, 0.4, 0.5, 0.6], ["true", "true", "false", "false", "true", "false"]),
-        ([0.1, 0.2, 0.3, 0.4, 0.5, 0.6], ["True", "True", "False", "False", "True", "False"]),
-        ([0.1, 0.2, 0.3, 0.4], ["TRUE", "false", "True", "FALSE"]),
-        ([0.1, 0.2, 0.3, 0.4, 0.5, 0.6], ["true", None, "false", "false", "true", None]),
-        ([0.1, 0.2, 0.3, 0.4, 0.5, 0.6], ["true", "invalid", "false", "maybe", "true", "false"]),
-    ],
-)
-def test_train_calibration_success_cases(scores, judgments):
-    """Test successful calibration training across supported judgment variations."""
-    df = pd.DataFrame({"uncertainty_score": scores, "judgment": judgments})
+@pytest.fixture
+def x_train():
+    with Path(FIXTURE_PATH).open() as f:
+        responses = json.load(f)["responses"]
+    return {"object": "response", "output": responses[0]["output"] + responses[1]["output"]}
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        input_file = Path(tmpdir) / "input.csv"
-        output_file = Path(tmpdir) / "output.json"
 
-        df.to_csv(input_file, index=False)
-        train_calibration(input_file, output_file)
+def test_train_calibration_returns_fitted_pipeline(x_train):
+    clf = train_calibration(x_train, np.array([0, 1]), "wepr")
+    assert isinstance(clf, BaseDetector)
 
-        assert output_file.exists()
+
+def test_train_calibration_epr(x_train):
+    clf = train_calibration(x_train, np.array([0, 1]), "epr")
+    assert isinstance(clf, BaseDetector)
+
+
+def test_train_calibration_invalid_reduction():
+    with pytest.raises(ValueError, match="Invalid reduction"):
+        train_calibration([], np.array([]), "invalid")
+
+
+def test_train_calibration_mismatched_lengths():
+    with pytest.raises(ValueError, match="Length of x"):
+        train_calibration([1, 2, 3], np.array([0, 1]), "epr")
 
 
 def test_train_calibration_insufficient_classes():
-    """Test error when only one class is present."""
-    data = {
-        "uncertainty_score": [0.1, 0.2, 0.3],
-        "judgment": ["true", "true", "true"],
-    }
-    df = pd.DataFrame(data)
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        input_file = Path(tmpdir) / "input.csv"
-        output_file = Path(tmpdir) / "output.json"
-
-        df.to_csv(input_file, index=False)
-
-        with pytest.raises(ValueError, match=r"Need both positive.*and negative.*judgments"):
-            train_calibration(input_file, output_file)
-
-
-def test_train_calibration_all_none():
-    """Test error when all judgments are None."""
-    data = {
-        "uncertainty_score": [0.1, 0.2, 0.3],
-        "judgment": [None, None, None],
-    }
-    df = pd.DataFrame(data)
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        input_file = Path(tmpdir) / "input.csv"
-        output_file = Path(tmpdir) / "output.json"
-
-        df.to_csv(input_file, index=False)
-
-        with pytest.raises(ValueError, match="No valid data found"):
-            train_calibration(input_file, output_file)
+    with pytest.raises(ValueError, match="Need both positive and negative labels"):
+        train_calibration([1, 2], np.array([0, 0]), "epr")

@@ -4,25 +4,21 @@ Calibration training for epr and wepr detectors.
 """
 
 import logging
-
 import numpy as np
-from sklearn.linear_model import LogisticRegression
+from artefactual.scoring.base_detector import BaseDetector, epr, wepr
 
-from artefactual.preprocessing.parser import LogProbParser
-from artefactual.scoring.base_detector import BaseDetector
-from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
 
 logger = logging.getLogger(__name__)
 
 MIN_CLASSES_FOR_TRAINING = 2
 
 
-def train_calibration(x: list, y: np.ndarray, reduction: str) -> BaseDetector:
+def train_calibration(X: list, y: np.ndarray, reduction: str)  -> BaseDetector:
     """
     Fits an EPR or WEPR pipeline on raw JSON responses.
 
     Args:
-        x: Raw json response.
+        X: Raw json response.
         y: Binary labels - 1 if hallucination, 0 if correct.
         reduction: scoring variants - "epr" or "wepr"
 
@@ -33,8 +29,8 @@ def train_calibration(x: list, y: np.ndarray, reduction: str) -> BaseDetector:
         msg = f"Invalid reduction: {reduction!r}. Expected 'epr' or 'wepr'."
         raise ValueError(msg)
 
-    if len(x) != len(y):
-        msg = f"Length of x ({len(x)}) must match length of y ({len(y)})."
+    if len(X) != len(y):
+        msg = f"Length of X ({len(X)}) must match length of y ({len(y)})."
         raise ValueError(msg)
 
     if len(np.unique(y)) < MIN_CLASSES_FOR_TRAINING:
@@ -43,15 +39,13 @@ def train_calibration(x: list, y: np.ndarray, reduction: str) -> BaseDetector:
 
     logger.info(f"Training on {len(y)} samples.")
 
-    clf = BaseDetector(
-        steps=[
-            ("parser", LogProbParser()),
-            ("entropy", EntropyTransformer(reduction=reduction)),
-            ("classifier", LogisticRegression()),
-        ]
-    )
+    # Fitting BaseDetector
+    if reduction == "epr":
+        clf = epr()
+    else:
+        clf = wepr()
 
-    clf.fit(x, y)
-    scores = clf.predict_proba(x)[:, 1]
+    clf.fit(X, y)
+    scores = clf.predict_proba(X)[:, 1]
     logger.info(f"Hallucination probabilities: {scores}")
     return clf
