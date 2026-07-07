@@ -41,6 +41,7 @@ class LogProbParser(BaseEstimator, TransformerMixin):
             return np.empty((0, 0, 0), dtype=np.float32)
 
         # validation step
+        # TODO(perf): O(n·T·k) Python loop — vectorize over the padded array once batches get large.
         for i, sample in enumerate(parsed):  # sample is the dictionary for each generation
             for token_idx, logprobs in sample.items():  # token position, ragged list of logprobs
                 for rank, lp in enumerate(logprobs):  # column index or k index, logprob value
