@@ -32,11 +32,11 @@ class LogProbParser(BaseEstimator, TransformerMixin):
     must start from data that has already been parsed.
     """
 
-    def fit(self, _x, _y=None) -> "LogProbParser":
+    def fit(self, X, y=None) -> "LogProbParser":  # noqa: ARG002, N803  — X / y unused but required by the sklearn fit signature
         return self
 
-    def transform(self, x: list) -> np.ndarray:
-        parsed = parse_top_logprobs(x)
+    def transform(self, X: list) -> np.ndarray:  # noqa: N803
+        parsed = parse_top_logprobs(X)
         if not parsed:
             return np.empty((0, 0, 0), dtype=np.float32)
 
