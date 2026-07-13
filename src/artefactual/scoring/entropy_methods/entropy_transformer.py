@@ -45,8 +45,18 @@ class EntropyTransformer(BaseEstimator, TransformerMixin, EntropyContributionsMi
         # self.reduction must stay unchanged for clone/get_params/set_params.
         return self.reduction if callable(self.reduction) else STRATEGIES[self.reduction]
 
+    def _align_to_k(self, s_kj: np.ndarray) -> np.ndarray:
+        width = s_kj.shape[-1]
+        if width > self.k:
+            return s_kj[..., : self.k]  # truncate to top-K contributions
+        if width < self.k:
+            pad_width = [(0, 0)] * (s_kj.ndim - 1) + [(0, self.k - width)]
+            return np.pad(s_kj, pad_width, constant_values=np.nan)  # pad to K contributions
+        return s_kj
+
     def transform(self, x: np.ndarray) -> np.ndarray:  # (n, n_features)
         s_kj = self.entropy_contributions(x)
+        s_kj = self._align_to_k(s_kj)
         features = self.reduction_fn(s_kj, axis=1)
         empty = np.isnan(features).all(axis=1)  # token-less sequences → all-NaN row
         if empty.any():
@@ -60,5 +70,6 @@ class EntropyTransformer(BaseEstimator, TransformerMixin, EntropyContributionsMi
 
     def transform_tokens(self, x: np.ndarray) -> np.ndarray:  # (n, T, n_features)
         s_kj = self.entropy_contributions(x)
+        s_kj = self._align_to_k(s_kj)
         windows = np.expand_dims(s_kj, axis=2)  # (n, T, 1, k) — one 1-token window per token
         return self.reduction_fn(windows, axis=2)
