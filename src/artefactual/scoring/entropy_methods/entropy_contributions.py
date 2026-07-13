@@ -15,11 +15,10 @@ class EntropyContributionsMixin:
     def entropy_contributions(logprobs: NDArray[np.floating]) -> NDArray[np.floating]:
         """Compute entropic contributions s_kj = -p_k log(p_k) for top-K logprobs using vectorized operations.
         Args:
-            logprobs: A 2D array of shape (num_tokens, num_logprobs) containing log probabilities.
-            k: Number of top log probabilities to consider per token.
+            logprobs: An array of log probabilities, the last axis being the per-token rank axis.
 
         Returns:
-            A 2D array of shape (num_tokens, K) containing entropy contributions.
+            An array of the same shape as `logprobs` containing entropy contributions.
         """
 
         if logprobs.size == 0:
