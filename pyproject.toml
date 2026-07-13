@@ -35,12 +35,12 @@ Issues = "https://github.com/artefactory/artefactual/issues"
 
 [project.optional-dependencies]
 hub = ["huggingface-hub>=0.27.0", "keras-hub>=0.18.1", "safetensors>=0.4.5"]
-test = ["hypothesis>=6.127.8", "pytest>=8.0.0", "pytest-cov>=6.0.0"]
 calibration = [
     "ray>=2.50.1",
     "matplotlib>=3.9.0",
     "vllm>=0.12.0 ; sys_platform != 'darwin'",
     "torch>=2.9.0",
+    "pandas>=2.0.0",
 ]
 adapters =[
     "langfuse>=4.6.1",
@@ -72,7 +72,6 @@ dev = [
     "scikeras>=0.13.0",
     "toolz>=1.0.0",
     "wandb>=0.19.4",
-    "lm-eval[vllm]>=0.4.7 ; sys_platform != 'darwin'",
     "mlcroissant>=1.0.12",
     "polars>=1.21.0",
     "orjson>=3.10.15",
@@ -88,6 +87,8 @@ dev = [
     "pre-commit>=4.0.0",
     "bump-my-version>=0.28.0",
     "git-cliff>=2.12.0",
+    "pytest>=8.0.0",
+    "pytest-cov>=6.0.0",
 ]
 
 [tool.codespell]
