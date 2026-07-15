@@ -13,7 +13,7 @@ class PretrainedLogisticRegression(LogisticRegression):
         Instantiate and initialize a LogisticRegression model using pre-trained weights.
         The metric (EPR or WEPR) is inferred from the coefficient keys.
 
-        Parameter:
+        Args:
         pretrained_model_name_or_path: Path to the JSON file containing intercept and coefficients
 
         Returns:
