@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
+from sklearn.utils.validation import check_is_fitted
 
 from artefactual.scoring.pretrained_regression import PretrainedLogisticRegression
 
@@ -68,6 +69,7 @@ def test_from_pretrained_wepr(mock_load, mock_wepr_weights):
 # Scikit-Learn Compatibility Tests
 
 
+# Check that predict and predict_proba work without calling .fit() first
 @patch("artefactual.scoring.pretrained_regression.load_weights")
 def test_sklearn_methods_work_without_fit(mock_load, mock_epr_weights):
     mock_load.return_value = mock_epr_weights
@@ -82,3 +84,47 @@ def test_sklearn_methods_work_without_fit(mock_load, mock_epr_weights):
     assert preds.shape == (2,)
     assert probs.shape == (2, 2)
     np.testing.assert_array_almost_equal(probs.sum(axis=1), np.ones(2))
+
+
+# Check that the model predicts the correct class based on the loaded weights
+@patch("artefactual.scoring.pretrained_regression.load_weights")
+def test_predict_output_values(mock_load, mock_epr_weights):
+    mock_load.return_value = mock_epr_weights
+    clf = PretrainedLogisticRegression.from_pretrained("dummy_path.json")
+
+    # high entropy → positive logit → class 1, low entropy → class 0
+    x = np.array([[5.0], [0.0]], dtype=np.float32)
+    preds = clf.predict(x)
+
+    assert preds[0] == 1
+    assert preds[1] == 0
+
+
+# Check that sklearn considers the model fitted after loading pretrained weights
+@patch("artefactual.scoring.pretrained_regression.load_weights")
+def test_check_is_fitted(mock_load, mock_epr_weights):
+    mock_load.return_value = mock_epr_weights
+    clf = PretrainedLogisticRegression.from_pretrained("dummy_path.json")
+
+    check_is_fitted(clf)  # raises if not fitted
+
+
+# Edge Cases
+
+
+# Check that a missing intercept key in the weights file raises a KeyError
+@patch("artefactual.scoring.pretrained_regression.load_weights")
+def test_missing_intercept_raises(mock_load):
+    mock_load.return_value = {"coefficients": {"mean_entropy": 1.0}}
+
+    with pytest.raises(KeyError):
+        PretrainedLogisticRegression.from_pretrained("dummy_path.json")
+
+
+# Check that unrecognized coefficient keys raise an error instead of silently failing
+@patch("artefactual.scoring.pretrained_regression.load_weights")
+def test_unknown_coefficients_raises(mock_load):
+    mock_load.return_value = {"intercept": 0.0, "coefficients": {"unknown_key": 1.0}}
+
+    with pytest.raises((KeyError, ValueError)):
+        PretrainedLogisticRegression.from_pretrained("dummy_path.json")
