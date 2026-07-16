@@ -2,6 +2,7 @@ import importlib.resources
 import json
 import logging
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ MODEL_WEIGHT_MAP = {
 }
 
 
-def load_weights(identifier: str) -> dict[str, float]:
+def load_weights(identifier: str | Path) -> dict[str, Any]:
     """
     Loads weights from a built-in model name or a local file path.
 
@@ -29,6 +30,7 @@ def load_weights(identifier: str) -> dict[str, float]:
         ValueError: If the identifier is not a supported model name,
         the file does not exist, or the file is not valid JSON.
     """
+    identifier = str(identifier)
     # 1. Check if it matches a built-in model name (The Registry)
     if identifier in MODEL_WEIGHT_MAP:
         filename = MODEL_WEIGHT_MAP[identifier]
