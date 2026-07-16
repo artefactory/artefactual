@@ -28,6 +28,9 @@ class PretrainedLogisticRegression(LogisticRegression):
             n_features = 1
         else:  # wepr
             k = sum(1 for key in coeffs if key.startswith("mean_rank_"))
+            if k == 0:
+                msg = "Unrecognized coefficient keys"
+                raise ValueError(msg)
             mean_vals = [coeffs[f"mean_rank_{i}"] for i in range(1, k + 1)]
             max_vals = [coeffs[f"max_rank_{i}"] for i in range(1, k + 1)]
             coef_array = np.array([mean_vals + max_vals], dtype=np.float32)  # (1, 2k)
