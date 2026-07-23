@@ -204,3 +204,7 @@ perso.py
 
 # MyST build outputs
 _build
+
+# Quarto / Reveal.js / Jupyter nbconvert slides output
+docs/slides/*.html
+docs/slides/*_files/
