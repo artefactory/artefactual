@@ -4,9 +4,9 @@ Slide decks presenting Artefactual to internal and external audiences.
 
 ## Decks
 
-| Deck | Description | Date |
-|------|-------------|------|
-| [Artefactual: Integrations](integrations_sklearn_langfuse.ipynb) | Introduces LLM hallucination detection, the EPR/WEPR scores, and integrations with scikit-learn and Langfuse. | 2026-07-22 |
+|Deck|   Description  | Date  |
+|----|----------------|-------|
+| [Artefactual: Integrations](integrations_sklearn_langfuse/integrations_sklearn_langfuse.ipynb) | Introduces LLM hallucination detection, the EPR/WEPR scores, and integrations with scikit-learn and Langfuse. | 2026-07-22 |
 
 ## Tracked sources vs. rendered output
 
