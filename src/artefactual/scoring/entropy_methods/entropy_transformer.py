@@ -42,7 +42,12 @@ class EntropyTransformer(BaseEstimator, TransformerMixin, EntropyContributionsMi
     @property
     def reduction_fn(self) -> Callable:
         # self.reduction must stay unchanged for clone/get_params/set_params.
-        return self.reduction if callable(self.reduction) else STRATEGIES[self.reduction]
+        if callable(self.reduction):
+            return self.reduction
+        if self.reduction in STRATEGIES:
+            return STRATEGIES[self.reduction]
+        msg = f"Invalid reduction: {self.reduction!r}. Expected 'epr', 'wepr', or a callable."
+        raise ValueError(msg)
 
     def transform(self, x: np.ndarray) -> np.ndarray:  # (n, n_features)
         s_kj = self.entropy_contributions(x)
