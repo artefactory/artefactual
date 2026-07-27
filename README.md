@@ -3,7 +3,7 @@
 Artefactual is a lightweight Python package for measuring model hallucination risk using entropy-based metrics. It is:
 
 - **Practical**: Precomputed calibration for several model families is included in `src/artefactual/data` and can be used by model name.
-- **Flexible**: Works with vLLM, OpenAI Chat Completions, and the OpenAI Responses API formats.
+- **Flexible**: Works with OpenAI Chat Completions and OpenAI Responses payloads, as objects or plain mappings, one at a time or as a batch.
 - **Detailed outputs**: Compute both sequence-level and token-level uncertainty scores to power downstream pipelines (e.g., answer filtering, reranking, human-in-the-loop triggers).
 
 The package provides two primary uncertainty detectors:
@@ -30,9 +30,9 @@ uv pip install -e '.[calibration]'
 # or non-editable:
 uv pip install '.[calibration]'
 ```
-*Mac users:* the calibration extra omits vllm (no Darwin wheels). Running the full calibration pipeline on Mac requires an alternative generation backend.
+*Mac users:* the calibration extra omits the GPU generation backend (no Darwin wheels). Running the full calibration pipeline on Mac requires an alternative generation backend.
 
-*Note*: Typical packages included in this installation method are `scikit-learn` (training), `vllm` (model generation), `ray` (optional distributed processing), `pandas`, `numpy`, and `tqdm`. Installing these may require system-level libraries or CUDA support depending on your environment.
+*Note*: Typical packages included in this installation method are `scikit-learn` (training), a local generation backend, `ray` (optional distributed processing), `pandas`, `numpy`, and `tqdm`. Installing these may require system-level libraries or CUDA support depending on your environment.
 
 ## Quickstart
 
@@ -56,7 +56,7 @@ from artefactual.scoring import EPR
 epr = EPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")
 
 # Compute sequence-level calibrated probabilities (list of floats)
-parsed_logprobs = parse_top_logprobs(response)  # response should be your OpenAI/vLLM output object
+parsed_logprobs = parse_top_logprobs(response)  # an OpenAI completion response, or a list of them
 seq_scores_epr = epr.compute(parsed_logprobs)
 
 # Compute token-level scores (list of numpy arrays)
@@ -76,7 +76,7 @@ from artefactual.scoring import WEPR
 wepr = WEPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")
 
 # Compute sequence-level calibrated probabilities (list of floats)
-parsed_logprobs = parse_top_logprobs(response) # response should be your OpenAI/vLLM output object
+parsed_logprobs = parse_top_logprobs(response)  # an OpenAI completion response, or a list of them
 seq_scores_wepr = wepr.compute(parsed_logprobs)
 
 # Compute token-level scores (list of numpy arrays)
