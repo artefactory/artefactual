@@ -1,4 +1,5 @@
 import operator
+import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -7,10 +8,20 @@ from numpy.typing import NDArray
 if TYPE_CHECKING:
     from vllm import RequestOutput
 
+_VLLM_DEPRECATION = (
+    "vLLM-specific parsing is deprecated and will be removed in a future release: "
+    "artefactual targets standard completion responses rather than inference-server "
+    "formats. Convert vLLM outputs to a completion response before parsing."
+)
+
 
 def process_vllm_top_logprobs(outputs: list["RequestOutput"], iterations: int) -> list[dict[int, list[float]]]:
     """
     Processes log probabilities from vllm `LLM.generate` (or `chat`) outputs for a given number of iterations.
+
+    .. deprecated::
+        Unreachable from `parse_top_logprobs`, which now only accepts standard completion
+        responses. Kept for direct callers until removal.
 
     Args:
         outputs (list[RequestOutput]): A list containing model output objects, each with log probability data.
@@ -19,6 +30,7 @@ def process_vllm_top_logprobs(outputs: list["RequestOutput"], iterations: int) -
         list[dict[int, list[float]]]: A list of dictionaries mapping token indices to lists of log probs
         for each token in the sequence.
     """
+    warnings.warn(_VLLM_DEPRECATION, DeprecationWarning, stacklevel=2)
 
     if not outputs or not outputs[0].outputs:
         return []

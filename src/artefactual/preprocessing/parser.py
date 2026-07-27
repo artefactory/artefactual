@@ -3,24 +3,61 @@ Module for parsing model outputs from various sources to extract log probabiliti
 Each format is handled by a dedicated parser function, defined in their respective modules.
 """
 
+import warnings
+from functools import singledispatch
 from typing import Any
 
 import numpy as np
+from beartype.door import is_bearable
 from numpy.typing import NDArray
+from pydantic import TypeAdapter, ValidationError
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils import Tags
 
 from artefactual.preprocessing.openai_parser import (
-    is_openai_responses_api,
     process_openai_chat_completion,
     process_openai_responses_api,
     sampled_tokens_logprobs_chat_completion_api,
     sampled_tokens_logprobs_responses_api,
 )
-from artefactual.preprocessing.vllm_parser import (
-    process_vllm_top_logprobs,
-    vllm_sampled_tokens_logprobs,
-)
+from artefactual.preprocessing.response_models import ChatCompletion, ResponsesPayload
+from artefactual.preprocessing.vllm_parser import _VLLM_DEPRECATION, vllm_sampled_tokens_logprobs
+
+_RESPONSE_ADAPTER = TypeAdapter(ChatCompletion | ResponsesPayload)
+
+
+@singledispatch
+def _top_logprobs(response: Any) -> list[dict[int, list[float]]]:
+    """Extract per-token top logprobs from a validated response. Register one per format."""
+    msg = f"No top-logprob extractor registered for {type(response).__name__}."
+    raise TypeError(msg)
+
+
+@_top_logprobs.register
+def _(response: ChatCompletion) -> list[dict[int, list[float]]]:
+    return process_openai_chat_completion(response, iterations=len(response.choices))
+
+
+@_top_logprobs.register
+def _(response: ResponsesPayload) -> list[dict[int, list[float]]]:
+    return process_openai_responses_api(response)
+
+
+@singledispatch
+def _sampled_logprobs(response: Any) -> list[NDArray]:
+    """Extract sampled-token logprobs from a validated response. Register one per format."""
+    msg = f"No sampled-logprob extractor registered for {type(response).__name__}."
+    raise TypeError(msg)
+
+
+@_sampled_logprobs.register
+def _(response: ChatCompletion) -> list[NDArray]:
+    return sampled_tokens_logprobs_chat_completion_api(response)
+
+
+@_sampled_logprobs.register
+def _(response: ResponsesPayload) -> list[NDArray]:
+    return sampled_tokens_logprobs_responses_api(response)
 
 
 class LogProbParser(BaseEstimator, TransformerMixin):
@@ -79,37 +116,26 @@ def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
 
     Args:
         outputs: Model outputs. Can be:
-                    - List of vLLM RequestOutput objects.
-                    - OpenAI ChatCompletion object (or dict).
-                    - OpenAI Responses object (or dict).
+                    - A completion response, as a mapping or an object.
+                    - A sequence of responses, parsed and concatenated in order.
 
     Returns:
-        List of dictionaries mapping token indices to lists of log probs.
+        List of dictionaries mapping token indices to lists of log probs,
+        one per generated sequence.
 
     Raises:
         TypeError: If the output format is not supported.
     """
-    # vLLM parser
-    if isinstance(outputs, list) and len(outputs) > 0 and hasattr(outputs[0], "outputs"):
-        if not outputs[0].outputs:
-            return []
-        iterations = len(outputs[0].outputs)
-        return process_vllm_top_logprobs(outputs, iterations)
+    if is_bearable(outputs, list | tuple):
+        return [sequence for response in outputs for sequence in parse_top_logprobs(response)]
 
-    # OpenAI parser for classic ChatCompletion
-    if hasattr(outputs, "choices") or (isinstance(outputs, dict) and "choices" in outputs):
-        choices = outputs.choices if hasattr(outputs, "choices") else outputs["choices"]
-        return process_openai_chat_completion(outputs, iterations=len(choices))
+    try:
+        response = _RESPONSE_ADAPTER.validate_python(outputs, from_attributes=True)
+    except ValidationError as error:
+        msg = f"Unsupported output format: {type(outputs).__name__}. Expected a completion response carrying logprobs."
+        raise TypeError(msg) from error
 
-    # OpenAI parser for Responses API
-    if is_openai_responses_api(outputs):
-        return process_openai_responses_api(outputs)
-
-    msg = (
-        f"Unsupported output format: {type(outputs).__name__}. "
-        "Expected vLLM RequestOutput, OpenAI ChatCompletion, or OpenAI Responses object."
-    )
-    raise TypeError(msg)
+    return _top_logprobs(response)
 
 
 def parse_sampled_token_logprobs(outputs: Any) -> list[NDArray]:
@@ -123,23 +149,18 @@ def parse_sampled_token_logprobs(outputs: Any) -> list[NDArray]:
         list[NDArray]: A list of 1D numpy arrays, each containing the log probabilities
                        of the sampled tokens for one sequence.
     """
-    # Check for vLLM offline inference format
+    # Deprecated vLLM offline inference format
     if isinstance(outputs, list) and len(outputs) > 0 and hasattr(outputs[0], "outputs"):
+        warnings.warn(_VLLM_DEPRECATION, DeprecationWarning, stacklevel=2)
         if not outputs[0].outputs:
             return []
         iterations = len(outputs[0].outputs)
         return vllm_sampled_tokens_logprobs(outputs, iterations)
 
-    # Check for OpenAI ChatCompletion format
-    if hasattr(outputs, "choices") or (isinstance(outputs, dict) and "choices" in outputs):
-        return sampled_tokens_logprobs_chat_completion_api(outputs)
+    try:
+        response = _RESPONSE_ADAPTER.validate_python(outputs, from_attributes=True)
+    except ValidationError as error:
+        msg = f"Unsupported output format: {type(outputs).__name__}. Expected a completion response carrying logprobs."
+        raise TypeError(msg) from error
 
-    # Check for OpenAI Responses API format
-    if is_openai_responses_api(outputs):
-        return sampled_tokens_logprobs_responses_api(outputs)
-
-    msg = (
-        f"Unsupported output format: {type(outputs).__name__}. "
-        "Expected vLLM RequestOutput, OpenAI ChatCompletion, or OpenAI Responses object."
-    )
-    raise TypeError(msg)
+    return _sampled_logprobs(response)
