@@ -2,22 +2,22 @@ from pathlib import Path
 
 from mock_vllm import load_json
 
-from artefactual.preprocessing import parse_top_logprobs
+from artefactual.preprocessing import parse_top_logprobs, process_vllm_top_logprobs
 from artefactual.scoring import EPR, WEPR
 
 
-def mock_vllm_example() -> None:
+def recorded_outputs_example() -> None:
     # ==========================================
-    # OPTION 1: Mocked vLLM Example
+    # OPTION 1: Recorded generation outputs
     # ==========================================
 
     fixture_path = Path(__file__).parent / "wepr_demo_responses.json"
-    print(f"Loading mock vLLM data from {fixture_path}...")  # noqa: T201
+    print(f"Loading recorded outputs from {fixture_path}...")  # noqa: T201
     outputs = load_json(fixture_path)
 
     # Compute EPR
     epr = EPR()  # initialize with default calibration
-    parsed_logprobs = parse_top_logprobs(outputs)  # parse the outputs to get logprobs
+    parsed_logprobs = process_vllm_top_logprobs(outputs, iterations=1)  # recorded outputs, not a completion response
 
     scores = epr.compute(parsed_logprobs)
     print(f"EPR Scores: {scores}")  # noqa: T201
@@ -91,5 +91,5 @@ def openai_example() -> None:
 
 
 if __name__ == "__main__":
-    mock_vllm_example()
+    recorded_outputs_example()
     openai_example()
