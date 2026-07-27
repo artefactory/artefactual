@@ -5,7 +5,7 @@ from beartype import beartype
 from numpy.typing import NDArray
 
 from artefactual.data.data_model import Completion
-from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin
+from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin, align_rank_width
 from artefactual.scoring.uncertainty_detector import LogProbUncertaintyDetector
 from artefactual.utils.io import load_weights
 
@@ -82,7 +82,8 @@ class WEPR(LogProbUncertaintyDetector):
 
             # Compute entropy contributions in a vectorized manner
             # Input shape: (num_tokens_in_sequence, K)
-            s_kj = EntropyContributionsMixin.entropy_contributions(logprobs_list, self.k)
+            contributions = EntropyContributionsMixin.entropy_contributions(np.asarray(logprobs_list))
+            s_kj = align_rank_width(contributions, self.k)
 
             # Token-level WEPR (S_beta): weighted sum across K using mean_weights
             # S_beta = sum(beta_k * s_kj) + beta_0

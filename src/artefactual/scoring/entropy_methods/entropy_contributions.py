@@ -33,3 +33,29 @@ class EntropyContributionsMixin:
         # Calculate entropy contributions: s = -p * log(p) = -exp(logp) * logp (logprobs are natural logs)
         with np.errstate(divide="ignore", invalid="ignore"):
             return -probs * logprobs
+
+
+@beartype
+def align_rank_width(contributions: NDArray[np.floating], k: int) -> NDArray[np.floating]:
+    """Truncate or zero-pad entropy contributions to exactly `k` ranks.
+
+    Calibrated weights are fixed at the rank count used during calibration, so the rank
+    axis must match before the weighted sum. Zero is the limit of the contribution itself
+    -- -p*log(p) tends to 0 as p tends to 0 -- so absent ranks add nothing to the score.
+
+    Args:
+        contributions: Array of shape (num_tokens, num_ranks).
+        k: Number of ranks the calibrated weights expect.
+
+    Returns:
+        Array of shape (num_tokens, k).
+    """
+    num_tokens, num_ranks = contributions.shape
+    if num_ranks == k:
+        return contributions
+    if num_ranks > k:
+        return contributions[:, :k]
+
+    aligned = np.zeros((num_tokens, k), dtype=contributions.dtype)
+    aligned[:, :num_ranks] = contributions
+    return aligned
