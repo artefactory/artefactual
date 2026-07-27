@@ -6,7 +6,7 @@ from beartype import beartype
 from numpy.typing import NDArray
 
 from artefactual.data.data_model import Completion
-from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin
+from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin, align_rank_width
 from artefactual.scoring.uncertainty_detector import LogProbUncertaintyDetector
 from artefactual.utils.io import load_calibration
 
@@ -89,7 +89,8 @@ class EPR(LogProbUncertaintyDetector):
             logprobs_list = [token_logprobs_dict[i] for i in sorted_indices]
 
             # Vectorized Entropy Calculation
-            s_kj = EntropyContributionsMixin.entropy_contributions(logprobs_list, self.k)
+            contributions = EntropyContributionsMixin.entropy_contributions(np.asarray(logprobs_list))
+            s_kj = align_rank_width(contributions, self.k)
 
             # sum over rank K (Token EPR)
             token_epr = np.sum(s_kj, axis=1)  # shape = (num_tokens_in_sequence)
