@@ -3,8 +3,6 @@ from importlib import resources
 from pathlib import Path
 
 import numpy as np
-import pytest
-from sklearn.exceptions import NotFittedError
 
 from artefactual.scoring.base_detector import BaseDetector, epr, wepr
 
@@ -64,9 +62,11 @@ def test_predict_proba_valid_probabilities():
     assert np.allclose(scores.sum(axis=1), 1.0)
 
 
-def test_unfitted_detector_raises():
-    with pytest.raises(NotFittedError):
-        epr().predict_proba(SINGLE_OPENAI_RESPONSE)
+def test_unfitted_detector_returns_raw_entropy():
+    scores = epr().predict_proba(SINGLE_OPENAI_RESPONSE)
+    assert scores.shape == (1, 2)
+    assert scores[0, 0] == 0.0  # column 0 is always zero in uncalibrated mode
+    assert scores[0, 1] > 0.0  # column 1 is raw mean entropy
 
 
 def test_predict_token_proba_shape():
