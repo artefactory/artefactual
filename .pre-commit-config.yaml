@@ -37,7 +37,7 @@ repos:
   rev: 1.9.1
   hooks:
     - id: nbqa-ruff
-      args: [--fix, --extend-ignore=T201,T203,ANN,B905,E501,PLR2004,S101,ERA001,F401,INP001]
+      args: ["--fix", "--extend-ignore=T201,T203,ANN,B905,E501,PLR2004,S101,ERA001,F401,INP001"]
     - id: nbqa-ruff-format
     - id: nbqa-pyupgrade
       args: [--py310-plus]
