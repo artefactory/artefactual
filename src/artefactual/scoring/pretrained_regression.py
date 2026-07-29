@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import numpy as np
-from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LogisticRegression
 
 from artefactual.utils.io import load_weights
@@ -47,14 +46,3 @@ class PretrainedLogisticRegression(LogisticRegression):
         instance.n_iter_ = np.array([0])  # indicates that it took 0 iterations to get to the weights
 
         return instance
-
-    def __sklearn_is_fitted__(self) -> bool:
-        return True
-
-    def predict_proba(self, x) -> np.ndarray:
-        try:
-            return super().predict_proba(x)
-        except (NotFittedError, AttributeError):
-            # uncalibrated fallback: raw mean feature value, matching EPR uncalibrated behaviour
-            scores = np.asarray(x).mean(axis=1)
-            return np.column_stack([np.zeros(len(scores)), scores])
