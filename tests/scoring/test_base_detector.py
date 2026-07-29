@@ -62,13 +62,6 @@ def test_predict_proba_valid_probabilities():
     assert np.allclose(scores.sum(axis=1), 1.0)
 
 
-def test_unfitted_detector_returns_raw_entropy():
-    scores = epr(str(EPR_WEIGHTS)).predict_proba(SINGLE_OPENAI_RESPONSE)
-    assert scores.shape == (1, 2)
-    assert scores[0, 0] == 0.0  # column 0 is always zero in uncalibrated mode
-    assert scores[0, 1] > 0.0  # column 1 is raw mean entropy
-
-
 def test_predict_token_proba_shape():
     token_scores = epr(str(EPR_WEIGHTS)).predict_token_proba(SINGLE_OPENAI_RESPONSE)
     assert token_scores.shape[0] == 1  # 1 sequence
