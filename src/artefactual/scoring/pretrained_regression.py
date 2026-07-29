@@ -1,4 +1,3 @@
-import warnings
 from pathlib import Path
 
 import numpy as np
@@ -20,15 +19,6 @@ class PretrainedLogisticRegression(LogisticRegression):
         Returns:
         PretrainedLogisticRegression : instance of the class pre-configured with the loaded weights
         """
-
-        if pretrained_model_name_or_path is None:
-            return warnings.warn(
-                "EPR is currently not calibrated. "
-                "To enable calibration, please specify a `pretrained_model_name_or_path`.",
-                UserWarning,
-                stacklevel=2,
-            )
-
         weights = load_weights(pretrained_model_name_or_path)
 
         coeffs = weights["coefficients"]

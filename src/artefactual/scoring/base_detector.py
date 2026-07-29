@@ -2,7 +2,6 @@ import numpy as np
 from sklearn.pipeline import Pipeline
 
 from artefactual.preprocessing.parser import LogProbParser
-from artefactual.scoring.default_epr_regression import DefaultEprLogisticRegression
 from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
 from artefactual.scoring.pretrained_regression import PretrainedLogisticRegression
 
@@ -48,6 +47,13 @@ class BaseDetector(Pipeline):
         )
 
 
+class UncalibratedModelError(ValueError):
+    """Raised when a model requires a pretrained weight path for calibration."""
+
+    def __init__(self, message: str = "To enable this detector specify a `pretrained_model_name_or_path`.") -> None:
+        super().__init__(message)
+
+
 # Factory aliases (module level), each returns a BaseDetector
 def epr(
     pretrained_model_name_or_path: str | None = None, *, transform_input=None, memory=None, verbose=False
@@ -56,7 +62,7 @@ def epr(
     if pretrained_model_name_or_path is not None:
         classifier = PretrainedLogisticRegression.from_pretrained(pretrained_model_name_or_path)
     else:
-        classifier = DefaultEprLogisticRegression()
+        raise UncalibratedModelError()
 
     return BaseDetector(
         steps=[
@@ -77,7 +83,8 @@ def wepr(
     if pretrained_model_name_or_path is not None:
         classifier = PretrainedLogisticRegression.from_pretrained(pretrained_model_name_or_path)
     else:
-        classifier = PretrainedLogisticRegression()
+        raise UncalibratedModelError()
+
     return BaseDetector(
         steps=[
             ("parser", LogProbParser()),
