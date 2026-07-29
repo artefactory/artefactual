@@ -21,23 +21,23 @@ SINGLE_OPENAI_RESPONSE = OPENAI_RESPONSES["responses"][0]
 
 
 def test_epr_returns_base_detector():
-    assert isinstance(epr(), BaseDetector)
+    assert isinstance(epr(str(EPR_WEIGHTS)), BaseDetector)
 
 
 def test_wepr_returns_base_detector():
-    assert isinstance(wepr(), BaseDetector)
+    assert isinstance(wepr(str(WEPR_WEIGHTS)), BaseDetector)
 
 
 def test_epr_step_names():
-    assert [name for name, _ in epr().steps] == ["parser", "entropy", "classifier"]
+    assert [name for name, _ in epr(str(EPR_WEIGHTS)).steps] == ["parser", "entropy", "classifier"]
 
 
 def test_epr_entropy_reduction():
-    assert epr().named_steps["entropy"].reduction == "epr"
+    assert epr(str(EPR_WEIGHTS)).named_steps["entropy"].reduction == "epr"
 
 
 def test_wepr_entropy_reduction():
-    assert wepr().named_steps["entropy"].reduction == "wepr"
+    assert wepr(str(WEPR_WEIGHTS)).named_steps["entropy"].reduction == "wepr"
 
 
 def test_epr_with_pretrained_has_coef():
@@ -63,7 +63,7 @@ def test_predict_proba_valid_probabilities():
 
 
 def test_unfitted_detector_returns_raw_entropy():
-    scores = epr().predict_proba(SINGLE_OPENAI_RESPONSE)
+    scores = epr(str(EPR_WEIGHTS)).predict_proba(SINGLE_OPENAI_RESPONSE)
     assert scores.shape == (1, 2)
     assert scores[0, 0] == 0.0  # column 0 is always zero in uncalibrated mode
     assert scores[0, 1] > 0.0  # column 1 is raw mean entropy
