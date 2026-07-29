@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.pipeline import Pipeline
 
 from artefactual.preprocessing.parser import LogProbParser
+from artefactual.scoring.default_epr_regression import DefaultEprLogisticRegression
 from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
 from artefactual.scoring.pretrained_regression import PretrainedLogisticRegression
 
@@ -55,7 +56,7 @@ def epr(
     if pretrained_model_name_or_path is not None:
         classifier = PretrainedLogisticRegression.from_pretrained(pretrained_model_name_or_path)
     else:
-        classifier = PretrainedLogisticRegression()
+        classifier = DefaultEprLogisticRegression()
 
     return BaseDetector(
         steps=[
