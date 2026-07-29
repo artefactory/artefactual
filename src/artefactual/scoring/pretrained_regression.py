@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -19,6 +20,15 @@ class PretrainedLogisticRegression(LogisticRegression):
         Returns:
         PretrainedLogisticRegression : instance of the class pre-configured with the loaded weights
         """
+
+        if pretrained_model_name_or_path is None:
+            return warnings.warn(
+                "EPR is currently not calibrated. "
+                "To enable calibration, please specify a `pretrained_model_name_or_path`.",
+                UserWarning,
+                stacklevel=2,
+            )
+
         weights = load_weights(pretrained_model_name_or_path)
 
         coeffs = weights["coefficients"]
@@ -26,7 +36,7 @@ class PretrainedLogisticRegression(LogisticRegression):
         if "mean_entropy" in coeffs:  # epr
             coef_array = np.array([[coeffs["mean_entropy"]]], dtype=np.float32)  # (1, 1)
             n_features = 1
-        else:  # wepr
+        elif "mean_rank_1" in coeffs:  # wepr
             k = sum(1 for key in coeffs if key.startswith("mean_rank_"))
             if k == 0:
                 msg = "Unrecognized coefficient keys"
@@ -35,6 +45,9 @@ class PretrainedLogisticRegression(LogisticRegression):
             max_vals = [coeffs[f"max_rank_{i}"] for i in range(1, k + 1)]
             coef_array = np.array([mean_vals + max_vals], dtype=np.float32)  # (1, 2k)
             n_features = 2 * k
+        else:
+            msg = "Unrecognized coefficient keys"
+            raise ValueError(msg)
 
         instance = cls()
 
