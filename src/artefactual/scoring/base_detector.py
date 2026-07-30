@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.pipeline import Pipeline
 
+from artefactual.exceptions import UncalibratedModelError
 from artefactual.preprocessing.parser import LogProbParser
 from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
 from artefactual.scoring.pretrained_regression import PretrainedLogisticRegression
@@ -45,13 +46,6 @@ class BaseDetector(Pipeline):
                 ("classifier", classifier),
             ]
         )
-
-
-class UncalibratedModelError(ValueError):
-    """Raised when a model requires a pretrained weight path for calibration."""
-
-    def __init__(self, message: str = "To enable this detector specify a `pretrained_model_name_or_path`.") -> None:
-        super().__init__(message)
 
 
 # Factory aliases (module level), each returns a BaseDetector
