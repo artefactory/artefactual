@@ -205,6 +205,6 @@ perso.py
 # MyST build outputs
 _build
 
-# Quarto / Reveal.js / Jupyter nbconvert slides output
-docs/slides/*.html
-docs/slides/*_files/
+# Quarto / Reveal.js slide output, staged for Sphinx's html_extra_path
+docs/_extra/
+.quarto/
