@@ -36,7 +36,13 @@ class PretrainedLogisticRegression(LogisticRegression):
             coef_array = np.array([mean_vals + max_vals], dtype=np.float32)  # (1, 2k)
             n_features = 2 * k
         else:
-            msg = "Unrecognized coefficient keys"
+            # Neither an EPR calibration nor WEPR weights; name what was found so the
+            # reader can tell a malformed file from an unsupported metric.
+            msg = (
+                "Unrecognized weights format: expected an EPR calibration with a "
+                "'mean_entropy' coefficient, or WEPR weights with 'mean_rank_1..k' and "
+                f"'max_rank_1..k'. Got keys: {sorted(coeffs)}"
+            )
             raise ValueError(msg)
 
         instance = cls()
