@@ -59,4 +59,15 @@ html_theme_options = {
 
 # General
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = [
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    # Quarto renders the decks into docs/_extra; keep nbsphinx off the sources.
+    "presentations/**/*.ipynb",
+]
+
+# Rendered decks, copied verbatim into the site root. Populated by
+# `quarto render docs/presentations`; a plain Sphinx build without Quarto still
+# succeeds, it just warns that the directory is missing.
+html_extra_path = ["_extra"]
