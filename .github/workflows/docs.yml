@@ -37,9 +37,6 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra docs
 
-      - name: Set up Pandoc
-        uses: pandoc/actions/setup@v1
-
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
 
