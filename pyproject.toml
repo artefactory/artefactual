@@ -45,7 +45,6 @@ calibration = [
 adapters = [
     "langfuse>=4.8.1",
     "openai>=2.41.1",
-    "python-dotenv>=1.0.0",
 ]
 docs = [
     "myst-parser~=4.0.1",
