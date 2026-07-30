@@ -209,6 +209,7 @@ max-complexity = 10
     "F401",    # unused imports allowed (often for demo/exploration)
     "INP001",  # implicit namespace package
 ]
+"examples/*.ipynb" = ["T201", "T203"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["artefactual"]
