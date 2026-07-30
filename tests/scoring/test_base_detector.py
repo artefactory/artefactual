@@ -3,7 +3,9 @@ from importlib import resources
 from pathlib import Path
 
 import numpy as np
+import pytest
 
+from artefactual.exceptions import UncalibratedModelError
 from artefactual.scoring.base_detector import BaseDetector, epr, wepr
 
 # Load package weights
@@ -26,6 +28,12 @@ def test_epr_returns_base_detector():
 
 def test_wepr_returns_base_detector():
     assert isinstance(wepr(str(WEPR_WEIGHTS)), BaseDetector)
+
+
+@pytest.mark.parametrize("factory", [epr, wepr])
+def test_factory_without_weights_raises(factory):
+    with pytest.raises(UncalibratedModelError):
+        factory()
 
 
 def test_epr_step_names():
