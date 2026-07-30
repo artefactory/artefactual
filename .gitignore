@@ -200,6 +200,7 @@ outputs/
 perso.py
 .context/
 
+!examples/*.json
 !tests/open_ai_responses.json
 
 # MyST build outputs

@@ -1,0 +1,350 @@
+{
+  "responses": [
+    {
+      "id": "resp_000",
+      "object": "response",
+      "model": "gpt-4.1-2025-04-14",
+      "output": [
+        {
+          "id": "msg_resp_000",
+          "type": "message",
+          "role": "assistant",
+          "status": "completed",
+          "content": [
+            {
+              "type": "output_text",
+              "text": "Paris.",
+              "annotations": [],
+              "logprobs": [
+                {
+                  "token": "Paris",
+                  "logprob": -0.001,
+                  "top_logprobs": [
+                    { "token": "Paris", "logprob": -0.001 },
+                    { "token": "London", "logprob": -15.0 },
+                    { "token": "Berlin", "logprob": -16.0 },
+                    { "token": "Madrid", "logprob": -17.0 },
+                    { "token": "Rome", "logprob": -18.0 },
+                    { "token": "Amsterdam", "logprob": -19.0 },
+                    { "token": "Vienna", "logprob": -20.0 },
+                    { "token": "Brussels", "logprob": -21.0 },
+                    { "token": "Lisbon", "logprob": -22.0 },
+                    { "token": "Athens", "logprob": -23.0 },
+                    { "token": "Prague", "logprob": -24.0 },
+                    { "token": "Warsaw", "logprob": -25.0 },
+                    { "token": "Dublin", "logprob": -26.0 },
+                    { "token": "Copenhagen", "logprob": -27.0 },
+                    { "token": "Stockholm", "logprob": -28.0 }
+                  ]
+                },
+                {
+                  "token": ".",
+                  "logprob": -0.001,
+                  "top_logprobs": [
+                    { "token": ".", "logprob": -0.001 },
+                    { "token": ",", "logprob": -15.0 },
+                    { "token": " is", "logprob": -16.0 },
+                    { "token": " the", "logprob": -17.0 },
+                    { "token": "!", "logprob": -18.0 },
+                    { "token": "?", "logprob": -19.0 },
+                    { "token": " and", "logprob": -20.0 },
+                    { "token": " -", "logprob": -21.0 },
+                    { "token": ";", "logprob": -22.0 },
+                    { "token": ":", "logprob": -23.0 },
+                    { "token": "\n", "logprob": -24.0 },
+                    { "token": " (", "logprob": -25.0 },
+                    { "token": " --", "logprob": -26.0 },
+                    { "token": " [", "logprob": -27.0 },
+                    { "token": " ...", "logprob": -28.0 }
+                  ]
+                },
+                {
+                  "token": "</s>",
+                  "logprob": -0.001,
+                  "top_logprobs": [
+                    { "token": "</s>", "logprob": -0.001 },
+                    { "token": "\n", "logprob": -15.0 },
+                    { "token": " ", "logprob": -16.0 },
+                    { "token": " The", "logprob": -17.0 },
+                    { "token": " It", "logprob": -18.0 },
+                    { "token": " France", "logprob": -19.0 },
+                    { "token": " This", "logprob": -20.0 },
+                    { "token": " That", "logprob": -21.0 },
+                    { "token": " A", "logprob": -22.0 },
+                    { "token": " In", "logprob": -23.0 },
+                    { "token": " We", "logprob": -24.0 },
+                    { "token": " You", "logprob": -25.0 },
+                    { "token": " To", "logprob": -26.0 },
+                    { "token": " As", "logprob": -27.0 },
+                    { "token": " Of", "logprob": -28.0 }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "top_logprobs": 15,
+      "metadata": {
+        "prompt": "What is the capital city of France? Please answer briefly."
+      }
+    },
+    {
+      "id": "resp_001",
+      "object": "response",
+      "model": "gpt-4.1-2025-04-14",
+      "output": [
+        {
+          "id": "msg_resp_001",
+          "type": "message",
+          "role": "assistant",
+          "status": "completed",
+          "content": [
+            {
+              "type": "output_text",
+              "text": "Charles Moslonka is a French singer born in Lyon in 1985.",
+              "annotations": [],
+              "logprobs": [
+                {
+                  "token": "Charles",
+                  "logprob": -0.0001,
+                  "top_logprobs": [
+                    { "token": "Charles", "logprob": -0.0001 },
+                    { "token": "He", "logprob": -15.0 },
+                    { "token": "The", "logprob": -16.0 },
+                    { "token": "A", "logprob": -17.0 },
+                    { "token": "Mr", "logprob": -18.0 },
+                    { "token": "This", "logprob": -19.0 },
+                    { "token": "She", "logprob": -20.0 },
+                    { "token": "Born", "logprob": -21.0 },
+                    { "token": "Known", "logprob": -22.0 },
+                    { "token": "Named", "logprob": -23.0 },
+                    { "token": "French", "logprob": -24.0 },
+                    { "token": "Singer", "logprob": -25.0 },
+                    { "token": "My", "logprob": -26.0 },
+                    { "token": "One", "logprob": -27.0 },
+                    { "token": "An", "logprob": -28.0 }
+                  ]
+                },
+                {
+                  "token": " Moslonka",
+                  "logprob": -0.0001,
+                  "top_logprobs": [
+                    { "token": " Moslonka", "logprob": -0.0001 },
+                    { "token": " M.", "logprob": -15.0 },
+                    { "token": " de", "logprob": -16.0 },
+                    { "token": " Mos", "logprob": -17.0 },
+                    { "token": " is", "logprob": -18.0 },
+                    { "token": " Mo", "logprob": -19.0 },
+                    { "token": " Mosl", "logprob": -20.0 },
+                    { "token": " Moslo", "logprob": -21.0 },
+                    { "token": " Mosch", "logprob": -22.0 },
+                    { "token": " Mosc", "logprob": -23.0 },
+                    { "token": " le", "logprob": -24.0 },
+                    { "token": " Moreau", "logprob": -25.0 },
+                    { "token": " Dubois", "logprob": -26.0 },
+                    { "token": " Bernard", "logprob": -27.0 },
+                    { "token": " Martin", "logprob": -28.0 }
+                  ]
+                },
+                {
+                  "token": " is",
+                  "logprob": -0.45,
+                  "top_logprobs": [
+                    { "token": " is", "logprob": -0.45 },
+                    { "token": ",", "logprob": -2.2 },
+                    { "token": " was", "logprob": -2.8 },
+                    { "token": " (", "logprob": -3.4 },
+                    { "token": " works", "logprob": -4.0 },
+                    { "token": " has", "logprob": -4.6 },
+                    { "token": " (born", "logprob": -5.2 },
+                    { "token": " became", "logprob": -5.8 },
+                    { "token": " born", "logprob": -6.4 },
+                    { "token": " grew", "logprob": -7.0 },
+                    { "token": " lived", "logprob": -7.6 },
+                    { "token": " died", "logprob": -8.2 },
+                    { "token": " left", "logprob": -8.8 },
+                    { "token": " moved", "logprob": -9.4 },
+                    { "token": " came", "logprob": -10.0 }
+                  ]
+                },
+                {
+                  "token": " a",
+                  "logprob": -1.45,
+                  "top_logprobs": [
+                    { "token": " a", "logprob": -1.45 },
+                    { "token": " an", "logprob": -1.6 },
+                    { "token": " the", "logprob": -1.8 },
+                    { "token": " one", "logprob": -2.0 },
+                    { "token": " known", "logprob": -2.2 },
+                    { "token": " well", "logprob": -2.5 },
+                    { "token": " best", "logprob": -2.8 },
+                    { "token": " famous", "logprob": -3.1 },
+                    { "token": " French", "logprob": -3.4 },
+                    { "token": " Belgian", "logprob": -3.7 },
+                    { "token": " Swiss", "logprob": -4.0 },
+                    { "token": " Polish", "logprob": -4.3 },
+                    { "token": " noted", "logprob": -4.6 },
+                    { "token": " popular", "logprob": -4.9 },
+                    { "token": " former", "logprob": -5.2 }
+                  ]
+                },
+                {
+                  "token": " French",
+                  "logprob": -0.45,
+                  "top_logprobs": [
+                    { "token": " French", "logprob": -0.45 },
+                    { "token": " Polish", "logprob": -2.2 },
+                    { "token": " Belgian", "logprob": -2.8 },
+                    { "token": " Swiss", "logprob": -3.4 },
+                    { "token": " Czech", "logprob": -4.0 },
+                    { "token": " Italian", "logprob": -4.6 },
+                    { "token": " Spanish", "logprob": -5.2 },
+                    { "token": " German", "logprob": -5.8 },
+                    { "token": " Austrian", "logprob": -6.4 },
+                    { "token": " Romanian", "logprob": -7.0 },
+                    { "token": " Slovak", "logprob": -7.6 },
+                    { "token": " Hungarian", "logprob": -8.2 },
+                    { "token": " Croatian", "logprob": -8.8 },
+                    { "token": " Serbian", "logprob": -9.4 },
+                    { "token": " Slovenian", "logprob": -10.0 }
+                  ]
+                },
+                {
+                  "token": " singer",
+                  "logprob": -1.65,
+                  "top_logprobs": [
+                    { "token": " singer", "logprob": -1.65 },
+                    { "token": " engineer", "logprob": -1.85 },
+                    { "token": " writer", "logprob": -2.05 },
+                    { "token": " professor", "logprob": -2.25 },
+                    { "token": " artist", "logprob": -2.45 },
+                    { "token": " musician", "logprob": -2.65 },
+                    { "token": " composer", "logprob": -2.85 },
+                    { "token": " poet", "logprob": -3.05 },
+                    { "token": " author", "logprob": -3.25 },
+                    { "token": " researcher", "logprob": -3.45 },
+                    { "token": " physicist", "logprob": -3.65 },
+                    { "token": " chemist", "logprob": -3.85 },
+                    { "token": " teacher", "logprob": -4.05 },
+                    { "token": " linguist", "logprob": -4.25 },
+                    { "token": " filmmaker", "logprob": -4.45 }
+                  ]
+                },
+                {
+                  "token": " born",
+                  "logprob": -0.0001,
+                  "top_logprobs": [
+                    { "token": " born", "logprob": -0.0001 },
+                    { "token": " who", "logprob": -15.0 },
+                    { "token": " based", "logprob": -16.0 },
+                    { "token": " working", "logprob": -17.0 },
+                    { "token": " living", "logprob": -18.0 },
+                    { "token": " raised", "logprob": -19.0 },
+                    { "token": " known", "logprob": -20.0 },
+                    { "token": " active", "logprob": -21.0 },
+                    { "token": " educated", "logprob": -22.0 },
+                    { "token": " trained", "logprob": -23.0 },
+                    { "token": " studied", "logprob": -24.0 },
+                    { "token": " graduated", "logprob": -25.0 },
+                    { "token": " associated", "logprob": -26.0 },
+                    { "token": " affiliated", "logprob": -27.0 },
+                    { "token": " recognized", "logprob": -28.0 }
+                  ]
+                },
+                {
+                  "token": " in",
+                  "logprob": -0.0001,
+                  "top_logprobs": [
+                    { "token": " in", "logprob": -0.0001 },
+                    { "token": " near", "logprob": -15.0 },
+                    { "token": " around", "logprob": -16.0 },
+                    { "token": " on", "logprob": -17.0 },
+                    { "token": " at", "logprob": -18.0 },
+                    { "token": " from", "logprob": -19.0 },
+                    { "token": " outside", "logprob": -20.0 },
+                    { "token": " within", "logprob": -21.0 },
+                    { "token": " between", "logprob": -22.0 },
+                    { "token": " among", "logprob": -23.0 },
+                    { "token": " across", "logprob": -24.0 },
+                    { "token": " inside", "logprob": -25.0 },
+                    { "token": " along", "logprob": -26.0 },
+                    { "token": " beside", "logprob": -27.0 },
+                    { "token": " beyond", "logprob": -28.0 }
+                  ]
+                },
+                {
+                  "token": " Lyon",
+                  "logprob": -0.45,
+                  "top_logprobs": [
+                    { "token": " Lyon", "logprob": -0.45 },
+                    { "token": " Paris", "logprob": -2.2 },
+                    { "token": " Warsaw", "logprob": -2.8 },
+                    { "token": " Brussels", "logprob": -3.4 },
+                    { "token": " Prague", "logprob": -4.0 },
+                    { "token": " Bordeaux", "logprob": -4.6 },
+                    { "token": " Marseille", "logprob": -5.2 },
+                    { "token": " Toulouse", "logprob": -5.8 },
+                    { "token": " Nice", "logprob": -6.4 },
+                    { "token": " Strasbourg", "logprob": -7.0 },
+                    { "token": " Nantes", "logprob": -7.6 },
+                    { "token": " Lille", "logprob": -8.2 },
+                    { "token": " Rennes", "logprob": -8.8 },
+                    { "token": " Grenoble", "logprob": -9.4 },
+                    { "token": " Montpellier", "logprob": -10.0 }
+                  ]
+                },
+                {
+                  "token": " in 1985",
+                  "logprob": -0.45,
+                  "top_logprobs": [
+                    { "token": " in 1985", "logprob": -0.45 },
+                    { "token": " in 1978", "logprob": -2.2 },
+                    { "token": " in 1990", "logprob": -2.8 },
+                    { "token": " in 1972", "logprob": -3.4 },
+                    { "token": " in 2001", "logprob": -4.0 },
+                    { "token": " in 1965", "logprob": -4.6 },
+                    { "token": " in 1993", "logprob": -5.2 },
+                    { "token": " in 1969", "logprob": -5.8 },
+                    { "token": " in 1980", "logprob": -6.4 },
+                    { "token": " in 1975", "logprob": -7.0 },
+                    { "token": " in 1962", "logprob": -7.6 },
+                    { "token": " in 1988", "logprob": -8.2 },
+                    { "token": " in 1958", "logprob": -8.8 },
+                    { "token": " in 1970", "logprob": -9.4 },
+                    { "token": " in 1995", "logprob": -10.0 }
+                  ]
+                },
+                {
+                  "token": ".",
+                  "logprob": -0.45,
+                  "top_logprobs": [
+                    { "token": ".", "logprob": -0.45 },
+                    { "token": ",", "logprob": -2.2 },
+                    { "token": " and", "logprob": -2.8 },
+                    { "token": " where", "logprob": -3.4 },
+                    { "token": " who", "logprob": -4.0 },
+                    { "token": " but", "logprob": -4.6 },
+                    { "token": " while", "logprob": -5.2 },
+                    { "token": " before", "logprob": -5.8 },
+                    { "token": " after", "logprob": -6.4 },
+                    { "token": " then", "logprob": -7.0 },
+                    { "token": " since", "logprob": -7.6 },
+                    { "token": " when", "logprob": -8.2 },
+                    { "token": " which", "logprob": -8.8 },
+                    { "token": " though", "logprob": -9.4 },
+                    { "token": " as", "logprob": -10.0 }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "top_logprobs": 15,
+      "metadata": {
+        "prompt": "Who is Charles Moslonka ? Where was he born ? Please answer in two sentences."
+      }
+    }
+  ]
+}
