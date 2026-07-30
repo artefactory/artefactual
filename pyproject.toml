@@ -7,6 +7,7 @@ authors = [
     { name = "Hicham Randrianarivo", email = "hicham.randrianarivo@artefact.com" },
     { name = "Gauthier Jeannin", email = "gauthier.jeannin@artefact.com" },
     { name = "Charles Moslonka", email = "charles.moslonka@artefact.com" },
+    { name = "Charlotte Le Bihan", email = "charlotte.lebihan@student-cs.fr},
 ]
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
