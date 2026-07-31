@@ -1,0 +1,23 @@
+# Deck project for the documentation site.
+#
+# Adding a deck:
+#   1. Create a folder here holding the .ipynb and its images. It is rendered
+#      automatically -- no CI or Sphinx config change needed.
+#   2. Add a row to index.md, which is the only inbound link to a deck: the
+#      notebooks are excluded from the Sphinx sources, so an unlisted deck ships
+#      but stays unreachable.
+#   3. Preview while writing:
+#        uvx --from quarto-cli quarto preview docs/presentations/<folder>/<deck>.ipynb
+#   4. Build the site the way CI does:
+#        uvx --from quarto-cli quarto render docs/presentations
+#        uv run sphinx-build -b html docs docs/_build/html
+
+project:
+  # Sphinx copies this tree verbatim into the site root (html_extra_path).
+  output-dir: ../_extra/presentations
+  render:
+    # One folder per deck; new decks are picked up without touching CI.
+    - "*/*.ipynb"
+
+format:
+  revealjs: default
