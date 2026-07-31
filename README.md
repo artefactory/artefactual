@@ -40,8 +40,8 @@ To try the examples instantly (no GPU or model downloads required) run the follo
 
 ```bash
 uv sync
-uv run python examples/epr_usage_demo.py
-uv run jupyter lab examples/wepr_demo.ipynb
+uv run jupyter lab examples/epr_usage_demo.ipynb
+uv run jupyter lab examples/wepr_usage_demo.ipynb
 ```
 
 ## Basic usage (sequence-level scores)
@@ -65,7 +65,7 @@ token_scores_epr = epr.compute_token_scores(parsed_logprobs)
 print("EPR sequence scores:", seq_scores_epr)
 ```
 
-For a runnable demo run `examples/epr_usage_demo.py`.
+For a runnable demo run `examples/epr_usage_demo.ipynb`.
 
 ### WEPR example:
 
@@ -84,7 +84,7 @@ token_scores_wepr = wepr.compute_token_scores(parsed_logprobs)
 
 print("WEPR sequence scores:", seq_scores_wepr)
 ```
-For a runnable demo run `examples/wepr_demo.ipynb`.
+For a runnable demo run `examples/wepr_usage_demo.ipynb`.
 
 In both examples, the `response` object can have the following structure :
 
@@ -115,8 +115,9 @@ response = {
 ### Further Examples
 
 Some examples and dummy scripts are available :
-* `examples/epr_usage_demo.py` — EPR usage demo
-* `examples/wepr_demo.ipynb` — Jupyter notebook showcasing WEPR scoring
+* `examples/epr_usage_demo.ipynb` — EPR usage demo
+* `examples/wepr_usage_demo.ipynb` — WEPR usage demo
+* `examples/langfuse_integration_demo.ipynb` — scoring Langfuse traces
 
 ## Calibration logic
 
@@ -134,9 +135,7 @@ If you prefer to provide a custom calibration or weight file, pass a filesystem 
 
 The calibration pipeline in this package produces the `weights_*.json` and `calibration_*.json` files used to turn raw entropy scores into calibrated probabilities.
 
-For an example of the implementation of this flow you can refer to the provided calibration script `scripts/calibration_llm/calibration_script.py`.
-
-The implemented flow (all modules live under `src/artefactual/calibration`) is:
+The implemented flow (the generation and rating modules live under `src/artefactual/calibration`; training lives in `scripts/`) is:
 
 1. Prepare a QA dataset of question/answers (e.g., `web_question_qa.json`) containing entries like:
 
@@ -151,9 +150,14 @@ The implemented flow (all modules live under `src/artefactual/calibration`) is:
 
 3. Use `src/artefactual/calibration/rates_answers.py` to have a judge LLM label each generated answer as `True`/`False` (correct/incorrect). This script produces a pandas DataFrame (or CSV) where each row contains `uncertainty_score` (EPR/WEPR) and `judgment` (the target).
 
-4. Train a calibration model by running `src/artefactual/calibration/train_calibration.py` on the DataFrame/CSV. This fits a logistic regression mapping uncertainty scores to probabilities and saves the resulting weights JSON (intercept and coefficient(s)).
+4. Train a calibration model with `scripts/train_calibration.py`:
 
-5. Add the produced `weights_*.json` or `calibration_*.json` to the package data registry (or point `EPR`/`WEPR` at the local file) so `EPR(pretrained_model_name_or_path=...)` / `WEPR(...)` can load the calibration when scoring.
+```bash
+uv run python scripts/train_calibration.py \
+    --responses responses.json --labels labels.json --reduction epr
+```
+
+   It takes the raw completion responses and one 0/1 label per generated sequence (1 for hallucination), and fits the same parser/entropy/classifier pipeline `epr()` and `wepr()` build — with the logistic regression fitted on your data instead of loaded from weights. The fitted intercept and coefficients are logged.
 
 *Important notes for calibration*:
 
