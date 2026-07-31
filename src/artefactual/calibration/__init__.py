@@ -9,8 +9,6 @@ if typing.TYPE_CHECKING:
     from artefactual.calibration.utils.memory import clear_gpu_memory
     from artefactual.calibration.utils.models import get_model_name, init_llm
 
-from artefactual.calibration.train_calibration import train_calibration
-
 __all__ = [
     "GenerationConfig",
     "RatingConfig",
@@ -19,7 +17,6 @@ __all__ = [
     "init_llm",
     "load_tqa_from_json",
     "save_to_json",
-    "train_calibration",
 ]
 
 
