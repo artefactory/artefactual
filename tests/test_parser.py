@@ -6,7 +6,13 @@ from hypothesis import assume, given
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 
-from artefactual.preprocessing.parser import LogProbParser, parse_sampled_token_logprobs, parse_top_logprobs
+from artefactual.preprocessing.parser import (
+    LogProbParser,
+    _sampled_logprobs,
+    _top_logprobs,
+    parse_sampled_token_logprobs,
+    parse_top_logprobs,
+)
 
 
 class MockVLLMOutput:
@@ -116,3 +122,62 @@ def test_sklearn_roundtrip():
 # Edge cases
 def test_empty_batch_transforms_to_an_empty_cube():
     assert LogProbParser().transform([]).shape == (0, 0, 0)
+
+
+# --- format dispatch -------------------------------------------------------------------
+# Both extractors are singledispatch tables keyed on the validated response model. The
+# fallback exists so an unregistered model fails loudly instead of returning nothing.
+
+
+def test_top_logprob_dispatch_rejects_an_unregistered_response():
+    with pytest.raises(TypeError, match="No top-logprob extractor registered"):
+        _top_logprobs(object())
+
+
+def test_sampled_logprob_dispatch_rejects_an_unregistered_response():
+    with pytest.raises(TypeError, match="No sampled-logprob extractor registered"):
+        _sampled_logprobs(object())
+
+
+@pytest.mark.parametrize("payload", [None, 42, "text", {"unrelated": 1}])
+def test_unsupported_payloads_are_rejected_by_both_entry_points(payload):
+    with pytest.raises(TypeError, match="Unsupported output format"):
+        parse_top_logprobs(payload)
+    with pytest.raises(TypeError, match="Unsupported output format"):
+        parse_sampled_token_logprobs(payload)
+
+
+def test_a_content_part_without_logprobs_is_skipped():
+    # a Responses item may interleave parts that carry no logprobs at all
+    payload = {"output": [{"content": [{"logprobs": []}, {"logprobs": [{"logprob": -0.2}]}]}]}
+
+    (sampled,) = parse_sampled_token_logprobs(payload)
+
+    np.testing.assert_allclose(sampled, [-0.2])
+
+
+def test_a_nested_batch_is_flattened_in_order():
+    def one(logprob):
+        return {"choices": [{"logprobs": {"content": [{"top_logprobs": [{"logprob": logprob}]}]}}]}
+
+    parsed = parse_top_logprobs([one(-0.1), [one(-0.2), one(-0.3)]])
+
+    assert [sequence[0] for sequence in parsed] == [[-0.1], [-0.2], [-0.3]]
+
+
+def test_a_tuple_batch_is_accepted():
+    payload = {"choices": [{"logprobs": {"content": [{"top_logprobs": [{"logprob": -0.1}]}]}}]}
+    assert len(parse_top_logprobs((payload, payload))) == 2
+
+
+# --- LogProbParser as a pipeline step --------------------------------------------------
+
+
+def test_fit_returns_self_and_ignores_its_arguments():
+    parser = LogProbParser()
+    assert parser.fit(["anything"], ["a target"]) is parser
+
+
+def test_a_batch_of_empty_sequences_transforms_to_an_empty_cube():
+    # every choice parses to {}, so there is no token axis and no rank axis to size
+    assert LogProbParser().transform({"choices": [{"logprobs": None}]}).shape == (1, 0, 0)

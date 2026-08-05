@@ -19,7 +19,6 @@ from artefactual.utils.io import (
     load_weights,
 )
 
-
 # --- the shipped registry --------------------------------------------------------------
 
 
