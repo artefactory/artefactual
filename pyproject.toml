@@ -92,6 +92,26 @@ dev = [
     "pytest-cov>=6.0.0",
 ]
 
+[tool.coverage.run]
+# `source` (not `--cov=artefactual`) so the namespace packages under adapters/ and
+# calibration/utils/ land in the denominator too — they have no __init__.py, and the
+# package-name scanner walks right past them.
+source = ["src/artefactual"]
+omit = [
+    # Both reach for torch/vllm/ray at import time, so neither can be imported on a
+    # machine without the `calibration` extra (vllm is pinned off darwin). Counting
+    # statements that can never execute here makes the total unreadable.
+    "src/artefactual/calibration/outputs_entropy.py",
+    "src/artefactual/calibration/utils/memory.py",
+]
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
+
 [tool.codespell]
 ignore-words-list = "rouge,ans"
 
