@@ -1,175 +1,297 @@
 # Artefactual
 
-Artefactual is a lightweight Python package for measuring model hallucination risk using entropy-based metrics. It is:
+**Hallucination detection for black-box LLMs, as scikit-learn estimators.**
 
-- **Practical**: Precomputed calibration for several model families is included in `src/artefactual/data` and can be used by model name.
-- **Flexible**: Works with OpenAI Chat Completions and OpenAI Responses payloads, as objects or plain mappings, one at a time or as a batch.
-- **Detailed outputs**: Compute both sequence-level and token-level uncertainty scores to power downstream pipelines (e.g., answer filtering, reranking, human-in-the-loop triggers).
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org)
+[![Paper](https://img.shields.io/badge/arXiv-2509.04492-b31b1b.svg)](https://arxiv.org/abs/2509.04492)
 
-The package provides two primary uncertainty detectors:
+Artefactual scores how likely an LLM response is to be a hallucination, using only the
+token log-probabilities the model already returns. No second model, no reference answer,
+no access to weights — just the `logprobs` field of a completion response.
 
-- **EPR (Entropy Production Rate)**: a token- and sequence-level entropy-based metric exposing raw and (optionally) calibrated probabilities.
-- **WEPR (Weighted EPR)**: a calibrated, learned weighted combination of entropy contributions yielding sequence- and token-level probabilities of hallucination.
+Detectors are `sklearn.pipeline.Pipeline` subclasses, so they drop straight into the
+tooling you already use.
 
-The library includes pre-computed calibration coefficients and weights for a set of popular models so data scientists can use EPR/WEPR out-of-the-box without running a calibration pipeline.
+```python
+from artefactual.scoring import epr
+
+detector = epr("mistralai/Ministral-8B-Instruct-2410")
+detector.predict_proba(response)[:, 1]      # P(hallucination) per sequence
+detector.predict_token_proba(response)      # ...and per token
+```
+
+---
+
+## Why
+
+Sampling-based detectors (SelfCheckGPT and friends) need *n* extra generations per answer.
+LLM-as-judge needs a second, usually larger, model. Both cost latency and money at
+inference time.
+
+Artefactual reads a signal that is already in the response. When a model is about to
+hallucinate, its next-token distribution flattens — the entropy of the top-k candidates
+rises. Aggregating those per-token entropy contributions gives a score, and a small
+logistic regression, calibrated once per model, turns that score into a probability.
+
+The result is a detector that costs one dot product per token and requires exactly one
+generation. The trade-off: you need `logprobs` and `top_logprobs` in the response, which
+rules out providers that do not expose them.
 
 ## Installation
 
-- **Minimal (core) install** — For most users who only want to compute EPR/WEPR using the precomputed files shipped in the package:
+```bash
+pip install artefactual
+```
+
+or, for development:
 
 ```bash
+git clone https://github.com/artefactory/artefactual
+cd artefactual
 uv sync
-# or for editable development install:
-uv pip install -e .
 ```
 
-- **With calibration (full) install** — If you plan to run the calibration pipeline or train WEPR/EPR coefficients, install the `calibration` extra to pull heavier ML tooling and platform-specific dependencies:
+The core install depends only on `numpy`, `scikit-learn`, `pydantic` and `beartype`.
+There is no GPU, torch, or inference-server dependency.
 
-```bash
-uv pip install -e '.[calibration]'
-# or non-editable:
-uv pip install '.[calibration]'
-```
-*Mac users:* the calibration extra omits the GPU generation backend (no Darwin wheels). Running the full calibration pipeline on Mac requires an alternative generation backend.
+| Extra | Installs | For |
+|---|---|---|
+| `.[adapters]` | `langfuse`, `openai` | Running the integration examples |
+| `.[docs]` | `sphinx` and theme | Building the documentation |
 
-*Note*: Typical packages included in this installation method are `scikit-learn` (training), a local generation backend, `ray` (optional distributed processing), `pandas`, `numpy`, and `tqdm`. Installing these may require system-level libraries or CUDA support depending on your environment.
+## Quick start
 
-## Quickstart
-
-To try the examples instantly (no GPU or model downloads required) run the following commands :
-
-```bash
-uv sync
-uv run jupyter lab examples/epr_usage_demo.ipynb
-uv run jupyter lab examples/wepr_usage_demo.ipynb
-```
-
-## Basic usage (sequence-level scores)
-
-### EPR example:
+Request log-probabilities when you generate, then score the response object directly —
+the pipeline parses it for you.
 
 ```python
-from artefactual.preprocessing import parse_top_logprobs
-from artefactual.scoring import EPR
+from openai import OpenAI
 
-# Use precomputed calibration (model keys are defined in the registry)
-epr = EPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")
+from artefactual.scoring import epr
 
-# Compute sequence-level calibrated probabilities (list of floats)
-parsed_logprobs = parse_top_logprobs(response)  # an OpenAI completion response, or a list of them
-seq_scores_epr = epr.compute(parsed_logprobs)
+client = OpenAI()
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Who wrote the Rust book?"}],
+    logprobs=True,
+    top_logprobs=15,  # match the rank count the weights were calibrated at
+)
 
-# Compute token-level scores (list of numpy arrays)
-token_scores_epr = epr.compute_token_scores(parsed_logprobs)
+detector = epr("mistralai/Ministral-8B-Instruct-2410")
+scores = detector.predict_proba(response)
 
-print("EPR sequence scores:", seq_scores_epr)
+print(f"P(hallucination) = {scores[0, 1]:.2f}")
 ```
 
-For a runnable demo run `examples/epr_usage_demo.ipynb`.
+`predict_proba` returns an `(n_sequences, 2)` array following the scikit-learn convention:
+column 0 is P(supported), column 1 is P(hallucinated). One row per generated sequence, so
+a request with `n=4` returns four rows.
 
-### WEPR example:
+### Token-level scores
 
 ```python
-from artefactual.scoring import WEPR
-
-# WEPR requires a weight source (model key or local weights file)
-wepr = WEPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")
-
-# Compute sequence-level calibrated probabilities (list of floats)
-parsed_logprobs = parse_top_logprobs(response)  # an OpenAI completion response, or a list of them
-seq_scores_wepr = wepr.compute(parsed_logprobs)
-
-# Compute token-level scores (list of numpy arrays)
-token_scores_wepr = wepr.compute_token_scores(parsed_logprobs)
-
-print("WEPR sequence scores:", seq_scores_wepr)
+token_scores = detector.predict_token_proba(response)  # (n_sequences, max_tokens, 1)
 ```
-For a runnable demo run `examples/wepr_usage_demo.ipynb`.
 
-In both examples, the `response` object can have the following structure :
+Sequences shorter than the longest in the batch are padded with `NaN`, so mask before
+aggregating:
 
 ```python
-# Example: using an OpenAI Responses-like structure (minimal illustrative example, not runnable)
+import numpy as np
+
+first = token_scores[0, :, 0]
+print(first[~np.isnan(first)])
+```
+
+This is what you want for highlighting the specific spans that drove a low score.
+
+## How it works
+
+Each detector is a three-step pipeline:
+
+```
+LogProbParser  ->  EntropyTransformer  ->  PretrainedLogisticRegression
+  response           entropy features         calibrated probability
+```
+
+**1. Parse.** `LogProbParser` normalises OpenAI Chat Completions and Responses API payloads
+— as SDK objects or plain dicts, singly or batched — into a dense
+`(n_sequences, n_tokens, k)` array of log-probabilities, `NaN`-padded.
+
+**2. Entropy.** For each token *j* and rank *k*, the entropy contribution is
+`s_kj = -p_kj * log(p_kj)`. `EntropyTransformer` reduces those contributions to features.
+Two reductions ship:
+
+| Reduction | Feature vector | Intuition |
+|---|---|---|
+| `epr` | `mean_j( sum_k s_kj )` — 1 feature | Mean total entropy per token |
+| `wepr` | `mean_j(s_kj)` ‖ `max_j(s_kj)` — 2k features | Per-rank mean and peak, weighted separately |
+
+EPR treats every rank alike. WEPR learns a weight per rank, which matters because
+`-p*log(p)` peaks at `p = 1/e` — mid-ranked candidates are more informative than either
+the near-certain top rank or the negligible tail.
+
+**3. Calibrate.** A `LogisticRegression` pre-loaded with per-model coefficients maps the
+features to a probability. Because it is a real sklearn classifier, `predict`,
+`predict_proba` and `decision_function` all work as expected.
+
+You can pass any callable as a custom reduction:
+
+```python
+import numpy as np
+
+from artefactual.scoring import EntropyTransformer
+
+EntropyTransformer(reduction=lambda s, axis: np.nanmax(s, axis=axis))
+```
+
+## Composing with scikit-learn
+
+Detectors are ordinary estimators, so introspection and composition work:
+
+```python
+from sklearn.base import clone
+
+detector = wepr("mistralai/Ministral-8B-Instruct-2410")
+detector.named_steps  # {'parser': ..., 'entropy': ..., 'classifier': ...}
+clone(detector)  # get_params / set_params round-trip
+```
+
+Both transformers are stateless — `fit` learns nothing — so you can call `transform`
+without fitting. Note that `LogProbParser` sets `no_validation=True` in order to accept
+response objects rather than arrays, so cross-validation must start from data that has
+already been parsed.
+
+## Supported models
+
+Calibrations ship in `src/artefactual/data` and are addressed by model name:
+
+| Model |
+|---|
+| `mistralai/Ministral-8B-Instruct-2410` |
+| `mistralai/Mistral-Small-3.1-24B-Instruct-2503` |
+| `tiiuae/Falcon3-10B-Instruct` |
+| `microsoft/phi-4` |
+
+Both `epr()` and `wepr()` accept any of these names. All shipped weights are calibrated at
+**k = 15**, so request `top_logprobs=15`.
+
+To use your own calibration, pass a path instead of a name:
+
+```python
+detector = wepr("/path/to/my_weights.json")
+```
+
+Weight files are JSON. EPR calibrations carry a single coefficient:
+
+```json
+{"intercept": -2.91, "coefficients": {"mean_entropy": 58.17}}
+```
+
+WEPR weights carry a `mean_rank_i` and `max_rank_i` pair for each rank `1..k`:
+
+```json
+{"intercept": -3.02, "coefficients": {"mean_rank_1": 3.81, "max_rank_1": -0.44}}
+```
+
+To calibrate on your own data, fit a `LogisticRegression` on the output of the
+`parser -> entropy` steps against 0/1 hallucination labels, then write out its
+`intercept_` and `coef_` in that shape.
+
+## Input formats
+
+Both OpenAI wire formats are accepted, as SDK objects or plain mappings, one at a time or
+as a list:
+
+```python
+detector.predict_proba(response)  # a single response
+detector.predict_proba([resp_a, resp_b])  # a batch, concatenated in order
+```
+
+A minimal Responses API payload looks like:
+
+```python
 response = {
-	"object": "response",
-	"output": [
-		{
-			"content": [
-				{
-					"logprobs": [
-						{"top_logprobs": [{"logprob": -0.1}, {"logprob": -2.3}]},
-						{"top_logprobs": [{"logprob": -0.05}, {"logprob": -3.1}]}
-					]
-				}
-			]
-		}
-	]
+    "object": "response",
+    "output": [
+        {
+            "content": [
+                {
+                    "logprobs": [
+                        {"top_logprobs": [{"logprob": -0.1}, {"logprob": -2.3}]},
+                        {"top_logprobs": [{"logprob": -0.05}, {"logprob": -3.1}]},
+                    ]
+                }
+            ]
+        }
+    ],
 }
 ```
 
-*Notes*:
-- `EPR(pretrained_model_name_or_path=...)` attempts to load calibration coefficients via `artefactual.utils.io.load_calibration` and will silently fall back to uncalibrated raw EPR scores if calibration is not found.
-- `WEPR(pretrained_model_name_or_path)` requires a weight source (either a known model key from the registry or a local JSON file) and will raise a `ValueError` if weights cannot be found.
-- Both `EPR.compute(...)` and `WEPR.compute(...)` return lists because the methods accept batch-style inputs (the top-level structure may contain multiple response objects). If you pass a single response object you'll receive a single-element list — index the first element (for example, `seq_scores_epr[0]` or `seq_scores_wepr[0]`) to obtain a single float probability.
+Malformed input fails loudly: a payload carrying no logprobs raises `TypeError`, and a
+positive or non-finite log-probability raises `ValueError` naming the offending sample,
+token and rank.
 
-### Further Examples
+## Integrations
 
-Some examples and dummy scripts are available :
-* `examples/epr_usage_demo.ipynb` — EPR usage demo
-* `examples/wepr_usage_demo.ipynb` — WEPR usage demo
-* `examples/langfuse_integration_demo.ipynb` — scoring Langfuse traces
+Score Langfuse traces in place:
 
-## Calibration logic
+```python
+from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator
 
-When possible, we strongly recommend to use calibrated detectors, so that outputs can be interpreted as probabilities. We describe below how to load existing weights, or to run the full pipeline on a new model and/or corpus.
-
-### Registry / Precomputed files
-
-Artefactual ships a small registry which maps canonical model identifiers to precomputed JSON files. These mappings are available in `src/artefactual/utils/io.py` under `MODEL_WEIGHT_MAP` and `MODEL_CALIBRATION_MAP`.
-
-You can pass one of those strings directly to `EPR` or `WEPR` constructors (e.g., `EPR(pretrained_model_name_or_path="mistralai/Ministral-8B-Instruct-2410")`). Under the hood the package reads `src/artefactual/data/<file>.json` via `importlib.resources`.
-
-If you prefer to provide a custom calibration or weight file, pass a filesystem path (e.g., `WEPR('/path/to/my_weights.json')`). See `artefactual.utils.io.load_weights` and `load_calibration` for the exact behavior.
-
-### Advanced: Calibration pipeline (for deep usage)
-
-The calibration pipeline in this package produces the `weights_*.json` and `calibration_*.json` files used to turn raw entropy scores into calibrated probabilities.
-
-The implemented flow (the generation and rating modules live under `src/artefactual/calibration`; training lives in `scripts/`) is:
-
-1. Prepare a QA dataset of question/answers (e.g., `web_question_qa.json`) containing entries like:
-
-   {
-	   "question": "where is roswell area 51?",
-	   "question_id": "d204f08c-fbcb-41cb-8e55-ee3879d68eea",
-	   "short_answer": "Roswell",
-	   "answer_aliases": []
-   }
-
-2. Run the generation utility `src/artefactual/calibration/outputs_entropy.py` to produce a JSON dataset that includes EPR/WEPR scores for each generated answer (this JSON contains `generated_answers` entries with an `epr_score`/`wepr_score` field).
-
-3. Use `src/artefactual/calibration/rates_answers.py` to have a judge LLM label each generated answer as `True`/`False` (correct/incorrect). This script produces a pandas DataFrame (or CSV) where each row contains `uncertainty_score` (EPR/WEPR) and `judgment` (the target).
-
-4. Train a calibration model with `scripts/train_calibration.py`:
-
-```bash
-uv run python scripts/train_calibration.py \
-    --responses responses.json --labels labels.json --reduction epr
+evaluator = HallucinationEvaluator("epr", langfuse_client, epr("microsoft/phi-4"))
+evaluator.score_trace(trace_id)
 ```
 
-   It takes the raw completion responses and one 0/1 label per generated sequence (1 for hallucination), and fits the same parser/entropy/classifier pipeline `epr()` and `wepr()` build — with the logistic regression fitted on your data instead of loaded from weights. The fitted intercept and coefficients are logged.
+See `examples/langfuse_integration_demo.ipynb`.
 
-*Important notes for calibration*:
+## Examples
 
-- The pipeline requires to use a LLM-as-a-judge, which can be chosen by the user (default is "mistralai/Ministral-8B-Instruct-2410").
-- WEPR training learns multiple coefficient groups (e.g., `mean_rank_i` and `max_rank_i`) while EPR calibration is a single-intercept plus mean-entropy coefficient.
-- See the modules under `src/artefactual/calibration` for implementation details and plotting utilities.
+| Notebook | Shows |
+|---|---|
+| `examples/epr_usage_demo.ipynb` | Scoring with EPR end to end |
+| `examples/wepr_usage_demo.ipynb` | WEPR, including token-level highlighting |
+| `examples/langfuse_integration_demo.ipynb` | Scoring observability traces |
+
+Run them without a GPU or any model download:
+
+```bash
+uv run jupyter lab examples/epr_usage_demo.ipynb
+```
+
+## API reference
+
+| Object | Purpose |
+|---|---|
+| `scoring.epr(path)` | Build an EPR detector pipeline |
+| `scoring.wepr(path)` | Build a WEPR detector pipeline |
+| `scoring.BaseDetector` | The `Pipeline` subclass adding `predict_token_proba` |
+| `scoring.EntropyTransformer` | Contributions → features; `reduction` is `"epr"`, `"wepr"` or a callable |
+| `scoring.PretrainedLogisticRegression` | `LogisticRegression` loaded from a weights file |
+| `preprocessing.LogProbParser` | Response objects → dense NaN-padded array |
+| `preprocessing.parse_top_logprobs` | Functional form of the parser |
+| `utils.io.load_weights` / `load_calibration` | Registry and file loading |
+
+## Development
+
+```bash
+uv sync
+uv run pytest tests        # test suite (needs the locked project env)
+uv run pytest tests --cov  # with coverage
+
+uvx ruff check src tests   # lint — a standalone tool, no project env needed
+uvx ruff format src tests
+```
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Citation
 
-If you consider `artefactual` or any of its feature useful for your research, consider citing our paper, accepted for publication at ECIR 2026:
+If `artefactual` is useful in your research, please cite our paper, accepted for
+publication at ECIR 2026:
 
-```
+```bibtex
 @misc{moslonka2025learnedhallucinationdetectionblackbox,
       title={Learned Hallucination Detection in Black-Box LLMs using Token-level Entropy Production Rate},
       author={Charles Moslonka and Hicham Randrianarivo and Arthur Garnier and Emmanuel Malherbe},
@@ -183,4 +305,4 @@ If you consider `artefactual` or any of its feature useful for your research, co
 
 ## License
 
-The use of this software is under the MIT license, with no limitation of usage, including for commercial applications.
+MIT — no limitation of usage, including for commercial applications.
