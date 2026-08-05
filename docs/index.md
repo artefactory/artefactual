@@ -5,7 +5,7 @@
 ## Features
 
 - **Practical**: Precomputed calibration for several model families
-- **Flexible**: Works with vLLM, OpenAI Chat Completions, and the OpenAI Responses API formats
+- **Flexible**: Works with the OpenAI Chat Completions and Responses API formats
 - **Detailed outputs**: Compute both sequence-level and token-level uncertainty scores
 
 ## Uncertainty Detectors
