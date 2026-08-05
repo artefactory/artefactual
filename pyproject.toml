@@ -36,13 +36,6 @@ Issues = "https://github.com/artefactory/artefactual/issues"
 
 [project.optional-dependencies]
 hub = ["huggingface-hub>=0.27.0", "keras-hub>=0.18.1", "safetensors>=0.4.5"]
-calibration = [
-    "ray>=2.50.1",
-    "matplotlib>=3.9.0",
-    "vllm>=0.12.0 ; sys_platform != 'darwin'",
-    "torch>=2.9.0",
-    "pandas>=2.0.0",
-]
 adapters = [
     "langfuse>=4.8.1",
     "openai>=2.41.1",
@@ -83,7 +76,7 @@ dev = [
     "pydantic>=2.10.6",
     "jupyterlab>=4.3.5",
     "hypothesis>=6.127.8",
-    "ruff>=0.14.8",
+    "ruff>=0.14.8,<0.15",
     "ty>=0.0.1a32",
     "pre-commit>=4.0.0",
     "bump-my-version>=0.28.0",
@@ -93,17 +86,10 @@ dev = [
 ]
 
 [tool.coverage.run]
-# `source` (not `--cov=artefactual`) so the namespace packages under adapters/ and
-# calibration/utils/ land in the denominator too — they have no __init__.py, and the
-# package-name scanner walks right past them.
+# `source` (not `--cov=artefactual`) so the namespace package under adapters/ lands in
+# the denominator too — it has no __init__.py, and the package-name scanner walks
+# right past it.
 source = ["src/artefactual"]
-omit = [
-    # Both reach for torch/vllm/ray at import time, so neither can be imported on a
-    # machine without the `calibration` extra (vllm is pinned off darwin). Counting
-    # statements that can never execute here makes the total unreadable.
-    "src/artefactual/calibration/outputs_entropy.py",
-    "src/artefactual/calibration/utils/memory.py",
-]
 
 [tool.coverage.report]
 exclude_also = [

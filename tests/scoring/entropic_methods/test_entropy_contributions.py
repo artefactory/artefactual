@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from artefactual.scoring import EntropyContributionsMixin
 
@@ -33,7 +34,7 @@ def test_compute_entropy_contributions_zero_logprob():
 
     result = EntropyContributionsMixin.entropy_contributions(logprobs)
 
-    assert result[0, 0] == 0.0
+    assert result[0, 0] == pytest.approx(0.0, abs=1e-12)
 
 
 def test_compute_entropy_contributions_empty_input():

@@ -1,7 +1,6 @@
 from typing import Any
 
 import numpy as np
-from numpy.typing import NDArray
 
 
 def _get_val(obj: Any, key: str, default: Any = None) -> Any:
@@ -176,7 +175,7 @@ def _parse_token_entry(token_entry: Any) -> list[float]:
     return [float(m_logprob)] if m_logprob is not None else []
 
 
-def sampled_tokens_logprobs_responses_api(response: Any) -> list[NDArray]:
+def sampled_tokens_logprobs_responses_api(response: Any) -> list[np.ndarray]:
     """
     Retrieves the log probabilities of the sampled tokens from a response following the OpenAI Responses API format.
 
@@ -187,11 +186,11 @@ def sampled_tokens_logprobs_responses_api(response: Any) -> list[NDArray]:
         response (Any): The response object from the OpenAI Responses API.
 
     Returns:
-        list[NDArray]: A list of 1D numpy arrays, each containing the log probabilities
+        list[np.ndarray]: A list of 1D numpy arrays, each containing the log probabilities
                        of the sampled tokens for one output item.
     """
     output_list = _get_val(response, "output", [])
-    all_sampled: list[NDArray] = []
+    all_sampled: list[np.ndarray] = []
 
     for item in output_list:
         content_list = _get_val(item, "content", [])
@@ -209,7 +208,7 @@ def sampled_tokens_logprobs_responses_api(response: Any) -> list[NDArray]:
     return all_sampled
 
 
-def sampled_tokens_logprobs_chat_completion_api(response: Any) -> list[NDArray]:
+def sampled_tokens_logprobs_chat_completion_api(response: Any) -> list[np.ndarray]:
     """
     Retrieves the log probabilities of the sampled tokens from a response following the OpenAI Chat Completion format.
 
@@ -220,11 +219,11 @@ def sampled_tokens_logprobs_chat_completion_api(response: Any) -> list[NDArray]:
         response (Any): The response object from the OpenAI Chat Completion API.
 
     Returns:
-        list[NDArray]: A list of 1D numpy arrays, each containing the log probabilities
+        list[np.ndarray]: A list of 1D numpy arrays, each containing the log probabilities
                        of the sampled tokens for one choice.
     """
     choices = _get_val(response, "choices", [])
-    all_sampled: list[NDArray] = []
+    all_sampled: list[np.ndarray] = []
 
     for choice in choices:
         logprobs_obj = _get_val(choice, "logprobs")

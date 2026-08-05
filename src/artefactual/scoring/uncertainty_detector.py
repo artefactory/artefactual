@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from numpy.typing import NDArray
+import numpy as np
 
 
 class UncertaintyDetector(ABC):
@@ -40,7 +40,7 @@ class LogProbUncertaintyDetector(UncertaintyDetector):
         self.k = k
 
     @abstractmethod
-    def compute_token_scores(self, inputs: Any) -> list[NDArray]:
+    def compute_token_scores(self, inputs: Any) -> list[np.ndarray]:
         """
         Compute token-level uncertainty scores from inputs.
 
@@ -54,7 +54,7 @@ class LogProbUncertaintyDetector(UncertaintyDetector):
 
 class SentenceProbabilityDetector(UncertaintyDetector):
     @abstractmethod
-    def compute_token_scores(self, inputs: list[NDArray]) -> list[NDArray]:
+    def compute_token_scores(self, inputs: list[np.ndarray]) -> list[np.ndarray]:
         """
         Compute token-level uncertainty scores from sampled logprobs.
 
