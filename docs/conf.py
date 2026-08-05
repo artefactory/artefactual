@@ -18,6 +18,10 @@ extensions = [
     "sphinx_autodoc_typehints",
 ]
 
+# Optional extras autodoc must not need installed to document the modules that guard
+# their imports behind TYPE_CHECKING.
+autodoc_mock_imports = ["langfuse"]
+
 # Autodoc settings
 autodoc_default_options = {
     "members": True,
@@ -26,8 +30,9 @@ autodoc_default_options = {
 }
 autosummary_generate = True
 
-# Napoleon settings (for NumPy docstrings)
-napoleon_google_docstring = False
+# Napoleon settings. The codebase documents with Google-style Args:/Returns:/Raises:
+# sections; NumPy style stays on so a contributor using it is still parsed.
+napoleon_google_docstring = True
 napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = True
 napoleon_include_private_with_doc = False
@@ -38,6 +43,9 @@ napoleon_use_rtype = True
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
+    # The detectors subclass Pipeline and LogisticRegression, so their inherited
+    # docstrings reference sklearn's glossary and labels.
+    "sklearn": ("https://scikit-learn.org/stable/", None),
 }
 
 # MyST settings
