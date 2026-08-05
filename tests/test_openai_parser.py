@@ -41,6 +41,29 @@ def test_both_formats_agree_on_a_plain_sequence():
     assert process_openai_chat_completion(chat(tokens), 1) == process_openai_responses_api(responses(tokens))
 
 
+def test_both_formats_agree_when_a_token_has_no_top_logprobs():
+    """A token with an empty `top_logprobs` must not shift the positions after it.
+
+    Chat completion keys by `enumerate` position and skips the empty token, leaving a hole
+    at index 1. The Responses parser keeps its own counter that only advances on non-empty
+    tokens, so it compacts instead. Same content, two different token indexings — and
+    `predict_token_proba` uses those indices to line scores up with the generated text.
+    """
+    tokens = [token(-0.1), {"top_logprobs": []}, token(-0.3)]
+
+    from_chat = process_openai_chat_completion(chat(tokens), 1)[0]
+    from_responses = process_openai_responses_api(responses(tokens))[0]
+
+    assert sorted(from_chat) == sorted(from_responses)
+
+
+def test_a_dropped_token_does_not_renumber_later_tokens():
+    # position 2 in the response must still be position 2 after parsing
+    tokens = [token(-0.1), {"top_logprobs": []}, token(-0.3)]
+
+    assert max(process_openai_responses_api(responses(tokens))[0]) == 2
+
+
 # --- absent or partial logprob data ----------------------------------------------------
 
 
