@@ -136,6 +136,9 @@ def process_openai_responses_api(response: Any) -> list[dict[int, list[float]]]:
         seq_logprobs_map: dict[int, list[float]] = {}
         content_list = _get_val(item, "content", [])
 
+        # The index is the token's position in the generated sequence, so it advances for
+        # every token -- including one whose top_logprobs came back empty. Skipping the
+        # increment there would shift every later token onto the wrong word.
         token_index = 0
         for content_part in content_list:
             tokens_data = _get_val(content_part, "logprobs")
@@ -145,7 +148,7 @@ def process_openai_responses_api(response: Any) -> list[dict[int, list[float]]]:
                     logprobs = _parse_token_entry(token_entry)
                     if logprobs:
                         seq_logprobs_map[token_index] = logprobs
-                        token_index += 1
+                    token_index += 1
 
         extracted_batch.append(seq_logprobs_map)
 
