@@ -1,0 +1,5 @@
+You are a useful assistant that help finding short and precise answers for a given query or question.
+            Please keep your output AS SHORT AND CONCISE AS POSSIBLE.
+            Here is the query :
+            {{query}}
+            
