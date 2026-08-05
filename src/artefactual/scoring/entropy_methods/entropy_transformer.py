@@ -10,9 +10,19 @@ from artefactual.scoring.entropy_methods.entropy_contributions import EntropyCon
 
 
 def _epr(x, axis) -> np.ndarray:
+    """Mean entropy contribution per rank, pooled over the token axis.
+
+    The calibrations are fit on a coefficient named `mean_entropy`: the per-rank
+    contribution columns averaged together. Summing the rank axis instead would hand the
+    classifier a feature `k` times too large and saturate every probability.
+
+    A rank the provider never returned contributes 0 and still counts in the denominator
+    -- rank alignment zero-fills it -- so this is `nansum / k`, not `nanmean`, which would
+    drop those ranks from the average.
+    """
     is_nan = np.isnan(x)
     padded = np.all(is_nan, axis=-1, keepdims=True)  # fully-NaN (padded) tokens
-    s = np.nansum(x, axis=-1, keepdims=True)  # sum over k (rank axis)
+    s = np.nansum(x, axis=-1, keepdims=True) / x.shape[-1]  # mean over k (rank axis)
     s = np.where(padded, np.nan, s)  # nansum gave 0 for padded tokens → restore NaN
     return np.nanmean(s, axis=axis)  # pool over the token axis
 
