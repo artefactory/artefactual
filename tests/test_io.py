@@ -86,11 +86,12 @@ def test_registry_name_wins_over_an_identically_named_local_file(tmp_path, monke
     # a stray file named after a model must not shadow the shipped calibration
     monkeypatch.chdir(tmp_path)
     name = "mistralai/Ministral-8B-Instruct-2410"
+    shadow = {"intercept": 999.0, "coefficients": {"mean_entropy": 999.0}}
     local = tmp_path / name
     local.parent.mkdir(parents=True, exist_ok=True)
-    local.write_text(json.dumps({"intercept": 999.0, "coefficients": {"mean_entropy": 999.0}}), encoding="utf-8")
+    local.write_text(json.dumps(shadow), encoding="utf-8")
 
-    assert load_calibration(name)["intercept"] != 999.0
+    assert load_calibration(name) != shadow
 
 
 # --- failure modes ---------------------------------------------------------------------

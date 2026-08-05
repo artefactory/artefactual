@@ -1,15 +1,13 @@
-"""Entropy methods package exports.
+"""Entropy methods package exports."""
 
-Expose commonly used functions and classes at the package level so users
-don't need to import from deep submodules.
-"""
-
-from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin
-from artefactual.scoring.entropy_methods.epr import EPR
-from artefactual.scoring.entropy_methods.wepr import WEPR
+from artefactual.scoring.entropy_methods.entropy_contributions import (
+    EntropyContributionsMixin,
+    align_rank_width,
+)
+from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
 
 __all__ = [
-    "EPR",
-    "WEPR",
     "EntropyContributionsMixin",
+    "EntropyTransformer",
+    "align_rank_width",
 ]
