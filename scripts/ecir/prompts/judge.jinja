@@ -1,0 +1,55 @@
+You are an expert evaluator tasked with determining if two answers convey compatible information. Your task is to make a binary True/False judgment on whether the answers are SEMANTICALLY COMPATIBLE.
+
+Query:
+{{ query }}
+
+Expected Answer:
+{{ expected_answer }}
+{% if answer_aliases %}
+Answer Aliases (Additional Correct Answers):
+{% for alias in answer_aliases %}
+- {{ alias }}
+{% endfor %}
+{% endif %}
+
+Generated Answer:
+{{ generated_answer }}
+
+CRITICAL INSTRUCTIONS:
+1. FIRST, perform a simple VERBATIM TEXT COMPARISON:
+   - If the generated answer is IDENTICAL (exact same text) to EITHER the expected answer OR ANY of the answer aliases, your judgment MUST be TRUE
+   - If not identical to any of them, proceed to semantic comparison
+
+2. For SEMANTIC COMPARISON, use these MANDATORY RULES:
+   - Judge "True" if the generated answer matches the SEMANTIC MEANING of EITHER the expected answer OR ANY of the answer aliases
+   - Judge "True" WHENEVER the general meaning or core concept is the same as either the expected answer or any alias
+   - Judge "True" if one answer is GENERAL and one is SPECIFIC about the same thing
+   - Judge "True" if one answer names a CATEGORY (e.g., "missionaries") and the other provides SPECIFIC INSTANCES of that category (e.g., "Augustine was sent by Pope Gregory")
+   - Judge "True" if one answer gives a BRIEF fact and the other ELABORATES with more details
+   - Judge "True" if one answer is more detailed but does NOT contradict the other
+   - Judge "False" ONLY if the answers directly CONTRADICT all of the expected answer and all aliases, or discuss ENTIRELY different topics
+
+3. EXTREMELY IMPORTANT RULES ABOUT SPECIFICITY:
+   - When one answer is general and one is specific → TRUE
+   - When one uses a category term and one gives examples → TRUE
+   - When one gives "who/what" and the other adds "when/where/how/why" → TRUE
+   - When one gives a person's role and the other gives their name → TRUE
+   - When one refers to a group and the other names individuals → TRUE
+
+4. Always check if the specific answer is an INSTANCE or EXAMPLE of the general answer
+   - If it is, the judgment MUST be TRUE regardless of how detailed the specific answer is
+
+5. The query is provided ONLY for context - do NOT use it in your judgment
+
+6. IMPORTANT: The generated answer should be considered TRUE if it matches EITHER the expected answer OR ANY of the answer aliases in meaning
+
+FINAL CHECK BEFORE SUBMITTING:
+- If the generated answer could reasonably be considered matching ANY of the expected answer or aliases → TRUE
+- If after reading all answers, they feel like they're talking about the same basic concept → TRUE
+- If you think "the generated answer is not contradicting the expected answer or any of its aliases" → TRUE
+
+Your response MUST follow this format:
+{
+  "judgment": true/false,
+  "explanation": "One clear sentence explaining why the answers are compatible or contradictory."
+}
