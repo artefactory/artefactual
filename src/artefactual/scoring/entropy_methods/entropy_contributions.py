@@ -1,8 +1,6 @@
 import numpy as np
 from beartype import beartype
 
-EPSILON = 1e-12
-
 
 class EntropyContributionsMixin:
     """

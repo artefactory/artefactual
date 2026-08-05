@@ -1,5 +1,6 @@
-"""Data loading and processing utilities for artefactual."""
+"""Package anchor for the shipped calibration and weight files.
 
-from artefactual.data.data_model import Completion, Result, TokenLogprob
-
-__all__ = ["Completion", "Result", "TokenLogprob"]
+`artefactual.utils.io` reads `weights_*.json` / `calibration_*.json` from here via
+`importlib.resources.files("artefactual.data")`, so this package must remain importable
+even though it exposes no Python API.
+"""
