@@ -40,19 +40,33 @@ def align_rank_width(contributions: np.ndarray, k: int) -> np.ndarray:
     axis must match before the weighted sum. Zero is the limit of the contribution itself
     -- -p*log(p) tends to 0 as p tends to 0 -- so absent ranks add nothing to the score.
 
+    Only the trailing axis is touched, so this serves both the (num_tokens, num_ranks)
+    shape the scorers build per sequence and the (n_sequences, num_tokens, num_ranks)
+    cube the pipeline passes between steps.
+
     Args:
-        contributions: Array of shape (num_tokens, num_ranks).
+        contributions: Array whose last axis is the rank axis.
         k: Number of ranks the calibrated weights expect.
 
     Returns:
-        Array of shape (num_tokens, k).
+        Array with the same leading axes and exactly `k` ranks.
+
+    Raises:
+        ValueError: If `k` is not positive, or the array has no rank axis.
     """
-    num_tokens, num_ranks = contributions.shape
+    if k <= 0:
+        msg = f"k must be positive, got {k}"
+        raise ValueError(msg)
+    if contributions.ndim < 1:
+        msg = "contributions must have at least one axis (the rank axis)"
+        raise ValueError(msg)
+
+    num_ranks = contributions.shape[-1]
     if num_ranks == k:
         return contributions
     if num_ranks > k:
-        return contributions[:, :k]
+        return contributions[..., :k]
 
-    aligned = np.zeros((num_tokens, k), dtype=contributions.dtype)
-    aligned[:, :num_ranks] = contributions
+    aligned = np.zeros((*contributions.shape[:-1], k), dtype=contributions.dtype)
+    aligned[..., :num_ranks] = contributions
     return aligned

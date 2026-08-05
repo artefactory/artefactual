@@ -176,7 +176,13 @@ def test_alignment_is_idempotent(width, k):
     np.testing.assert_array_equal(align_rank_width(once, k), once)
 
 
-def test_alignment_rejects_a_one_dimensional_array():
-    # a single token's ranks must arrive as (1, k); unpacking a 1-D array would misread it
-    with pytest.raises(Exception, match=r"(?i)unpack|shape|beartype|dimension"):
-        align_rank_width(np.array([0.3, 0.2]), 4)
+@pytest.mark.parametrize("shape", [(2,), (3, 2), (4, 3, 2)])
+def test_alignment_touches_only_the_rank_axis(shape):
+    # the pipeline passes (n_sequences, n_tokens, k); the scorers pass (n_tokens, k)
+    aligned = align_rank_width(np.ones(shape), 5)
+    assert aligned.shape == (*shape[:-1], 5)
+
+
+def test_alignment_rejects_a_non_positive_k():
+    with pytest.raises(ValueError, match="k must be positive"):
+        align_rank_width(np.ones((2, 3)), 0)
