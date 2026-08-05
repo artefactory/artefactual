@@ -16,6 +16,7 @@
 ```{toctree}
 :maxdepth: 2
 
+examples/index
 api
 presentations/index
 ```

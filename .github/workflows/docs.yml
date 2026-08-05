@@ -57,6 +57,22 @@ jobs:
           fi
           printf 'deployed deck: %s\n' "${decks[@]}"
 
+      - name: Check the example notebooks reached the site
+        run: |
+          # nbsphinx skipping a notebook is a warning, not an error: assert instead.
+          shopt -s nullglob
+          missing=0
+          for nb in docs/examples/*.ipynb; do
+            page="docs/_build/html/examples/$(basename "${nb%.ipynb}").html"
+            if [ ! -f "$page" ]; then
+              echo "::error::$nb did not build to $page"
+              missing=1
+            else
+              echo "deployed example: $page"
+            fi
+          done
+          exit $missing
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

@@ -174,8 +174,34 @@ Calibrations ship in `src/artefactual/data` and are addressed by model name:
 | `tiiuae/Falcon3-10B-Instruct` |
 | `microsoft/phi-4` |
 
-Both `epr()` and `wepr()` accept any of these names. All shipped weights are calibrated at
-**k = 15**, so request `top_logprobs=15`.
+Both `epr()` and `wepr()` accept any of these names.
+
+### The `k` parameter
+
+`k` is the top-k rank count you intend to score at, and it defaults to **15** — the rank
+count every shipped file was calibrated at.
+
+```python
+detector = wepr("microsoft/phi-4", k=15)
+```
+
+It is applied at both ends of the pipeline:
+
+- **Input** — the entropy contributions are truncated or zero-padded to exactly `k` ranks,
+  so a response carrying a different `top_logprobs` still scores correctly. (Zero is the
+  limit of `-p*log(p)` as `p` tends to 0, so a rank the provider never returned adds
+  nothing.)
+- **Weights** — WEPR coefficients are fixed at their calibration rank count, so loading
+  weights that disagree with `k` raises rather than producing a silently mis-shaped score:
+
+  ```
+  ValueError: Weights cover 15 rank(s) but k=20 was requested. WEPR coefficients are
+  fixed at the rank count used during calibration; pass k=15, or supply weights
+  calibrated at k=20.
+  ```
+
+EPR calibrations record no rank count, so for `epr()` the `k` only governs input
+alignment.
 
 To use your own calibration, pass a path instead of a name:
 
@@ -252,20 +278,20 @@ evaluator = HallucinationEvaluator("epr", langfuse_client, epr("microsoft/phi-4"
 evaluator.score_trace(trace_id)
 ```
 
-See `examples/langfuse_integration_demo.ipynb`.
+See `docs/examples/langfuse_integration_demo.ipynb`.
 
 ## Examples
 
 | Notebook | Shows |
 |---|---|
-| `examples/epr_usage_demo.ipynb` | Scoring with EPR end to end |
-| `examples/wepr_usage_demo.ipynb` | WEPR, including token-level highlighting |
-| `examples/langfuse_integration_demo.ipynb` | Scoring observability traces |
+| `docs/examples/epr_usage_demo.ipynb` | Scoring with EPR end to end |
+| `docs/examples/wepr_usage_demo.ipynb` | WEPR, including token-level highlighting |
+| `docs/examples/langfuse_integration_demo.ipynb` | Scoring observability traces |
 
 Run them without a GPU or any model download:
 
 ```bash
-uv run jupyter lab examples/epr_usage_demo.ipynb
+uv run jupyter lab docs/examples/epr_usage_demo.ipynb
 ```
 
 ## API reference
