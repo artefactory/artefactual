@@ -1,4 +1,6 @@
 import numpy as np
+from sklearn.base import BaseEstimator
+from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
 from artefactual.exceptions import UncalibratedModelError
@@ -50,6 +52,9 @@ def _build(
     registry: Registry,
     pretrained_model_name_or_path: str | None,
     k: int,
+    *,
+    trainable: bool,
+    classifier: BaseEstimator | None,
     **pipeline_kwargs,
 ) -> "BaseDetector":
     """Assemble a parser -> entropy -> classifier pipeline pinned to `k` ranks.
@@ -60,15 +65,27 @@ def _build(
     Splitting that ownership is what let a narrow response be zero-filled and scored as
     though its unfetched ranks held no probability mass.
     """
-    if pretrained_model_name_or_path is None:
-        raise UncalibratedModelError()
+    if trainable:
+        if pretrained_model_name_or_path is not None:
+            msg = "Pass either pretrained weights or trainable=True, not both."
+            raise ValueError(msg)
+        # Unregularised, so the fitted coefficients are comparable to the shipped files.
+        # C=np.inf rather than penalty=None: the latter is deprecated in scikit-learn 1.8
+        # and removed in 1.10, and the two produce identical coefficients.
+        final = classifier if classifier is not None else LogisticRegression(C=np.inf, max_iter=1000)
+    else:
+        if classifier is not None:
+            msg = "`classifier` only applies with trainable=True; pretrained weights bring their own."
+            raise ValueError(msg)
+        if pretrained_model_name_or_path is None:
+            raise UncalibratedModelError()
+        final = PretrainedLogisticRegression.from_pretrained(pretrained_model_name_or_path, registry=registry, k=k)
 
-    classifier = PretrainedLogisticRegression.from_pretrained(pretrained_model_name_or_path, registry=registry, k=k)
     return BaseDetector(
         steps=[
             ("parser", LogProbParser(k=k)),
             ("entropy", EntropyTransformer(reduction=reduction)),
-            ("classifier", classifier),
+            ("classifier", final),
         ],
         **pipeline_kwargs,
     )
@@ -79,16 +96,34 @@ def epr(
     pretrained_model_name_or_path: str | None = None,
     k: int = DEFAULT_K,
     *,
+    trainable: bool = False,
+    classifier: BaseEstimator | None = None,
     transform_input=None,
     memory=None,
     verbose=False,
 ) -> "BaseDetector":
-    """EPR detector. `k` is the top-k rank count the responses will carry."""
+    """EPR detector.
+
+    Args:
+        pretrained_model_name_or_path: A model name from the registry, or a path to a
+            calibration file. Omit it only together with `trainable=True`.
+        k: The top-k rank count the responses carry. EPR is a mean over ranks, so
+            this is part of the feature definition.
+        trainable: Return an *unfitted* detector to calibrate on your own labelled data.
+            Call `fit(responses, y)`, where 1 marks a hallucination.
+        classifier: Final estimator, with `trainable=True` only. Defaults to the
+            unregularised logistic regression the shipped calibrations were fit with.
+
+    Raises:
+        UncalibratedModelError: If neither weights nor `trainable=True` were given.
+    """
     return _build(
         "epr",
         "calibration",
         pretrained_model_name_or_path,
         k,
+        trainable=trainable,
+        classifier=classifier,
         transform_input=transform_input,
         memory=memory,
         verbose=verbose,
@@ -99,16 +134,33 @@ def wepr(
     pretrained_model_name_or_path: str | None = None,
     k: int = DEFAULT_K,
     *,
+    trainable: bool = False,
+    classifier: BaseEstimator | None = None,
     transform_input=None,
     memory=None,
     verbose=False,
 ) -> "BaseDetector":
-    """WEPR detector. `k` is the top-k rank count; the weights must be calibrated at it."""
+    """WEPR detector.
+
+    Args:
+        pretrained_model_name_or_path: A model name from the registry, or a path to a
+            calibration file. Omit it only together with `trainable=True`.
+        k: The top-k rank count the responses carry. The weights must be calibrated at it.
+        trainable: Return an *unfitted* detector to calibrate on your own labelled data.
+            Call `fit(responses, y)`, where 1 marks a hallucination.
+        classifier: Final estimator, with `trainable=True` only. Defaults to the
+            unregularised logistic regression the shipped calibrations were fit with.
+
+    Raises:
+        UncalibratedModelError: If neither weights nor `trainable=True` were given.
+    """
     return _build(
         "wepr",
         "weights",
         pretrained_model_name_or_path,
         k,
+        trainable=trainable,
+        classifier=classifier,
         transform_input=transform_input,
         memory=memory,
         verbose=verbose,
