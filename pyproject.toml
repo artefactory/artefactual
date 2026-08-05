@@ -35,7 +35,6 @@ Repository = "https://github.com/artefactory/artefactual"
 Issues = "https://github.com/artefactory/artefactual/issues"
 
 [project.optional-dependencies]
-hub = ["huggingface-hub>=0.27.0", "keras-hub>=0.18.1", "safetensors>=0.4.5"]
 adapters = [
     "langfuse>=4.8.1",
     "openai>=2.41.1",
