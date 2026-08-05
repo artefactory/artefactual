@@ -13,7 +13,7 @@ _DATA = resources.files("artefactual.data")
 EPR_WEIGHTS = _DATA / "calibration_ministral.json"
 WEPR_WEIGHTS = _DATA / "weights_mistral_small.json"
 
-TESTS_DIR = Path(__file__).resolve().parents[1]
+TESTS_DIR = Path(__file__).resolve().parent
 OPENAI_RESPONSES_PATH = TESTS_DIR / "open_ai_responses.json"
 
 with OPENAI_RESPONSES_PATH.open("r", encoding="utf-8") as f:
