@@ -3,7 +3,6 @@ from typing import Any
 
 import numpy as np
 from beartype import beartype
-from numpy.typing import NDArray
 
 from artefactual.data.data_model import Completion
 from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin, align_rank_width
@@ -60,7 +59,7 @@ class EPR(LogProbUncertaintyDetector):
     def _compute_raw_token_scores(
         self,
         parsed_logprobs: list[dict[int, list[float]]],
-    ) -> list[NDArray]:
+    ) -> list[np.ndarray]:
         """
         Internal implementation to compute raw token-level EPR scores.
 
@@ -74,7 +73,7 @@ class EPR(LogProbUncertaintyDetector):
             return []
 
         completions = [Completion(token_logprobs=data) for data in parsed_logprobs]
-        raw_token_scores: list[NDArray] = []
+        raw_token_scores: list[np.ndarray] = []
 
         for completion in completions:
             token_logprobs_dict = completion.token_logprobs
@@ -127,7 +126,7 @@ class EPR(LogProbUncertaintyDetector):
         return seq_scores
 
     @beartype
-    def compute_token_scores(self, parsed_logprobs: list[dict[int, list[float]]]) -> list[NDArray]:
+    def compute_token_scores(self, parsed_logprobs: list[dict[int, list[float]]]) -> list[np.ndarray]:
         """
         Compute token-level EPR scores from parsed logprobs.
         You can parse raw model outputs using the `parse_top_logprobs` method from `artefactual.preprocessing`.
@@ -139,7 +138,7 @@ class EPR(LogProbUncertaintyDetector):
             List of token-level EPR scores (numpy arrays).
         """
         raw_token_scores = self._compute_raw_token_scores(parsed_logprobs)
-        token_scores: list[NDArray] = []
+        token_scores: list[np.ndarray] = []
 
         for token_epr in raw_token_scores:
             if token_epr.size > 0 and self.is_calibrated:
@@ -160,7 +159,7 @@ class EPR(LogProbUncertaintyDetector):
             return 1.0 / (1.0 + np.exp(-self.intercept))
         return 0.0
 
-    def _apply_calibration(self, raw_epr: float | NDArray) -> float | NDArray:
+    def _apply_calibration(self, raw_epr: float | np.ndarray) -> float | np.ndarray:
         """
         Apply logistic calibration to a raw EPR score or array of scores.
         The calibration uses a linear transformation followed by a sigmoid:
@@ -173,7 +172,7 @@ class EPR(LogProbUncertaintyDetector):
         Returns:
             A calibrated score with the same shape as ``raw_epr``:
             - If ``raw_epr`` is a float, returns a single calibrated float.
-            - If ``raw_epr`` is an NDArray, returns an NDArray of calibrated scores.
+            - If ``raw_epr`` is an np.ndarray, returns an np.ndarray of calibrated scores.
         """
         linear_score = self.coefficient * raw_epr + self.intercept
         return 1.0 / (1.0 + np.exp(-linear_score))

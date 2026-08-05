@@ -3,7 +3,6 @@ import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
-from numpy.typing import NDArray
 
 if TYPE_CHECKING:
     from vllm import RequestOutput
@@ -61,7 +60,7 @@ def process_vllm_top_logprobs(outputs: list["RequestOutput"], iterations: int) -
     return all_sequences
 
 
-def vllm_sampled_tokens_logprobs(outputs: list["RequestOutput"], iterations: int = 1) -> list[NDArray]:
+def vllm_sampled_tokens_logprobs(outputs: list["RequestOutput"], iterations: int = 1) -> list[np.ndarray]:
     """
     Extracts log probabilities of the sampled tokens from vLLM outputs.
 
@@ -69,13 +68,13 @@ def vllm_sampled_tokens_logprobs(outputs: list["RequestOutput"], iterations: int
         outputs (list[RequestOutput]): A list containing model output objects, each with log probability data.
         iterations (int) = 1: The number of iterations to process, corresponding to the number of output sequences.
     Returns:
-        list[NDArray]: A list of 1D numpy arrays, each containing the log probabilities
+        list[np.ndarray]: A list of 1D numpy arrays, each containing the log probabilities
                        of the sampled tokens for one sequence.
     """
     if not outputs or not outputs[0].outputs:
         return []
 
-    sampled_logprobs: list[NDArray] = []
+    sampled_logprobs: list[np.ndarray] = []
 
     for i in range(iterations):
         sampled_token_ids = outputs[0].outputs[i].token_ids  # whole token ids infos

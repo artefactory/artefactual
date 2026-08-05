@@ -9,7 +9,6 @@ from typing import Any
 
 import numpy as np
 from beartype.door import is_bearable
-from numpy.typing import NDArray
 from pydantic import TypeAdapter, ValidationError
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils import Tags
@@ -44,19 +43,19 @@ def _(response: ResponsesPayload) -> list[dict[int, list[float]]]:
 
 
 @singledispatch
-def _sampled_logprobs(response: Any) -> list[NDArray]:
+def _sampled_logprobs(response: Any) -> list[np.ndarray]:
     """Extract sampled-token logprobs from a validated response. Register one per format."""
     msg = f"No sampled-logprob extractor registered for {type(response).__name__}."
     raise TypeError(msg)
 
 
 @_sampled_logprobs.register
-def _(response: ChatCompletion) -> list[NDArray]:
+def _(response: ChatCompletion) -> list[np.ndarray]:
     return sampled_tokens_logprobs_chat_completion_api(response)
 
 
 @_sampled_logprobs.register
-def _(response: ResponsesPayload) -> list[NDArray]:
+def _(response: ResponsesPayload) -> list[np.ndarray]:
     return sampled_tokens_logprobs_responses_api(response)
 
 
@@ -138,7 +137,7 @@ def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
     return _top_logprobs(response)
 
 
-def parse_sampled_token_logprobs(outputs: Any) -> list[NDArray]:
+def parse_sampled_token_logprobs(outputs: Any) -> list[np.ndarray]:
     """
     A wrapper function to parse token probabilities from various output formats.
     First checks for vLLM format, then OpenAI ChatCompletion, and finally OpenAI Responses API.
@@ -146,7 +145,7 @@ def parse_sampled_token_logprobs(outputs: Any) -> list[NDArray]:
     Args:
         outputs: Model outputs in various formats.
     Returns:
-        list[NDArray]: A list of 1D numpy arrays, each containing the log probabilities
+        list[np.ndarray]: A list of 1D numpy arrays, each containing the log probabilities
                        of the sampled tokens for one sequence.
     """
     # Deprecated vLLM offline inference format

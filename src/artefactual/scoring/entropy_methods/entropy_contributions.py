@@ -1,6 +1,5 @@
 import numpy as np
 from beartype import beartype
-from numpy.typing import NDArray
 
 EPSILON = 1e-12
 
@@ -12,7 +11,7 @@ class EntropyContributionsMixin:
 
     @staticmethod
     @beartype
-    def entropy_contributions(logprobs: NDArray) -> NDArray:
+    def entropy_contributions(logprobs: np.ndarray) -> np.ndarray:
         """Compute entropic contributions s_kj = -p_k log(p_k) for top-K logprobs using vectorized operations.
         Args:
             logprobs: An array of log probabilities, with the last axis being the per-token rank axis.
@@ -36,7 +35,7 @@ class EntropyContributionsMixin:
 
 
 @beartype
-def align_rank_width(contributions: NDArray, k: int) -> NDArray:
+def align_rank_width(contributions: np.ndarray, k: int) -> np.ndarray:
     """Truncate or zero-pad entropy contributions to exactly `k` ranks.
 
     Calibrated weights are fixed at the rank count used during calibration, so the rank
