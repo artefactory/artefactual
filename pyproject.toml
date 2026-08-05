@@ -180,6 +180,11 @@ ignore = [
 [tool.ruff.lint.mccabe]
 max-complexity = 10
 
+[tool.ruff.lint.pylint]
+# The detector factories take one positional argument and the rest keyword-only; a
+# keyword-only option is not the argument-ordering hazard PLR0913 is guarding against.
+max-args = 8
+
 [tool.ruff.lint.per-file-ignores]
 "**/scripts/*" = [
     "INP001",
@@ -213,8 +218,9 @@ max-complexity = 10
     "ERA001",  # commented-out code allowed in notebooks
     "F401",    # unused imports allowed (often for demo/exploration)
     "INP001",  # implicit namespace package
+    "A004",    # IPython's display shadows a builtin; that is the documented import
 ]
-"examples/*.ipynb" = ["T201", "T203"]
+"examples/*.ipynb" = ["T201", "T203", "A004"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["artefactual"]

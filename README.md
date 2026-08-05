@@ -195,9 +195,17 @@ WEPR weights carry a `mean_rank_i` and `max_rank_i` pair for each rank `1..k`:
 {"intercept": -3.02, "coefficients": {"mean_rank_1": 3.81, "max_rank_1": -0.44}}
 ```
 
-To calibrate on your own data, fit a `LogisticRegression` on the output of the
-`parser -> entropy` steps against 0/1 hallucination labels, then write out its
-`intercept_` and `coef_` in that shape.
+To calibrate on your own data, ask the same factory for an unfitted detector and fit it
+on 0/1 labels, where 1 marks a hallucination:
+
+```python
+detector = wepr(k=15, trainable=True).fit(responses, y)
+coefficients = detector.named_steps["classifier"].coef_
+```
+
+`trainable=True` is explicit on purpose: calling `wepr()` with neither weights nor
+`trainable=True` raises rather than quietly returning a detector that would train on your
+data and emit probabilities no calibration backs.
 
 ## Input formats
 
