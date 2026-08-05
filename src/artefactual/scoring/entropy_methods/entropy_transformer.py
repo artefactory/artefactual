@@ -6,7 +6,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils import Tags
 
 from artefactual.exceptions import EmptySequenceWarning
-from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin, align_rank_width
+from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin, RankAlignmentMixin
 
 
 def _epr(x, axis) -> np.ndarray:
@@ -26,7 +26,7 @@ def _wepr(x, axis) -> np.ndarray:
 STRATEGIES = {"epr": _epr, "wepr": _wepr}
 
 
-class EntropyTransformer(BaseEstimator, TransformerMixin, EntropyContributionsMixin):
+class EntropyTransformer(BaseEstimator, TransformerMixin, EntropyContributionsMixin, RankAlignmentMixin):
     def __init__(self, reduction: str | Callable = "epr", k: int | None = None) -> None:
         self.reduction = reduction  # "epr" | "wepr" | custom reduction(s_kj, axis)
         # Rank count the downstream calibration expects. `None` reduces over whatever
@@ -54,18 +54,10 @@ class EntropyTransformer(BaseEstimator, TransformerMixin, EntropyContributionsMi
         raise ValueError(msg)
 
     def _align(self, s_kj: np.ndarray) -> np.ndarray:
-        """Match the rank axis to `self.k`, keeping padded tokens fully NaN.
-
-        `align_rank_width` zero-fills absent ranks, which is right for a real token -- the
-        contribution of a rank that was never returned is 0. But a *padded* token is an
-        all-NaN row, and zero-filling it would make it look like a real token that happens
-        to carry no entropy. `_epr` detects padding with `all(isnan)`, so the row has to
-        stay entirely NaN.
-        """
+        """Match the rank axis to `self.k`, or leave it alone when no k was given."""
         if self.k is None:
             return s_kj
-        padded = np.isnan(s_kj).all(axis=-1, keepdims=True)
-        return np.where(padded, np.nan, align_rank_width(s_kj, self.k))
+        return self.align_preserving_padding(s_kj, self.k)
 
     def transform(self, x: np.ndarray) -> np.ndarray:  # (n, n_features)
         s_kj = self._align(self.entropy_contributions(x))

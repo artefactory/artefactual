@@ -8,7 +8,7 @@ surface, plus `predict_token_proba` for token-level scores.
 from artefactual.scoring.base_detector import BaseDetector, epr, wepr
 from artefactual.scoring.entropy_methods.entropy_contributions import (
     EntropyContributionsMixin,
-    align_rank_width,
+    RankAlignmentMixin,
 )
 from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
 from artefactual.scoring.pretrained_regression import PretrainedLogisticRegression
@@ -18,7 +18,7 @@ __all__ = [
     "EntropyContributionsMixin",
     "EntropyTransformer",
     "PretrainedLogisticRegression",
-    "align_rank_width",
+    "RankAlignmentMixin",
     "epr",
     "wepr",
 ]
