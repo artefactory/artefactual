@@ -1,7 +1,14 @@
 import numpy as np
 import pytest
+from conftest import rank_vectors
+from hypothesis import given
+from hypothesis import strategies as st
+>>>>>>> conflict 1 of 1 ends
 
 from artefactual.scoring import EntropyContributionsMixin
+from artefactual.scoring.entropy_methods.entropy_contributions import align_rank_width
+
+entropy_contributions = EntropyContributionsMixin.entropy_contributions
 
 
 def test_compute_entropy_contributions_basic():
@@ -67,3 +74,110 @@ def test_compute_entropy_contributions_real_data_sample():
     assert np.isclose(result[0, 0], s1, rtol=1e-5)
     assert np.isclose(result[0, 1], s2, rtol=1e-5)
     assert np.isclose(result[0, 2], s3, rtol=1e-5)
+
+
+# --- invariants of s_kj = -p*log(p) ----------------------------------------------------
+
+
+@given(ranks=rank_vectors())
+def test_contributions_are_non_negative(ranks):
+    # p in (0, 1] and log(p) <= 0, so -p*log(p) >= 0; a negative value would flip the
+    # sign of every downstream weighted sum
+    result = entropy_contributions(np.array([ranks]))
+    assert (result >= 0).all()
+
+
+@given(ranks=rank_vectors())
+def test_contributions_preserve_shape(ranks):
+    array = np.array([ranks])
+    assert entropy_contributions(array).shape == array.shape
+
+
+@given(ranks=rank_vectors(min_ranks=2))
+def test_contributions_are_invariant_to_input_order(ranks):
+    # the function re-sorts internally, so callers need not pre-sort
+    shuffled = list(reversed(ranks))
+    np.testing.assert_allclose(
+        entropy_contributions(np.array([ranks])),
+        entropy_contributions(np.array([shuffled])),
+        rtol=1e-6,
+    )
+
+
+def test_contributions_are_not_monotonic_in_rank():
+    """-p*log(p) peaks at p = 1/e, so rank order is not contribution order.
+
+    `align_rank_width` truncates by rank, which therefore does *not* drop the smallest
+    contributions. Pinning this stops anyone from "optimising" the truncation into a
+    top-k-by-magnitude, which would change the metric.
+    """
+    # rank 1 is nearly certain (tiny contribution), rank 2 sits at the p = 1/e peak
+    result = entropy_contributions(np.array([[-0.01, -1.0]]))[0]
+
+    assert result[0] < result[1]
+
+
+def test_the_peak_contribution_is_at_logprob_minus_one():
+    grid = np.linspace(-6.0, 0.0, 601)
+    contributions = entropy_contributions(grid.reshape(1, -1))[0]
+    # the array comes back sorted descending by logprob, so recover the argmax position
+    peak = np.sort(grid)[::-1][int(np.argmax(contributions))]
+
+    assert peak == pytest.approx(-1.0, abs=0.05)
+
+
+def test_a_certain_token_contributes_nothing():
+    assert entropy_contributions(np.array([[0.0]]))[0, 0] == 0.0
+
+
+def test_padded_positions_stay_nan():
+    # LogProbParser pads short sequences with NaN and the reductions rely on it surviving
+    result = entropy_contributions(np.array([[-0.5, np.nan]]))
+    assert np.isnan(result).sum() == 1
+
+
+# --- align_rank_width ------------------------------------------------------------------
+
+
+@given(width=st.integers(1, 20), k=st.integers(1, 20))
+def test_alignment_always_produces_exactly_k_ranks(width, k):
+    aligned = align_rank_width(np.ones((3, width)), k)
+    assert aligned.shape == (3, k)
+
+
+@given(ranks=rank_vectors(min_ranks=4, max_ranks=10), k=st.integers(1, 3))
+def test_truncation_keeps_the_leading_ranks(ranks, k):
+    contributions = entropy_contributions(np.array([ranks]))
+    np.testing.assert_array_equal(align_rank_width(contributions, k), contributions[:, :k])
+
+
+def test_padding_appends_zeros_and_leaves_real_ranks_untouched():
+    # 0 is the limit of -p*log(p) as p tends to 0, so absent ranks are weightless
+    contributions = np.array([[0.3, 0.2]])
+    aligned = align_rank_width(contributions, 5)
+
+    np.testing.assert_allclose(aligned[:, :2], contributions)
+    assert not aligned[:, 2:].any()
+
+
+def test_alignment_to_the_same_width_is_a_no_op():
+    contributions = np.array([[0.3, 0.2]])
+    assert align_rank_width(contributions, 2) is contributions
+
+
+@given(width=st.integers(1, 12), k=st.integers(1, 12))
+def test_alignment_preserves_dtype(width, k):
+    aligned = align_rank_width(np.ones((2, width), dtype=np.float32), k)
+    assert aligned.dtype == np.float32
+
+
+@given(width=st.integers(1, 12), k=st.integers(1, 12))
+def test_alignment_is_idempotent(width, k):
+    once = align_rank_width(np.ones((2, width)), k)
+    np.testing.assert_array_equal(align_rank_width(once, k), once)
+
+
+def test_alignment_rejects_a_one_dimensional_array():
+    # a single token's ranks must arrive as (1, k); unpacking a 1-D array would misread it
+    with pytest.raises(Exception, match="(?i)unpack|shape|beartype|dimension"):
+        align_rank_width(np.array([0.3, 0.2]), 4)
