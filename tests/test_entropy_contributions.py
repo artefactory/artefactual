@@ -4,10 +4,11 @@ from conftest import rank_vectors
 from hypothesis import given
 from hypothesis import strategies as st
 
-from artefactual.scoring import EntropyContributionsMixin
-from artefactual.scoring.entropy_methods.entropy_contributions import align_rank_width
+from artefactual.scoring import EntropyContributionsMixin, RankAlignmentMixin
 
 entropy_contributions = EntropyContributionsMixin.entropy_contributions
+align_rank_width = RankAlignmentMixin.align_rank_width
+align_preserving_padding = RankAlignmentMixin.align_preserving_padding
 
 
 def test_compute_entropy_contributions_basic():
@@ -186,3 +187,24 @@ def test_alignment_touches_only_the_rank_axis(shape):
 def test_alignment_rejects_a_non_positive_k():
     with pytest.raises(ValueError, match="k must be positive"):
         align_rank_width(np.ones((2, 3)), 0)
+
+
+def test_padded_tokens_stay_fully_nan_when_aligned():
+    # a padded token carries no data; zero-filling it would read as a real zero-entropy token
+    contributions = np.array([[0.3, 0.2], [np.nan, np.nan]])
+
+    aligned = align_preserving_padding(contributions, 4)
+
+    assert np.isnan(aligned[1]).all()
+    np.testing.assert_allclose(aligned[0], [0.3, 0.2, 0.0, 0.0])
+
+
+def test_real_tokens_are_zero_filled_when_aligned():
+    aligned = align_preserving_padding(np.array([[0.3, 0.2]]), 4)
+    np.testing.assert_allclose(aligned, [[0.3, 0.2, 0.0, 0.0]])
+
+
+def test_alignment_rejects_an_array_with_no_rank_axis():
+    # a 0-d array has no rank axis to align; shape[-1] would IndexError
+    with pytest.raises(ValueError, match="at least one axis"):
+        align_rank_width(np.array(1.0), 3)

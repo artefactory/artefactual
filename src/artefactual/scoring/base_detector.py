@@ -4,7 +4,10 @@ from sklearn.pipeline import Pipeline
 from artefactual.exceptions import UncalibratedModelError
 from artefactual.preprocessing.parser import LogProbParser
 from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
-from artefactual.scoring.pretrained_regression import PretrainedLogisticRegression
+from artefactual.scoring.pretrained_regression import PretrainedLogisticRegression, Registry
+
+# Every calibration and weights file shipped with the package was fit at 15 ranks.
+DEFAULT_K = 15
 
 
 class BaseDetector(Pipeline):
@@ -36,34 +39,55 @@ class BaseDetector(Pipeline):
         return flat_scores.reshape(n_samples, max_tokens, 1)
 
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path: str, reduction: str) -> "BaseDetector":
+    def from_pretrained(cls, pretrained_model_name_or_path: str, reduction: str, k: int = DEFAULT_K) -> "BaseDetector":
         """Build a ready-to-predict detector with weights loaded."""
-        classifier = PretrainedLogisticRegression.from_pretrained(pretrained_model_name_or_path)
-        return cls(
-            steps=[
-                ("parser", LogProbParser()),
-                ("entropy", EntropyTransformer(reduction=reduction)),
-                ("classifier", classifier),
-            ]
-        )
+        factory = {"epr": epr, "wepr": wepr}[reduction]
+        return factory(pretrained_model_name_or_path, k=k)
+
+
+def _build(
+    reduction: str,
+    registry: Registry,
+    pretrained_model_name_or_path: str | None,
+    k: int,
+    **pipeline_kwargs,
+) -> "BaseDetector":
+    """Assemble a parser -> entropy -> classifier pipeline pinned to `k` ranks.
+
+    `k` goes to both ends: the transformer aligns the response's rank axis to it, and the
+    classifier checks the weights were calibrated at it. Without that the classifier's
+    feature count follows the weights file while the feature *width* follows whatever
+    `top_logprobs` the caller happened to request.
+    """
+    if pretrained_model_name_or_path is None:
+        raise UncalibratedModelError()
+
+    classifier = PretrainedLogisticRegression.from_pretrained(pretrained_model_name_or_path, registry=registry, k=k)
+    return BaseDetector(
+        steps=[
+            ("parser", LogProbParser()),
+            ("entropy", EntropyTransformer(reduction=reduction, k=k)),
+            ("classifier", classifier),
+        ],
+        **pipeline_kwargs,
+    )
 
 
 # Factory aliases (module level), each returns a BaseDetector
 def epr(
-    pretrained_model_name_or_path: str | None = None, *, transform_input=None, memory=None, verbose=False
+    pretrained_model_name_or_path: str | None = None,
+    k: int = DEFAULT_K,
+    *,
+    transform_input=None,
+    memory=None,
+    verbose=False,
 ) -> "BaseDetector":
-
-    if pretrained_model_name_or_path is not None:
-        classifier = PretrainedLogisticRegression.from_pretrained(pretrained_model_name_or_path)
-    else:
-        raise UncalibratedModelError()
-
-    return BaseDetector(
-        steps=[
-            ("parser", LogProbParser()),
-            ("entropy", EntropyTransformer(reduction="epr")),
-            ("classifier", classifier),
-        ],
+    """EPR detector. `k` is the top-k rank count the responses will carry."""
+    return _build(
+        "epr",
+        "calibration",
+        pretrained_model_name_or_path,
+        k,
         transform_input=transform_input,
         memory=memory,
         verbose=verbose,
@@ -71,20 +95,19 @@ def epr(
 
 
 def wepr(
-    pretrained_model_name_or_path: str | None = None, *, transform_input=None, memory=None, verbose=False
+    pretrained_model_name_or_path: str | None = None,
+    k: int = DEFAULT_K,
+    *,
+    transform_input=None,
+    memory=None,
+    verbose=False,
 ) -> "BaseDetector":
-
-    if pretrained_model_name_or_path is not None:
-        classifier = PretrainedLogisticRegression.from_pretrained(pretrained_model_name_or_path)
-    else:
-        raise UncalibratedModelError()
-
-    return BaseDetector(
-        steps=[
-            ("parser", LogProbParser()),
-            ("entropy", EntropyTransformer(reduction="wepr")),
-            ("classifier", classifier),
-        ],
+    """WEPR detector. `k` is the top-k rank count; the weights must be calibrated at it."""
+    return _build(
+        "wepr",
+        "weights",
+        pretrained_model_name_or_path,
+        k,
         transform_input=transform_input,
         memory=memory,
         verbose=verbose,

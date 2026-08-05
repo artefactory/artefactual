@@ -174,3 +174,47 @@ def test_a_wepr_file_missing_a_max_rank_is_reported(tmp_path):
 
     with pytest.raises(KeyError):
         PretrainedLogisticRegression.from_pretrained(str(path))
+
+
+# --- the k parameter -------------------------------------------------------------------
+
+
+def test_k_defaults_to_no_alignment():
+    # standalone, the transformer reduces over whatever width it is handed
+    assert EntropyTransformer().k is None
+    assert EntropyTransformer(reduction="wepr").transform(LOGPROBS).shape == (1, 2 * LOGPROBS.shape[2])
+
+
+@pytest.mark.parametrize("k", [1, 3, 8])
+def test_k_pins_the_wepr_feature_width(k):
+    features = EntropyTransformer(reduction="wepr", k=k).transform(LOGPROBS)
+    assert features.shape == (1, 2 * k)
+
+
+def test_k_survives_a_clone():
+    original = EntropyTransformer(reduction="wepr", k=8)
+    assert clone(original).k == 8
+    assert original.get_params()["k"] == 8
+
+
+def test_k_is_not_mutated_by_transform():
+    transformer = EntropyTransformer(reduction="wepr", k=8)
+    transformer.transform(LOGPROBS)
+    assert transformer.k == 8
+
+
+def test_widening_k_leaves_the_epr_score_unchanged():
+    # absent ranks contribute 0, so padding the rank axis cannot move a summed score
+    narrow = EntropyTransformer(reduction="epr", k=3).transform(LOGPROBS)
+    wide = EntropyTransformer(reduction="epr", k=10).transform(LOGPROBS)
+    np.testing.assert_allclose(narrow, wide)
+
+
+def test_padded_sequences_still_warn_when_k_is_set():
+    # alignment must not turn an all-NaN token into a real zero-entropy one
+    padded = np.full((1, 2, 3), np.nan)
+
+    with pytest.warns(EmptySequenceWarning):
+        features = EntropyTransformer(reduction="epr", k=10).transform(padded)
+
+    assert not features.any()

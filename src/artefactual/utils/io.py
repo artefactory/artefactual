@@ -64,7 +64,7 @@ MODEL_CALIBRATION_MAP = {
 }
 
 
-def load_calibration(identifier: str) -> dict[str, float]:
+def load_calibration(identifier: str | Path) -> dict[str, Any]:
     """
     Loads calibration coefficients from a built-in model name OR a local file path.
 
@@ -72,7 +72,8 @@ def load_calibration(identifier: str) -> dict[str, float]:
         identifier: The model name (e.g., "tiiuae/Falcon3-10B-Instruct") or a path to a JSON file.
 
     Returns:
-        A dictionary containing the calibration coefficients (e.g., "intercept", "coefficients").
+        A dictionary with an "intercept" float and a "coefficients" mapping -- the same
+        envelope `load_weights` returns, so both registries are interchangeable to callers.
 
     Raises:
         ValueError: If the identifier is not found in the registry and is not a valid file path,
