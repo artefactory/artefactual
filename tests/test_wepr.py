@@ -218,5 +218,5 @@ def test_a_certain_token_contributes_no_entropy(tmp_path):
 def test_compute_rejects_a_bare_sequence(tmp_path):
     # beartype guards the batch shape; a single dict is the easy caller mistake
     scorer = make_wepr(tmp_path, dense_weights(2))
-    with pytest.raises(Exception, match="(?i)type|beartype"):
+    with pytest.raises(Exception, match=r"(?i)type|beartype"):
         scorer.compute({0: [-0.1, -0.2]})

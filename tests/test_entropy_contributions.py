@@ -178,5 +178,5 @@ def test_alignment_is_idempotent(width, k):
 
 def test_alignment_rejects_a_one_dimensional_array():
     # a single token's ranks must arrive as (1, k); unpacking a 1-D array would misread it
-    with pytest.raises(Exception, match="(?i)unpack|shape|beartype|dimension"):
+    with pytest.raises(Exception, match=r"(?i)unpack|shape|beartype|dimension"):
         align_rank_width(np.array([0.3, 0.2]), 4)
