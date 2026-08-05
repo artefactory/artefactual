@@ -20,8 +20,8 @@ def test_epr_initialization_no_path():
     with pytest.warns(UserWarning, match="EPR is currently not calibrated"):
         epr = EPR()
         assert not epr.is_calibrated
-        assert epr.intercept == pytest.approx(0.0, abs=1e-12)
-        assert epr.coefficient == pytest.approx(1.0)
+        np.testing.assert_allclose(epr.intercept, 0.0, atol=1e-12)
+        np.testing.assert_allclose(epr.coefficient, 1.0)
 
 
 def test_epr_initialization_calibrated(mock_load_calibration):

@@ -3,7 +3,6 @@ import pytest
 from conftest import rank_vectors
 from hypothesis import given
 from hypothesis import strategies as st
->>>>>>> conflict 1 of 1 ends
 
 from artefactual.scoring import EntropyContributionsMixin
 from artefactual.scoring.entropy_methods.entropy_contributions import align_rank_width
@@ -41,7 +40,7 @@ def test_compute_entropy_contributions_zero_logprob():
 
     result = EntropyContributionsMixin.entropy_contributions(logprobs)
 
-    assert result[0, 0] == pytest.approx(0.0, abs=1e-12)
+    np.testing.assert_allclose(result[0, 0], 0.0, atol=1e-12)
 
 
 def test_compute_entropy_contributions_empty_input():
@@ -127,7 +126,7 @@ def test_the_peak_contribution_is_at_logprob_minus_one():
 
 
 def test_a_certain_token_contributes_nothing():
-    assert entropy_contributions(np.array([[0.0]]))[0, 0] == 0.0
+    np.testing.assert_allclose(entropy_contributions(np.array([[0.0]]))[0, 0], 0.0, atol=1e-12)
 
 
 def test_padded_positions_stay_nan():

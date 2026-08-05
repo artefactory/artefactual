@@ -88,4 +88,4 @@ def test_compute_epr_output_without_logprobs(mock_calibration):
 
     scores = detector.compute(parsed_logprobs)
     assert len(scores) == 1
-    assert scores[0] == pytest.approx(0.0, abs=1e-12)
+    np.testing.assert_allclose(scores[0], 0.0, atol=1e-12)
