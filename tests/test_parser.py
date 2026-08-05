@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 import numpy as np
 import pytest
 from hypothesis import assume, given
@@ -14,43 +12,13 @@ from artefactual.preprocessing.parser import (
     parse_top_logprobs,
 )
 
-
-class MockVLLMOutput:
-    def __init__(self, outputs):
-        self.outputs = outputs
-
-
 # The OpenAI dispatch cases that lived here asserted which processor got called, not what
 # was parsed; they are covered end-to-end in test_openai_parsing.py.
-
-
-def test_parse_top_logprobs_no_longer_accepts_vllm_outputs():
-    # standard completion responses only; vLLM outputs must be converted first
-    with pytest.raises(TypeError, match="Unsupported output format"):
-        parse_top_logprobs([MockVLLMOutput(outputs=[])])
 
 
 def test_parse_top_logprobs_unsupported():
     with pytest.raises(TypeError, match="Unsupported output format"):
         parse_top_logprobs("unsupported_format")
-
-
-@patch("artefactual.preprocessing.parser.vllm_sampled_tokens_logprobs")
-def test_parse_sampled_token_logprobs_vllm(mock_process):
-    mock_process.return_value = [np.array([-0.1, -0.2])]
-    outputs = [MockVLLMOutput(outputs=[1, 2])]
-
-    result = parse_sampled_token_logprobs(outputs)
-
-    mock_process.assert_called_once_with(outputs, 2)
-    assert len(result) == 1
-    np.testing.assert_array_equal(result[0], np.array([-0.1, -0.2]))
-
-
-def test_parse_sampled_token_logprobs_vllm_empty():
-    outputs = [MockVLLMOutput(outputs=[])]
-    result = parse_sampled_token_logprobs(outputs)
-    assert result == []
 
 
 # The OpenAI sampled-logprob dispatch cases are covered end-to-end in test_openai_parsing.py.

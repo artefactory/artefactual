@@ -180,7 +180,7 @@ def sampled_tokens_logprobs_responses_api(response: Any) -> list[np.ndarray]:
     Retrieves the log probabilities of the sampled tokens from a response following the OpenAI Responses API format.
 
     Iterates over all output items and returns a list of 1D arrays (one per output item),
-    consistent with the vLLM counterpart.
+    one array per sequence.
 
     Args:
         response (Any): The response object from the OpenAI Responses API.
@@ -213,7 +213,7 @@ def sampled_tokens_logprobs_chat_completion_api(response: Any) -> list[np.ndarra
     Retrieves the log probabilities of the sampled tokens from a response following the OpenAI Chat Completion format.
 
     Iterates over all choices and returns a list of 1D arrays (one per choice),
-    consistent with the vLLM counterpart.
+    one array per sequence.
 
     Args:
         response (Any): The response object from the OpenAI Chat Completion API.

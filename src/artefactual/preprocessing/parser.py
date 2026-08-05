@@ -3,7 +3,6 @@ Module for parsing model outputs from various sources to extract log probabiliti
 Each format is handled by a dedicated parser function, defined in their respective modules.
 """
 
-import warnings
 from functools import singledispatch
 from typing import Any
 
@@ -20,7 +19,6 @@ from artefactual.preprocessing.openai_parser import (
     sampled_tokens_logprobs_responses_api,
 )
 from artefactual.preprocessing.response_models import ChatCompletion, ResponsesPayload
-from artefactual.preprocessing.vllm_parser import _VLLM_DEPRECATION, vllm_sampled_tokens_logprobs
 
 _RESPONSE_ADAPTER = TypeAdapter(ChatCompletion | ResponsesPayload)
 
@@ -140,7 +138,7 @@ def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
 def parse_sampled_token_logprobs(outputs: Any) -> list[np.ndarray]:
     """
     A wrapper function to parse token probabilities from various output formats.
-    First checks for vLLM format, then OpenAI ChatCompletion, and finally OpenAI Responses API.
+    Handles the OpenAI ChatCompletion and OpenAI Responses API shapes.
 
     Args:
         outputs: Model outputs in various formats.
@@ -148,14 +146,6 @@ def parse_sampled_token_logprobs(outputs: Any) -> list[np.ndarray]:
         list[np.ndarray]: A list of 1D numpy arrays, each containing the log probabilities
                        of the sampled tokens for one sequence.
     """
-    # Deprecated vLLM offline inference format
-    if isinstance(outputs, list) and len(outputs) > 0 and hasattr(outputs[0], "outputs"):
-        warnings.warn(_VLLM_DEPRECATION, DeprecationWarning, stacklevel=2)
-        if not outputs[0].outputs:
-            return []
-        iterations = len(outputs[0].outputs)
-        return vllm_sampled_tokens_logprobs(outputs, iterations)
-
     try:
         response = _RESPONSE_ADAPTER.validate_python(outputs, from_attributes=True)
     except ValidationError as error:
