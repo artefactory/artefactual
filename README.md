@@ -314,7 +314,7 @@ uv run jupyter lab docs/examples/epr_usage_demo.ipynb
 | `scoring.BaseDetector` | The `Pipeline` subclass adding `predict_token_proba` |
 | `scoring.EntropyTransformer` | Contributions → features; `reduction` is `"epr"`, `"wepr"` or a callable |
 | `scoring.PretrainedLogisticRegression` | `LogisticRegression` loaded from a weights file |
-| `preprocessing.parser.LogProbParser` | Response objects → dense NaN-padded array |
+| `preprocessing.LogProbParser` | Response objects → dense NaN-padded array |
 | `preprocessing.parse_top_logprobs` | Functional form of the parser |
 | `utils.io.load_weights` / `load_calibration` | Registry and file loading |
 
