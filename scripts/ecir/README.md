@@ -20,7 +20,13 @@ model.
 
 Only the two `run-batch` stages need the GPU box; everything else runs anywhere.
 
-`questions.json` is a list of:
+## The training data you need
+
+A calibration is a logistic regression fit on `(response, was_it_a_hallucination)` pairs.
+You supply the questions and their gold answers; the pipeline produces the responses and,
+via an LLM judge, the labels.
+
+So the only input you write is `questions.json`, a list of:
 
 ```json
 [{"question": "Who sent Augustine to England?",
@@ -29,19 +35,59 @@ Only the two `run-batch` stages need the GPU box; everything else runs anywhere.
   "answer_aliases": ["Gregory I", "the Pope"]}]
 ```
 
-`question_id` must be unique — it becomes the key every later stage joins on.
+| Field | Required | Used for |
+|---|---|---|
+| `question` | yes | The prompt sent to the model being calibrated |
+| `question_id` | yes | Becomes `custom_id`; every stage joins on it, so it must be unique |
+| `short_answer` | yes | The gold answer the judge grades against |
+| `answer_aliases` | no | Other answers the judge should accept; omit or leave empty |
+
+Any short-form QA set works — TriviaQA, Natural Questions, SimpleQA, or your own domain
+questions. What matters is that answers are short enough to grade automatically and that
+the set is hard enough for the model to get some wrong: the fit needs both classes, and a
+model that answers everything correctly produces no positive examples to learn from.
+
+A few hundred questions is a workable starting point. `evaluate_calibration.py` reports a
+95% interval, so if it is too wide to distinguish EPR from WEPR, that is the signal to
+label more.
 
 ## Run it
 
 ```bash
-./run_pipeline.sh questions.json out/ \
-    mistralai/Ministral-8B-Instruct-2410 \
-    mistralai/Ministral-8B-Instruct-2410 \
-    15
+./run_pipeline.sh questions.json out/
 ```
 
-Arguments are `questions.json`, output directory, generator model, judge model, and `k`
-(the number of top logprobs to request per token — **use 15**, see below).
+That uses the defaults below. To pick the models and rank count explicitly:
+
+```bash
+./run_pipeline.sh \
+    --model mistralai/Ministral-8B-Instruct-2410 \
+    --judge mistralai/Ministral-8B-Instruct-2410 \
+    --top-logprobs 15 \
+    questions.json out/
+```
+
+`run_pipeline.sh --help` lists everything. The knobs:
+
+| Flag | Environment | Default | What it sets |
+|---|---|---|---|
+| `-m, --model` | `GEN_MODEL` | `mistralai/Ministral-8B-Instruct-2410` | Model that answers the questions |
+| `-j, --judge` | `JUDGE_MODEL` | same as above | Model that grades the answers |
+| `-k, --top-logprobs` | `TOP_LOGPROBS` | `15` | Ranks per token — see below |
+| `-r, --reductions` | `REDUCTIONS` | `epr wepr` | Which calibrations to fit |
+| `-f, --force` | — | off | Redo stages whose output already exists |
+| — | `GEN_TEMPERATURE` | `0.6` | Sampling temperature for the answers |
+| — | `GEN_MAX_TOKENS` | `200` | Answer length cap |
+| — | `JUDGE_TEMPERATURE` | `0` | Sampling temperature for the judge |
+| — | `JUDGE_MAX_TOKENS` | `200` | Judge reply cap |
+| — | `PYTHON` | `python3` | Interpreter that can import `artefactual` |
+
+The generation defaults are the paper's settings; change them and you are measuring
+something else.
+
+**Stages resume.** The two `vllm run-batch` stages are skipped when their output already
+exists, so an interrupted run picks up where it stopped, and re-fitting with different
+`--reductions` costs no GPU time. `--force` redoes them.
 
 You end up with, in `out/`:
 
@@ -98,8 +144,9 @@ repeating — both detectors are fit from the same generations.
 
 `k` appears in three places and **must be the same number in all of them**: the third
 argument to `build_generation_requests.sh` (it becomes `top_logprobs` in the request), and
-`--k` on both Python scripts. Every shipped calibration uses 15. `run_pipeline.sh` passes
-its fifth argument to all three, so driving the pipeline end to end keeps them in step.
+`--k` on both Python scripts. Every shipped calibration uses 15. `run_pipeline.sh` threads
+its `--top-logprobs` through all three, so driving the pipeline end to end keeps them in
+step — the stage-by-stage route below is where they can drift apart.
 
 It cannot be inferred, because it is part of the metric: EPR averages the entropy
 contribution over the top `k` ranks, so changing `k` rescales the score, and WEPR has one
