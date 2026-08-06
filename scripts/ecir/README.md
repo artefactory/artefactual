@@ -54,13 +54,13 @@ works, including your own domain questions. Two properties matter:
   classes. A model that answers everything correctly produces no hallucinations to learn
   from, and the fit will fail with a single-class error.
 
-A few hundred questions is a workable start. Step 7 reports a 95% interval; if it is too
+A few hundred questions is a workable start. Step 6 reports a 95% interval; if it is too
 wide to tell EPR and WEPR apart, that is the signal to label more.
 
 ## Tutorial
 
-Eight steps, start to finish. Set these once — `K` in particular has to be the same number
-in steps 1, 6 and 7, and mismatching it is the most common way to train a detector that scores wrongly:
+Seven steps, start to finish. Set these once — `K` in particular has to be the same number
+in steps 1 and 6, and mismatching it is the most common way to train a detector that scores wrongly:
 
 ```bash
 cd scripts/ecir
@@ -107,7 +107,7 @@ jq -r 'select(.response != null)
 ```
 
 One number should print, and it must equal `$K`. If it is smaller, the generation ignored
-`top_logprobs` — fix that and rerun, because steps 6 and 7 will refuse the data.
+`top_logprobs` — fix that and rerun, because step 6 will refuse the data.
 
 ### Step 3 — build the judge requests
 
@@ -144,62 +144,57 @@ jq -r 'select(.response != null) | (.response.body // .response).choices[0].mess
 Compare against your question count. All-correct or all-wrong cannot be fit — go back to
 step 1 with harder or easier questions.
 
-### Step 6 — train the detector
+### Step 6 — train the detector and evaluate it
 
 ```bash
 uv run ../train_detector.py \
     --responses "$OUT/responses.jsonl" \
     --judgments "$OUT/judgments.jsonl" \
     --reduction wepr --k "$K" \
-    --output "$OUT/wepr_weights.json"
+    --output "$OUT/wepr_weights.json" \
+    --report "$OUT/wepr_evaluation.json"
 ```
 
+One script, because the two halves are one question. It splits the labelled set once
+(stratified, `--test_size`, default 0.25), fits on the training part, writes the weights,
+then scores that fitted detector on the part it never saw. **The numbers describe the file
+in `--output`** — what is reported is what is shipped, not an average over models that were
+refitted and discarded.
+
 `uv run` resolves the project environment itself, so there is no activation step and no
-chance of picking up a different install. It logs what it joined and fitted (numbers here
-are illustrative):
+chance of picking up a different install. Numbers here are illustrative:
 
 ```
 joined 400 pairs on custom_id (112 hallucinations)
+fitting on 300 response(s), holding out 100
 intercept: -3.02
 wrote out/wepr_weights.json
+
+               precision    recall  f1-score   support
+
+    grounded       0.88      0.93      0.90        72
+hallucination      0.74      0.61      0.67        28
+
+    accuracy                           0.84       100
+
+   roc_auc: 0.7412  [0.6810, 0.7955]
+    pr_auc: 0.5233  [0.4401, 0.6118]
 ```
 
-Repeat with `--reduction epr` for the other detector. Steps 2 and 4 do not need repeating —
-both are fit from the same generations.
+Read the two halves as different questions. ROC-AUC and PR-AUC score the *ranking*, which
+is what a detector is for when you triage by score; the classification report scores the
+decisions at the 0.5 threshold. A detector can rank well and still make poor calls there,
+so read both — and if you intend to act on a different threshold, the AUCs are the ones
+that carry over. Recall on the `hallucination` row is usually the number that matters: the
+fraction of hallucinations actually flagged.
 
-### Step 7 — evaluate it
+Repeat with `--reduction epr` for the other detector and compare. Steps 2 and 4 do not need
+repeating — both detectors are fit from the same generations.
 
-```bash
-uv run ../evaluate_detector.py \
-    --responses "$OUT/responses.jsonl" \
-    --judgments "$OUT/judgments.jsonl" \
-    --reduction wepr --k "$K" \
-    --output "$OUT/wepr_evaluation.json"
-```
+Pass `--test_size 0` to fit on everything and skip the evaluation. Do that only once you
+have already measured the recipe and want the last few percent of data in the model.
 
-```
-              precision    recall  f1-score   support
-
-   grounded       0.88      0.93      0.90       288
-hallucination       0.74      0.61      0.67       112
-
-    accuracy                           0.84       400
-wepr over 5 stratified folds
-   roc_auc: 0.7412 +/- 0.0413
-    pr_auc: 0.5233 +/- 0.0602
-```
-
-Those figures are illustrative — they show the shape of the report, not a result to expect.
-Run it for both reductions and compare. The two halves answer different questions: ROC-AUC
-and PR-AUC score the *ranking*, which is what a detector is for when you triage by score,
-while the classification report scores the decisions at the 0.5 threshold. A detector can
-rank well and still make poor calls there, so read both — and if you plan to act on a
-different threshold, the AUCs are the ones that carry over.
-
-Recall on the `hallucination` row is usually the number that matters: it is the fraction of
-hallucinations the detector actually flags.
-
-### Step 8 — use the trained detector
+### Step 7 — use the trained detector
 
 ```python
 from artefactual.scoring import wepr
@@ -244,10 +239,10 @@ SelfCheckGPT.
 
 ## Use k = 15
 
-`k` is the number of ranks per token, and it appears in three places that **must agree**:
-`build_generation_requests.sh` (step 1, where it becomes `top_logprobs`), and `--k` on both
-Python scripts (steps 6 and 7). Every shipped detector was trained at 15. Setting `K` once at the
-top of the tutorial is what keeps them in step.
+`k` is the number of ranks per token, and it appears in two places that **must agree**:
+`build_generation_requests.sh` (step 1, where it becomes `top_logprobs`) and `--k` on
+`train_detector.py` (step 6). Every shipped detector was trained at 15. Setting `K` once at
+the top of the tutorial is what keeps them in step.
 
 It cannot be inferred, because it is part of the metric: EPR is the entropy of the top `k`
 ranks (Eq. 3 and 6 of the paper), so changing `k` changes what is being measured, and WEPR
@@ -277,7 +272,7 @@ If you generated at a narrower `k`, regenerate — do not reuse a detector train
 
 **`Response N carries M rank(s) per token but k=15 was requested`.** The generation batch
 was produced with a smaller `top_logprobs` than you are fitting at — most often because
-step 1 and step 5 were run with different `k`. Check what the responses actually carry:
+step 1 and step 6 were run with different `k`. Check what the responses actually carry:
 
 ```bash
 jq -r 'select(.response != null)
@@ -348,32 +343,33 @@ negation: **1 marks a hallucination**.
 
 ## Evaluation method
 
-`evaluate_detector.py` reproduces the paper's bootstrap: resample the labelled set with
-replacement, fit on the sample, score whatever fell out of it, repeat 1000 times
-(`--repetitions`). It reports the mean the paper quotes plus a 95% percentile interval —
-the mean alone cannot say whether a gap between two detectors is real.
+`train_detector.py` splits the labelled set once with `train_test_split`, stratified so the
+hallucination rate is the same on both sides, fits the detector on the training part, and
+scores it on the held-out part. **The evaluation is of the model that was written to
+`--output`** — the detector is fitted once and never refitted, so the numbers belong to the
+artefact you keep rather than to the recipe that produced it.
 
-The resampling is `OutOfBagBootstrap`, a `BaseCrossValidator` in that script, so
-`cross_validate` does the fitting and scoring as it would for any splitter. It is written
-out because scikit-learn ships no bootstrap splitter: every splitter it provides samples
-*without* replacement, and `cross_validation.Bootstrap` was removed long ago. The one
-alternative, `BaggingClassifier(oob_score=True)`, returns a single aggregate number rather
-than a distribution, so it cannot produce a percentile interval.
+`--test_size` (default 0.25) sets the holdout; `--seed` (default 42) fixes both the split
+and the resampling, so a rerun reproduces the run exactly. `--test_size 0` fits on
+everything and skips the evaluation, which is only worth doing once the recipe is already
+measured.
 
-Draws are seeded per repetition from `--seed` (default 42), so a rerun reproduces the same
-folds. A draw is skipped and counted when it cannot be fitted or cannot be scored — a
-resample of a rare class can miss it entirely, and both `LogisticRegression.fit` and
-`roc_auc` need two classes present.
+The confidence intervals come from resampling the *held-out predictions* with replacement
+(`--repetitions`, default 1000) and taking the 2.5th and 97.5th percentiles. Resamples that
+come back single-class are dropped, because ROC-AUC is undefined on them; the surviving
+count is reported next to the interval and is worth reading when hallucinations are rare.
 
-The classification report alongside is built from out-of-bag probabilities averaged over
-every repetition that held an example out, thresholded at 0.5. That averaging is needed
-because a bootstrap example is out of bag many times over, so `cross_val_predict` cannot be
-used at all — it requires each example to be predicted exactly once.
+**How this differs from the paper.** The paper bootstraps the whole procedure — resample,
+*refit*, score what fell out, repeat — so its interval measures how much the fitting varies
+across datasets. This resamples one fixed model's scores, which answers the narrower
+question of how precisely that model's ROC-AUC is known. The intervals here are therefore
+tighter than Table 1's, and the two are not directly comparable. The point estimate is
+comparable; the spread is not.
 
-Read the two halves as different questions: ROC-AUC and PR-AUC score the *ranking*, which
-is what matters when you triage by score, while the classification report scores the
-decisions at 0.5. Recall on the `hallucination` row is usually the number to watch — the
-fraction of hallucinations actually flagged.
+Alongside the AUCs, `classification_report` gives per-class precision, recall and F1 at the
+0.5 threshold. Read them as different questions: the AUCs score the *ranking*, which is
+what matters when you triage by score, while the report scores the decisions. Recall on the
+`hallucination` row is usually the number to watch — the fraction actually flagged.
 
 ## Not reproduced
 
