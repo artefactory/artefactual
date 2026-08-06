@@ -44,11 +44,16 @@ jobs:
         run: quarto render docs/presentations
 
       - name: Build documentation
-        run: uv run sphinx-build -b html docs docs/_build/html
+        # -W: a page Sphinx declines to build -- a notebook nbsphinx skips, a missing
+        # toctree entry, a broken cross-reference -- is reported as a warning and would
+        # otherwise deploy a site with the page silently absent.
+        run: uv run sphinx-build -W -b html docs docs/_build/html
 
       - name: Check the decks reached the site
         run: |
-          # html_extra_path failures are warnings, not errors: assert instead.
+          # Quarto writes the decks into docs/_extra before Sphinx runs. Producing none
+          # leaves that directory empty, which Sphinx copies without complaint, so -W
+          # cannot see this failure and it is asserted here.
           shopt -s nullglob
           decks=(docs/_build/html/presentations/*/*.html)
           if [ ${#decks[@]} -eq 0 ]; then
