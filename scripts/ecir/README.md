@@ -178,14 +178,26 @@ uv run ../evaluate_detector.py \
 ```
 
 ```
-wepr over 1000 bootstrap repetitions
-   roc_auc: 0.7412  [0.6810, 0.7955]
-    pr_auc: 0.5233  [0.4401, 0.6118]
+              precision    recall  f1-score   support
+
+   grounded       0.88      0.93      0.90       288
+hallucination       0.74      0.61      0.67       112
+
+    accuracy                           0.84       400
+wepr over 5 stratified folds
+   roc_auc: 0.7412 +/- 0.0413
+    pr_auc: 0.5233 +/- 0.0602
 ```
 
 Those figures are illustrative — they show the shape of the report, not a result to expect.
-The interval is the point: a mean alone cannot say whether a gap between two detectors is
-real. Run it for both reductions and compare.
+Run it for both reductions and compare. The two halves answer different questions: ROC-AUC
+and PR-AUC score the *ranking*, which is what a detector is for when you triage by score,
+while the classification report scores the decisions at the 0.5 threshold. A detector can
+rank well and still make poor calls there, so read both — and if you plan to act on a
+different threshold, the AUCs are the ones that carry over.
+
+Recall on the `hallucination` row is usually the number that matters: it is the fraction of
+hallucinations the detector actually flags.
 
 ### Step 8 — use the trained detector
 
@@ -296,8 +308,11 @@ jq -r 'select(.response != null) | (.response.body // .response).choices[0].mess
 joins by id — a reordered or partially failed batch can never pair a generation with the
 wrong verdict, but two unrelated batches will not join at all.
 
-**`No out-of-bag fold held two classes` from the evaluation.** Too few examples, or too
-few of one class, for any bootstrap fold to hold both. Label more data.
+**`5-fold cross-validation needs at least 5 of each class` from the evaluation.** The rarer
+class — usually the hallucinations — has fewer members than there are folds, so it cannot
+appear in every one. The message prints the actual counts. Label more data, or lower
+`--folds`; note that fewer folds means a noisier estimate, so treat it as a way to get a
+reading at all rather than a fix.
 
 ## What the scripts read
 
@@ -333,14 +348,32 @@ negation: **1 marks a hallucination**.
 
 ## Evaluation method
 
-`evaluate_detector.py` reproduces the paper's bootstrap: resample the
-labelled set with replacement, fit on the sample, score whatever fell out of it, repeat
-1000 times (`--repetitions`). It reports the mean the paper quotes plus a 95% percentile
-interval — the mean alone cannot say whether a gap between two detectors is real.
+`evaluate_detector.py` reproduces the paper's bootstrap: resample the labelled set with
+replacement, fit on the sample, score whatever fell out of it, repeat 1000 times
+(`--repetitions`). It reports the mean the paper quotes plus a 95% percentile interval —
+the mean alone cannot say whether a gap between two detectors is real.
 
-Resampling uses `sklearn.utils.resample` seeded per repetition (`--seed`, default 42), so
-a rerun reproduces the same folds. Folds whose out-of-bag set holds fewer than two
-examples or only one class are skipped and counted, because ROC-AUC is undefined there.
+The resampling is `OutOfBagBootstrap`, a `BaseCrossValidator` in that script, so
+`cross_validate` does the fitting and scoring as it would for any splitter. It is written
+out because scikit-learn ships no bootstrap splitter: every splitter it provides samples
+*without* replacement, and `cross_validation.Bootstrap` was removed long ago. The one
+alternative, `BaggingClassifier(oob_score=True)`, returns a single aggregate number rather
+than a distribution, so it cannot produce a percentile interval.
+
+Draws are seeded per repetition from `--seed` (default 42), so a rerun reproduces the same
+folds. A draw is skipped and counted when it cannot be fitted or cannot be scored — a
+resample of a rare class can miss it entirely, and both `LogisticRegression.fit` and
+`roc_auc` need two classes present.
+
+The classification report alongside is built from out-of-bag probabilities averaged over
+every repetition that held an example out, thresholded at 0.5. That averaging is needed
+because a bootstrap example is out of bag many times over, so `cross_val_predict` cannot be
+used at all — it requires each example to be predicted exactly once.
+
+Read the two halves as different questions: ROC-AUC and PR-AUC score the *ranking*, which
+is what matters when you triage by score, while the classification report scores the
+decisions at 0.5. Recall on the `hallucination` row is usually the number to watch — the
+fraction of hallucinations actually flagged.
 
 ## Not reproduced
 
