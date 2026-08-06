@@ -1,8 +1,8 @@
 """
-Calibration training for the epr and wepr detectors.
+Trains an epr or wepr hallucination detector from a labelled batch.
 
 Usage:
-    uv run scripts/train_calibration.py \
+    uv run scripts/train_detector.py \
         --responses responses.jsonl --judgments judgments.jsonl --reduction epr
 
 Both inputs are `vllm run-batch` outputs: one line per request, carrying the `custom_id`
@@ -18,21 +18,26 @@ The fitted intercept and coefficients are written to `--output` in the shape
 `artefactual.utils.io.load_weights` reads back.
 """
 
-import argparse
 import json
-import logging
-from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 import numpy as np
-from sklearn.linear_model import LogisticRegression
+from absl import app, flags, logging
 
-from artefactual.preprocessing.parser import LogProbParser
-from artefactual.scoring.base_detector import DEFAULT_K, BaseDetector
-from artefactual.scoring.entropy_methods.entropy_transformer import STRATEGIES, EntropyTransformer
+from artefactual.scoring import BaseDetector, epr, wepr
+from artefactual.scoring.base_detector import DEFAULT_K
+from artefactual.scoring.entropy_methods.entropy_transformer import STRATEGIES
 
-logger = logging.getLogger(__name__)
+FLAGS = flags.FLAGS
+
+flags.DEFINE_string("responses", None, "vllm run-batch output with logprobs")
+flags.DEFINE_string("judgments", None, "vllm run-batch output with judge verdicts")
+flags.DEFINE_enum("reduction", "epr", sorted(STRATEGIES), "scoring variant")
+flags.DEFINE_integer("k", DEFAULT_K, "top_logprobs the batch was generated with")
+flags.DEFINE_string("output", None, "where to write the fitted weights JSON")
+
+flags.mark_flags_as_required(["responses", "judgments"])
 
 
 def read_batch_output(path: Path) -> dict[str, Any]:
@@ -56,7 +61,7 @@ def read_batch_output(path: Path) -> dict[str, Any]:
         response = record["response"]
         rows[record["custom_id"]] = response.get("body", response)
     if failed:
-        logger.warning(f"{path.name}: dropped {failed} failed request(s)")
+        logging.warning(f"{path.name}: dropped {failed} failed request(s)")
     return rows
 
 
@@ -92,7 +97,7 @@ def join_on_custom_id(responses: dict[str, Any], judgments: dict[str, Any]) -> t
     only_responses = sorted(set(responses) - set(judgments))
     only_judgments = sorted(set(judgments) - set(responses))
     if only_responses or only_judgments:
-        logger.warning(
+        logging.warning(
             f"{len(only_responses)} generation(s) without a verdict and "
             f"{len(only_judgments)} verdict(s) without a generation were dropped"
         )
@@ -106,42 +111,10 @@ def join_on_custom_id(responses: dict[str, Any], judgments: dict[str, Any]) -> t
         x.append(responses[custom_id])
         y.append(0 if judgment else 1)  # judgment True == correct answer == not a hallucination
     if unparsed:
-        logger.warning(f"dropped {unparsed} verdict(s) that could not be parsed")
+        logging.warning(f"dropped {unparsed} verdict(s) that could not be parsed")
 
-    logger.info(f"joined {len(x)} pairs on custom_id ({sum(y)} hallucinations)")
+    logging.info(f"joined {len(x)} pairs on custom_id ({sum(y)} hallucinations)")
     return x, np.array(y)
-
-
-def train_calibration(x: Any, y: np.ndarray, reduction: str | Callable, k: int = DEFAULT_K) -> BaseDetector:
-    """
-    Fit an EPR or WEPR pipeline on raw completion responses.
-
-    Args:
-        x: Completion responses, in any shape `LogProbParser` accepts.
-        y: Binary labels, one per generated sequence - 1 if hallucination, 0 if correct.
-        reduction: scoring variant - "epr", "wepr", or a custom reduction callable.
-        k: rank count to align the responses to; must be the top_logprobs used to generate.
-
-    Returns:
-        The fitted BaseDetector pipeline.
-    """
-    # Checked up front: EntropyTransformer only rejects a bad reduction once the whole
-    # batch has been parsed, which is a long wait to be told about a typo.
-    if not callable(reduction) and reduction not in STRATEGIES:
-        msg = f"Invalid reduction: {reduction!r}. Expected one of {sorted(STRATEGIES)}, or a callable."
-        raise ValueError(msg)
-
-    # Assembled here rather than through epr()/wepr(): those only ever hand back a
-    # calibrated detector, and an unfitted one must not escape the library.
-    clf = BaseDetector(
-        steps=[
-            ("parser", LogProbParser()),
-            ("entropy", EntropyTransformer(reduction=reduction, k=k)),
-            ("classifier", LogisticRegression(penalty=None, max_iter=1000)),
-        ]
-    )
-    clf.fit(x, y)
-    return clf
 
 
 def weights_payload(detector: BaseDetector, reduction: str, k: int) -> dict[str, Any]:
@@ -158,28 +131,22 @@ def weights_payload(detector: BaseDetector, reduction: str, k: int) -> dict[str,
     return {"intercept": float(classifier.intercept_[0]), "coefficients": named}
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--responses", type=Path, required=True, help="vllm run-batch output with logprobs")
-    parser.add_argument("--judgments", type=Path, required=True, help="vllm run-batch output with judge verdicts")
-    parser.add_argument("--reduction", choices=sorted(STRATEGIES), default="epr", help="scoring variant")
-    parser.add_argument("--k", type=int, default=DEFAULT_K, help="top_logprobs the batch was generated with")
-    parser.add_argument("--output", type=Path, help="where to write the fitted weights JSON")
-    args = parser.parse_args()
+def main(argv: list[str]) -> None:
+    if len(argv) > 1:
+        msg = f"unexpected positional argument(s): {argv[1:]}"
+        raise app.UsageError(msg)
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    x, y = join_on_custom_id(read_batch_output(Path(FLAGS.responses)), read_batch_output(Path(FLAGS.judgments)))
+    detector = {"epr": epr, "wepr": wepr}[FLAGS.reduction](k=FLAGS.k, trainable=True).fit(x, y)
 
-    x, y = join_on_custom_id(read_batch_output(args.responses), read_batch_output(args.judgments))
-    detector = train_calibration(x, y, args.reduction, k=args.k)
+    payload = weights_payload(detector, FLAGS.reduction, FLAGS.k)
+    logging.info(f"intercept: {payload['intercept']}")
+    logging.info(f"coefficients: {payload['coefficients']}")
 
-    payload = weights_payload(detector, args.reduction, args.k)
-    logger.info(f"intercept: {payload['intercept']}")
-    logger.info(f"coefficients: {payload['coefficients']}")
-
-    if args.output:
-        args.output.write_text(json.dumps(payload, indent=4), encoding="utf-8")
-        logger.info(f"wrote {args.output}")
+    if FLAGS.output:
+        Path(FLAGS.output).write_text(json.dumps(payload, indent=4), encoding="utf-8")
+        logging.info(f"wrote {FLAGS.output}")
 
 
 if __name__ == "__main__":
-    main()
+    app.run(main)

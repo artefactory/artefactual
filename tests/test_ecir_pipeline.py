@@ -19,7 +19,7 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 ECIR = REPO / "scripts" / "ecir"
-TRAIN = REPO / "scripts" / "train_calibration.py"
+TRAIN = REPO / "scripts" / "train_detector.py"
 
 jinja2 = pytest.importorskip("jinja2")
 
@@ -163,7 +163,7 @@ def test_training_pairs_by_id_regardless_of_file_order(pack, tmp_path):
     import sys
 
     sys.path.insert(0, str(TRAIN.parent))
-    import train_calibration as tc
+    import train_detector as tc
 
     verdicts = {"q-1": True, "q-2": False, "q-3": True}
     judgments = judgments_file(tmp_path / "judgments.jsonl", verdicts)
@@ -182,7 +182,7 @@ def test_training_refuses_a_batch_with_no_shared_ids(pack, tmp_path):
     import sys
 
     sys.path.insert(0, str(TRAIN.parent))
-    import train_calibration as tc
+    import train_detector as tc
 
     other = judgments_file(tmp_path / "other.jsonl", {"z-9": True})
 
