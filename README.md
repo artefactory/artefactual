@@ -59,6 +59,25 @@ already in the `logprobs` — a calibration per model turns it into a probabilit
 Scoring is fast enough to run on every response rather than a sample of them, which is
 what makes it usable as a filter rather than an audit.
 
+## Results
+
+ROC-AUC on TriviaQA hallucination detection at `k = 15`, from Table 1 of the
+[paper](https://arxiv.org/abs/2509.04492):
+
+| Model | SelfCheckGPT | EPR | HalluDetect | WEPR |
+|---|---|---|---|---|
+| `Mistral-Small-3.1-24B` | 79.0 | 74.6 | 78.7 | **82.0** |
+| `Falcon-3-10B` | 70.1 | 75.4 | 79.0 | **84.1** |
+| `Phi-4` (14.7B) | 71.4 | 78.2 | 83.8 | **85.4** |
+| `Ministral-8B-2410` | 81.1 | 81.4 | **86.1** | 85.8 |
+
+SelfCheckGPT buys its numbers with 10 extra generations per answer; EPR and WEPR use none.
+The paper measures roughly 80 ± 20 µs per score, against at least 10 s for SelfCheckGPT.
+
+Scores drop 10-20 points on WebQuestions, a dataset the detectors were not trained on, so
+train on data that resembles your traffic — see
+[`scripts/ecir/README.md`](scripts/ecir/README.md) for the full tables and the procedure.
+
 ## Installation
 
 ```bash

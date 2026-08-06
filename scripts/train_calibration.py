@@ -2,7 +2,7 @@
 Calibration training for the epr and wepr detectors.
 
 Usage:
-    python scripts/train_calibration.py \
+    uv run scripts/train_calibration.py \
         --responses responses.jsonl --judgments judgments.jsonl --reduction epr
 
 Both inputs are `vllm run-batch` outputs: one line per request, carrying the `custom_id`

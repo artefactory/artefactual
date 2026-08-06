@@ -1,32 +1,34 @@
 # Reproducing the ECIR EPR / WEPR experiments
 
-Rebuilds the EPR and WEPR calibrations from
-*"Learned Hallucination Detection in Black-Box LLMs using Token-level Entropy Production Rate"*
-and reports their out-of-bag bootstrap scores.
+Trains an EPR or WEPR detector from scratch: generate answers, have an LLM grade them,
+train the detector on the result, and check how well it separates hallucinations. This is
+the procedure from *"Learned Hallucination Detection in Black-Box LLMs using Token-level
+Entropy Production Rate"*, and the same one to follow for training a detector on a model of your own.
 
-**The two LLM stages — generating the answers, and rating them with an LLM judge — are run
-by [`vllm run-batch`](https://docs.vllm.ai/en/stable/examples/offline_inference/openai_batch.html).**
+**The two LLM stages — generating the answers, and grading them — are run by
+[`vllm run-batch`](https://docs.vllm.ai/en/stable/examples/offline_inference/openai_batch.html).**
 The scripts here only prepare its input and read its output; nothing in this repo calls a
 model.
 
-## Before you start
+## What you need
 
-| You need | Why |
-|---|---|
-| `vllm` on `PATH`, on a Linux GPU box | Runs the two batches. Not an `artefactual` dependency, and it has no macOS wheels. |
-| `jq` | Builds the batch request files. |
-| `artefactual` installed (`uv sync`) | Fits and evaluates the calibrations. |
-| `questions.json` | Your QA pack (below). |
+| | Why | Where |
+|---|---|---|
+| `vllm` | Runs the two LLM stages | A Linux GPU box — it has no macOS wheels |
+| `jq` | Builds the batch request files | Anywhere |
+| This repo, `uv sync`'d | Trains and evaluates the detector | Anywhere |
+| `questions.json` | Your QA pack — see below | You write this |
 
-Only the two `run-batch` stages need the GPU box; everything else runs anywhere.
+Only steps 2 and 4 need the GPU. The rest runs on a laptop, so the usual split is to build
+the request files locally, copy them over, run the batches, and copy the outputs back.
 
 ## The training data you need
 
-A calibration is a logistic regression fit on `(response, was_it_a_hallucination)` pairs.
-You supply the questions and their gold answers; the pipeline produces the responses and,
-via an LLM judge, the labels.
+The detector is a logistic regression trained on `(response, was_it_a_hallucination)` pairs.
+You supply the questions and their gold answers; the pipeline produces the responses, and
+the LLM judge produces the labels.
 
-So the only input you write is `questions.json`, a list of:
+So the only file you write is `questions.json`, a list of:
 
 ```json
 [{"question": "Who sent Augustine to England?",
@@ -42,63 +44,150 @@ So the only input you write is `questions.json`, a list of:
 | `short_answer` | yes | The gold answer the judge grades against |
 | `answer_aliases` | no | Other answers the judge should accept; omit or leave empty |
 
-Any short-form QA set works — TriviaQA, Natural Questions, SimpleQA, or your own domain
-questions. What matters is that answers are short enough to grade automatically and that
-the set is hard enough for the model to get some wrong: the fit needs both classes, and a
-model that answers everything correctly produces no positive examples to learn from.
+The paper uses **TriviaQA** for training and **WebQuestions** to test generalisation, plus
+a financial RAG corpus (ArGiMi-Ardian) for missing-context detection. Any short-form QA set
+works, including your own domain questions. Two properties matter:
 
-A few hundred questions is a workable starting point. `evaluate_calibration.py` reports a
-95% interval, so if it is too wide to distinguish EPR from WEPR, that is the signal to
-label more.
+- **Answers must be short enough to grade automatically.** The judge compares against
+  `short_answer`; an essay cannot be scored this way.
+- **The set must be hard enough that the model gets some wrong.** The fit needs both
+  classes. A model that answers everything correctly produces no hallucinations to learn
+  from, and the fit will fail with a single-class error.
 
-## Run it
+A few hundred questions is a workable start. Step 7 reports a 95% interval; if it is too
+wide to tell EPR and WEPR apart, that is the signal to label more.
+
+## Tutorial
+
+Eight steps, start to finish. Set these once — `K` in particular has to be the same number
+in steps 1, 6 and 7, and mismatching it is the most common way to train a detector that scores wrongly:
 
 ```bash
-./run_pipeline.sh questions.json out/
+cd scripts/ecir
+MODEL=mistralai/Ministral-8B-Instruct-2410   # the model you are calibrating
+JUDGE=mistralai/Ministral-8B-Instruct-2410   # the model that grades it
+K=15                                          # ranks per token; every shipped file uses 15
+OUT=out
+mkdir -p "$OUT"
 ```
 
-That uses the defaults below. To pick the models and rank count explicitly:
+### Step 1 — build the generation requests
 
 ```bash
-./run_pipeline.sh \
-    --model mistralai/Ministral-8B-Instruct-2410 \
-    --judge mistralai/Ministral-8B-Instruct-2410 \
-    --top-logprobs 15 \
-    questions.json out/
+./build_generation_requests.sh questions.json "$MODEL" "$K" > "$OUT/gen_requests.jsonl"
 ```
 
-`run_pipeline.sh --help` lists everything. The knobs:
+One JSON line per question, in the OpenAI batch format, asking for `top_logprobs: $K`.
+Check it before spending GPU time:
 
-| Flag | Environment | Default | What it sets |
-|---|---|---|---|
-| `-m, --model` | `GEN_MODEL` | `mistralai/Ministral-8B-Instruct-2410` | Model that answers the questions |
-| `-j, --judge` | `JUDGE_MODEL` | same as above | Model that grades the answers |
-| `-k, --top-logprobs` | `TOP_LOGPROBS` | `15` | Ranks per token — see below |
-| `-r, --reductions` | `REDUCTIONS` | `epr wepr` | Which calibrations to fit |
-| `-f, --force` | — | off | Redo stages whose output already exists |
-| — | `GEN_TEMPERATURE` | `0.6` | Sampling temperature for the answers |
-| — | `GEN_MAX_TOKENS` | `200` | Answer length cap |
-| — | `JUDGE_TEMPERATURE` | `0` | Sampling temperature for the judge |
-| — | `JUDGE_MAX_TOKENS` | `200` | Judge reply cap |
-| — | `PYTHON` | `python3` | Interpreter that can import `artefactual` |
+```bash
+head -1 "$OUT/gen_requests.jsonl" | jq '{custom_id, model: .body.model, k: .body.top_logprobs}'
+wc -l < "$OUT/gen_requests.jsonl"   # should equal your question count
+```
 
-The generation defaults are the paper's settings; change them and you are measuring
-something else.
+Sampling follows the paper (§4.1.2): non-greedy decoding at `T_samp = 1.0`, `top_p = 1.0`,
+sampling cutoff `K_samp = 50`. Override with `GEN_TEMPERATURE`, `GEN_TOP_P`, `GEN_TOP_K`.
 
-**Stages resume.** The two `vllm run-batch` stages are skipped when their output already
-exists, so an interrupted run picks up where it stopped, and re-fitting with different
-`--reductions` costs no GPU time. `--force` redoes them.
+The 200-token cap is this script's default, not the paper's — the paper only notes that the
+tasks yield short answers. The paper does report that dropping to `T_samp = 0.6` changed
+ROC-AUC by less than 1 point on Falcon-3-10B, so the signal is not an artefact of sampling
+hot.
 
-You end up with, in `out/`:
+### Step 2 — generate the answers *(GPU)*
 
-| File | What it is |
-|---|---|
-| `responses.jsonl` | Generated answers with their top-15 logprobs (`vllm run-batch` output) |
-| `judgments.jsonl` | The judge's verdicts (`vllm run-batch` output) |
-| `{epr,wepr}_weights.json` | The fitted calibrations, in the format `load_weights` reads |
-| `{epr,wepr}_evaluation.json` | Mean ROC-AUC / PR-AUC with 95% intervals |
+```bash
+vllm run-batch -i "$OUT/gen_requests.jsonl" -o "$OUT/responses.jsonl" --model "$MODEL"
+```
 
-To use a fitted calibration:
+This is the expensive step. Confirm every request came back with the right rank width:
+
+```bash
+jq -r 'select(.response != null)
+       | .response.choices[0].logprobs.content[0].top_logprobs | length' "$OUT/responses.jsonl" | sort -u
+```
+
+One number should print, and it must equal `$K`. If it is smaller, the generation ignored
+`top_logprobs` — fix that and rerun, because steps 6 and 7 will refuse the data.
+
+### Step 3 — build the judge requests
+
+```bash
+./build_judge_requests.sh questions.json "$OUT/responses.jsonl" "$JUDGE" > "$OUT/judge_requests.jsonl"
+```
+
+Joins each generated answer back to its gold answer on `custom_id` and renders the paper's
+grading prompt. Generations that failed are dropped, and the count is reported on stderr.
+
+### Step 4 — grade the answers *(GPU)*
+
+```bash
+vllm run-batch -i "$OUT/judge_requests.jsonl" -o "$OUT/judgments.jsonl" --model "$JUDGE"
+```
+
+The judge replies with `{"judgment": true|false, "explanation": "..."}`. `true` means the
+answer was **correct**, so the training label is its negation — 1 marks a hallucination.
+Spot-check a few:
+
+```bash
+jq -r 'select(.response != null) | .response.choices[0].message.content' "$OUT/judgments.jsonl" | head -3
+```
+
+### Step 5 — check the class balance
+
+Before fitting, make sure you have both classes:
+
+```bash
+jq -r 'select(.response != null) | .response.choices[0].message.content' "$OUT/judgments.jsonl" \
+  | grep -c '"judgment": *true'
+```
+
+Compare against your question count. All-correct or all-wrong cannot be fit — go back to
+step 1 with harder or easier questions.
+
+### Step 6 — train the detector
+
+```bash
+uv run ../train_calibration.py \
+    --responses "$OUT/responses.jsonl" \
+    --judgments "$OUT/judgments.jsonl" \
+    --reduction wepr --k "$K" \
+    --output "$OUT/wepr_weights.json"
+```
+
+`uv run` resolves the project environment itself, so there is no activation step and no
+chance of picking up a different install. It logs what it joined and fitted (numbers here
+are illustrative):
+
+```
+joined 400 pairs on custom_id (112 hallucinations)
+intercept: -3.02
+wrote out/wepr_weights.json
+```
+
+Repeat with `--reduction epr` for the other detector. Steps 2 and 4 do not need repeating —
+both are fit from the same generations.
+
+### Step 7 — evaluate it
+
+```bash
+uv run ../evaluate_calibration.py \
+    --responses "$OUT/responses.jsonl" \
+    --judgments "$OUT/judgments.jsonl" \
+    --reduction wepr --k "$K" \
+    --output "$OUT/wepr_evaluation.json"
+```
+
+```
+wepr over 1000 bootstrap repetitions
+   roc_auc: 0.7412  [0.6810, 0.7955]
+    pr_auc: 0.5233  [0.4401, 0.6118]
+```
+
+Those figures are illustrative — they show the shape of the report, not a result to expect.
+The interval is the point: a mean alone cannot say whether a gap between two detectors is
+real. Run it for both reductions and compare.
+
+### Step 8 — use the trained detector
 
 ```python
 from artefactual.scoring import wepr
@@ -107,53 +196,53 @@ detector = wepr("out/wepr_weights.json", k=15)
 detector.predict_proba(response)[:, 1]
 ```
 
-## Or stage by stage
+The file is the same format `load_weights` reads, so it is interchangeable with the shipped
+ones. Score responses generated the same way — same model, and `top_logprobs` at least `k`.
 
-Useful when the GPU box and your workstation are different machines: run steps 2 and 4
-there, the rest anywhere.
+## What the paper reports
 
-```bash
-MODEL=mistralai/Ministral-8B-Instruct-2410
-JUDGE=mistralai/Ministral-8B-Instruct-2410
+ROC-AUC at `K = 15`, from Table 1 of the paper. Higher is better; **bold** is the best of
+the four methods on that row.
 
-# 1. build the generation requests
-./build_generation_requests.sh questions.json "$MODEL" 15 > out/gen_requests.jsonl
+### TriviaQA — hallucination detection
 
-# 2. generate  (LLM)
-vllm run-batch -i out/gen_requests.jsonl -o out/responses.jsonl --model "$MODEL"
+| Model | SelfCheckGPT | EPR | HalluDetect | WEPR |
+|---|---|---|---|---|
+| `Mistral-Small-3.1-24B` | 79.0 | 74.6 | 78.7 | **82.0** |
+| `Falcon-3-10B` | 70.1 | 75.4 | 79.0 | **84.1** |
+| `Phi-4` (14.7B) | 71.4 | 78.2 | 83.8 | **85.4** |
+| `Ministral-8B-2410` | 81.1 | 81.4 | **86.1** | 85.8 |
 
-# 3. build the judge requests -- reads the answers from step 2
-./build_judge_requests.sh questions.json out/responses.jsonl "$JUDGE" > out/judge_requests.jsonl
+### WebQuestions — generalisation (detectors trained on TriviaQA)
 
-# 4. rate  (LLM)
-vllm run-batch -i out/judge_requests.jsonl -o out/judgments.jsonl --model "$JUDGE"
+| Model | SelfCheckGPT | EPR | HalluDetect | WEPR |
+|---|---|---|---|---|
+| `Mistral-Small-3.1-24B` | 59.3 | 62.5 | 62.8 | **64.8** |
+| `Falcon-3-10B` | 65.8 | 68.2 | 69.3 | **73.2** |
+| `Phi-4` (14.7B) | 65.0 | 65.2 | 66.3 | **66.6** |
+| `Ministral-8B-2410` | 66.2 | 65.4 | 71.6 | **72.6** |
 
-# 5. fit -- reads steps 2 and 4
-python ../train_calibration.py --responses out/responses.jsonl --judgments out/judgments.jsonl \
-    --reduction wepr --k 15 --output out/wepr_weights.json
+Two things worth reading off these: **WEPR beats EPR on every row**, which is why `wepr` is
+the default, and the absolute numbers drop by 10-20 points when the detector meets a dataset
+it was not trained on. Train on data that resembles your traffic.
 
-# 6. evaluate -- reads steps 2 and 4
-python ../evaluate_calibration.py --responses out/responses.jsonl --judgments out/judgments.jsonl \
-    --reduction wepr --k 15 --output out/wepr_evaluation.json
-```
-
-Repeat steps 5 and 6 with `--reduction epr` for the EPR row. Steps 2 and 4 do not need
-repeating — both detectors are fit from the same generations.
+SelfCheckGPT needs 10 extra generations per answer for those numbers; EPR and WEPR need
+none. The paper measures roughly 80 ± 20 µs per score against at least 10 s for
+SelfCheckGPT.
 
 ## Use k = 15
 
-`k` appears in three places and **must be the same number in all of them**: the third
-argument to `build_generation_requests.sh` (it becomes `top_logprobs` in the request), and
-`--k` on both Python scripts. Every shipped calibration uses 15. `run_pipeline.sh` threads
-its `--top-logprobs` through all three, so driving the pipeline end to end keeps them in
-step — the stage-by-stage route below is where they can drift apart.
+`k` is the number of ranks per token, and it appears in three places that **must agree**:
+`build_generation_requests.sh` (step 1, where it becomes `top_logprobs`), and `--k` on both
+Python scripts (steps 6 and 7). Every shipped detector was trained at 15. Setting `K` once at the
+top of the tutorial is what keeps them in step.
 
 It cannot be inferred, because it is part of the metric: EPR averages the entropy
 contribution over the top `k` ranks, so changing `k` rescales the score, and WEPR has one
 coefficient per rank.
 
-Generating with a smaller `top_logprobs` than you score at fails loudly, for both
-reductions, as soon as the responses are read:
+Generating with a smaller `top_logprobs` than you fit at fails loudly, for both reductions,
+as soon as the responses are read:
 
 ```
 ValueError: Response 0 carries 5 rank(s) per token but k=15 was requested. The missing
@@ -162,17 +251,16 @@ understate the entropy by a factor of 5/15. Regenerate with top_logprobs=15, or 
 k=5 with a calibration fit at that rank count.
 ```
 
-Generating *wider* is harmless — the surplus ranks are dropped — so if in doubt, request
-more. Supplying WEPR weights whose rank count disagrees with `--k` is caught separately,
-by their coefficient vector:
+Generating *wider* is harmless — surplus ranks are dropped — so when in doubt, request more.
+Supplying WEPR weights whose rank count disagrees with `--k` is caught separately, by their
+coefficient vector:
 
 ```
 ValueError: Weights cover 15 rank(s) but k=20 was requested. WEPR coefficients are fixed
 at the rank count used during calibration; pass k=15, or supply weights calibrated at k=20.
 ```
 
-If you generated at a narrower `k`, regenerate — do not reuse a calibration fit at another.
-
+If you generated at a narrower `k`, regenerate — do not reuse a detector trained at another.
 ## If something looks wrong
 
 **`Response N carries M rank(s) per token but k=15 was requested`.** The generation batch
@@ -221,8 +309,7 @@ few of one class, for any bootstrap fold to hold both. Label more data.
  "error": null}
 ```
 
-`response` is the ChatCompletion itself — it is *not* nested under `response.body`. Steps
-3, 5 and 6 consume this directly; there is no conversion step.
+`response` is the ChatCompletion itself — it is *not* nested under `response.body`. Steps 3, 6 and 7 consume this directly; there is no conversion step.
 
 ## Prompts
 
@@ -239,7 +326,7 @@ negation: **1 marks a hallucination**.
 
 ## Evaluation method
 
-`evaluate_calibration.py` reproduces the paper's out-of-bag bootstrap: resample the
+`evaluate_calibration.py` reproduces the paper's bootstrap: resample the
 labelled set with replacement, fit on the sample, score whatever fell out of it, repeat
 1000 times (`--repetitions`). It reports the mean the paper quotes plus a 95% percentile
 interval — the mean alone cannot say whether a gap between two detectors is real.
@@ -250,5 +337,6 @@ examples or only one class are skipped and counted, because ROC-AUC is undefined
 
 ## Not reproduced
 
-The SelfCheckGPT and Halludetect baselines are not part of the EPR/WEPR method and are not
-included, so the paper's baseline comparison columns cannot be rebuilt from this repo.
+The SelfCheckGPT and HalluDetect baselines the paper compares against are not part of the
+EPR/WEPR method and are not included here, so the paper's two comparison columns cannot be
+rebuilt from this repo.
