@@ -50,7 +50,7 @@ class WEPR(LogProbUncertaintyDetector):
     def _compute_wepr_stats(
         self,
         parsed_logprobs: list[dict[int, list[float]]],
-    ) -> list[tuple[NDArray[np.floating], NDArray[np.floating] | None]]:
+    ) -> list[tuple[NDArray, NDArray | None]]:
         """
         Internal implementation to compute WEPR intermediate statistics.
 
@@ -66,7 +66,7 @@ class WEPR(LogProbUncertaintyDetector):
             return []
 
         completions = [Completion(token_logprobs=data) for data in parsed_logprobs]
-        stats: list[tuple[NDArray[np.floating], NDArray[np.floating] | None]] = []
+        stats: list[tuple[NDArray, NDArray | None]] = []
 
         for completion in completions:
             token_logprobs_dict = completion.token_logprobs
@@ -135,7 +135,7 @@ class WEPR(LogProbUncertaintyDetector):
         return seq_scores
 
     @beartype
-    def compute_token_scores(self, parsed_logprobs: list[dict[int, list[float]]]) -> list[NDArray[np.floating]]:
+    def compute_token_scores(self, parsed_logprobs: list[dict[int, list[float]]]) -> list[NDArray]:
         """
         Compute token-level WEPR scores from parsed logprobs.
         You can parse raw model outputs using the `parse_top_logprobs` method from `artefactual.preprocessing`.
@@ -147,7 +147,7 @@ class WEPR(LogProbUncertaintyDetector):
             List of token-level WEPR scores (numpy arrays).
         """
         stats = self._compute_wepr_stats(parsed_logprobs)
-        token_scores: list[NDArray[np.floating]] = []
+        token_scores: list[NDArray] = []
 
         for token_wepr, _ in stats:
             # Apply sigmoid to token scores for consistency
