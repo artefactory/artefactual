@@ -103,7 +103,7 @@ This is the expensive step. Confirm every request came back with the right rank 
 
 ```bash
 jq -r 'select(.response != null)
-       | .response.choices[0].logprobs.content[0].top_logprobs | length' "$OUT/responses.jsonl" | sort -u
+       | (.response.body // .response).choices[0].logprobs.content[0].top_logprobs | length' "$OUT/responses.jsonl" | sort -u
 ```
 
 One number should print, and it must equal `$K`. If it is smaller, the generation ignored
@@ -129,7 +129,7 @@ answer was **correct**, so the training label is its negation — 1 marks a hall
 Spot-check a few:
 
 ```bash
-jq -r 'select(.response != null) | .response.choices[0].message.content' "$OUT/judgments.jsonl" | head -3
+jq -r 'select(.response != null) | (.response.body // .response).choices[0].message.content' "$OUT/judgments.jsonl" | head -3
 ```
 
 ### Step 5 — check the class balance
@@ -137,7 +137,7 @@ jq -r 'select(.response != null) | .response.choices[0].message.content' "$OUT/j
 Before fitting, make sure you have both classes:
 
 ```bash
-jq -r 'select(.response != null) | .response.choices[0].message.content' "$OUT/judgments.jsonl" \
+jq -r 'select(.response != null) | (.response.body // .response).choices[0].message.content' "$OUT/judgments.jsonl" \
   | grep -c '"judgment": *true'
 ```
 
@@ -269,7 +269,7 @@ step 1 and step 5 were run with different `k`. Check what the responses actually
 
 ```bash
 jq -r 'select(.response != null)
-       | .response.choices[0].logprobs.content[0].top_logprobs | length' out/responses.jsonl | sort -u
+       | (.response.body // .response).choices[0].logprobs.content[0].top_logprobs | length' out/responses.jsonl | sort -u
 ```
 
 One number should come back, and it must be at least your `--k`. If it is smaller, rerun
@@ -288,7 +288,7 @@ jq -c 'select(.error != null) | {custom_id, error}' out/responses.jsonl
 few and, if the model is simply chatty, raise `JUDGE_MAX_TOKENS`:
 
 ```bash
-jq -r 'select(.response != null) | .response.choices[0].message.content' out/judgments.jsonl | head
+jq -r 'select(.response != null) | (.response.body // .response).choices[0].message.content' out/judgments.jsonl | head
 ```
 
 **`No custom_id is present in both files`.** The two files came from different batches.
@@ -305,11 +305,18 @@ few of one class, for any bootstrap fold to hold both. Label more data.
 
 ```json
 {"id": "vllm-383d...", "custom_id": "q-1",
- "response": {"choices": [{"message": {...}, "logprobs": {"content": [...]}}]},
+ "response": {"status_code": 200, "request_id": "vllm-batch-be0f...",
+              "body": {"choices": [{"message": {...}, "logprobs": {"content": [...]}}]}},
  "error": null}
 ```
 
-`response` is the ChatCompletion itself — it is *not* nested under `response.body`. Steps 3, 6 and 7 consume this directly; there is no conversion step.
+This is the OpenAI Batch output spec: `response` is an envelope, and the ChatCompletion is
+its `body`. Steps 3, 6 and 7 unwrap it themselves, so there is no conversion step.
+
+Older vllm put the completion directly in `response`, with no envelope. The scripts accept
+either, so batch files produced before the change still read — but note the difference when
+inspecting a file by hand, because `jq '.response.choices[0]'` silently yields `null` on a
+current file rather than failing.
 
 ## Prompts
 
