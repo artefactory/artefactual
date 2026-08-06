@@ -13,7 +13,7 @@
 # Environment:
 #   JUDGE_TEMPERATURE  sampling temperature (default 0, grading should be deterministic)
 #   JUDGE_MAX_TOKENS   reply cap            (default 200; raise it if verdicts come back
-#                      truncated and train_calibration.py reports unparsed judgments)
+#                      truncated and train_detector.py reports unparsed judgments)
 #
 # Joins the generations back to their gold answers on `custom_id`, which
 # `vllm run-batch` carries through from the generation request. Rows where

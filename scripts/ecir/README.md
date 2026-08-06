@@ -147,7 +147,7 @@ step 1 with harder or easier questions.
 ### Step 6 — train the detector
 
 ```bash
-uv run ../train_calibration.py \
+uv run ../train_detector.py \
     --responses "$OUT/responses.jsonl" \
     --judgments "$OUT/judgments.jsonl" \
     --reduction wepr --k "$K" \
@@ -170,7 +170,7 @@ both are fit from the same generations.
 ### Step 7 — evaluate it
 
 ```bash
-uv run ../evaluate_calibration.py \
+uv run ../evaluate_detector.py \
     --responses "$OUT/responses.jsonl" \
     --judgments "$OUT/judgments.jsonl" \
     --reduction wepr --k "$K" \
@@ -333,7 +333,7 @@ negation: **1 marks a hallucination**.
 
 ## Evaluation method
 
-`evaluate_calibration.py` reproduces the paper's bootstrap: resample the
+`evaluate_detector.py` reproduces the paper's bootstrap: resample the
 labelled set with replacement, fit on the sample, score whatever fell out of it, repeat
 1000 times (`--repetitions`). It reports the mean the paper quotes plus a 95% percentile
 interval — the mean alone cannot say whether a gap between two detectors is real.
