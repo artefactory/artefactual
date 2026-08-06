@@ -1,6 +1,6 @@
 [project]
 name = "artefactual"
-version = "2026.07.0"
+dynamic = ["version"]
 description = "Hallucination detection for black-box LLMs from token log-probabilities"
 readme = "README.md"
 authors = [
@@ -53,8 +53,19 @@ docs = [
 ]
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
+
+# The version comes from the most recent tag reachable from HEAD, so a build carries the
+# version of the release it was cut from and no committed file restates it.
+[tool.hatch.version]
+source = "vcs"
+
+# Build output, generated from the tag and never committed, holding the version as a
+# literal for `__init__.py` to import. Written to its own module because the hook
+# overwrites whatever file it targets.
+[tool.hatch.build.hooks.vcs]
+version-file = "src/artefactual/_version.py"
 
 [dependency-groups]
 dev = [
@@ -251,8 +262,11 @@ exclude = ["tests/", "scripts", "examples"]
 [tool.ty.rules]
 unresolved-import = "ignore"
 
+# Computes the next version and creates its tag; it writes no files and makes no commit,
+# because the tag is what the version is read from. `current_version` is absent so the
+# current value is discovered from the most recent tag reachable from HEAD, which keeps
+# the two ends of a release -- what is tagged and what is built -- reading the same source.
 [tool.bumpversion]
-current_version = "2026.07.0"
 parse = """(?x)
     (?P<release>
         (?:[1-9][0-9]{3})\\.     # YYYY.
@@ -261,7 +275,7 @@ parse = """(?x)
     \\.(?P<patch>\\d+)           # .patch
 """
 serialize = ["{release}.{patch}"]
-commit = true
+commit = false
 tag = true
 tag_name = "v{new_version}"
 
@@ -270,13 +284,3 @@ calver_format = "{YYYY}.{0M}"
 
 [tool.bumpversion.parts.patch]
 first_value = "0"
-
-[[tool.bumpversion.files]]
-filename = "pyproject.toml"
-search = 'version = "{current_version}"'
-replace = 'version = "{new_version}"'
-
-[[tool.bumpversion.files]]
-filename = "src/artefactual/__init__.py"
-search = '__version__ = "{current_version}"'
-replace = '__version__ = "{new_version}"'

@@ -1,3 +1,5 @@
 """Artefactual: hallucination detection for black-box LLMs, as scikit-learn estimators."""
 
-__version__ = "2026.07.0"
+from artefactual._version import __version__
+
+__all__ = ["__version__"]

@@ -208,3 +208,6 @@ _build
 # Quarto / Reveal.js slide output, staged for Sphinx's html_extra_path
 docs/_extra/
 .quarto/
+
+# Build output: the hatch-vcs hook writes the version here from the git tag.
+src/artefactual/_version.py
