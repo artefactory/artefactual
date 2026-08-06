@@ -119,7 +119,9 @@ exclude_patterns = [
     "presentations/**/*.ipynb",
 ]
 
-# Rendered decks, copied verbatim into the site root. Populated by
-# `quarto render docs/presentations`; a plain Sphinx build without Quarto still
-# succeeds, it just warns that the directory is missing.
-html_extra_path = ["_extra"]
+# Rendered decks, copied verbatim into the site root, produced by
+# `quarto render docs/presentations`. Listed only when that directory is present: a missing
+# extra path is a warning, and the build runs with -W, so naming it unconditionally would
+# fail any build that skipped Quarto. An empty directory warns about nothing either way,
+# so CI asserts the decks reached the site rather than relying on this entry.
+html_extra_path = ["_extra"] if (Path(__file__).parent / "_extra").is_dir() else []
