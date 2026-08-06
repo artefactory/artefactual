@@ -1,252 +1,118 @@
 """Format-specific extractors for the two OpenAI completion shapes.
 
 `chat.completions` nests one sequence per `choice`; `responses` nests one per `output`
-item. Both are read through duck-typed accessors so a raw mapping and a typed SDK object
-work identically, which is what lets a JSON fixture stand in for a live client.
+item. Both are handed a model from `response_models` that `parser` has already validated,
+so fields are read by attribute: the "mapping or object?" question the payload arrives
+with is settled at that boundary, and a raw mapping never reaches this module.
 
 Dispatch between them lives in `parser`; nothing here is called directly by the pipeline.
 """
 
-from typing import Any
-
 import numpy as np
 
+from artefactual.preprocessing.response_models import (
+    ChatCompletion,
+    ResponsesPayload,
+    TokenLogprobs,
+)
 
-def _get_val(obj: Any, key: str, default: Any = None) -> Any:
-    """Read a value from either an object attribute or a mapping key.
 
-    Lets the extractors accept a typed SDK object and a plain `dict` through one path.
+def _ranks(token: TokenLogprobs) -> list[float]:
+    """The token's top-k logprobs, highest first; empty if the position carried none.
+
+    Sorted here rather than left to the transformer because `LogProbParser` truncates to
+    `k` ranks, and truncating an unordered list would keep the wrong ones.
+    """
+    return sorted((rank.logprob for rank in token.top_logprobs if rank.logprob is not None), reverse=True)
+
+
+def process_openai_chat_completion(response: ChatCompletion) -> list[dict[int, list[float]]]:
+    """Extract per-token top logprobs from a chat completion, one dict per choice.
 
     Args:
-        obj: Object or mapping to read from.
-        key: Attribute name or mapping key.
-        default: Returned when neither is present.
+        response: A validated `ChatCompletion`.
 
     Returns:
-        The value, or `default`.
+        One dict per sampled sequence, mapping token position to that token's ranks.
+        Positions whose `top_logprobs` was empty are omitted.
     """
-    if hasattr(obj, key):
-        return getattr(obj, key)
-    if isinstance(obj, dict):
-        return obj.get(key, default)
-    return default
+    sequences = []
+    for choice in response.choices:
+        sequence: dict[int, list[float]] = {}
+        content = choice.logprobs.content if choice.logprobs is not None else []
+        for token_index, token in enumerate(content):
+            ranks = _ranks(token)
+            if ranks:
+                sequence[token_index] = ranks
+        sequences.append(sequence)
+    return sequences
 
 
-def _extract_logprobs_from_token(token_data: Any) -> list[float]:
-    """
-    Extracts log probabilities from a single token's data structure.
+def process_openai_responses_api(response: ResponsesPayload) -> list[dict[int, list[float]]]:
+    """Extract per-token top logprobs from a Responses payload, one dict per output item.
+
+    Structure: `response.output -> [item] -> item.content -> [part] -> part.logprobs`.
 
     Args:
-        token_data (Any): The data structure containing token information, expected to have 'top_logprobs'.
+        response: A validated `ResponsesPayload`.
 
     Returns:
-        list[float]: A list of log probability values extracted from the token data.
+        One dict per sampled sequence, mapping token position to that token's ranks.
+        Positions whose `top_logprobs` was empty are omitted.
     """
-    top_logprobs = _get_val(token_data, "top_logprobs", [])
-
-    if not top_logprobs:
-        return []
-
-    probs = []
-    for item in top_logprobs:
-        val = _get_val(item, "logprob")
-        if val is not None:
-            probs.append(float(val))
-    return sorted(probs, reverse=True)  # Sort in descending order : highest logprob first
-
-
-def _process_single_choice(choice: Any) -> dict[int, list[float]]:
-    """
-    Processes log probabilities for a single choice object from the API response.
-
-    Args:
-        choice (Any): The choice object containing log probability information.
-
-    Returns:
-        dict[int, list[float]]: A dictionary mapping token indices to lists of log probabilities.
-    """
-    seq = {}
-
-    logprobs_obj = _get_val(choice, "logprobs")
-    if not logprobs_obj:
-        return seq
-
-    content_logprobs = _get_val(logprobs_obj, "content", [])
-    if not content_logprobs:
-        return seq
-
-    for token_idx, token_data in enumerate(content_logprobs):
-        probs = _extract_logprobs_from_token(token_data)
-        if probs:
-            seq[token_idx] = probs
-
-    return seq
-
-
-def process_openai_chat_completion(response: Any, iterations: int) -> list[dict[int, list[float]]]:
-    """
-    Processes top log probabilities from OpenAI Chat Completion (classic 'choices' format).
-
-    Args:
-        response (Any): The response object or dictionary from OpenAI API (ChatCompletion).
-        iterations (int): The number of iterations (choices) to process.
-
-    Returns:
-        list[dict[int, list[float]]]: A list of dictionaries, where each dictionary maps token indices to lists of
-        log probabilities for a sequence.
-    """
-    choices = _get_val(response, "choices", [])
-    if not choices:
-        return []
-
-    count = min(iterations, len(choices))
-    all_sequences = []
-
-    for i in range(count):
-        seq_data = _process_single_choice(choices[i])
-        all_sequences.append(seq_data)
-
-    return all_sequences
-
-
-def is_openai_responses_api(outputs: Any) -> bool:
-    """
-    Detects if the output follows the signature of the new OpenAI Responses API.
-
-    Args:
-        outputs (Any): The output object or dictionary to inspect.
-
-    Returns:
-        bool: True if the output matches the OpenAI Responses API signature, False otherwise.
-    """
-    if hasattr(outputs, "object") and outputs.object == "response":
-        return True
-    if isinstance(outputs, dict) and outputs.get("object") == "response":
-        return True
-    return hasattr(outputs, "output") or (isinstance(outputs, dict) and "output" in outputs)
-
-
-def process_openai_responses_api(response: Any) -> list[dict[int, list[float]]]:
-    """
-    Parses the response from the 'client.responses.create' API to extract the top log probabilities.
-
-    Structure expected: response.output -> [item] -> item.content -> [part] -> part.logprobs
-
-    Args:
-        response (Any): The response object from the OpenAI Responses API.
-
-    Returns:
-        list[dict[int, list[float]]]: A list of dictionaries, where each dictionary maps token indices to lists of log
-        probabilities for a sequence.
-    """
-    extracted_batch = []
-    output_list = _get_val(response, "output", [])
-
-    for item in output_list:
-        seq_logprobs_map: dict[int, list[float]] = {}
-        content_list = _get_val(item, "content", [])
-
+    batch = []
+    for item in response.output:
+        sequence: dict[int, list[float]] = {}
         # The index is the token's position in the generated sequence, so it advances for
         # every token -- including one whose top_logprobs came back empty. Skipping the
         # increment there would shift every later token onto the wrong word.
         token_index = 0
-        for content_part in content_list:
-            tokens_data = _get_val(content_part, "logprobs")
-
-            if tokens_data:
-                for token_entry in tokens_data:
-                    logprobs = _parse_token_entry(token_entry)
-                    if logprobs:
-                        seq_logprobs_map[token_index] = logprobs
-                    token_index += 1
-
-        extracted_batch.append(seq_logprobs_map)
-
-    return extracted_batch
+        for part in item.content:
+            for token in part.logprobs:
+                # Unlike the chat format, a Responses token may carry only the sampled
+                # logprob. Falling back to it keeps the position from being dropped.
+                ranks = _ranks(token) if token.top_logprobs else _sampled_only(token)
+                if ranks:
+                    sequence[token_index] = ranks
+                token_index += 1
+        batch.append(sequence)
+    return batch
 
 
-def _parse_token_entry(token_entry: Any) -> list[float]:
-    """
-    Parses a single token entry from an OpenAI response to extract log probabilities.
-
-    Args:
-        token_entry (Any): The token entry object containing log probability data.
-
-    Returns:
-        list[float]: A list of log probabilities associated with the token.
-    """
-    top_k = _get_val(token_entry, "top_logprobs", [])
-
-    if top_k:
-        logprobs = []
-        for k in top_k:
-            k_logprob = _get_val(k, "logprob")
-            if k_logprob is not None:
-                logprobs.append(float(k_logprob))
-        return sorted(logprobs, reverse=True)  # Sort in descending order : highest logprob first
-    m_logprob = _get_val(token_entry, "logprob")
-    return [float(m_logprob)] if m_logprob is not None else []
+def _sampled_only(token: TokenLogprobs) -> list[float]:
+    """The sampled token's own logprob as a one-element rank list, or empty if absent."""
+    return [token.logprob] if token.logprob is not None else []
 
 
-def sampled_tokens_logprobs_responses_api(response: Any) -> list[np.ndarray]:
-    """
-    Retrieves the log probabilities of the sampled tokens from a response following the OpenAI Responses API format.
-
-    Iterates over all output items and returns a list of 1D arrays (one per output item),
-    one array per sequence.
+def sampled_tokens_logprobs_responses_api(response: ResponsesPayload) -> list[np.ndarray]:
+    """Logprobs of the sampled tokens only, one 1-D array per output item.
 
     Args:
-        response (Any): The response object from the OpenAI Responses API.
+        response: A validated `ResponsesPayload`.
 
     Returns:
-        list[np.ndarray]: A list of 1D numpy arrays, each containing the log probabilities
-                       of the sampled tokens for one output item.
+        One array per sampled sequence, holding the sampled token logprobs in order.
     """
-    output_list = _get_val(response, "output", [])
-    all_sampled: list[np.ndarray] = []
-
-    for item in output_list:
-        content_list = _get_val(item, "content", [])
-        item_probs: list[float] = []
-        for content_part in content_list:
-            logprobs_data = _get_val(content_part, "logprobs")
-            if not logprobs_data:
-                continue
-            for token_entry in logprobs_data:
-                logprob = _get_val(token_entry, "logprob")
-                if logprob is not None:
-                    item_probs.append(float(logprob))
-        all_sampled.append(np.array(item_probs))
-
-    return all_sampled
+    return [
+        np.array([token.logprob for part in item.content for token in part.logprobs if token.logprob is not None])
+        for item in response.output
+    ]
 
 
-def sampled_tokens_logprobs_chat_completion_api(response: Any) -> list[np.ndarray]:
-    """
-    Retrieves the log probabilities of the sampled tokens from a response following the OpenAI Chat Completion format.
-
-    Iterates over all choices and returns a list of 1D arrays (one per choice),
-    one array per sequence.
+def sampled_tokens_logprobs_chat_completion_api(response: ChatCompletion) -> list[np.ndarray]:
+    """Logprobs of the sampled tokens only, one 1-D array per choice.
 
     Args:
-        response (Any): The response object from the OpenAI Chat Completion API.
+        response: A validated `ChatCompletion`.
 
     Returns:
-        list[np.ndarray]: A list of 1D numpy arrays, each containing the log probabilities
-                       of the sampled tokens for one choice.
+        One array per sampled sequence, holding the sampled token logprobs in order.
     """
-    choices = _get_val(response, "choices", [])
-    all_sampled: list[np.ndarray] = []
-
-    for choice in choices:
-        logprobs_obj = _get_val(choice, "logprobs")
-        choice_probs: list[float] = []
-        if logprobs_obj:
-            token_logprobs = _get_val(logprobs_obj, "content", [])
-            for token_data in token_logprobs:
-                logprob = _get_val(token_data, "logprob")
-                if logprob is not None:
-                    choice_probs.append(float(logprob))
-        all_sampled.append(np.array(choice_probs))
-
-    return all_sampled
+    return [
+        np.array([
+            token.logprob
+            for token in (choice.logprobs.content if choice.logprobs is not None else [])
+            if token.logprob is not None
+        ])
+        for choice in response.choices
+    ]

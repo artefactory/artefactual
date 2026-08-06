@@ -1,10 +1,11 @@
-"""Parsing of completion responses into the logprob arrays the scorers consume."""
+"""Parsing of completion responses into the logprob arrays the scorers consume.
 
-from artefactual.preprocessing.openai_parser import (
-    is_openai_responses_api,
-    process_openai_chat_completion,
-    process_openai_responses_api,
-)
+`LogProbParser` is the pipeline step; `parse_top_logprobs` and
+`parse_sampled_token_logprobs` are its functional form. The per-format extractors in
+`openai_parser` are implementation detail — they take validated models, not raw payloads,
+and `parse_top_logprobs` is the supported way in.
+"""
+
 from artefactual.preprocessing.parser import (
     LogProbParser,
     parse_sampled_token_logprobs,
@@ -13,9 +14,6 @@ from artefactual.preprocessing.parser import (
 
 __all__ = [
     "LogProbParser",
-    "is_openai_responses_api",
     "parse_sampled_token_logprobs",
     "parse_top_logprobs",
-    "process_openai_chat_completion",
-    "process_openai_responses_api",
 ]

@@ -34,7 +34,7 @@ def _top_logprobs(response: Any) -> list[dict[int, list[float]]]:
 
 @_top_logprobs.register
 def _(response: ChatCompletion) -> list[dict[int, list[float]]]:
-    return process_openai_chat_completion(response, iterations=len(response.choices))
+    return process_openai_chat_completion(response)
 
 
 @_top_logprobs.register
