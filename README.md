@@ -6,56 +6,58 @@
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org)
 [![Paper](https://img.shields.io/badge/arXiv-2509.04492-b31b1b.svg)](https://arxiv.org/abs/2509.04492)
 
-Artefactual scores how likely an LLM response is to be a hallucination, using only the
-token log-probabilities the model already returns. No second model, no reference answer,
-no access to weights — just the `logprobs` field of a completion response.
+Artefactual scores how likely an LLM response is to be a hallucination. It reads a
+signal the model already emits, so detection costs no extra generations, no second model,
+no reference answer and no access to weights — just the `logprobs` field of a completion
+response you were going to make anyway.
 
 Detectors are `sklearn.pipeline.Pipeline` subclasses, so they drop straight into the
 tooling you already use.
 
 ```python
-from artefactual.scoring import epr
+from artefactual.scoring import wepr
 
-detector = epr("mistralai/Ministral-8B-Instruct-2410")
+detector = wepr("mistralai/Ministral-8B-Instruct-2410")
 detector.predict_proba(response)[:, 1]      # P(hallucination) per sequence
 detector.predict_token_proba(response)      # ...and per token
 ```
 
 ---
 
+## Features
+
+| | |
+|---|---|
+| **Score a response** | `predict_proba(response)` → P(hallucination), from the response you already generated |
+| **Locate the problem** | `predict_token_proba(response)` → a score per token, for highlighting the spans that drove it |
+| **Score in batches** | Pass a list; sequences are parsed, padded and scored together |
+| **Bring your own model** | Pre-fit calibrations for four model families, or fit one on your own labelled data |
+| **Drop into scikit-learn** | Detectors are `Pipeline` subclasses: `clone`, `get_params`, `GridSearchCV` all work |
+| **Read either OpenAI format** | Chat Completions and Responses, as SDK objects or plain dicts |
+| **Watch production traffic** | A Langfuse adapter scores traces in place and writes the score back |
+
+No extra generations, no second model, no GPU, and no dependency heavier than
+`scikit-learn`.
+
 ## Why
 
-Sampling-based detectors (SelfCheckGPT and friends) need *n* extra generations per answer.
-LLM-as-judge needs a second, usually larger, model. Both cost latency and money at
-inference time.
+Detecting hallucinations usually means paying for a second opinion. Sampling-based
+detectors (SelfCheckGPT and friends) need *n* extra generations per answer. LLM-as-judge
+needs a second, usually larger, model. Both add latency and cost to every request you want
+to check.
 
-Artefactual reads a signal that is already in the response. When a model is about to
-hallucinate, its next-token distribution flattens — the entropy of the top-k candidates
-rises. Aggregating those per-token entropy contributions gives a score, and a small
-logistic regression, calibrated once per model, turns that score into a probability.
+Artefactual takes the measurement from the response you already have. A model's own
+confidence is informative about whether it is making something up, and that confidence is
+already in the `logprobs` — a calibration per model turns it into a probability.
 
-The result is a detector that costs one dot product per token and requires exactly one
-generation.
+| | Extra generations | Extra model | Cost per check |
+|---|---|---|---|
+| Sampling-based | *n* | — | *n* × generation |
+| LLM-as-judge | — | yes | one judge call |
+| **Artefactual** | **none** | **none** | **a dot product per token** |
 
-## Limitations
-
-Worth knowing before you adopt it:
-
-- **You need `logprobs` and `top_logprobs`.** Providers that do not expose them cannot be
-  scored at all. `top_logprobs` must be at least the calibrated `k` (15), which also rules
-  out providers capping it lower.
-- **Calibrations are model-specific.** The coefficients map entropy to probability for one
-  model's distribution. Four are shipped (see [Supported models](#supported-models));
-  scoring a different model needs [your own calibration](#calibrating-on-your-own-data),
-  which needs labelled data.
-- **The probability is only as good as its calibration.** Rankings transfer more readily
-  than absolute values — if you only need to triage the riskiest answers, the raw ordering
-  is the robust part.
-- **It detects distributional uncertainty, not falsehood.** A model that is confidently
-  wrong — a memorised misconception, a poisoned fine-tune — has a peaked distribution and
-  scores low. This is a complement to retrieval grounding or a judge, not a replacement.
-- **Scoring is per sequence.** There is no cross-response consistency check, which is the
-  signal sampling-based detectors buy with their extra generations.
+Scoring is fast enough to run on every response rather than a sample of them, which is
+what makes it usable as a filter rather than an audit.
 
 ## Installation
 
@@ -87,7 +89,7 @@ the pipeline parses it for you.
 ```python
 from openai import OpenAI
 
-from artefactual.scoring import epr
+from artefactual.scoring import wepr
 
 client = OpenAI()
 response = client.chat.completions.create(
@@ -97,7 +99,7 @@ response = client.chat.completions.create(
     top_logprobs=15,  # required: at least the rank count the weights were calibrated at
 )
 
-detector = epr("mistralai/Ministral-8B-Instruct-2410")
+detector = wepr("mistralai/Ministral-8B-Instruct-2410")
 scores = detector.predict_proba(response)
 
 print(f"P(hallucination) = {scores[0, 1]:.2f}")
@@ -107,7 +109,28 @@ print(f"P(hallucination) = {scores[0, 1]:.2f}")
 column 0 is P(supported), column 1 is P(hallucinated). One row per generated sequence, so
 a request with `n=4` returns four rows.
 
-### Token-level scores
+## Usage
+
+Everything below assumes a `response` generated with `logprobs=True` and
+`top_logprobs=15`, as in the quick start.
+
+### Choosing a detector
+
+**Use `wepr` unless you have a reason not to.** Both detectors are calibrated the same
+way, on the same labelled data, so picking `epr` saves no setup work — only parameters.
+Given that the training cost is identical, take the stronger detector.
+
+| | `wepr(...)` — default | `epr(...)` |
+|---|---|---|
+| Features | 2 × `k` | 1 |
+| Reads | Each rank separately | Overall confidence per token |
+| Needs calibrating | Yes | Yes |
+| Choose it when | Almost always | Too few labelled examples to fit `2k` coefficients |
+
+Both accept the same arguments and return the same thing, so switching is a one-word
+change.
+
+### Score every token
 
 ```python
 token_scores = detector.predict_token_proba(response)  # (n_sequences, max_tokens, 1)
@@ -125,53 +148,53 @@ print(first[~np.isnan(first)])
 
 This is what you want for highlighting the specific spans that drove a low score.
 
-## How it works
+### Score a batch
 
-Each detector is a three-step pipeline:
-
-```
-LogProbParser  ->  EntropyTransformer  ->  PretrainedLogisticRegression
-  response           entropy features         calibrated probability
-```
-
-**1. Parse.** `LogProbParser` normalises OpenAI Chat Completions and Responses API payloads
-— as SDK objects or plain dicts, singly or batched — into a dense
-`(n_sequences, n_tokens, k)` array of log-probabilities, `NaN`-padded.
-
-**2. Entropy.** For each token *j* and rank *k*, the entropy contribution is
-`s_kj = -p_kj * log(p_kj)`. `EntropyTransformer` reduces those contributions to features.
-Two reductions ship:
-
-| Reduction | Feature vector | Intuition |
-|---|---|---|
-| `epr` | `mean_j( mean_k s_kj )` — 1 feature | Mean entropy contribution per rank, per token |
-| `wepr` | `mean_j(s_kj)` ‖ `max_j(s_kj)` — 2k features | Per-rank mean and peak, weighted separately |
-
-EPR treats every rank alike; the calibrated coefficient is named `mean_entropy` because
-the feature is a *mean* over the `k` ranks, not a sum. Since the denominator is `k` rather
-than however many ranks a response happens to carry, `k` is part of the feature's
-definition rather than a display detail — which is why responses narrower than `k` are
-rejected instead of padded.
-
-WEPR learns a weight per rank, which matters because `-p*log(p)` peaks at `p = 1/e` —
-mid-ranked candidates are more informative than either the near-certain top rank or the
-negligible tail.
-
-**3. Calibrate.** A `LogisticRegression` pre-loaded with per-model coefficients maps the
-features to a probability. Because it is a real sklearn classifier, `predict`,
-`predict_proba` and `decision_function` all work as expected.
-
-You can pass any callable as a custom reduction:
+Pass a list to score many responses in one call. They are parsed, padded to a common
+length and scored together, one output row per generated sequence in input order:
 
 ```python
-import numpy as np
-
-from artefactual.scoring import EntropyTransformer
-
-EntropyTransformer(reduction=lambda s, axis: np.nanmax(s, axis=axis))
+scores = detector.predict_proba([response_a, response_b])  # (n_sequences, 2)
 ```
 
-## Composing with scikit-learn
+Each response is validated on its own, so one malformed or too-narrow response is reported
+by position rather than quietly changing its neighbours' scores.
+
+### Score Langfuse traces
+
+Fetch a trace, score its output, and write the probability back as a trace score. Re-runs
+overwrite rather than duplicate, so this is safe to schedule:
+
+```python
+from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator
+
+evaluator = HallucinationEvaluator("wepr", langfuse_client, wepr("microsoft/phi-4"))
+evaluator.score_trace(trace_id)
+```
+
+See `docs/examples/langfuse_integration_demo.ipynb`.
+
+### Calibrate for your own model
+
+Any model that returns `top_logprobs` can be calibrated, not just the four shipped ones.
+Ask the same factory for an unfitted detector and fit it on 0/1 labels, where 1 marks a
+hallucination:
+
+```python
+detector = wepr(k=15, trainable=True).fit(responses, y)
+coefficients = detector.named_steps["classifier"].coef_
+```
+
+`trainable=True` is explicit on purpose: calling `wepr()` with neither weights nor
+`trainable=True` raises rather than quietly returning a detector that would train on your
+data and emit probabilities no calibration backs.
+
+To go from a question set to a calibration end to end — generating answers, labelling them
+with an LLM judge, fitting and evaluating — see
+[`scripts/ecir/README.md`](scripts/ecir/README.md). Both LLM stages run under
+`vllm run-batch`; the scripts only prepare its input and read its output.
+
+### Use it inside scikit-learn
 
 Detectors are ordinary estimators, so introspection and composition work:
 
@@ -188,7 +211,83 @@ without fitting. Note that `LogProbParser` sets `no_validation=True` in order to
 response objects rather than arrays, so cross-validation must start from data that has
 already been parsed.
 
-## Supported models
+## Requirements
+
+Artefactual reads a signal that has to be present in the response, so two things are
+required of whatever produced it:
+
+1. **`logprobs` and `top_logprobs` are enabled.** Providers that do not expose them cannot
+   be scored at all.
+2. **`top_logprobs` is at least `k`**, the rank count the calibration was fit at — 15 for
+   every shipped file. See [The `k` parameter](#the-k-parameter) for what happens
+   otherwise, and why narrower responses are refused rather than adjusted.
+
+## Limitations
+
+Worth knowing before you adopt it:
+
+- **You need `logprobs` and `top_logprobs`.** Providers that do not expose them cannot be
+  scored at all. `top_logprobs` must be at least the calibrated `k` (15), which also rules
+  out providers capping it lower.
+- **Calibrations are model-specific.** A calibration maps one model's confidence onto a
+  probability. Four are shipped (see [Supported models](#supported-models));
+  scoring a different model needs [your own calibration](#calibrate-for-your-own-model),
+  which needs labelled data.
+- **The probability is only as good as its calibration.** Rankings transfer more readily
+  than absolute values — if you only need to triage the riskiest answers, the raw ordering
+  is the robust part.
+- **It measures uncertainty, not truth.** A model that is confidently wrong — a memorised
+  misconception, a poisoned fine-tune — is not uncertain, and scores low. This is a
+  complement to retrieval grounding or a judge, not a replacement for them.
+- **Scoring is per sequence.** There is no cross-response consistency check, which is the
+  signal sampling-based detectors buy with their extra generations.
+
+## How it works
+
+Each detector is a three-step scikit-learn pipeline:
+
+```
+LogProbParser  ->  EntropyTransformer  ->  PretrainedLogisticRegression
+  response            uncertainty              calibrated probability
+                       features
+```
+
+**1. Parse.** `LogProbParser` normalises OpenAI Chat Completions and Responses API payloads
+— as SDK objects or plain dicts, singly or batched — into a dense
+`(n_sequences, n_tokens, k)` array of log-probabilities, `NaN`-padded.
+
+**2. Measure.** The middle step turns the raw distribution into a small feature vector
+summarising how uncertain the model was. The shipped detectors measure this with the
+entropy contribution of each candidate, `s_kj = -p_kj * log(p_kj)` for token *j* and rank
+*k*, reduced two ways:
+
+| Reduction | Feature vector | Reads |
+|---|---|---|
+| `epr` | `mean_j( mean_k s_kj )` — 1 feature | Mean contribution per rank, per token |
+| `wepr` | `mean_j(s_kj)` ‖ `max_j(s_kj)` — 2k features | Per-rank mean and peak, weighted separately |
+
+EPR averages over exactly `k` ranks, which is why `k` belongs to the feature's definition
+and why responses carrying fewer ranks are rejected rather than padded. WEPR weights each
+rank separately, which pays off because `-p*log(p)` peaks at `p = 1/e`: a mid-ranked
+candidate carries more signal than either the near-certain top rank or the negligible tail.
+
+**3. Calibrate.** A `LogisticRegression` pre-loaded with per-model coefficients maps the
+features to a probability. Because it is a real sklearn classifier, `predict`,
+`predict_proba` and `decision_function` all work as expected.
+
+The measurement step is a plain transformer, so any callable can replace the reduction:
+
+```python
+import numpy as np
+
+from artefactual.scoring import EntropyTransformer
+
+EntropyTransformer(reduction=lambda s, axis: np.nanmax(s, axis=axis))
+```
+
+## Reference
+
+### Supported models
 
 Calibrations ship in `src/artefactual/data` and are addressed by model name:
 
@@ -261,37 +360,10 @@ WEPR weights carry a `mean_rank_i` and `max_rank_i` pair for each rank `1..k`:
 {"intercept": -3.02, "coefficients": {"mean_rank_1": 3.81, "max_rank_1": -0.44}}
 ```
 
-### Calibrating on your own data
+### Input formats
 
-Any model that returns `top_logprobs` can be calibrated, not just the four shipped ones.
-Ask the same factory for an unfitted detector and fit it on 0/1 labels, where 1 marks a
-hallucination:
-
-```python
-detector = wepr(k=15, trainable=True).fit(responses, y)
-coefficients = detector.named_steps["classifier"].coef_
-```
-
-`trainable=True` is explicit on purpose: calling `wepr()` with neither weights nor
-`trainable=True` raises rather than quietly returning a detector that would train on your
-data and emit probabilities no calibration backs.
-
-To go from a question set to a calibration end to end — generating answers, labelling them
-with an LLM judge, fitting and evaluating — see
-[`scripts/ecir/README.md`](scripts/ecir/README.md). Both LLM stages run under
-`vllm run-batch`; the scripts only prepare its input and read its output.
-
-## Input formats
-
-Both OpenAI wire formats are accepted, as SDK objects or plain mappings, one at a time or
-as a list:
-
-```python
-detector.predict_proba(response)  # a single response
-detector.predict_proba([resp_a, resp_b])  # a batch, concatenated in order
-```
-
-A minimal Responses API payload looks like:
+Both OpenAI wire formats are accepted, as SDK objects or plain mappings. A minimal
+Responses API payload looks like:
 
 ```python
 response = {
@@ -314,19 +386,6 @@ response = {
 Malformed input fails loudly: a payload carrying no logprobs raises `TypeError`, and a
 positive or non-finite log-probability raises `ValueError` naming the offending sample,
 token and rank.
-
-## Integrations
-
-Score Langfuse traces in place:
-
-```python
-from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator
-
-evaluator = HallucinationEvaluator("epr", langfuse_client, epr("microsoft/phi-4"))
-evaluator.score_trace(trace_id)
-```
-
-See `docs/examples/langfuse_integration_demo.ipynb`.
 
 ## Examples
 

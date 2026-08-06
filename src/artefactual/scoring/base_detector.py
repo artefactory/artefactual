@@ -129,10 +129,14 @@ def epr(
     memory=None,
     verbose=False,
 ) -> "BaseDetector":
-    """Build an EPR detector: Entropy Production Rate, pooled over ranks and tokens.
+    """Build a hallucination detector that pools a response's uncertainty into one number.
 
-    One feature — the mean entropy contribution per rank, averaged over tokens. Cheaper
-    and lower-variance than WEPR, but it cannot weight ranks differently.
+    EPR — Entropy Production Rate. A single feature, pooling every rank of the token
+    distribution into one number.
+
+    Both detectors need a calibration fit on labelled data, so choosing this one saves no
+    setup work over `wepr` — only parameters. Prefer `wepr` unless there is too little
+    labelled data to fit its larger coefficient vector.
 
     Example:
         >>> detector = epr("mistralai/Ministral-8B-Instruct-2410")
@@ -178,11 +182,14 @@ def wepr(
     memory=None,
     verbose=False,
 ) -> "BaseDetector":
-    """Build a WEPR detector: Weighted EPR, one learned coefficient per rank.
+    """Build a hallucination detector that reads each rank of the token distribution.
 
-    `2k` features — the per-rank mean and peak across tokens. Because `-p*log(p)` peaks at
-    `p = 1/e`, mid-ranked candidates carry more signal than the near-certain top rank or
-    the negligible tail, and weighting ranks separately lets the calibration exploit that.
+    WEPR — Weighted EPR. `2k` features, one learned coefficient per rank, letting the
+    calibration weight the informative ranks over the rest.
+
+    The default choice: it costs the same to calibrate as `epr` and reads strictly more of
+    the distribution. Fall back to `epr` only when labelled data is too scarce to fit `2k`
+    coefficients.
 
     Example:
         >>> detector = wepr("mistralai/Ministral-8B-Instruct-2410")
