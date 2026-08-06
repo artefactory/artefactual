@@ -1,25 +1,35 @@
 name: Build
 
+# Called by `pull-request.yaml` to check the package still builds, and by `release.yaml`
+# to produce the distributions it publishes. Building and publishing are separate jobs so
+# a pull request -- which runs code that has not been reviewed yet -- executes in a job
+# holding neither the TestPyPI environment nor `id-token: write`.
 on:
-  push:
-    tags:
-      - 'v[0-9]*'  # Matches v2026.01.0, v2026.01.1, etc.
+  workflow_call:
+    inputs:
+      publish:
+        description: Publish the built distributions to TestPyPI.
+        type: boolean
+        default: false
+      tag:
+        description: >-
+          Tag the distributions must carry. The version is derived from the repository's
+          tags, so naming the expected one here turns a mis-derived version into a failure
+          instead of a wrongly-numbered release.
+        type: string
+        default: ""
 
 permissions:
   contents: read
-  id-token: write  # Required for TestPyPI trusted publishing
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment:
-      name: testpypi
-      url: https://test.pypi.org/p/artefactual
-    env:
-      TAG_NAME: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v4
         with:
+          # hatch-vcs reads the version from the most recent reachable tag. A shallow
+          # checkout fetches none and it falls back to 0.1.dev1 with only a warning.
           fetch-depth: 0
           lfs: true
 
@@ -27,41 +37,20 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Get version from code
-        id: version
-        run: |
-          CODE_VERSION=$(uvx bump-my-version show current_version)
-          TAG_VERSION="${TAG_NAME#v}"  # Remove 'v' prefix
-          echo "code_version=$CODE_VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag_version=$TAG_VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Validate version matches tag
-        env:
-          CODE_VERSION: ${{ steps.version.outputs.code_version }}
-          TAG_VERSION: ${{ steps.version.outputs.tag_version }}
-        run: |
-          if [ "$CODE_VERSION" != "$TAG_VERSION" ]; then
-            echo "::error::Version mismatch: code=$CODE_VERSION, tag=$TAG_VERSION"
-            exit 1
-          fi
-          echo "Version validated: $CODE_VERSION"
-
       - name: Build package
         run: uv build
 
       # The wheel is exercised before it is published anywhere, and from an environment
       # built only from its own declared dependencies -- not the project's. A dependency
       # that is needed but unlisted resolves fine in the repo and fails only for a user
-      # installing the wheel, which is precisely what this catches. Publishing to TestPyPI
-      # without this check tests only that an upload succeeds.
+      # installing the wheel, which is precisely what this catches.
       - name: Smoke-test the built wheel
         run: |
           set -euo pipefail
           wheel=$(ls dist/*.whl)
           echo "testing $wheel"
           uv run --isolated --no-project --with "$wheel" python - <<'SMOKE'
-          import artefactual
-          from artefactual.scoring import epr, wepr
+          from artefactual.scoring import epr
 
           # a published detector, resolved and read through the wheel's own dependencies
           detector = epr("chicham/artefactual-epr-ministral", k=15)
@@ -81,6 +70,46 @@ jobs:
           print("wheel imports, resolves a published detector and scores:", float(score[0]))
           SMOKE
 
+      - name: Check the built version against the tag
+        if: inputs.tag != ''
+        env:
+          TAG_NAME: ${{ inputs.tag }}
+        run: |
+          # Compared as versions rather than as strings: PEP 440 normalises the tag's
+          # zero-padded CalVer month, so v2026.08.0 legitimately builds 2026.8.0.
+          uv run --no-project --with packaging python - <<'PY'
+          import os, pathlib, sys
+          from packaging.version import Version
+
+          built = {Version(p.name.split("-")[1]) for p in pathlib.Path("dist").glob("*.whl")}
+          expected = Version(os.environ["TAG_NAME"].removeprefix("v"))
+          if built != {expected}:
+              sys.exit(f"::error::built {sorted(map(str, built))}, expected {expected} from the tag")
+          print(f"built {expected} from {os.environ['TAG_NAME']}")
+          PY
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  publish-testpypi:
+    if: inputs.publish
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/artefactual
+    permissions:
+      id-token: write  # Required for TestPyPI trusted publishing
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
       - name: Publish to TestPyPI
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e
         with:
@@ -91,6 +120,9 @@ jobs:
       # it exercises the uploaded metadata and dependency resolution. Dependencies come
       # from real PyPI, since TestPyPI does not mirror them.
       - name: Install from TestPyPI and score
+        if: inputs.tag != ''
+        env:
+          TAG_NAME: ${{ inputs.tag }}
         run: |
           set -euo pipefail
           version="${TAG_NAME#v}"
@@ -100,10 +132,7 @@ jobs:
                  --extra-index-url https://pypi.org/simple/ \
                  --index-strategy unsafe-best-match \
                  --with "artefactual==$version" \
-                 python -c "
-          from artefactual.scoring import epr
-          print('installed from TestPyPI:', epr('chicham/artefactual-epr-ministral', k=15).named_steps['classifier'])
-          "; then
+                 python -c "from artefactual.scoring import epr; print('installed from TestPyPI:', epr('chicham/artefactual-epr-ministral', k=15).named_steps['classifier'])"; then
               exit 0
             fi
             echo "not indexed yet, retrying in 20s (attempt $attempt)"
@@ -111,9 +140,3 @@ jobs:
           done
           echo "::error::artefactual==$version never became installable from TestPyPI"
           exit 1
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-package-distributions
-          path: dist/
