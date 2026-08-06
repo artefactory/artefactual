@@ -1,19 +1,29 @@
+"""Format-specific extractors for the two OpenAI completion shapes.
+
+`chat.completions` nests one sequence per `choice`; `responses` nests one per `output`
+item. Both are read through duck-typed accessors so a raw mapping and a typed SDK object
+work identically, which is what lets a JSON fixture stand in for a live client.
+
+Dispatch between them lives in `parser`; nothing here is called directly by the pipeline.
+"""
+
 from typing import Any
 
 import numpy as np
 
 
 def _get_val(obj: Any, key: str, default: Any = None) -> Any:
-    """
-    Safely retrieves a value from an object attribute or a dictionary key.
+    """Read a value from either an object attribute or a mapping key.
+
+    Lets the extractors accept a typed SDK object and a plain `dict` through one path.
 
     Args:
-        obj (Any): The object or dictionary to retrieve the value from.
-        key (str): The attribute name or dictionary key to look up.
-        default (Any, optional): The value to return if the key or attribute is not found. Defaults to None.
+        obj: Object or mapping to read from.
+        key: Attribute name or mapping key.
+        default: Returned when neither is present.
 
     Returns:
-        Any: The retrieved value or the default value.
+        The value, or `default`.
     """
     if hasattr(obj, key):
         return getattr(obj, key)

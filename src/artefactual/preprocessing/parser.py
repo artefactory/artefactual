@@ -1,6 +1,8 @@
-"""
-Module for parsing model outputs from various sources to extract log probabilities.
-Each format is handled by a dedicated parser function, defined in their respective modules.
+"""Extraction of top-k logprobs from completion responses into a dense array.
+
+Responses are validated against the models in `response_models` and dispatched by type,
+so a new provider format is added by registering an extractor rather than by editing the
+entry points here.
 """
 
 from functools import singledispatch
@@ -58,32 +60,50 @@ def _(response: ResponsesPayload) -> list[np.ndarray]:
 
 
 class LogProbParser(BaseEstimator, TransformerMixin):
-    """
-    Wraps parse_top_logprobs as a pipeline step.
+    """First pipeline step: completion responses in, a dense logprob array out.
 
-    Because this transformer accepts non-standard list[dict] inputs
-    by bypassing scikit-learn validation, cross-validation
-    must start from data that has already been parsed.
+    Accepts raw responses rather than arrays, so it opts out of scikit-learn's input
+    validation. Cross-validation over a `BaseDetector` therefore has to start from data
+    this step has already parsed, since sklearn cannot index a response object by row.
+
+    This step owns the rank axis. It sizes the output to `k` and refuses responses that
+    carry fewer ranks, which is possible only here: downstream, every token has been padded
+    to a common width and a token's original rank count is no longer recoverable.
 
     Args:
-        k: The rank count the responses are expected to carry. Responses narrower than
-            this are rejected here, at the boundary where each token's true rank count is
-            still visible -- downstream every token has been padded to a common width.
-            `None` accepts whatever width the responses carry.
+        k: Rank count to emit. `None` uses the widest rank count present in the batch.
     """
 
     def __init__(self, k: int | None = None) -> None:
         self.k = k
 
     def fit(self, X, y=None) -> "LogProbParser":  # noqa: ARG002, N803 — X / y unused but required by the sklearn fit signature
+        """No-op, present so the step composes in a `Pipeline`. Returns self."""
         return self
 
     def transform(self, X: list) -> np.ndarray:  # noqa: N803
+        """Parse responses into a NaN-padded logprob array.
+
+        Args:
+            X: One completion response, or a sequence of them. Each yields one row per
+                sampled sequence.
+
+        Returns:
+            `(n_sequences, max_tokens, k)`, NaN where a sequence is shorter than the
+            longest in the batch or a token position carried no ranks. Empty input gives
+            an empty `(0, 0, 0)` array.
+
+        Raises:
+            TypeError: If a response is not a recognised completion format.
+            ValueError: If a logprob is missing, non-finite or positive, or if a response
+                carries fewer than `k` ranks per token.
+        """
         parsed = parse_top_logprobs(X)
         if not parsed:
             return np.empty((0, 0, 0), dtype=np.float32)
 
-        # validation step
+        # Rejected before the array is built: NaN is the padding marker downstream, so an
+        # invalid logprob cast into the array would be indistinguishable from padding.
         # TODO(perf): O(n·T·k) Python loop — vectorize over the padded array once batches get large.
         for i, sample in enumerate(parsed):  # sample is the dictionary for each generation
             for token_idx, logprobs in sample.items():  # token position, ragged list of logprobs
@@ -97,9 +117,8 @@ class LogProbParser(BaseEstimator, TransformerMixin):
         max_tokens = max((max(d.keys()) + 1 for d in parsed if d), default=0)
         self._reject_narrow(parsed)
 
-        # Exactly `k` ranks when one was asked for, so every later step reduces over a
-        # width it can trust. Surplus ranks are dropped: a calibration fit at k ignores
-        # them, unlike missing ranks, which cannot be conjured.
+        # Surplus ranks are dropped rather than kept: a calibration fit at k has no
+        # coefficient for rank k+1, and EPR's mean is defined over exactly k ranks.
         width = self.k if self.k is not None else max((len(v) for d in parsed for v in d.values()), default=0)
 
         arr = np.full((len(parsed), max_tokens, width), np.nan, dtype=np.float32)
@@ -111,12 +130,14 @@ class LogProbParser(BaseEstimator, TransformerMixin):
         return arr
 
     def _reject_narrow(self, parsed: list[dict[int, list[float]]]) -> None:
-        """Refuse a response whose tokens carry fewer than `k` ranks.
+        """Raise if any response carries fewer than `k` ranks per token.
 
-        Checked per response rather than across the batch: a batch mixing widths has a
-        maximum that hides its narrowest member, and it is the member that gets scored
-        wrongly. Token positions with no ranks at all are the empty-`top_logprobs` case
-        and stay padding -- the entropy step reports those as empty sequences.
+        Compared per response, not across the batch, because padding is applied per batch:
+        a wide response would otherwise raise the measured width above a narrow sibling's
+        own rank count.
+
+        Token positions holding no ranks are skipped. Those are the empty-`top_logprobs`
+        case and remain padding, which the entropy step reports as an empty sequence.
         """
         if self.k is None:
             return
@@ -135,10 +156,7 @@ class LogProbParser(BaseEstimator, TransformerMixin):
                 raise ValueError(error_msg)
 
     def __sklearn_tags__(self) -> Tags:
-        """
-        Bypasses strict scikit-learn array validation checks, allowing
-        the transformer to accept a raw list of dictionaries.
-        """
+        """Declares the step stateless and exempt from array validation."""
         tags = super().__sklearn_tags__()
         tags.no_validation = True
         tags.requires_fit = False  # model is stateless
@@ -147,20 +165,19 @@ class LogProbParser(BaseEstimator, TransformerMixin):
 
 
 def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
-    """
-    Parse different output formats to extract logprobs.
+    """Extract each token's top-k logprobs, one entry per sampled sequence.
 
     Args:
-        outputs: Model outputs. Can be:
-                    - A completion response, as a mapping or an object.
-                    - A sequence of responses, parsed and concatenated in order.
+        outputs: A completion response, as a mapping or an object, or a sequence of them
+            parsed and concatenated in order.
 
     Returns:
-        List of dictionaries mapping token indices to lists of log probs,
-        one per generated sequence.
+        One dict per sequence, mapping token position to that token's ranks. Ranks are
+        ragged: a position whose `top_logprobs` was empty maps to an empty list, and the
+        position is still counted so token indices track the generated text.
 
     Raises:
-        TypeError: If the output format is not supported.
+        TypeError: If the output is not a recognised completion format.
     """
     if is_bearable(outputs, list | tuple):
         return [sequence for response in outputs for sequence in parse_top_logprobs(response)]
@@ -175,15 +192,19 @@ def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
 
 
 def parse_sampled_token_logprobs(outputs: Any) -> list[np.ndarray]:
-    """
-    A wrapper function to parse token probabilities from various output formats.
-    Handles the OpenAI ChatCompletion and OpenAI Responses API shapes.
+    """Extract the logprob of each *sampled* token, ignoring the alternatives.
+
+    The counterpart to `parse_top_logprobs`, which reads the top-k distribution. Neither
+    EPR nor WEPR uses this; it is exposed for callers measuring sequence likelihood.
 
     Args:
-        outputs: Model outputs in various formats.
+        outputs: A single completion response, as a mapping or an object.
+
     Returns:
-        list[np.ndarray]: A list of 1D numpy arrays, each containing the log probabilities
-                       of the sampled tokens for one sequence.
+        One 1-D array per sequence, holding the sampled token logprobs in order.
+
+    Raises:
+        TypeError: If the output is not a recognised completion format.
     """
     try:
         response = _RESPONSE_ADAPTER.validate_python(outputs, from_attributes=True)

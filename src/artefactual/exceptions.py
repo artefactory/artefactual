@@ -1,3 +1,10 @@
+"""Warnings and errors raised across the package.
+
+Both hierarchies have a base class so callers can catch or filter the whole family:
+`ArtefactualWarning` for recoverable conditions, `ArtefactualError` for failures.
+"""
+
+
 class ArtefactualWarning(UserWarning):
     """Base for all artefactual warnings (subclass of UserWarning → shown by default, filterable)."""
 
@@ -11,11 +18,11 @@ class ArtefactualError(Exception):
 
 
 class UncalibratedModelError(ArtefactualError):
-    """Raised when a detector requires a pretrained weight path for calibration.
+    """Raised when a detector is built with neither pretrained weights nor `trainable=True`.
 
-    Deliberately not a silent fallback to an unfitted classifier: a detector that quietly
-    trains on the caller's data would emit plausible-looking probabilities that no
-    calibration backs, which is far harder to notice than an exception.
+    A detector has no default calibration: the coefficients are model-specific, so an
+    unfitted classifier would return probabilities backed by nothing. The two ways to
+    resolve it are naming a calibration or asking for an unfitted pipeline to `fit`.
     """
 
     _MESSAGE = (

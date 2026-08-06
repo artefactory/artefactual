@@ -35,8 +35,27 @@ rises. Aggregating those per-token entropy contributions gives a score, and a sm
 logistic regression, calibrated once per model, turns that score into a probability.
 
 The result is a detector that costs one dot product per token and requires exactly one
-generation. The trade-off: you need `logprobs` and `top_logprobs` in the response, which
-rules out providers that do not expose them.
+generation.
+
+## Limitations
+
+Worth knowing before you adopt it:
+
+- **You need `logprobs` and `top_logprobs`.** Providers that do not expose them cannot be
+  scored at all. `top_logprobs` must be at least the calibrated `k` (15), which also rules
+  out providers capping it lower.
+- **Calibrations are model-specific.** The coefficients map entropy to probability for one
+  model's distribution. Four are shipped (see [Supported models](#supported-models));
+  scoring a different model needs [your own calibration](#calibrating-on-your-own-data),
+  which needs labelled data.
+- **The probability is only as good as its calibration.** Rankings transfer more readily
+  than absolute values — if you only need to triage the riskiest answers, the raw ordering
+  is the robust part.
+- **It detects distributional uncertainty, not falsehood.** A model that is confidently
+  wrong — a memorised misconception, a poisoned fine-tune — has a peaked distribution and
+  scores low. This is a complement to retrieval grounding or a judge, not a replacement.
+- **Scoring is per sequence.** There is no cross-response consistency check, which is the
+  signal sampling-based detectors buy with their extra generations.
 
 ## Installation
 
@@ -207,10 +226,10 @@ higher. The two directions are not symmetric:
   at k=5 with a calibration fit at that rank count.
   ```
 
-  This is a wrong score rather than a rescaled one: a 5-rank response scored at `k=15`
-  yields 0.1073 where its true value is 0.3219, landing *below* a genuine 15-rank response
-  of comparable uncertainty (0.1805). Mixed-width batches would rank incorrectly, so the
-  check is per response — a wide response in the same batch never masks a narrow one.
+  The resulting score is wrong rather than merely rescaled — a narrow response can score
+  as *more* confident than a genuinely wider one — so it is rejected instead of adjusted.
+  Each response is checked individually, so a wide response cannot mask a narrow one in
+  the same batch.
 
 WEPR additionally validates the weights themselves, since its coefficient vector has one
 entry per rank:
@@ -242,8 +261,11 @@ WEPR weights carry a `mean_rank_i` and `max_rank_i` pair for each rank `1..k`:
 {"intercept": -3.02, "coefficients": {"mean_rank_1": 3.81, "max_rank_1": -0.44}}
 ```
 
-To calibrate on your own data, ask the same factory for an unfitted detector and fit it
-on 0/1 labels, where 1 marks a hallucination:
+### Calibrating on your own data
+
+Any model that returns `top_logprobs` can be calibrated, not just the four shipped ones.
+Ask the same factory for an unfitted detector and fit it on 0/1 labels, where 1 marks a
+hallucination:
 
 ```python
 detector = wepr(k=15, trainable=True).fit(responses, y)

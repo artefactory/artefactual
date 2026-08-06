@@ -1,3 +1,9 @@
+"""Scoring of Langfuse traces with an artefactual detector.
+
+`langfuse` is an optional dependency (`pip install artefactual[adapters]`) and is imported
+only for type checking, so this module is importable without it.
+"""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -9,12 +15,39 @@ if TYPE_CHECKING:
 
 
 class HallucinationEvaluator:
+    """Scores a Langfuse trace's output and writes the result back as a trace score.
+
+    The trace `output` must be the completion response itself, carrying logprobs — the
+    same object `BaseDetector.predict_proba` accepts.
+    """
+
     def __init__(self, name: str, langfuse_client: Langfuse, detector: BaseDetector) -> None:
+        """
+        Args:
+            name: Score name recorded in Langfuse, used as the metric label in its UI.
+            langfuse_client: An authenticated `Langfuse` client.
+            detector: A calibrated detector, e.g. `epr("mistralai/Ministral-8B-Instruct-2410")`.
+        """
         self.name = name
         self.langfuse = langfuse_client
         self.detector = detector
 
     def score_trace(self, trace_id: str) -> float:
+        """Fetch a trace, score its output, and attach the probability to it.
+
+        The score id is derived from the trace id and the value, so re-scoring an
+        unchanged trace overwrites its score rather than appending a duplicate.
+
+        Args:
+            trace_id: Id of the trace to fetch and score.
+
+        Returns:
+            P(hallucination) for the trace's first sequence, as a plain `float` —
+            Langfuse serialises the value to JSON, which numpy scalars do not survive.
+
+        Raises:
+            TypeError: If the trace output is not a completion response carrying logprobs.
+        """
         trace = self.langfuse.api.trace.get(trace_id)
         value = float(self.detector.predict_proba(trace.output)[0, 1])
         self.langfuse.create_score(

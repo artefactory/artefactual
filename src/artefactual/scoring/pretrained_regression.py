@@ -1,3 +1,5 @@
+"""A logistic regression whose coefficients are loaded from a file rather than fitted."""
+
 from pathlib import Path
 from typing import Any, Literal
 
@@ -13,6 +15,14 @@ Registry = Literal["weights", "calibration"]
 
 
 class PretrainedLogisticRegression(LogisticRegression):
+    """`LogisticRegression` presented as already fitted, from published coefficients.
+
+    The published EPR/WEPR calibrations are coefficient files, not pickled estimators, so
+    there is nothing to unpickle and no training data to refit from. Loading them onto an
+    instance keeps the detector a plain sklearn `Pipeline`, at the cost of assigning the
+    fitted attributes directly.
+    """
+
     # sklearn sets these inside fit; from_pretrained assigns them directly on a
     # never-fitted instance, so declare them for the type checker.
     coef_: np.ndarray
@@ -29,12 +39,12 @@ class PretrainedLogisticRegression(LogisticRegression):
         registry: Registry = "weights",
         k: int | None = None,
     ) -> "PretrainedLogisticRegression":
-        """
-        Instantiate a LogisticRegression pre-loaded with calibrated coefficients.
+        """Instantiate a classifier holding calibrated coefficients, ready to predict.
 
-        The metric (EPR or WEPR) is inferred from the coefficient keys, but which registry
-        a bare *model name* resolves through cannot be — both registries are keyed by the
-        same model names — so the caller states it. A filesystem path bypasses the registry.
+        The metric is inferred from the coefficient keys (`mean_entropy` for EPR,
+        `mean_rank_1..k` for WEPR). The *registry* cannot be inferred, because both are
+        keyed by the same model names, so the caller states it. A filesystem path bypasses
+        the registry entirely.
 
         Args:
             pretrained_model_name_or_path: A model name in the chosen registry, or a path
