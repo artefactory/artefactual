@@ -102,14 +102,32 @@ def test_the_written_value_matches_the_returned_score(tmp_path, payload, calibra
 def test_the_score_id_is_an_idempotency_key(tmp_path, payload, calibration):
     """Re-scoring an unchanged trace must reuse the same score id.
 
-    The id is derived from the trace id and the value, so a repeat run overwrites rather
-    than appending a duplicate score.
+    The id is derived from the trace id and the metric name, so a repeat run overwrites
+    rather than appending a duplicate score.
     """
     client = StubLangfuse(Trace(payload))
     evaluator = HallucinationEvaluator("epr", client, build_detector(tmp_path, calibration))
 
     evaluator.score_trace("trace-1")
     evaluator.score_trace("trace-1")
+
+    first, second = client.scores
+    assert first["score_id"] == second["score_id"]
+
+
+@drawn
+@given(payload=traces, first_calibration=epr_calibration(), second_calibration=epr_calibration())
+def test_the_score_id_survives_a_change_of_value(tmp_path, payload, first_calibration, second_calibration):
+    """A re-score that produces a *different* value must still overwrite.
+
+    This is what scheduling the evaluator depends on: retraining the detector, or swapping
+    it, moves the score. Keying the id on the value would mint a fresh id each time and
+    accumulate rows instead of replacing the previous one.
+    """
+    client = StubLangfuse(Trace(payload))
+    for index, calibration in enumerate((first_calibration, second_calibration)):
+        detector = epr(str(write_json(tmp_path, f"cal-{index}.json", calibration)))
+        HallucinationEvaluator("epr", client, detector).score_trace("trace-1")
 
     first, second = client.scores
     assert first["score_id"] == second["score_id"]

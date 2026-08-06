@@ -35,8 +35,10 @@ class HallucinationEvaluator:
     def score_trace(self, trace_id: str) -> float:
         """Fetch a trace, score its output, and attach the probability to it.
 
-        The score id is derived from the trace id and the value, so re-scoring an
-        unchanged trace overwrites its score rather than appending a duplicate.
+        The score id is derived from the trace id and the metric name, so a trace carries
+        one score per metric however often it is re-scored. Keying on the value instead
+        would mint a fresh id whenever the score moved — after a weights update or a
+        detector swap — and accumulate rows rather than replacing them.
 
         Args:
             trace_id: Id of the trace to fetch and score.
@@ -54,6 +56,6 @@ class HallucinationEvaluator:
             trace_id=trace_id,
             name=self.name,
             value=value,
-            score_id=f"{trace_id}-{value}",  # idempotency key
+            score_id=f"{trace_id}-{self.name}",  # idempotency key: one score per metric
         )
         return value
