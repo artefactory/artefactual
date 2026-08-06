@@ -14,6 +14,19 @@ _LOADERS = {"weights": load_weights, "calibration": load_calibration}
 Registry = Literal["weights", "calibration"]
 
 
+def _reject_missing(mapping, required, what: str) -> None:
+    """Raise if any of *required* is absent from *mapping*, naming every one that is.
+
+    A weights file is data, so every way it can be malformed has to surface as a message
+    about the file. Indexing it directly would instead raise `KeyError` naming a single
+    key, which reads as an internal fault rather than a bad input.
+    """
+    absent = [key for key in required if key not in mapping]
+    if absent:
+        msg = f"Malformed {what}: missing {absent}."
+        raise ValueError(msg)
+
+
 class PretrainedLogisticRegression(LogisticRegression):
     """`LogisticRegression` presented as already fitted, from published coefficients.
 
@@ -58,12 +71,14 @@ class PretrainedLogisticRegression(LogisticRegression):
             An instance pre-configured with the loaded weights.
 
         Raises:
-            ValueError: If the file is neither an EPR calibration nor WEPR weights, or if
-                WEPR weights do not cover exactly `k` ranks.
+            ValueError: If the file is neither an EPR calibration nor WEPR weights, if it
+                is missing an intercept or a coefficient the format requires, or if WEPR
+                weights do not cover exactly `k` ranks.
         """
         # The two loaders declare different value types; both yield a coefficient mapping,
         # so pin it here rather than let the union leak into every lookup below.
         weights: dict[str, Any] = _LOADERS[registry](str(pretrained_model_name_or_path))
+        _reject_missing(weights, ("intercept", "coefficients"), "weights file")
         coeffs: dict[str, float] = weights["coefficients"]
 
         if "mean_entropy" in coeffs:  # epr
@@ -81,6 +96,14 @@ class PretrainedLogisticRegression(LogisticRegression):
                     f"pass k={file_k}, or supply weights trained at k={k}."
                 )
                 raise ValueError(msg)
+            # The count comes from the mean_rank_* keys alone, so a file with gaps in the
+            # run, or with a mean but no matching max, still reaches here. Name every
+            # missing key at once rather than failing on whichever is indexed first.
+            _reject_missing(
+                coeffs,
+                [f"{stat}_rank_{i}" for i in range(1, file_k + 1) for stat in ("mean", "max")],
+                f"WEPR weights covering {file_k} rank(s)",
+            )
             mean_vals = [coeffs[f"mean_rank_{i}"] for i in range(1, file_k + 1)]
             max_vals = [coeffs[f"max_rank_{i}"] for i in range(1, file_k + 1)]
             coef_array = np.array([mean_vals + max_vals], dtype=np.float32)  # (1, 2k)

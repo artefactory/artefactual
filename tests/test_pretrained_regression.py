@@ -190,8 +190,13 @@ def test_any_epr_calibration_loads(tmp_path, payload):
 
 
 def test_a_missing_intercept_is_reported(tmp_path):
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError, match=r"Malformed weights file: missing \['intercept'\]"):
         load(tmp_path, {"coefficients": {"mean_entropy": 1.0}})
+
+
+def test_missing_coefficients_are_reported(tmp_path):
+    with pytest.raises(ValueError, match=r"Malformed weights file: missing \['coefficients'\]"):
+        load(tmp_path, {"intercept": 0.0})
 
 
 def test_unrecognised_coefficients_name_what_was_found(tmp_path):
@@ -207,5 +212,12 @@ def test_max_rank_without_mean_rank_is_rejected(tmp_path):
 
 def test_a_wepr_file_missing_a_max_rank_is_reported(tmp_path):
     payload = {"intercept": 0.0, "coefficients": {"mean_rank_1": 1.0, "mean_rank_2": 1.0, "max_rank_1": 1.0}}
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError, match=r"Malformed WEPR weights covering 2 rank\(s\): missing \['max_rank_2'\]"):
+        load(tmp_path, payload)
+
+
+def test_a_wepr_file_with_a_gap_in_the_ranks_is_reported(tmp_path):
+    # two mean_rank_* keys set the count to 2, but rank 2 itself is absent
+    payload = {"intercept": 0.0, "coefficients": {"mean_rank_1": 1.0, "mean_rank_3": 1.0, "max_rank_1": 1.0}}
+    with pytest.raises(ValueError, match=r"missing \['mean_rank_2', 'max_rank_2'\]"):
         load(tmp_path, payload)
