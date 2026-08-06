@@ -1,3 +1,5 @@
+"""The detector pipeline and the `epr` / `wepr` factories that build it."""
+
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.linear_model import LogisticRegression
@@ -13,12 +15,28 @@ DEFAULT_K = 15
 
 
 class BaseDetector(Pipeline):
-    def predict_token_proba(self, x) -> np.ndarray:
-        """Token-level hallucination probabilities, shape (n_samples, max_tokens, 1).
+    """A `parser -> entropy -> classifier` pipeline returning P(hallucination).
 
-        Routes the pipeline in token mode (transform_tokens, with transform fallback),
-        mask padded (NaN) token rows before the classifier, scatter results back so
-        padded positions stay NaN.
+    A scikit-learn `Pipeline`, so `predict`, `predict_proba`, `fit`, `get_params` and
+    `clone` behave as expected and the detector composes into `GridSearchCV` and friends.
+    Build one with `epr()` or `wepr()` rather than constructing it directly.
+
+    Class 1 is the hallucination class: `predict_proba(...)[:, 1]` is the score of
+    interest.
+    """
+
+    def predict_token_proba(self, x) -> np.ndarray:
+        """Per-token hallucination probabilities, for locating *where* a response drifts.
+
+        Runs the transformer steps in token mode (`transform_tokens`, falling back to
+        `transform`), then scores only the non-padded token rows and scatters the results
+        back, so padded positions stay NaN rather than being scored as real tokens.
+
+        Args:
+            x: The same input `predict_proba` accepts.
+
+        Returns:
+            `(n_sequences, max_tokens, 1)`, NaN at padded positions.
         """
         raw_output = x
         for _, transformer in self.steps[:-1]:
@@ -42,7 +60,19 @@ class BaseDetector(Pipeline):
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path: str, reduction: str, k: int = DEFAULT_K) -> "BaseDetector":
-        """Build a ready-to-predict detector with weights loaded."""
+        """Build a calibrated detector, selecting the reduction by name.
+
+        Equivalent to calling `epr()` or `wepr()` directly; provided for callers that hold
+        the reduction as data.
+
+        Args:
+            pretrained_model_name_or_path: A registry model name, or a path to a file.
+            reduction: `"epr"` or `"wepr"`.
+            k: Rank count the responses carry.
+
+        Returns:
+            A detector ready to `predict_proba`.
+        """
         factory = {"epr": epr, "wepr": wepr}[reduction]
         return factory(pretrained_model_name_or_path, k=k)
 
@@ -59,11 +89,9 @@ def _build(
 ) -> "BaseDetector":
     """Assemble a parser -> entropy -> classifier pipeline pinned to `k` ranks.
 
-    The parser owns the rank axis: it refuses a response carrying fewer than `k` ranks and
-    hands on an array exactly `k` wide, so the entropy step needs no rank count of its own
-    and the classifier only has to check the weights were calibrated at the same `k`.
-    Splitting that ownership is what let a narrow response be zero-filled and scored as
-    though its unfetched ranks held no probability mass.
+    `k` is handled at the ends of the pipeline: the parser sizes the rank axis to it, and
+    the classifier checks the loaded weights were calibrated at it. The entropy step in
+    between carries no rank count, since its input width is already `k`.
     """
     if trainable:
         if pretrained_model_name_or_path is not None:
@@ -91,7 +119,6 @@ def _build(
     )
 
 
-# Factory aliases (module level), each returns a BaseDetector
 def epr(
     pretrained_model_name_or_path: str | None = None,
     k: int = DEFAULT_K,
@@ -102,20 +129,31 @@ def epr(
     memory=None,
     verbose=False,
 ) -> "BaseDetector":
-    """EPR detector.
+    """Build an EPR detector: Entropy Production Rate, pooled over ranks and tokens.
+
+    One feature — the mean entropy contribution per rank, averaged over tokens. Cheaper
+    and lower-variance than WEPR, but it cannot weight ranks differently.
+
+    Example:
+        >>> detector = epr("mistralai/Ministral-8B-Instruct-2410")
+        >>> detector.predict_proba(response)[:, 1]  # doctest: +SKIP
 
     Args:
         pretrained_model_name_or_path: A model name from the registry, or a path to a
             calibration file. Omit it only together with `trainable=True`.
-        k: The top-k rank count the responses carry. EPR is a mean over ranks, so
-            this is part of the feature definition.
+        k: Rank count the responses carry, and the width EPR averages over. Responses
+            carrying fewer than `k` ranks are rejected when parsed.
         trainable: Return an *unfitted* detector to calibrate on your own labelled data.
             Call `fit(responses, y)`, where 1 marks a hallucination.
         classifier: Final estimator, with `trainable=True` only. Defaults to the
             unregularised logistic regression the shipped calibrations were fit with.
 
+    Returns:
+        A `BaseDetector`, calibrated and ready to predict, or unfitted if `trainable`.
+
     Raises:
         UncalibratedModelError: If neither weights nor `trainable=True` were given.
+        ValueError: If both were given, or if `classifier` is passed without `trainable`.
     """
     return _build(
         "epr",
@@ -140,19 +178,33 @@ def wepr(
     memory=None,
     verbose=False,
 ) -> "BaseDetector":
-    """WEPR detector.
+    """Build a WEPR detector: Weighted EPR, one learned coefficient per rank.
+
+    `2k` features — the per-rank mean and peak across tokens. Because `-p*log(p)` peaks at
+    `p = 1/e`, mid-ranked candidates carry more signal than the near-certain top rank or
+    the negligible tail, and weighting ranks separately lets the calibration exploit that.
+
+    Example:
+        >>> detector = wepr("mistralai/Ministral-8B-Instruct-2410")
+        >>> detector.predict_proba(response)[:, 1]  # doctest: +SKIP
 
     Args:
         pretrained_model_name_or_path: A model name from the registry, or a path to a
-            calibration file. Omit it only together with `trainable=True`.
-        k: The top-k rank count the responses carry. The weights must be calibrated at it.
+            weights file. Omit it only together with `trainable=True`.
+        k: Rank count the responses carry. The weights must cover exactly this many ranks,
+            and responses carrying fewer are rejected when parsed.
         trainable: Return an *unfitted* detector to calibrate on your own labelled data.
             Call `fit(responses, y)`, where 1 marks a hallucination.
         classifier: Final estimator, with `trainable=True` only. Defaults to the
             unregularised logistic regression the shipped calibrations were fit with.
 
+    Returns:
+        A `BaseDetector`, calibrated and ready to predict, or unfitted if `trainable`.
+
     Raises:
         UncalibratedModelError: If neither weights nor `trainable=True` were given.
+        ValueError: If both were given, if `classifier` is passed without `trainable`, or
+            if the weights do not cover exactly `k` ranks.
     """
     return _build(
         "wepr",

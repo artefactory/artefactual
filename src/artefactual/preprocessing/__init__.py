@@ -1,3 +1,5 @@
+"""Parsing of completion responses into the logprob arrays the scorers consume."""
+
 from artefactual.preprocessing.openai_parser import (
     is_openai_responses_api,
     process_openai_chat_completion,

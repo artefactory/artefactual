@@ -1,21 +1,34 @@
+"""Per-rank entropy contributions, the quantity both EPR and WEPR reduce."""
+
 import numpy as np
 from beartype import beartype
 
+# Hints below are bare `np.ndarray`, not `NDArray[np.floating]`: beartype cannot resolve any
+# NDArray subscript against numpy >= 2.5 and raises at decoration time, making the package
+# unimportable. Re-subscripting them reintroduces that failure.
+
 
 class EntropyContributionsMixin:
-    """
-    Mixin that provides entropy contribution computation for top-K logprobs.
-    """
+    """Provides `entropy_contributions` to the transformers that reduce it."""
 
     @staticmethod
     @beartype
     def entropy_contributions(logprobs: np.ndarray) -> np.ndarray:
-        """Compute entropic contributions s_kj = -p_k log(p_k) for top-K logprobs using vectorized operations.
+        """Entropy contribution `s_kj = -p_kj * log(p_kj)` for each rank of each token.
+
+        The contribution peaks at `p = 1/e`, so it is not monotonic in rank: a mid-ranked
+        candidate contributes more than either a near-certain top rank or a negligible
+        tail one.
+
+        Ranks are sorted descending before the conversion, so callers need not supply them
+        in order. NaN sorts to the end and propagates, keeping padded positions padded.
+
         Args:
-            logprobs: An array of log probabilities, with the last axis being the per-token rank axis.
+            logprobs: Natural-log probabilities, with the rank axis last. Any number of
+                leading axes is allowed.
 
         Returns:
-            An array of the same shape containing entropy contributions.
+            Contributions with the same shape and NaN in the same positions.
         """
 
         if logprobs.size == 0:

@@ -1,9 +1,16 @@
+"""Resolution of calibration and weight files, by model name or by path.
+
+Two registries, keyed by the same model names: `MODEL_WEIGHT_MAP` for WEPR weights and
+`MODEL_CALIBRATION_MAP` for EPR calibrations. A name is resolved against the files shipped
+in `artefactual.data`; anything that is a readable path is loaded directly, so callers can
+mix published and locally fitted calibrations.
+"""
+
 import importlib.resources
 import json
 from pathlib import Path
 from typing import Any
 
-# calibration and weights loading utilities
 MODEL_WEIGHT_MAP = {
     "tiiuae/Falcon3-10B-Instruct": "weights_falcon3.json",
     "mistralai/Mistral-Small-3.1-24B-Instruct-2503": "weights_mistral_small.json",

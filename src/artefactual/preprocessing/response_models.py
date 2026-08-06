@@ -27,12 +27,16 @@ class TokenLogprobs(BaseModel):
 
 
 class ChatChoiceLogprobs(BaseModel):
+    """The `logprobs` block of a chat choice, holding one entry per generated token."""
+
     model_config = _ACCEPTS_DICT_OR_OBJECT
 
     content: list[TokenLogprobs] = []
 
 
 class ChatChoice(BaseModel):
+    """One sampled sequence of a chat completion."""
+
     model_config = _ACCEPTS_DICT_OR_OBJECT
 
     logprobs: ChatChoiceLogprobs | None = None
@@ -47,12 +51,16 @@ class ChatCompletion(BaseModel):
 
 
 class ResponseContentPart(BaseModel):
+    """One content part of an output item, holding its per-token logprobs."""
+
     model_config = _ACCEPTS_DICT_OR_OBJECT
 
     logprobs: list[TokenLogprobs] = []
 
 
 class ResponseOutputItem(BaseModel):
+    """One sampled sequence of a Responses API payload."""
+
     model_config = _ACCEPTS_DICT_OR_OBJECT
 
     content: list[ResponseContentPart] = []
