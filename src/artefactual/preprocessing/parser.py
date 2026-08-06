@@ -95,8 +95,9 @@ class LogProbParser(BaseEstimator, TransformerMixin):
 
         Raises:
             TypeError: If a response is not a recognised completion format.
-            ValueError: If a logprob is missing, non-finite or positive, or if a response
-                carries fewer than `k` ranks per token.
+            ValueError: If a logprob is missing, non-finite or positive, if no response
+                carries any log-probabilities, or if a response carries fewer than `k`
+                ranks per token.
         """
         parsed = parse_top_logprobs(X)
         if not parsed:
@@ -115,6 +116,21 @@ class LogProbParser(BaseEstimator, TransformerMixin):
                         )
                         raise ValueError(error_msg)
         max_tokens = max((max(d.keys()) + 1 for d in parsed if d), default=0)
+        if max_tokens == 0 and self.k is not None:
+            # The shape was recognised but nothing carried ranks, which is what a provider
+            # returns when logprobs were not requested or are not supported. Caught here
+            # because a (n, 0, k) array reaches the entropy step as a zero-size reduction,
+            # whose numpy error names nothing the caller can act on. Gated on `k` for the
+            # same reason `_reject_narrow` is: without a declared rank count the parser has
+            # no expectation to contradict, and an empty parse is just an empty parse.
+            error_msg = (
+                f"None of the {len(parsed)} response(s) carry any log-probabilities. The "
+                f"payload is a recognised completion format but its top_logprobs are "
+                f"absent or empty, which is what a provider returns when logprobs were "
+                f"not requested or are unsupported. Regenerate with logprobs=True and "
+                f"top_logprobs={self.k if self.k is not None else 'k'}."
+            )
+            raise ValueError(error_msg)
         self._reject_narrow(parsed)
 
         # Surplus ranks are dropped rather than kept: a calibration fit at k has no
