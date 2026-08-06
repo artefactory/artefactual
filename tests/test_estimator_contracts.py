@@ -17,7 +17,6 @@ from sklearn.base import clone
 from artefactual.exceptions import EmptySequenceWarning
 from artefactual.preprocessing.parser import LogProbParser
 from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
-from artefactual.scoring.pretrained_regression import PretrainedLogisticRegression
 
 # Drawn wherever the test only needs "some valid input"; the few assertions below that
 # pin an exact number keep their literals, because that is what they are checking.
@@ -184,31 +183,6 @@ def test_padded_tokens_do_not_drag_the_epr_mean_down():
         EntropyTransformer(reduction="epr").transform(padded),
         EntropyTransformer(reduction="epr").transform(single),
     )
-
-
-# --- PretrainedLogisticRegression ------------------------------------------------------
-
-
-def test_weights_with_a_max_rank_but_no_mean_rank_are_rejected(tmp_path):
-    # only mean_rank_* drives the k count, so this file would build a 0-feature classifier
-    path = tmp_path / "w.json"
-    path.write_text('{"intercept": 0.0, "coefficients": {"max_rank_1": 1.0}}', encoding="utf-8")
-
-    with pytest.raises(ValueError, match="Unrecognized weights format"):
-        PretrainedLogisticRegression.from_pretrained(str(path))
-
-
-def test_a_wepr_file_missing_a_max_rank_is_reported(tmp_path):
-    # the rank count comes from mean_rank_* alone, so an unpaired mean reaches the
-    # coefficient build; it is refused there by name rather than zero-filled
-    path = tmp_path / "w.json"
-    path.write_text(
-        '{"intercept": 0.0, "coefficients": {"mean_rank_1": 1.0, "mean_rank_2": 1.0, "max_rank_1": 1.0}}',
-        encoding="utf-8",
-    )
-
-    with pytest.raises(ValueError, match=r"missing \['max_rank_2'\]"):
-        PretrainedLogisticRegression.from_pretrained(str(path))
 
 
 # --- the k parameter -------------------------------------------------------------------

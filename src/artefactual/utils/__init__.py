@@ -1,8 +1,7 @@
-"""Utilities for the artefactual package."""
+"""Shared helpers. Detector persistence lives in `io`."""
 
-from artefactual.utils.io import load_calibration, load_weights
+from artefactual.utils.io import EstimatorPersistenceMixin
 
 __all__ = [
-    "load_calibration",
-    "load_weights",
+    "EstimatorPersistenceMixin",
 ]

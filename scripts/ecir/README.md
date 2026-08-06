@@ -225,7 +225,7 @@ uv run ../train_detector.py \
     --responses "$OUT/responses.jsonl" \
     --judgments "$OUT/judgments.jsonl" \
     --reduction wepr --k "$K" \
-    --output "$OUT/wepr_weights.json" \
+    --output "$OUT/wepr.skops" \
     --report "$OUT/wepr_evaluation.json"
 ```
 
@@ -242,7 +242,7 @@ chance of picking up a different install. Numbers here are illustrative:
 joined 400 pairs on custom_id (112 hallucinations)
 fitting on 300 response(s), holding out 100
 intercept: -3.02
-wrote out/wepr_weights.json
+wrote out/wepr.skops
 
                precision    recall  f1-score   support
 
@@ -272,7 +272,7 @@ for reduction in epr wepr; do
   uv run ../train_detector.py \
       --responses "$OUT/responses.jsonl" --judgments "$OUT/judgments.jsonl" \
       --reduction "$reduction" --k "$K" \
-      --output "$OUT/${reduction}_weights.json" \
+      --output "$OUT/${reduction}.skops" \
       --report "$OUT/${reduction}_evaluation.json" &
 done
 wait
@@ -287,12 +287,12 @@ cost; generating narrow can only be corrected with more GPU time.
 ```python
 from artefactual.scoring import wepr
 
-detector = wepr("out/wepr_weights.json", k=15)
+detector = wepr("out/wepr.skops", k=15)
 detector.predict_proba(response)[:, 1]
 ```
 
-The file is the same format `load_weights` reads, so it is interchangeable with the shipped
-ones. Score responses generated the same way — same model, and `top_logprobs` at least `k`.
+The file is the same `.skops` format the published detectors use, so it is interchangeable
+with them. Score responses generated the same way — same model, and `top_logprobs` at least `k`.
 
 ## What the paper reports
 

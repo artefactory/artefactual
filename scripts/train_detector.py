@@ -4,7 +4,7 @@ Trains a hallucination detector and evaluates the model it produces.
 Usage:
     uv run scripts/train_detector.py \
         --responses responses.jsonl --judgments judgments.jsonl --reduction wepr \
-        --output wepr_weights.json --report wepr_evaluation.json
+        --output wepr.skops --report wepr_evaluation.json
 
 Both inputs are `vllm run-batch` outputs: one line per request, carrying the `custom_id`
 the generation request was built with. Rows are joined on that id rather than on position,
@@ -27,8 +27,8 @@ model's scores, which answers "how precisely do I know this model's ROC-AUC" rat
 "how much does the fitting procedure vary". The intervals are therefore narrower than
 Table 1's and not directly comparable to them.
 
-The fitted intercept and coefficients are written to `--output` in the shape
-`artefactual.utils.io.load_weights` reads back; the evaluation goes to `--report`.
+The fitted estimator is written to `--output` as a `.skops` file, the shape
+`epr()` and `wepr()` read back; the evaluation report goes to `--report` as JSON.
 """
 
 import json
@@ -41,7 +41,7 @@ from sklearn.metrics import average_precision_score, classification_report, roc_
 from sklearn.model_selection import train_test_split
 from sklearn.utils import resample
 
-from artefactual.scoring import BaseDetector, epr, wepr
+from artefactual.scoring import BaseDetector
 from artefactual.scoring.base_detector import DEFAULT_K
 from artefactual.scoring.entropy_methods.entropy_transformer import STRATEGIES
 
@@ -56,7 +56,7 @@ flags.DEFINE_string("responses", None, "vllm run-batch output with logprobs")
 flags.DEFINE_string("judgments", None, "vllm run-batch output with judge verdicts")
 flags.DEFINE_enum("reduction", "epr", sorted(STRATEGIES), "scoring variant")
 flags.DEFINE_integer("k", DEFAULT_K, "top_logprobs the batch was generated with")
-flags.DEFINE_string("output", None, "where to write the fitted weights JSON")
+flags.DEFINE_string("output", None, "where to write the fitted detector (.skops)")
 flags.DEFINE_string("report", None, "where to write the evaluation as JSON")
 flags.DEFINE_float("test_size", TEST_SIZE, "held-out fraction; 0 fits on everything and skips evaluation")
 flags.DEFINE_integer("repetitions", REPETITIONS, "resamples used for the confidence intervals")
@@ -142,20 +142,6 @@ def join_on_custom_id(responses: dict[str, Any], judgments: dict[str, Any]) -> t
     return x, np.array(y)
 
 
-def weights_payload(detector: BaseDetector, reduction: str, k: int) -> dict[str, Any]:
-    """Serialise the fitted classifier in the shape `load_weights` reads back."""
-    classifier = detector.named_steps["classifier"]
-    coefficients = classifier.coef_[0].tolist()
-
-    if reduction == "epr":
-        named = {"mean_entropy": coefficients[0]}
-    else:
-        named = {f"mean_rank_{i + 1}": coefficients[i] for i in range(k)}
-        named |= {f"max_rank_{i + 1}": coefficients[k + i] for i in range(k)}
-
-    return {"intercept": float(classifier.intercept_[0]), "coefficients": named}
-
-
 def bootstrap_interval(y_true: np.ndarray, scores: np.ndarray, metric, n_repetitions: int, seed: int) -> dict:
     """Mean and 95% percentile interval for a ranking metric, by resampling the held-out set.
 
@@ -233,7 +219,6 @@ def main(argv: list[str]) -> None:
         raise app.UsageError(msg)
 
     x, y = join_on_custom_id(read_batch_output(Path(FLAGS.responses)), read_batch_output(Path(FLAGS.judgments)))
-    build = {"epr": epr, "wepr": wepr}[FLAGS.reduction]
 
     if FLAGS.test_size > 0:
         x_train, x_test, y_train, y_test = split_labelled_set(x, y, FLAGS.test_size, FLAGS.seed)
@@ -242,14 +227,13 @@ def main(argv: list[str]) -> None:
         x_train, y_train, x_test, y_test = x, y, None, None
         logging.info(f"fitting on all {len(y)} response(s); --test_size 0, so no evaluation")
 
-    detector = build(k=FLAGS.k, trainable=True).fit(x_train, y_train)
+    detector = BaseDetector.trainable(FLAGS.reduction, k=FLAGS.k).fit(x_train, y_train)
 
-    payload = weights_payload(detector, FLAGS.reduction, FLAGS.k)
-    logging.info(f"intercept: {payload['intercept']}")
-    logging.info(f"coefficients: {payload['coefficients']}")
+    classifier = detector.named_steps["classifier"]
+    logging.info(f"intercept: {float(classifier.intercept_[0])}")
+    logging.info(f"coefficients: {classifier.coef_[0].tolist()}")
     if FLAGS.output:
-        Path(FLAGS.output).write_text(json.dumps(payload, indent=4), encoding="utf-8")
-        logging.info(f"wrote {FLAGS.output}")
+        logging.info(f"wrote {detector.save_estimator(FLAGS.output)}")
 
     if y_test is None:
         return

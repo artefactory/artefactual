@@ -27,7 +27,7 @@ response = client.chat.completions.create(
     top_logprobs=15,
 )
 
-detector = wepr(MODEL)
+detector = wepr(DETECTOR)
 print(detector.predict_proba(response)[:, 1])   # P(hallucination) per sequence
 print(detector.predict_token_proba(response))   # ...and per token
 ```
@@ -90,29 +90,31 @@ arguments and return the same type.
 ```python
 from artefactual.scoring import epr, wepr
 
-wepr("microsoft/phi-4")                       # pre-trained, one of four shipped models
-wepr("/path/to/my_weights.json")              # trained on another model
+wepr("chicham/artefactual-wepr-phi4")         # a published detector, by its own repo
+wepr("/path/to/my_detector.skops")           # one you trained yourself
 wepr(k=15, trainable=True).fit(responses, y)  # fit your own, y is 0/1 per sequence
-epr("microsoft/phi-4")                        # the single-coefficient variant
+epr("chicham/artefactual-epr-phi4")           # the single-coefficient variant
 ```
 
 Scoring a batch, reading per-token scores, scoring Langfuse traces, composing into
 `GridSearchCV` and training a detector for a model that is not shipped are covered in the
 [user guide](https://artefactory.github.io/artefactual/guide/scoring.html).
 
-## Supported models
+## Published detectors
 
-Weight files ship in `src/artefactual/data` and are addressed by model name:
+A detector is named by its own Hugging Face repository, not by the model it scores. Pick
+the row for the model that produced the responses, and the column for the reduction:
 
-| Model |
-|---|
-| `mistralai/Ministral-8B-Instruct-2410` |
-| `mistralai/Mistral-Small-3.1-24B-Instruct-2503` |
-| `tiiuae/Falcon3-10B-Instruct` |
-| `microsoft/phi-4` |
+| Model that produced the responses | `epr()` | `wepr()` |
+|---|---|---|
+| `mistralai/Ministral-8B-Instruct-2410` | `chicham/artefactual-epr-ministral` | `chicham/artefactual-wepr-ministral` |
+| `mistralai/Mistral-Small-3.1-24B-Instruct-2503` | `chicham/artefactual-epr-mistral-small` | `chicham/artefactual-wepr-mistral-small` |
+| `tiiuae/Falcon3-10B-Instruct` | `chicham/artefactual-epr-falcon3` | `chicham/artefactual-wepr-falcon3` |
+| `microsoft/phi-4` | `chicham/artefactual-epr-phi4` | `chicham/artefactual-wepr-phi4` |
 
-Both `epr()` and `wepr()` accept any of these names, or a path to a weights file trained on
-another model.
+All are trained at `k = 15`. Both factories also accept a path to a `.skops` file, so a
+detector you trained yourself is named the same way one published here is — the package
+holds no list of models, and publishing another detector needs no release.
 
 ## Limitations
 
