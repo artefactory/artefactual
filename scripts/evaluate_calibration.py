@@ -2,7 +2,7 @@
 Out-of-bag bootstrap evaluation of an EPR or WEPR calibration.
 
 Usage:
-    python scripts/evaluate_calibration.py \
+    uv run scripts/evaluate_calibration.py \
         --responses responses.jsonl --judgments judgments.jsonl --reduction wepr
 
 Reproduces the ECIR evaluation: resample the labelled set with replacement, fit on the
