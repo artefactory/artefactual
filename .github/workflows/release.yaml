@@ -1,27 +1,92 @@
 name: Release
 
+# Every merge to main is a release: the tag is created here rather than by hand, and the
+# version is read back off that tag by hatch-vcs, so what is tagged and what is built
+# cannot disagree.
+#
+# The chain runs inside one workflow. Chaining through `workflow_run` on a pushed tag
+# would never fire: a push made with GITHUB_TOKEN does not start a workflow run, so the
+# tag would appear and nothing would build.
 on:
-  workflow_run:
-    workflows: [Build]
-    types: [completed]
+  push:
+    branches: [main]
 
 permissions:
-  contents: write
-  id-token: write  # Required for PyPI trusted publishing
+  contents: read
+
+# Serialised, not cancelled: two merges landing together must not both compute "the next
+# tag" from the same base, and abandoning a run part-way through leaves a tag with no
+# release against it.
+concurrency:
+  group: release-main
+  cancel-in-progress: false
 
 jobs:
-  release:
+  tag:
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
-    environment:
-      name: pypi
-      url: https://pypi.org/p/artefactual
-    env:
-      TAG_NAME: ${{ github.event.workflow_run.head_branch }}
+    permissions:
+      contents: write  # create and push the tag
+    outputs:
+      tag: ${{ steps.bump.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
+          # bump-my-version reads the current version from the most recent reachable tag,
+          # so the tag history is its input, not just the build's.
           fetch-depth: 0
+          lfs: true
+
+      - uses: astral-sh/setup-uv@61cb8a9741eeb8a550a1b8544337180c0fc8476b  # v7.2.0
+        with:
+          enable-cache: true
+
+      - name: Compute and create the next tag
+        id: bump
+        run: |
+          # Annotated tags carry a tagger, which a runner has no identity for by default.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Configured to write no files and make no commit, so this only tags HEAD --
+          # which is what keeps the tag an ancestor of main and reachable by `describe`.
+          uvx bump-my-version bump patch
+          tag=$(git describe --tags --exact-match HEAD)
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "tagged $tag"
+
+      - name: Push the tag
+        env:
+          TAG_NAME: ${{ steps.bump.outputs.tag }}
+        run: git push origin "$TAG_NAME"
+
+  build:
+    needs: tag
+    permissions:
+      contents: read
+      id-token: write  # a called workflow cannot hold more than its caller grants
+    uses: ./.github/workflows/build.yaml
+    with:
+      publish: true
+      tag: ${{ needs.tag.outputs.tag }}
+
+  publish:
+    needs: [tag, build]
+    runs-on: ubuntu-latest
+    # Everything outward-facing lives behind this environment, so a required reviewer on
+    # it holds the GitHub Release and the PyPI upload together. The tag is already pushed
+    # by then; a tag is cheap to delete, a PyPI version is not reusable.
+    environment:
+      name: pypi
+      url: https://pypi.org/p/artefactual
+    permissions:
+      contents: write  # create the GitHub Release
+      id-token: write  # Required for PyPI trusted publishing
+    env:
+      TAG_NAME: ${{ needs.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.tag.outputs.tag }}
+          fetch-depth: 0  # git-cliff reads the commits since the previous tag
           lfs: true
 
       - uses: astral-sh/setup-uv@61cb8a9741eeb8a550a1b8544337180c0fc8476b  # v7.2.0
@@ -43,11 +108,6 @@ jobs:
         with:
           name: python-package-distributions
           path: dist/
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Remove pre-existing publish attestations
-        run: rm -f dist/*.publish.attestation
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b  # v2.5.0
