@@ -60,9 +60,13 @@ jq -c -s \
   | select(.error == null and .response != null)
   | .custom_id as $id
   | ($gold[$id] // error("no question for custom_id \($id)")) as $q
+  # `run-batch` follows the OpenAI Batch output spec, which wraps the ChatCompletion in an
+  # envelope: .response is {status_code, request_id, body}, and the completion is the body.
+  # Older vllm emitted the completion directly as .response, so accept both.
+  | (.response.body // .response) as $completion
   # Bound before the template chain: inside join(), `.` is the array split() produced,
   # not the response object.
-  | .response.choices[0].message.content as $answer
+  | $completion.choices[0].message.content as $answer
   | ($q.answer_aliases // []) as $aliases
   # Jinja runs with trim_blocks off, so every {% %} tag leaves the newline it sits on.
   # That is why each alias is wrapped in newlines and the block keeps a trailing pair:

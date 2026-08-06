@@ -40,17 +40,21 @@ def read_batch_output(path: Path) -> dict[str, Any]:
 
     Lines whose request failed carry `error` and a null `response`; they are dropped and
     counted rather than crashing the run, because one bad row should not cost a batch.
+
+    `run-batch` follows the OpenAI Batch output spec, so `response` is an envelope --
+    `{status_code, request_id, body}` -- and the ChatCompletion is its `body`. Older vllm
+    put the completion directly in `response`, so unwrap only when the envelope is there.
     """
     rows, failed = {}, 0
     for line in path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
         record = json.loads(line)
-        # `response` IS the ChatCompletion -- vLLM does not nest it under `body`.
         if record.get("error") is not None or record.get("response") is None:
             failed += 1
             continue
-        rows[record["custom_id"]] = record["response"]
+        response = record["response"]
+        rows[record["custom_id"]] = response.get("body", response)
     if failed:
         logger.warning(f"{path.name}: dropped {failed} failed request(s)")
     return rows
