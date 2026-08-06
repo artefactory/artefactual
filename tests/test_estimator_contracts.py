@@ -225,36 +225,41 @@ def test_k_is_not_mutated_by_transform(payload):
     assert parser.k == 8
 
 
-def test_widening_k_would_dilute_the_epr_feature():
+def test_zero_filling_understates_the_epr_feature():
     """Why the parser refuses a narrow response instead of zero-filling it.
 
-    EPR is a mean over ranks, so absent ranks contribute 0 but still count in the
-    denominator: reducing the same data at a wider k scales the feature by exactly the
-    ratio of the two. That is a wrong score, not a rescaled one, because a genuinely wider
-    response is not diluted the same way -- which is why k is the parser's to enforce and
-    not a free parameter.
+    EPR sums the rank axis, so ranks the caller never fetched contribute nothing and the
+    sum stops short of the entropy the distribution actually carries. Padding a 3-rank
+    response out to 10 therefore reproduces its 3-rank score, not the score a genuine
+    10-rank response would have earned -- the two are not comparable, which is why the
+    rank count is the parser's to enforce.
     """
     narrow = EntropyTransformer(reduction="epr").transform(LOGPROBS[:, :, :3])
-    wide = EntropyTransformer(reduction="epr").transform(
+    padded = EntropyTransformer(reduction="epr").transform(
         np.pad(LOGPROBS[:, :, :3], ((0, 0), (0, 0), (0, 7)), constant_values=np.nan)
     )
 
-    np.testing.assert_allclose(wide, narrow * 3 / 10, rtol=1e-6)
+    np.testing.assert_allclose(padded, narrow, rtol=1e-6)
 
 
-def test_the_epr_feature_is_the_mean_not_the_sum_over_ranks():
-    """Guards the scale the shipped calibrations were fit at.
+def test_the_epr_feature_is_the_truncated_entropy():
+    """Pins EPR to Eq. 3 and 6: mean over tokens of the sum over ranks.
 
-    The coefficient is named `mean_entropy` and was produced by averaging the per-rank
-    contribution columns. Summing instead inflates the feature by k and saturates every
-    calibrated probability, which is a silent failure -- the ranking still looks right.
+    Averaging the rank axis instead would still rank identically -- it is a constant
+    rescale -- so nothing downstream would object, and the feature would silently stop
+    being an entropy. A uniform distribution over k ranks has entropy ln(k) exactly, which
+    catches the reduction and the log base at once. See test_feature_extraction.py for the
+    comparison against the released implementation.
     """
     contributions = EntropyTransformer().entropy_contributions(LOGPROBS)
-    k = LOGPROBS.shape[-1]
-
     feature = EntropyTransformer(reduction="epr").transform(LOGPROBS)
 
-    np.testing.assert_allclose(feature[:, 0], contributions.sum(axis=-1).mean(axis=-1) / k, rtol=1e-6)
+    np.testing.assert_allclose(feature[:, 0], contributions.sum(axis=-1).mean(axis=-1), rtol=1e-6)
+
+    for k in (2, 8, 15):
+        uniform = np.full((1, 1, k), np.log(1 / k))
+        epr = EntropyTransformer(reduction="epr").transform(uniform)
+        np.testing.assert_allclose(epr[0, 0], np.log(k), rtol=1e-6)
 
 
 def test_padded_sequences_still_warn():

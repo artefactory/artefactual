@@ -12,21 +12,20 @@ from artefactual.scoring.entropy_methods.entropy_contributions import EntropyCon
 
 
 def _epr(x, axis) -> np.ndarray:
-    """Mean entropy contribution per rank, pooled over the token axis.
+    """Entropy Production Rate: the truncated entropy, averaged over tokens.
 
-    Matches the `mean_entropy` coefficient the calibrations are fit on: the per-rank
-    contribution columns averaged, not summed.
+    The paper's Eq. 6 -- the mean over the sequence of the top-K entropy estimate
+    `H~_K = -sum_k p_k ln p_k` (Eq. 3). So the rank axis is summed, not averaged: the
+    result is an entropy, on the same scale as `H(q)` itself, in nats as the ECIR2026
+    release computes it.
 
-    The rank mean divides by `k`, the full rank width, so a NaN rank counts as 0 in the
-    numerator and still counts in the denominator; `nanmean` would drop it from both. A
-    token whose ranks are entirely NaN is padding rather than data and is excluded from
-    the token mean instead.
+    A token whose ranks are entirely NaN is padding rather than data, and is excluded from
+    the token mean rather than contributing the 0 that `nansum` would give it.
     """
-    is_nan = np.isnan(x)
-    padded = np.all(is_nan, axis=-1, keepdims=True)  # fully-NaN (padded) tokens
-    s = np.nansum(x, axis=-1, keepdims=True) / x.shape[-1]  # mean over k (rank axis)
+    padded = np.all(np.isnan(x), axis=-1, keepdims=True)  # fully-NaN (padded) tokens
+    s = np.nansum(x, axis=-1, keepdims=True)  # H~_K: sum over the K ranks
     s = np.where(padded, np.nan, s)  # nansum gave 0 for padded tokens → restore NaN
-    return np.nanmean(s, axis=axis)  # pool over the token axis
+    return np.nanmean(s, axis=axis)  # EPR: mean over the token axis
 
 
 def _wepr(x, axis) -> np.ndarray:

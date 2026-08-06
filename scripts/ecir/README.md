@@ -237,18 +237,18 @@ SelfCheckGPT.
 Python scripts (steps 6 and 7). Every shipped detector was trained at 15. Setting `K` once at the
 top of the tutorial is what keeps them in step.
 
-It cannot be inferred, because it is part of the metric: EPR averages the entropy
-contribution over the top `k` ranks, so changing `k` rescales the score, and WEPR has one
-coefficient per rank.
+It cannot be inferred, because it is part of the metric: EPR is the entropy of the top `k`
+ranks (Eq. 3 and 6 of the paper), so changing `k` changes what is being measured, and WEPR
+has one coefficient per rank.
 
 Generating with a smaller `top_logprobs` than you fit at fails loudly, for both reductions,
 as soon as the responses are read:
 
 ```
 ValueError: Response 0 carries 5 rank(s) per token but k=15 was requested. The missing
-ranks are not absent from the distribution, only unfetched, so zero-filling them would
-understate the entropy by a factor of 5/15. Regenerate with top_logprobs=15, or score at
-k=5 with a calibration fit at that rank count.
+ranks are not absent from the distribution, only unfetched, so zero-filling them would drop
+their entropy contributions and score the response as more confident than it was.
+Regenerate with top_logprobs=15, or score at k=5 with a detector trained at that rank count.
 ```
 
 Generating *wider* is harmless — surplus ranks are dropped — so when in doubt, request more.

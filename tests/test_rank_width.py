@@ -5,13 +5,13 @@ caller-controlled: OpenAI's `top_logprobs` caps at 20 and 5 is a common default,
 every shipped weights file is calibrated at k=15. The two have to be reconciled, and the
 direction matters:
 
-* **Wider than k** is reconcilable. The surplus ranks are dropped, because the calibration
-  never saw them and a mean over k ranks is defined without them.
+* **Wider than k** is reconcilable. The surplus ranks are dropped, because the detector was
+  trained on exactly k of them and has no coefficient for a k+1th.
 * **Narrower than k** is not. Those ranks are not absent from the distribution, only
-  unfetched, so zero-filling them understates the entropy by exactly `width/k` -- a 5-rank
-  response scored at k=15 lands *below* a genuine 15-rank response of comparable
-  uncertainty. That reorders results rather than merely rescaling them, so the pipeline
-  refuses it.
+  unfetched. EPR sums the rank axis, so zero-filling them simply drops their contributions
+  and the response scores as more confident than it was -- indistinguishable from a model
+  that really was that sure. That reorders results rather than rescaling them, so the
+  pipeline refuses it.
 
 `LogProbParser` owns this: it is the only step that sees a token's true rank count, since
 everything downstream receives a batch already padded to a common width. That is also why
@@ -85,11 +85,12 @@ def test_the_refusal_names_the_remedy(tmp_path, payload, calibration):
 
 @settings_for_tmp_path
 @given(payload=narrow_payloads, calibration=epr_calibration())
-def test_the_refusal_quantifies_the_understatement(tmp_path, payload, calibration):
+def test_the_refusal_explains_the_direction_of_the_error(tmp_path, payload, calibration):
+    # which way the score would be wrong is the part that tells a reader whether they can
+    # live with it -- a narrow response looks *more* confident, so hallucinations slip past
     detector = epr(str(write_json(tmp_path, "cal.json", calibration)))
-    expected = f"factor of {payload_width(payload)}/{CALIBRATED_K}"
 
-    with pytest.raises(ValueError, match=expected):
+    with pytest.raises(ValueError, match="more confident than it was"):
         detector.predict_proba(payload)
 
 
