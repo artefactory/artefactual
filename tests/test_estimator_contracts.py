@@ -180,14 +180,15 @@ def test_weights_with_a_max_rank_but_no_mean_rank_are_rejected(tmp_path):
 
 
 def test_a_wepr_file_missing_a_max_rank_is_reported(tmp_path):
-    # WEPR zero-fills the gap; the classifier indexes it directly and raises instead
+    # the rank count comes from mean_rank_* alone, so an unpaired mean reaches the
+    # coefficient build; it is refused there by name rather than zero-filled
     path = tmp_path / "w.json"
     path.write_text(
         '{"intercept": 0.0, "coefficients": {"mean_rank_1": 1.0, "mean_rank_2": 1.0, "max_rank_1": 1.0}}',
         encoding="utf-8",
     )
 
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError, match=r"missing \['max_rank_2'\]"):
         PretrainedLogisticRegression.from_pretrained(str(path))
 
 
