@@ -98,20 +98,47 @@ repeating — both detectors are fit from the same generations.
 
 `k` appears in three places and **must be the same number in all of them**: the third
 argument to `build_generation_requests.sh` (it becomes `top_logprobs` in the request), and
-`--k` on both Python scripts. Every shipped calibration uses 15.
+`--k` on both Python scripts. Every shipped calibration uses 15. `run_pipeline.sh` passes
+its fifth argument to all three, so driving the pipeline end to end keeps them in step.
 
 It cannot be inferred, because it is part of the metric: EPR averages the entropy
 contribution over the top `k` ranks, so changing `k` rescales the score, and WEPR has one
-coefficient per rank. Getting it wrong fails loudly rather than silently for WEPR:
+coefficient per rank.
+
+Generating with a smaller `top_logprobs` than you score at fails loudly, for both
+reductions, as soon as the responses are read:
+
+```
+ValueError: Response 0 carries 5 rank(s) per token but k=15 was requested. The missing
+ranks are not absent from the distribution, only unfetched, so zero-filling them would
+understate the entropy by a factor of 5/15. Regenerate with top_logprobs=15, or score at
+k=5 with a calibration fit at that rank count.
+```
+
+Generating *wider* is harmless — the surplus ranks are dropped — so if in doubt, request
+more. Supplying WEPR weights whose rank count disagrees with `--k` is caught separately,
+by their coefficient vector:
 
 ```
 ValueError: Weights cover 15 rank(s) but k=20 was requested. WEPR coefficients are fixed
 at the rank count used during calibration; pass k=15, or supply weights calibrated at k=20.
 ```
 
-If you generate at a different `k`, regenerate — do not reuse a calibration fit at another.
+If you generated at a narrower `k`, regenerate — do not reuse a calibration fit at another.
 
 ## If something looks wrong
+
+**`Response N carries M rank(s) per token but k=15 was requested`.** The generation batch
+was produced with a smaller `top_logprobs` than you are fitting at — most often because
+step 1 and step 5 were run with different `k`. Check what the responses actually carry:
+
+```bash
+jq -r 'select(.response != null)
+       | .response.choices[0].logprobs.content[0].top_logprobs | length' out/responses.jsonl | sort -u
+```
+
+One number should come back, and it must be at least your `--k`. If it is smaller, rerun
+steps 1 and 2 — the judgments are unaffected and do not need regenerating.
 
 **`joined N pairs on custom_id` reports fewer than your question count.** Some requests
 failed. Lines whose request errored carry `"error"` and a null `"response"`; they are

@@ -75,7 +75,7 @@ response = client.chat.completions.create(
     model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Who wrote the Rust book?"}],
     logprobs=True,
-    top_logprobs=15,  # match the rank count the weights were calibrated at
+    top_logprobs=15,  # required: at least the rank count the weights were calibrated at
 )
 
 detector = epr("mistralai/Ministral-8B-Instruct-2410")
@@ -129,9 +129,10 @@ Two reductions ship:
 | `wepr` | `mean_j(s_kj)` ‖ `max_j(s_kj)` — 2k features | Per-rank mean and peak, weighted separately |
 
 EPR treats every rank alike; the calibrated coefficient is named `mean_entropy` because
-the feature is a *mean* over the `k` ranks, not a sum. A rank the provider never returned
-counts as 0 and still counts in the denominator, which is why `k` is part of the
-definition rather than a display detail.
+the feature is a *mean* over the `k` ranks, not a sum. Since the denominator is `k` rather
+than however many ranks a response happens to carry, `k` is part of the feature's
+definition rather than a display detail — which is why responses narrower than `k` are
+rejected instead of padded.
 
 WEPR learns a weight per rank, which matters because `-p*log(p)` peaks at `p = 1/e` —
 mid-ranked candidates are more informative than either the near-certain top rank or the
@@ -190,24 +191,38 @@ count every shipped file was calibrated at.
 detector = wepr("microsoft/phi-4", k=15)
 ```
 
-It is applied at both ends of the pipeline:
+**Your responses must carry at least `k` ranks.** This is an input requirement, not
+something the pipeline reconciles for you — generate with `top_logprobs` set to `k` or
+higher. The two directions are not symmetric:
 
-- **Input** — the entropy contributions are truncated or zero-padded to exactly `k` ranks,
-  so a response carrying a different `top_logprobs` still scores correctly. (Zero is the
-  limit of `-p*log(p)` as `p` tends to 0, so a rank the provider never returned adds
-  nothing to the sum — but it does count in the mean, which is why `k` must match the
-  calibration rather than the response.)
-- **Weights** — WEPR coefficients are fixed at their calibration rank count, so loading
-  weights that disagree with `k` raises rather than producing a silently mis-shaped score:
+- **Wider than `k`** — surplus ranks are dropped. The calibration never saw them, and a
+  mean over `k` ranks is defined without them, so scoring is unaffected.
+- **Narrower than `k`** — refused. Those ranks are not absent from the distribution, only
+  unfetched, so filling them with zeros understates the entropy by exactly `width/k`:
 
   ```
-  ValueError: Weights cover 15 rank(s) but k=20 was requested. WEPR coefficients are
-  fixed at the rank count used during calibration; pass k=15, or supply weights
-  calibrated at k=20.
+  ValueError: Response 0 carries 5 rank(s) per token but k=15 was requested. The missing
+  ranks are not absent from the distribution, only unfetched, so zero-filling them would
+  understate the entropy by a factor of 5/15. Regenerate with top_logprobs=15, or score
+  at k=5 with a calibration fit at that rank count.
   ```
 
-EPR calibrations record no rank count, so for `epr()` the `k` only governs input
-alignment.
+  This is a wrong score rather than a rescaled one: a 5-rank response scored at `k=15`
+  yields 0.1073 where its true value is 0.3219, landing *below* a genuine 15-rank response
+  of comparable uncertainty (0.1805). Mixed-width batches would rank incorrectly, so the
+  check is per response — a wide response in the same batch never masks a narrow one.
+
+WEPR additionally validates the weights themselves, since its coefficient vector has one
+entry per rank:
+
+```
+ValueError: Weights cover 15 rank(s) but k=20 was requested. WEPR coefficients are
+fixed at the rank count used during calibration; pass k=15, or supply weights
+calibrated at k=20.
+```
+
+EPR calibrations record no rank count, so for `epr()` the `k` you pass is what governs the
+input width.
 
 To use your own calibration, pass a path instead of a name:
 
