@@ -148,10 +148,10 @@ class LogProbParser(BaseEstimator, TransformerMixin):
                 error_msg = (
                     f"Response {i} carries {min(widths)} rank(s) per token but k={self.k} "
                     f"was requested. The missing ranks are not absent from the "
-                    f"distribution, only unfetched, so zero-filling them would understate "
-                    f"the entropy by a factor of {min(widths)}/{self.k}. Regenerate with "
-                    f"top_logprobs={self.k}, or score at k={min(widths)} with a "
-                    f"calibration fit at that rank count."
+                    f"distribution, only unfetched, so zero-filling them would drop their "
+                    f"entropy contributions and score the response as more confident than "
+                    f"it was. Regenerate with top_logprobs={self.k}, or score at "
+                    f"k={min(widths)} with a detector trained at that rank count."
                 )
                 raise ValueError(error_msg)
 

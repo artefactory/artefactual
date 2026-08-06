@@ -282,13 +282,17 @@ entropy contribution of each candidate, `s_kj = -p_kj * log(p_kj)` for token *j*
 
 | Reduction | Feature vector | Reads |
 |---|---|---|
-| `epr` | `mean_j( mean_k s_kj )` — 1 feature | Mean contribution per rank, per token |
+| `epr` | `mean_j( sum_k s_kj )` — 1 feature | The sequence's average top-`k` entropy |
 | `wepr` | `mean_j(s_kj)` ‖ `max_j(s_kj)` — 2k features | Per-rank mean and peak, weighted separately |
 
-EPR averages over exactly `k` ranks, which is why `k` belongs to the feature's definition
-and why responses carrying fewer ranks are rejected rather than padded. WEPR weights each
-rank separately, which pays off because `-p*log(p)` peaks at `p = 1/e`: a mid-ranked
-candidate carries more signal than either the near-certain top rank or the negligible tail.
+EPR sums the rank axis, so it is the top-`k` entropy estimate averaged over the sequence —
+which is why `k` belongs to the feature's definition, and why a response carrying fewer
+ranks is rejected rather than padded: the missing contributions would simply be absent, and
+the response would look more confident than it was.
+
+WEPR weights each rank separately, which pays off because `-p*log(p)` peaks at `p = 1/e`: a
+mid-ranked candidate carries more signal than either the near-certain top rank or the
+negligible tail.
 
 **3. Calibrate.** A `LogisticRegression` pre-loaded with per-model coefficients maps the
 features to a probability. Because it is a real sklearn classifier, `predict`,
@@ -335,13 +339,14 @@ higher. The two directions are not symmetric:
 - **Wider than `k`** — surplus ranks are dropped. The calibration never saw them, and a
   mean over `k` ranks is defined without them, so scoring is unaffected.
 - **Narrower than `k`** — refused. Those ranks are not absent from the distribution, only
-  unfetched, so filling them with zeros understates the entropy by exactly `width/k`:
+  unfetched, so filling them with zeros drops their contributions from the sum:
 
   ```
   ValueError: Response 0 carries 5 rank(s) per token but k=15 was requested. The missing
   ranks are not absent from the distribution, only unfetched, so zero-filling them would
-  understate the entropy by a factor of 5/15. Regenerate with top_logprobs=15, or score
-  at k=5 with a calibration fit at that rank count.
+  drop their entropy contributions and score the response as more confident than it was.
+  Regenerate with top_logprobs=15, or score at k=5 with a detector trained at that rank
+  count.
   ```
 
   The resulting score is wrong rather than merely rescaled — a narrow response can score

@@ -9,14 +9,14 @@ entropy_contributions = EntropyContributionsMixin.entropy_contributions
 
 
 def test_compute_entropy_contributions_basic():
-    """Test basic entropy calculation with simple numpy array input."""
-    # p = 0.5, log(p) = -0.693147
-    # s = -p * log(p) = 0.346573
+    """Contributions are in nats, as the ECIR2026 release computes them."""
+    # p = 0.5 twice: each contributes -0.5*ln(0.5), summing to ln 2 -- a fair coin's
+    # entropy in nats, which is the value that pins the log base.
     logprobs = np.array([[-0.69314718, -0.69314718]], dtype=np.float32)
 
     result = EntropyContributionsMixin.entropy_contributions(logprobs)
 
-    expected_entropy = -0.5 * np.log(0.5)  # ≈ 0.346573
+    expected_entropy = -0.5 * np.log(0.5)  # ln 2 nats in total
     assert result.shape == (1, 2)
     np.testing.assert_allclose(result, [[expected_entropy, expected_entropy]], rtol=1e-5)
 
