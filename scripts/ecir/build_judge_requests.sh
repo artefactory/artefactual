@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
-# Build LLM-as-a-judge batch requests from generated answers.
 #
-#   build_judge_requests.sh questions.json responses.jsonl <judge-model> > judge_requests.jsonl
+# Build `vllm run-batch` requests that grade generated answers against gold ones.
+#
+# Usage:
+#   build_judge_requests.sh <questions.json> <responses.jsonl> <judge-model> > judge_requests.jsonl
+#
+# Arguments:
+#   questions.json   the same pack used for generation, carrying the gold answers
+#   responses.jsonl  run-batch output from the generation stage
+#   judge-model      model to grade with, as vllm names it
+#
+# Environment:
+#   JUDGE_TEMPERATURE  sampling temperature (default 0, grading should be deterministic)
+#   JUDGE_MAX_TOKENS   reply cap            (default 200; raise it if verdicts come back
+#                      truncated and train_calibration.py reports unparsed judgments)
 #
 # Joins the generations back to their gold answers on `custom_id`, which
 # `vllm run-batch` carries through from the generation request. Rows where
@@ -12,13 +24,23 @@
 # checks the result byte-for-byte against the original Jinja template.
 set -euo pipefail
 
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+  awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "${BASH_SOURCE[0]}"
+  exit 0
+fi
+
 questions=${1:?usage: build_judge_requests.sh questions.json responses.jsonl judge-model}
 responses=${2:?missing responses.jsonl}
 model=${3:?missing judge model}
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
+for file in "$questions" "$responses"; do
+  [ -f "$file" ] || { echo "error: no such file: $file" >&2; exit 1; }
+done
+
 # The judge answers in JSON ({"judgment": ..., "explanation": ...}), so it needs room to
 # reply -- this is not a single-token verdict.
+temperature=${JUDGE_TEMPERATURE:-0}
 max_tokens=${JUDGE_MAX_TOKENS:-200}
 
 total=$(wc -l <"$responses" | tr -d " ")
@@ -31,6 +53,7 @@ jq -c -s \
   --rawfile tpl "$here/prompts/judge.txt" \
   --slurpfile questions "$questions" \
   --arg model "$model" \
+  --argjson temperature "$temperature" \
   --argjson max_tokens "$max_tokens" '
   ($questions[0] | INDEX(.question_id)) as $gold
   | .[]
@@ -58,6 +81,6 @@ jq -c -s \
      | split("{{generated_answer}}") | join($answer)
     ) as $prompt
   | {custom_id: $id, method: "POST", url: "/v1/chat/completions",
-     body: {model: $model, temperature: 0, max_completion_tokens: $max_tokens,
+     body: {model: $model, temperature: $temperature, max_completion_tokens: $max_tokens,
             messages: [{role: "user", content: $prompt}]}}
 ' "$responses"
