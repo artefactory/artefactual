@@ -1,50 +1,40 @@
 # Artefactual
 
-**Artefactual** scores how likely an LLM response is to be a hallucination, using only the
-log-probabilities the model already returns — no extra generations, no second model, no
-access to weights.
+Artefactual assigns a language model's answer a probability of being a hallucination. It
+reads the answer that has already been generated, together with the token probabilities
+returned alongside it, and needs nothing else from the model.
 
-Detectors are `scikit-learn` pipelines, so they compose with the tooling you already use.
+```bash
+pip install artefactual
+```
 
 ```python
 from artefactual.scoring import wepr
 
 detector = wepr("mistralai/Ministral-8B-Instruct-2410")
-detector.predict_proba(response)[:, 1]      # P(hallucination) per sequence
-detector.predict_token_proba(response)      # ...and per token
+detector.predict_proba(response)[:, 1]   # P(hallucination) per sequence
 ```
 
-## Features
+The [project README](https://github.com/artefactory/artefactual) covers installation,
+requirements and the published results. This site covers using a detector in depth.
 
-- **Cheap**: one pass over the response you already generated, no second opinion to buy
-- **Practical**: calibrations shipped for several model families, or fit your own
-- **Flexible**: reads the OpenAI Chat Completions and Responses API formats
-- **Detailed**: sequence-level and token-level scores, for highlighting the spans that
-  drove a low score
+- {doc}`guide/scoring` — choosing a detector, thresholds, batches, traces, training
+- {doc}`guide/how-it-works` — the three pipeline stages and the two entropy reductions
+- {doc}`guide/reference` — the rank count, weight-file layout, accepted response shapes
+- {doc}`examples/index` — runnable notebooks, no GPU or API key required
+- {doc}`api` — generated signatures
 
-## Detectors
-
-Two ship, differing in how much of the response's confidence they read:
-
-- **`wepr(...)`** — weights each rank of the token distribution separately. The stronger
-  detector, and the one to default to.
-- **`epr(...)`** — a single pooled feature. Worth it only when there is too little
-  labelled data to fit WEPR's larger coefficient vector.
-
-Both are calibrated the same way and on the same data, so choosing `epr` saves no setup
-work. Both take the same arguments and return the same thing, so switching between them is
-a one-word change. See the
-[README](https://github.com/artefactory/artefactual#how-it-works) for what each measures.
-
-## Requirements
-
-Responses must carry `logprobs` with at least `k` entries in `top_logprobs`, where `k` is
-the rank count the calibration was fit at (15 for every shipped file). Narrower responses
-are rejected rather than scored, since the missing ranks cannot be reconstructed.
+Reproducing the ECIR 2026 experiments end to end is documented in the
+[`scripts/ecir`](https://github.com/artefactory/artefactual/tree/main/scripts/ecir)
+subdirectory.
 
 ```{toctree}
 :maxdepth: 2
+:hidden:
 
+guide/scoring
+guide/how-it-works
+guide/reference
 examples/index
 api
 presentations/index

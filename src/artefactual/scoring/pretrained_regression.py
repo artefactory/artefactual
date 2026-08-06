@@ -52,7 +52,7 @@ class PretrainedLogisticRegression(LogisticRegression):
             registry: "weights" for WEPR weights, "calibration" for an EPR calibration.
             k: The rank count the caller intends to score at. WEPR weights are validated
                 against it, because their coefficient vector is fixed at the rank count
-                used during calibration. `None` skips the check.
+                they were trained at. `None` skips the check.
 
         Returns:
             An instance pre-configured with the loaded weights.
@@ -77,8 +77,8 @@ class PretrainedLogisticRegression(LogisticRegression):
             if k is not None and file_k != k:
                 msg = (
                     f"Weights cover {file_k} rank(s) but k={k} was requested. WEPR "
-                    f"coefficients are fixed at the rank count used during calibration; "
-                    f"pass k={file_k}, or supply weights calibrated at k={k}."
+                    f"coefficients are fixed at the rank count they were trained at; "
+                    f"pass k={file_k}, or supply weights trained at k={k}."
                 )
                 raise ValueError(msg)
             mean_vals = [coeffs[f"mean_rank_{i}"] for i in range(1, file_k + 1)]

@@ -3,14 +3,14 @@
 Trains an EPR or WEPR detector from scratch: generate answers, have an LLM grade them,
 train the detector on the result, and check how well it separates hallucinations. This is
 the procedure from *"Learned Hallucination Detection in Black-Box LLMs using Token-level
-Entropy Production Rate"*, and the same one to follow for training a detector on a model of your own.
+Entropy Production Rate"*, and the procedure to follow for training a detector on any other model.
 
 **The two LLM stages — generating the answers, and grading them — are run by
 [`vllm run-batch`](https://docs.vllm.ai/en/stable/examples/offline_inference/openai_batch.html).**
 The scripts here only prepare its input and read its output; nothing in this repo calls a
 model.
 
-## What you need
+## Requirements
 
 | | Why | Where |
 |---|---|---|
@@ -19,16 +19,26 @@ model.
 | This repo, `uv sync`'d | Trains and evaluates the detector | Anywhere |
 | `questions.json` | Your QA pack — see below | You write this |
 
-Only steps 2 and 4 need the GPU. The rest runs on a laptop, so the usual split is to build
-the request files locally, copy them over, run the batches, and copy the outputs back.
+The work falls into three phases, and only the middle one needs a GPU:
 
-## The training data you need
+| Phase | What happens | GPU | Cost |
+|---|---|---|---|
+| **A. Prepare the data** | Write the questions, render them as batch requests | no | minutes |
+| **B. Run the models** | Generate answers, then grade them — two `vllm run-batch` passes | **yes** | hours |
+| **C. Train and evaluate** | Fit the detector on the labels, score it on held-out data | no | seconds |
+
+So the usual split is to do A on a laptop, copy the request files to a GPU box for B, copy
+the outputs back, and do C anywhere. Phase C is cheap enough to rerun freely — retraining
+at a different `k` or on a different reduction never costs GPU time, because it reads the
+same two files phase B produced.
+
+## The training data
 
 The detector is a logistic regression trained on `(response, was_it_a_hallucination)` pairs.
 You supply the questions and their gold answers; the pipeline produces the responses, and
 the LLM judge produces the labels.
 
-So the only file you write is `questions.json`, a list of:
+The only file authored by hand is `questions.json`, a list of:
 
 ```json
 [{"question": "Who sent Augustine to England?",
@@ -39,14 +49,14 @@ So the only file you write is `questions.json`, a list of:
 
 | Field | Required | Used for |
 |---|---|---|
-| `question` | yes | The prompt sent to the model being calibrated |
+| `question` | yes | The prompt sent to the model being scored |
 | `question_id` | yes | Becomes `custom_id`; every stage joins on it, so it must be unique |
 | `short_answer` | yes | The gold answer the judge grades against |
 | `answer_aliases` | no | Other answers the judge should accept; omit or leave empty |
 
 The paper uses **TriviaQA** for training and **WebQuestions** to test generalisation, plus
 a financial RAG corpus (ArGiMi-Ardian) for missing-context detection. Any short-form QA set
-works, including your own domain questions. Two properties matter:
+works, including domain-specific question sets. Two properties matter:
 
 - **Answers must be short enough to grade automatically.** The judge compares against
   `short_answer`; an essay cannot be scored this way.
@@ -59,19 +69,30 @@ wide to tell EPR and WEPR apart, that is the signal to label more.
 
 ## Tutorial
 
-Seven steps, start to finish. Set these once — `K` in particular has to be the same number
-in steps 1 and 6, and mismatching it is the most common way to train a detector that scores wrongly:
+Seven steps in three phases. Set these once — `K` has to be the same number in steps 2 and
+6, and mismatching it is the most common way to train a detector that scores wrongly:
 
 ```bash
 cd scripts/ecir
-MODEL=mistralai/Ministral-8B-Instruct-2410   # the model you are calibrating
-JUDGE=mistralai/Ministral-8B-Instruct-2410   # the model that grades it
+MODEL=mistralai/Ministral-8B-Instruct-2410   # the model being scored
+JUDGE=mistralai/Ministral-8B-Instruct-2410   # the model that grades its answers
 K=15                                          # ranks per token; every shipped file uses 15
 OUT=out
 mkdir -p "$OUT"
 ```
 
-### Step 1 — build the generation requests
+---
+
+## Phase A — Prepare the data
+
+No GPU. Everything here is cheap and worth getting right before spending GPU hours.
+
+### Step 1 — write `questions.json`
+
+The only hand-authored file. See [the training data](#the-training-data) above for the
+schema and for the properties of a usable question set.
+
+### Step 2 — build the generation requests
 
 ```bash
 ./build_generation_requests.sh questions.json "$MODEL" "$K" > "$OUT/gen_requests.jsonl"
@@ -82,7 +103,7 @@ Check it before spending GPU time:
 
 ```bash
 head -1 "$OUT/gen_requests.jsonl" | jq '{custom_id, model: .body.model, k: .body.top_logprobs}'
-wc -l < "$OUT/gen_requests.jsonl"   # should equal your question count
+wc -l < "$OUT/gen_requests.jsonl"   # should equal the question count
 ```
 
 Sampling follows the paper (§4.1.2): non-greedy decoding at `T_samp = 1.0`, `top_p = 1.0`,
@@ -93,13 +114,20 @@ tasks yield short answers. The paper does report that dropping to `T_samp = 0.6`
 ROC-AUC by less than 1 point on Falcon-3-10B, so the signal is not an artefact of sampling
 hot.
 
-### Step 2 — generate the answers *(GPU)*
+---
+
+## Phase B — Run the models *(GPU)*
+
+The expensive phase: two `vllm run-batch` passes, and they are **strictly sequential** —
+the judge grades answers that do not exist until generation has finished.
+
+### Step 3 — generate the answers
 
 ```bash
 vllm run-batch -i "$OUT/gen_requests.jsonl" -o "$OUT/responses.jsonl" --model "$MODEL"
 ```
 
-This is the expensive step. Confirm every request came back with the right rank width:
+Confirm every request came back with the right rank width:
 
 ```bash
 jq -r 'select(.response != null)
@@ -109,7 +137,7 @@ jq -r 'select(.response != null)
 One number should print, and it must equal `$K`. If it is smaller, the generation ignored
 `top_logprobs` — fix that and rerun, because step 6 will refuse the data.
 
-### Step 3 — build the judge requests
+### Step 4 — build the judge requests
 
 ```bash
 ./build_judge_requests.sh questions.json "$OUT/responses.jsonl" "$JUDGE" > "$OUT/judge_requests.jsonl"
@@ -118,7 +146,7 @@ One number should print, and it must equal `$K`. If it is smaller, the generatio
 Joins each generated answer back to its gold answer on `custom_id` and renders the paper's
 grading prompt. Generations that failed are dropped, and the count is reported on stderr.
 
-### Step 4 — grade the answers *(GPU)*
+### Step 5 — grade the answers
 
 ```bash
 vllm run-batch -i "$OUT/judge_requests.jsonl" -o "$OUT/judgments.jsonl" --model "$JUDGE"
@@ -126,23 +154,23 @@ vllm run-batch -i "$OUT/judge_requests.jsonl" -o "$OUT/judgments.jsonl" --model 
 
 The judge replies with `{"judgment": true|false, "explanation": "..."}`. `true` means the
 answer was **correct**, so the training label is its negation — 1 marks a hallucination.
-Spot-check a few:
+Spot-check a few, then check the class balance:
 
 ```bash
 jq -r 'select(.response != null) | (.response.body // .response).choices[0].message.content' "$OUT/judgments.jsonl" | head -3
-```
 
-### Step 5 — check the class balance
-
-Before fitting, make sure you have both classes:
-
-```bash
 jq -r 'select(.response != null) | (.response.body // .response).choices[0].message.content' "$OUT/judgments.jsonl" \
   | grep -c '"judgment": *true'
 ```
 
-Compare against your question count. All-correct or all-wrong cannot be fit — go back to
-step 1 with harder or easier questions.
+Compare that count against the question count. All-correct or all-wrong cannot be fit;
+step 1 then needs harder or easier questions.
+
+---
+
+## Phase C — Train and evaluate
+
+No GPU, seconds to run, and it never needs phase B repeated.
 
 ### Step 6 — train the detector and evaluate it
 
@@ -181,18 +209,32 @@ hallucination      0.74      0.61      0.67        28
     pr_auc: 0.5233  [0.4401, 0.6118]
 ```
 
-Read the two halves as different questions. ROC-AUC and PR-AUC score the *ranking*, which
-is what a detector is for when you triage by score; the classification report scores the
-decisions at the 0.5 threshold. A detector can rank well and still make poor calls there,
-so read both — and if you intend to act on a different threshold, the AUCs are the ones
-that carry over. Recall on the `hallucination` row is usually the number that matters: the
-fraction of hallucinations actually flagged.
+The two halves answer different questions. ROC-AUC and PR-AUC score the *ranking*, which
+governs triage by score; the classification report scores the decisions at the 0.5
+threshold. A detector can rank well and still decide poorly there, so both are relevant,
+and only the AUCs carry over to a different threshold. Recall on the `hallucination` row is
+usually the figure of interest: the fraction of hallucinations actually flagged.
 
-Repeat with `--reduction epr` for the other detector and compare. Steps 2 and 4 do not need
-repeating — both detectors are fit from the same generations.
+`--test_size 0` fits on everything and skips the evaluation. It is appropriate only once
+the procedure has been measured and the remaining data is wanted in the model.
 
-Pass `--test_size 0` to fit on everything and skip the evaluation. Do that only once you
-have already measured the recipe and want the last few percent of data in the model.
+**The two reductions are independent and can run at the same time** — both read the same
+two files, and neither needs phase B repeated:
+
+```bash
+for reduction in epr wepr; do
+  uv run ../train_detector.py \
+      --responses "$OUT/responses.jsonl" --judgments "$OUT/judgments.jsonl" \
+      --reduction "$reduction" --k "$K" \
+      --output "$OUT/${reduction}_weights.json" \
+      --report "$OUT/${reduction}_evaluation.json" &
+done
+wait
+```
+
+Sweeping `--k` works the same way, with one constraint: `--k` can go no higher than the
+`top_logprobs` phase B was run with. Generating wide allows retraining narrower at no
+cost; generating narrow can only be corrected with more GPU time.
 
 ### Step 7 — use the trained detector
 
@@ -231,7 +273,7 @@ the four methods on that row.
 
 Two things worth reading off these: **WEPR beats EPR on every row**, which is why `wepr` is
 the default, and the absolute numbers drop by 10-20 points when the detector meets a dataset
-it was not trained on. Train on data that resembles your traffic.
+it was not trained on. Training data should resemble the traffic being scored.
 
 SelfCheckGPT needs 10 extra generations per answer for those numbers; EPR and WEPR need
 none. The paper measures roughly 80 ± 20 µs per score against at least 10 s for
@@ -240,7 +282,7 @@ SelfCheckGPT.
 ## Use k = 15
 
 `k` is the number of ranks per token, and it appears in two places that **must agree**:
-`build_generation_requests.sh` (step 1, where it becomes `top_logprobs`) and `--k` on
+`build_generation_requests.sh` (step 2, where it becomes `top_logprobs`) and `--k` on
 `train_detector.py` (step 6). Every shipped detector was trained at 15. Setting `K` once at
 the top of the tutorial is what keeps them in step.
 
@@ -248,8 +290,8 @@ It cannot be inferred, because it is part of the metric: EPR is the entropy of t
 ranks (Eq. 3 and 6 of the paper), so changing `k` changes what is being measured, and WEPR
 has one coefficient per rank.
 
-Generating with a smaller `top_logprobs` than you fit at fails loudly, for both reductions,
-as soon as the responses are read:
+Generating with a smaller `top_logprobs` than the fitted `k` fails loudly, for both
+reductions, as soon as the responses are read:
 
 ```
 ValueError: Response 0 carries 5 rank(s) per token but k=15 was requested. The missing
@@ -264,25 +306,26 @@ coefficient vector:
 
 ```
 ValueError: Weights cover 15 rank(s) but k=20 was requested. WEPR coefficients are fixed
-at the rank count used during calibration; pass k=15, or supply weights calibrated at k=20.
+at the rank count they were trained at; pass k=15, or supply weights trained at k=20.
 ```
 
-If you generated at a narrower `k`, regenerate — do not reuse a detector trained at another.
+Responses generated at a narrower `k` must be regenerated; a detector trained at another
+rank count is not a substitute.
 ## If something looks wrong
 
 **`Response N carries M rank(s) per token but k=15 was requested`.** The generation batch
-was produced with a smaller `top_logprobs` than you are fitting at — most often because
-step 1 and step 6 were run with different `k`. Check what the responses actually carry:
+was produced with a smaller `top_logprobs` than the fitted `k`, most often because step 2
+and step 6 were run with different values. The responses can be inspected directly:
 
 ```bash
 jq -r 'select(.response != null)
        | (.response.body // .response).choices[0].logprobs.content[0].top_logprobs | length' out/responses.jsonl | sort -u
 ```
 
-One number should come back, and it must be at least your `--k`. If it is smaller, rerun
-steps 1 and 2 — the judgments are unaffected and do not need regenerating.
+One number should come back, and it must be at least `--k`. If it is smaller, rerun
+steps 2 and 3 — the judgments are unaffected and do not need regenerating.
 
-**`joined N pairs on custom_id` reports fewer than your question count.** Some requests
+**`joined N pairs on custom_id` reports fewer than the question count.** Some requests
 failed. Lines whose request errored carry `"error"` and a null `"response"`; they are
 dropped and counted rather than crashing the run. Check the count in the log and inspect:
 
@@ -313,7 +356,7 @@ reading at all rather than a fix.
 
 `vllm run-batch` writes one line per request:
 
-```json
+```text
 {"id": "vllm-383d...", "custom_id": "q-1",
  "response": {"status_code": 200, "request_id": "vllm-batch-be0f...",
               "body": {"choices": [{"message": {...}, "logprobs": {"content": [...]}}]}},
@@ -336,7 +379,7 @@ backslashes, `&` or quotes cannot corrupt the rendering.
 
 `prompts/judge.jinja` is the original jinja2 template, kept so the rendering can be
 re-checked against it — it was verified byte-identical for 0, 1 and 2 aliases. Edit the
-prompts and you are no longer reproducing the paper.
+prompts and the run no longer reproduces the paper.
 
 The judge's `judgment: true` means the answer was correct, so the training label is its
 negation: **1 marks a hallucination**.
@@ -347,7 +390,7 @@ negation: **1 marks a hallucination**.
 hallucination rate is the same on both sides, fits the detector on the training part, and
 scores it on the held-out part. **The evaluation is of the model that was written to
 `--output`** — the detector is fitted once and never refitted, so the numbers belong to the
-artefact you keep rather than to the recipe that produced it.
+artefact being kept rather than to the procedure that produced it.
 
 `--test_size` (default 0.25) sets the holdout; `--seed` (default 42) fixes both the split
 and the resampling, so a rerun reproduces the run exactly. `--test_size 0` fits on
@@ -367,9 +410,9 @@ tighter than Table 1's, and the two are not directly comparable. The point estim
 comparable; the spread is not.
 
 Alongside the AUCs, `classification_report` gives per-class precision, recall and F1 at the
-0.5 threshold. Read them as different questions: the AUCs score the *ranking*, which is
-what matters when you triage by score, while the report scores the decisions. Recall on the
-`hallucination` row is usually the number to watch — the fraction actually flagged.
+0.5 threshold. The two measure different things: the AUCs score the *ranking*, which governs
+triage by score, while the report scores the decisions. Recall on the `hallucination` row is
+usually the figure of interest — the fraction actually flagged.
 
 ## Not reproduced
 

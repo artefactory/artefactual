@@ -2,7 +2,7 @@
 
 # Project information
 project = "Artefactual"
-copyright = "2025, Hicham Randrianarivo, Gauthier Jeannin, Charles Moslonka"  # noqa: A001
+copyright = "2025, Artefact Research Center"  # noqa: A001
 author = "Hicham Randrianarivo, Gauthier Jeannin, Charles Moslonka"
 
 # Extensions
@@ -49,6 +49,7 @@ intersphinx_mapping = {
 }
 
 # MyST settings
+myst_heading_anchors = 3
 myst_enable_extensions = [
     "colon_fence",
     "deflist",
