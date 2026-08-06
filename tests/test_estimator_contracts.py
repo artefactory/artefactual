@@ -6,6 +6,8 @@ sklearn itself would run, restricted to the ones that make sense for estimators 
 deliberately opt out of array validation.
 """
 
+import warnings
+
 import numpy as np
 import pytest
 from conftest import chat_payloads_of_fixed_width, logprob_cubes
@@ -150,6 +152,23 @@ def test_a_populated_sequence_does_not_warn():
     with warnings.catch_warnings():
         warnings.simplefilter("error", EmptySequenceWarning)
         EntropyTransformer(reduction="epr").transform(LOGPROBS)
+
+
+@pytest.mark.parametrize("reduction", ["epr", "wepr"])
+def test_padding_reports_once_not_twice(reduction):
+    """`EmptySequenceWarning` is the only warning a padded batch produces.
+
+    numpy's "Mean of empty slice" and "All-NaN slice encountered" describe the same
+    condition from a frame inside the transformer, so they are silenced at the reduction.
+    Silencing them must not also swallow the warning that names the offending sequences.
+    """
+    padded = np.full((1, 2, 3), np.nan)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        EntropyTransformer(reduction=reduction).transform(padded)
+
+    assert [w.category for w in caught] == [EmptySequenceWarning]
 
 
 def test_padded_tokens_do_not_drag_the_epr_mean_down():

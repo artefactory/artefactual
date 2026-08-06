@@ -11,6 +11,24 @@ from artefactual.exceptions import EmptySequenceWarning
 from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin
 
 
+def _nan_reduce(reduction: Callable, x: np.ndarray, axis: int) -> np.ndarray:
+    """Apply a NaN-aware numpy reduction, silencing its all-NaN-slice warnings.
+
+    A fully padded sequence — or a padded token position, in `transform_tokens` — is an
+    expected input here, not an anomaly: `transform` detects it and raises
+    `EmptySequenceWarning`, which names the condition and says what the score will be.
+    numpy's "Mean of empty slice" and "All-NaN slice encountered" report the same thing a
+    second time, from a frame that points at this file rather than at the caller's data.
+
+    Scoped to these reductions rather than to `transform`, so a caller-supplied `reduction`
+    keeps whatever warnings it raises.
+    """
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "Mean of empty slice", RuntimeWarning)
+        warnings.filterwarnings("ignore", "All-NaN slice encountered", RuntimeWarning)
+        return reduction(x, axis=axis)
+
+
 def _epr(x, axis) -> np.ndarray:
     """Entropy Production Rate: the truncated entropy, averaged over tokens.
 
@@ -25,12 +43,12 @@ def _epr(x, axis) -> np.ndarray:
     padded = np.all(np.isnan(x), axis=-1, keepdims=True)  # fully-NaN (padded) tokens
     s = np.nansum(x, axis=-1, keepdims=True)  # H~_K: sum over the K ranks
     s = np.where(padded, np.nan, s)  # nansum gave 0 for padded tokens → restore NaN
-    return np.nanmean(s, axis=axis)  # EPR: mean over the token axis
+    return _nan_reduce(np.nanmean, s, axis)  # EPR: mean over the token axis
 
 
 def _wepr(x, axis) -> np.ndarray:
-    mean_branch = np.nanmean(x, axis=axis)
-    max_branch = np.nanmax(x, axis=axis)
+    mean_branch = _nan_reduce(np.nanmean, x, axis)
+    max_branch = _nan_reduce(np.nanmax, x, axis)
     return np.concatenate([mean_branch, max_branch], axis=-1)
 
 
