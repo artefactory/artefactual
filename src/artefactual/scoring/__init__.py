@@ -1,8 +1,9 @@
-"""Scoring module for artefactual library.
+"""Hallucination detectors and the pieces they are built from.
 
-The public scoring API is a scikit-learn pipeline: `epr()` and `wepr()` build a
-`BaseDetector` (a `Pipeline`) exposing the standard `fit`/`transform`/`predict_proba`
-surface, plus `predict_token_proba` for token-level scores.
+`epr()` and `wepr()` are the entry points: each returns a `BaseDetector`, a scikit-learn
+`Pipeline` exposing the standard `fit`/`transform`/`predict_proba` surface plus
+`predict_token_proba` for token-level scores. The two differ in how much of a response's
+confidence they read; both are used the same way.
 """
 
 from artefactual.scoring.base_detector import BaseDetector, epr, wepr
