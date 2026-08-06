@@ -101,7 +101,7 @@ class LogProbParser(BaseEstimator, TransformerMixin):
         """
         parsed = parse_top_logprobs(X)
         if not parsed:
-            return np.empty((0, 0, 0), dtype=np.float32)
+            return np.empty((0, 0, 0), dtype=np.float64)
 
         # Rejected before the array is built: NaN is the padding marker downstream, so an
         # invalid logprob cast into the array would be indistinguishable from padding.
@@ -133,11 +133,16 @@ class LogProbParser(BaseEstimator, TransformerMixin):
             raise ValueError(error_msg)
         self._reject_narrow(parsed)
 
+        # float64: `LogisticRegression` takes the dtype of the features it is fitted on, and
+        # the pretrained coefficients are read from JSON at full decimal precision. Matching
+        # them keeps a fitted detector and a pretrained one on one dtype, and keeps the dot
+        # product from upcasting on every call.
+        #
         # Surplus ranks are dropped rather than kept: a calibration fit at k has no
         # coefficient for rank k+1, and EPR's mean is defined over exactly k ranks.
         width = self.k if self.k is not None else max((len(v) for d in parsed for v in d.values()), default=0)
 
-        arr = np.full((len(parsed), max_tokens, width), np.nan, dtype=np.float32)
+        arr = np.full((len(parsed), max_tokens, width), np.nan, dtype=np.float64)
         for i, sample in enumerate(parsed):
             for token_idx, logprobs in sample.items():
                 ranks = logprobs[:width]

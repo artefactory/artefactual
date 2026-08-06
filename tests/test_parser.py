@@ -55,7 +55,7 @@ def chat_completion(draw):
 @given(chat_completion())
 def test_transform_shape_and_padding(payload):
     arr = LogProbParser().transform(payload)
-    assert arr.shape[0] == len(payload["choices"]) and arr.dtype == np.float32
+    assert arr.shape[0] == len(payload["choices"]) and arr.dtype == np.float64
     real = arr[~np.isnan(arr)]
     assert np.isfinite(real).all() and (real <= 0).all()  # NaN <-> padding invariant
 
