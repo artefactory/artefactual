@@ -64,7 +64,16 @@ class LogProbParser(BaseEstimator, TransformerMixin):
     Because this transformer accepts non-standard list[dict] inputs
     by bypassing scikit-learn validation, cross-validation
     must start from data that has already been parsed.
+
+    Args:
+        k: The rank count the responses are expected to carry. Responses narrower than
+            this are rejected here, at the boundary where each token's true rank count is
+            still visible -- downstream every token has been padded to a common width.
+            `None` accepts whatever width the responses carry.
     """
+
+    def __init__(self, k: int | None = None) -> None:
+        self.k = k
 
     def fit(self, X, y=None) -> "LogProbParser":  # noqa: ARG002, N803 — X / y unused but required by the sklearn fit signature
         return self
@@ -86,14 +95,44 @@ class LogProbParser(BaseEstimator, TransformerMixin):
                         )
                         raise ValueError(error_msg)
         max_tokens = max((max(d.keys()) + 1 for d in parsed if d), default=0)
-        k = max((len(v) for d in parsed for v in d.values()), default=0)
+        self._reject_narrow(parsed)
 
-        arr = np.full((len(parsed), max_tokens, k), np.nan, dtype=np.float32)
+        # Exactly `k` ranks when one was asked for, so every later step reduces over a
+        # width it can trust. Surplus ranks are dropped: a calibration fit at k ignores
+        # them, unlike missing ranks, which cannot be conjured.
+        width = self.k if self.k is not None else max((len(v) for d in parsed for v in d.values()), default=0)
+
+        arr = np.full((len(parsed), max_tokens, width), np.nan, dtype=np.float32)
         for i, sample in enumerate(parsed):
             for token_idx, logprobs in sample.items():
-                arr[i, token_idx, : len(logprobs)] = logprobs  # [depth, row, columns]
+                ranks = logprobs[:width]
+                arr[i, token_idx, : len(ranks)] = ranks  # [depth, row, columns]
 
         return arr
+
+    def _reject_narrow(self, parsed: list[dict[int, list[float]]]) -> None:
+        """Refuse a response whose tokens carry fewer than `k` ranks.
+
+        Checked per response rather than across the batch: a batch mixing widths has a
+        maximum that hides its narrowest member, and it is the member that gets scored
+        wrongly. Token positions with no ranks at all are the empty-`top_logprobs` case
+        and stay padding -- the entropy step reports those as empty sequences.
+        """
+        if self.k is None:
+            return
+
+        for i, sample in enumerate(parsed):
+            widths = [len(logprobs) for logprobs in sample.values() if logprobs]
+            if widths and min(widths) < self.k:
+                error_msg = (
+                    f"Response {i} carries {min(widths)} rank(s) per token but k={self.k} "
+                    f"was requested. The missing ranks are not absent from the "
+                    f"distribution, only unfetched, so zero-filling them would understate "
+                    f"the entropy by a factor of {min(widths)}/{self.k}. Regenerate with "
+                    f"top_logprobs={self.k}, or score at k={min(widths)} with a "
+                    f"calibration fit at that rank count."
+                )
+                raise ValueError(error_msg)
 
     def __sklearn_tags__(self) -> Tags:
         """

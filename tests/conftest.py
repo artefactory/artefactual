@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import numpy as np
 from beartype.door import is_bearable
 from hypothesis import strategies as st
 
@@ -88,6 +89,42 @@ def parsed_sequences(draw, min_sequences=1, max_sequences=4, min_ranks=1, max_ra
             position: draw(rank_vectors(min_ranks=width, max_ranks=width)) for position in range(n_tokens)
         })
     return sequences
+
+
+@st.composite
+def chat_payloads_of_fixed_width(draw, min_ranks=1, max_ranks=20):
+    """A raw ChatCompletion mapping whose every token carries the same top-k width.
+
+    Emitted as a plain mapping rather than a model instance because that is what a caller
+    hands the pipeline, and the width is what these tests vary. Recover it with
+    `payload_width`.
+    """
+    width = draw(st.integers(min_ranks, max_ranks))
+    content = [
+        {"top_logprobs": [{"logprob": value} for value in draw(rank_vectors(min_ranks=width, max_ranks=width))]}
+        for _ in range(draw(st.integers(1, 4)))
+    ]
+    return {"choices": [{"logprobs": {"content": content}}]}
+
+
+def payload_width(payload):
+    """The top-k width of a payload from `chat_payloads_of_fixed_width`."""
+    return len(payload["choices"][0]["logprobs"]["content"][0]["top_logprobs"])
+
+
+@st.composite
+def logprob_cubes(draw, min_sequences=1, max_sequences=3, min_tokens=1, max_tokens=4, min_ranks=2, max_ranks=8):
+    """The `(n_sequences, n_tokens, k)` array `LogProbParser` hands the scorers.
+
+    Rectangular and descending along the rank axis, which is what the parser guarantees:
+    it sizes the rank axis once for the batch and sorts each token's ranks.
+    """
+    tokens = draw(st.integers(min_tokens, max_tokens))
+    width = draw(st.integers(min_ranks, max_ranks))
+    return np.array([
+        [draw(rank_vectors(min_ranks=width, max_ranks=width)) for _ in range(tokens)]
+        for _ in range(draw(st.integers(min_sequences, max_sequences)))
+    ])
 
 
 # --- calibration and weight files ------------------------------------------------------

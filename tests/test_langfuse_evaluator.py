@@ -4,21 +4,25 @@
 the client — `api.trace.get`, `create_score` and the trace's `output`. Those are supplied
 here by small hand-written stubs that record what they were called with, so the test runs
 without the extra installed and asserts real behaviour rather than a mock's recollection.
+
+Trace payloads and calibrations are drawn rather than fixed: the evaluator must behave the
+same for any response the pipeline accepts, and a single hand-written payload only ever
+proves it for that one.
 """
 
 import numpy as np
 import pytest
-from conftest import write_json
+from conftest import chat_payloads_of_fixed_width, epr_calibration, write_json
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 
 from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator
 from artefactual.scoring import epr
+from artefactual.scoring.base_detector import DEFAULT_K
 
-CALIBRATION = {"intercept": 0.0, "coefficients": {"mean_entropy": 1.0}}
-
-
-def chat_payload(n_ranks=3):
-    ranks = [-3.0 - 0.1 * index for index in range(n_ranks)]
-    return {"choices": [{"logprobs": {"content": [{"top_logprobs": [{"logprob": v} for v in ranks]}]}}]}
+# The detector defaults to DEFAULT_K, and the parser refuses anything narrower.
+traces = chat_payloads_of_fixed_width(min_ranks=DEFAULT_K, max_ranks=20)
+drawn = settings(suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
 
 
 class Trace:
@@ -47,49 +51,63 @@ class StubLangfuse:
         self.scores.append(kwargs)
 
 
-@pytest.fixture
-def detector(tmp_path):
-    return epr(str(write_json(tmp_path, "cal.json", CALIBRATION)))
+def build_detector(tmp_path, calibration):
+    return epr(str(write_json(tmp_path, "cal.json", calibration)))
 
 
-@pytest.fixture
-def client():
-    return StubLangfuse(Trace(chat_payload()))
+@drawn
+@given(payload=traces, calibration=epr_calibration())
+def test_scoring_returns_a_probability(tmp_path, payload, calibration):
+    client = StubLangfuse(Trace(payload))
 
-
-def test_scoring_returns_a_probability(client, detector):
-    score = HallucinationEvaluator("epr", client, detector).score_trace("trace-1")
+    score = HallucinationEvaluator("epr", client, build_detector(tmp_path, calibration)).score_trace("trace-1")
 
     assert 0.0 <= score <= 1.0
 
 
-def test_the_trace_is_fetched_by_id(client, detector):
-    HallucinationEvaluator("epr", client, detector).score_trace("trace-1")
+@drawn
+@given(payload=traces, calibration=epr_calibration())
+def test_the_trace_is_fetched_by_id(tmp_path, payload, calibration):
+    client = StubLangfuse(Trace(payload))
+
+    HallucinationEvaluator("epr", client, build_detector(tmp_path, calibration)).score_trace("trace-1")
 
     assert client.api.trace.requested == ["trace-1"]
 
 
-def test_the_score_is_written_back_to_langfuse(client, detector):
-    HallucinationEvaluator("epr", client, detector).score_trace("trace-1")
+@drawn
+@given(payload=traces, calibration=epr_calibration())
+def test_the_score_is_written_back_to_langfuse(tmp_path, payload, calibration):
+    client = StubLangfuse(Trace(payload))
+
+    HallucinationEvaluator("epr", client, build_detector(tmp_path, calibration)).score_trace("trace-1")
 
     (written,) = client.scores
     assert written["trace_id"] == "trace-1"
     assert written["name"] == "epr"
 
 
-def test_the_written_value_matches_the_returned_score(client, detector):
-    score = HallucinationEvaluator("epr", client, detector).score_trace("trace-1")
+@drawn
+@given(payload=traces, calibration=epr_calibration())
+def test_the_written_value_matches_the_returned_score(tmp_path, payload, calibration):
+    client = StubLangfuse(Trace(payload))
+
+    score = HallucinationEvaluator("epr", client, build_detector(tmp_path, calibration)).score_trace("trace-1")
 
     assert client.scores[0]["value"] == pytest.approx(score)
 
 
-def test_the_score_id_is_an_idempotency_key(client, detector):
+@drawn
+@given(payload=traces, calibration=epr_calibration())
+def test_the_score_id_is_an_idempotency_key(tmp_path, payload, calibration):
     """Re-scoring an unchanged trace must reuse the same score id.
 
     The id is derived from the trace id and the value, so a repeat run overwrites rather
     than appending a duplicate score.
     """
-    evaluator = HallucinationEvaluator("epr", client, detector)
+    client = StubLangfuse(Trace(payload))
+    evaluator = HallucinationEvaluator("epr", client, build_detector(tmp_path, calibration))
+
     evaluator.score_trace("trace-1")
     evaluator.score_trace("trace-1")
 
@@ -97,45 +115,57 @@ def test_the_score_id_is_an_idempotency_key(client, detector):
     assert first["score_id"] == second["score_id"]
 
 
-def test_the_evaluator_name_is_used_as_the_score_name(client, detector):
-    HallucinationEvaluator("custom-name", client, detector).score_trace("trace-1")
+@drawn
+@given(payload=traces, calibration=epr_calibration())
+def test_the_evaluator_name_is_used_as_the_score_name(tmp_path, payload, calibration):
+    client = StubLangfuse(Trace(payload))
+
+    HallucinationEvaluator("custom-name", client, build_detector(tmp_path, calibration)).score_trace("trace-1")
 
     assert client.scores[0]["name"] == "custom-name"
 
 
-def test_the_detector_reads_the_trace_output(detector):
-    # a confident trace and an uncertain one must not receive the same score
-    confident = StubLangfuse(Trace({"choices": [{"logprobs": {"content": [{"top_logprobs": [{"logprob": 0.0}]}]}}]}))
-    uncertain = StubLangfuse(Trace(chat_payload()))
-
-    confident_score = HallucinationEvaluator("epr", confident, detector).score_trace("a")
-    uncertain_score = HallucinationEvaluator("epr", uncertain, detector).score_trace("b")
-
-    assert confident_score != uncertain_score
-
-
-def test_a_trace_without_logprobs_is_rejected(detector):
-    # an output that carries no logprobs cannot be scored; it must not be silently zeroed
-    client = StubLangfuse(Trace({"unrelated": "payload"}))
-
-    with pytest.raises(TypeError, match="Unsupported output format"):
-        HallucinationEvaluator("epr", client, detector).score_trace("trace-1")
-
-
-def test_scoring_a_multi_sequence_trace_uses_the_first_sequence(detector):
-    payload = chat_payload()
-    payload["choices"].append(payload["choices"][0])
+@drawn
+@given(payload=traces, calibration=epr_calibration())
+def test_the_score_is_the_detectors_own_verdict_on_the_trace_output(tmp_path, payload, calibration):
+    # the evaluator must score what the trace carried, not a re-derived or default input
+    detector = build_detector(tmp_path, calibration)
     client = StubLangfuse(Trace(payload))
 
     score = HallucinationEvaluator("epr", client, detector).score_trace("trace-1")
 
-    expected = detector.predict_proba(payload)[0, 1]
-    assert score == pytest.approx(float(expected))
+    assert score == pytest.approx(float(detector.predict_proba(payload)[0, 1]))
 
 
-def test_the_score_is_a_plain_float(client, detector):
-    # langfuse serialises the value to JSON, which numpy scalars do not survive
+@drawn
+@given(output=st.dictionaries(st.text(min_size=1), st.text(), min_size=1), calibration=epr_calibration())
+def test_a_trace_without_logprobs_is_rejected(tmp_path, output, calibration):
+    # an output that carries no logprobs cannot be scored; it must not be silently zeroed
+    client = StubLangfuse(Trace(output))
+
+    with pytest.raises(TypeError, match="Unsupported output format"):
+        HallucinationEvaluator("epr", client, build_detector(tmp_path, calibration)).score_trace("trace-1")
+
+
+@drawn
+@given(payload=traces, calibration=epr_calibration())
+def test_scoring_a_multi_sequence_trace_uses_the_first_sequence(tmp_path, payload, calibration):
+    detector = build_detector(tmp_path, calibration)
+    duplicated = {"choices": [*payload["choices"], payload["choices"][0]]}
+    client = StubLangfuse(Trace(duplicated))
+
     score = HallucinationEvaluator("epr", client, detector).score_trace("trace-1")
+
+    assert score == pytest.approx(float(detector.predict_proba(duplicated)[0, 1]))
+
+
+@drawn
+@given(payload=traces, calibration=epr_calibration())
+def test_the_score_is_a_plain_float(tmp_path, payload, calibration):
+    # langfuse serialises the value to JSON, which numpy scalars do not survive
+    client = StubLangfuse(Trace(payload))
+
+    score = HallucinationEvaluator("epr", client, build_detector(tmp_path, calibration)).score_trace("trace-1")
 
     assert type(score) is float
     assert not isinstance(score, np.floating)
