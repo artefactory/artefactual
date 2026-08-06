@@ -1,7 +1,7 @@
 [project]
 name = "artefactual"
 version = "2026.07.0"
-description = "Add your description here"
+description = "Hallucination detection for black-box LLMs from token log-probabilities"
 readme = "README.md"
 authors = [
     { name = "Hicham Randrianarivo", email = "hicham.randrianarivo@artefact.com" },
@@ -13,7 +13,6 @@ license = "MIT"
 license-files = ["LICEN[CS]E*"]
 requires-python = ">=3.10,<3.14"
 classifiers = [
-    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
