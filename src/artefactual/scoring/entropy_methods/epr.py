@@ -60,7 +60,7 @@ class EPR(LogProbUncertaintyDetector):
     def _compute_raw_token_scores(
         self,
         parsed_logprobs: list[dict[int, list[float]]],
-    ) -> list[NDArray[np.floating]]:
+    ) -> list[NDArray]:
         """
         Internal implementation to compute raw token-level EPR scores.
 
@@ -74,7 +74,7 @@ class EPR(LogProbUncertaintyDetector):
             return []
 
         completions = [Completion(token_logprobs=data) for data in parsed_logprobs]
-        raw_token_scores: list[NDArray[np.floating]] = []
+        raw_token_scores: list[NDArray] = []
 
         for completion in completions:
             token_logprobs_dict = completion.token_logprobs
@@ -127,7 +127,7 @@ class EPR(LogProbUncertaintyDetector):
         return seq_scores
 
     @beartype
-    def compute_token_scores(self, parsed_logprobs: list[dict[int, list[float]]]) -> list[NDArray[np.floating]]:
+    def compute_token_scores(self, parsed_logprobs: list[dict[int, list[float]]]) -> list[NDArray]:
         """
         Compute token-level EPR scores from parsed logprobs.
         You can parse raw model outputs using the `parse_top_logprobs` method from `artefactual.preprocessing`.
@@ -139,7 +139,7 @@ class EPR(LogProbUncertaintyDetector):
             List of token-level EPR scores (numpy arrays).
         """
         raw_token_scores = self._compute_raw_token_scores(parsed_logprobs)
-        token_scores: list[NDArray[np.floating]] = []
+        token_scores: list[NDArray] = []
 
         for token_epr in raw_token_scores:
             if token_epr.size > 0 and self.is_calibrated:
@@ -160,7 +160,7 @@ class EPR(LogProbUncertaintyDetector):
             return 1.0 / (1.0 + np.exp(-self.intercept))
         return 0.0
 
-    def _apply_calibration(self, raw_epr: float | NDArray[np.floating]) -> float | NDArray[np.floating]:
+    def _apply_calibration(self, raw_epr: float | NDArray) -> float | NDArray:
         """
         Apply logistic calibration to a raw EPR score or array of scores.
         The calibration uses a linear transformation followed by a sigmoid:

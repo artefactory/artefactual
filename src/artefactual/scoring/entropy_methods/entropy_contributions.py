@@ -12,7 +12,7 @@ class EntropyContributionsMixin:
 
     @staticmethod
     @beartype
-    def entropy_contributions(logprobs: NDArray[np.floating]) -> NDArray[np.floating]:
+    def entropy_contributions(logprobs: NDArray) -> NDArray:
         """Compute entropic contributions s_kj = -p_k log(p_k) for top-K logprobs using vectorized operations.
         Args:
             logprobs: An array of log probabilities, with the last axis being the per-token rank axis.
@@ -36,7 +36,7 @@ class EntropyContributionsMixin:
 
 
 @beartype
-def align_rank_width(contributions: NDArray[np.floating], k: int) -> NDArray[np.floating]:
+def align_rank_width(contributions: NDArray, k: int) -> NDArray:
     """Truncate or zero-pad entropy contributions to exactly `k` ranks.
 
     Calibrated weights are fixed at the rank count used during calibration, so the rank
