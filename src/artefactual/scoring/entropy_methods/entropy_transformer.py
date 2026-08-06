@@ -6,7 +6,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils import Tags
 
 from artefactual.exceptions import EmptySequenceWarning
-from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin, RankAlignmentMixin
+from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin
 
 
 def _epr(x, axis) -> np.ndarray:
@@ -26,13 +26,17 @@ def _wepr(x, axis) -> np.ndarray:
 STRATEGIES = {"epr": _epr, "wepr": _wepr}
 
 
-class EntropyTransformer(BaseEstimator, TransformerMixin, EntropyContributionsMixin, RankAlignmentMixin):
-    def __init__(self, reduction: str | Callable = "epr", k: int | None = None) -> None:
+class EntropyTransformer(BaseEstimator, TransformerMixin, EntropyContributionsMixin):
+    """Reduce per-rank entropy contributions to the features a calibration was fit on.
+
+    Carries no rank count of its own: `LogProbParser` owns the rank axis and hands over an
+    array already sized to the calibrated `k`, so this step reduces over whatever width it
+    receives. Splitting that ownership is what let a narrow response be silently zero-filled
+    and scored -- only the parser sees a token's true rank count.
+    """
+
+    def __init__(self, reduction: str | Callable = "epr") -> None:
         self.reduction = reduction  # "epr" | "wepr" | custom reduction(s_kj, axis)
-        # Rank count the downstream calibration expects. `None` reduces over whatever
-        # width the input carries, which is what a standalone transformer should do; the
-        # detector factories always pass an explicit k.
-        self.k = k
 
     def __sklearn_tags__(self) -> Tags:
         tags = super().__sklearn_tags__()
@@ -53,14 +57,8 @@ class EntropyTransformer(BaseEstimator, TransformerMixin, EntropyContributionsMi
         msg = f"Invalid reduction: {self.reduction!r}. Expected 'epr', 'wepr', or a callable."
         raise ValueError(msg)
 
-    def _align(self, s_kj: np.ndarray) -> np.ndarray:
-        """Match the rank axis to `self.k`, or leave it alone when no k was given."""
-        if self.k is None:
-            return s_kj
-        return self.align_preserving_padding(s_kj, self.k)
-
     def transform(self, x: np.ndarray) -> np.ndarray:  # (n, n_features)
-        s_kj = self._align(self.entropy_contributions(x))
+        s_kj = self.entropy_contributions(x)
         features = self.reduction_fn(s_kj, axis=1)
         empty = np.isnan(features).all(axis=1)  # token-less sequences → all-NaN row
         if empty.any():
@@ -73,6 +71,6 @@ class EntropyTransformer(BaseEstimator, TransformerMixin, EntropyContributionsMi
         return features
 
     def transform_tokens(self, x: np.ndarray) -> np.ndarray:  # (n, T, n_features)
-        s_kj = self._align(self.entropy_contributions(x))
+        s_kj = self.entropy_contributions(x)
         windows = np.expand_dims(s_kj, axis=2)  # (n, T, 1, k) — one 1-token window per token
         return self.reduction_fn(windows, axis=2)

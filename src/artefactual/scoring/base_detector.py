@@ -54,10 +54,11 @@ def _build(
 ) -> "BaseDetector":
     """Assemble a parser -> entropy -> classifier pipeline pinned to `k` ranks.
 
-    `k` goes to both ends: the transformer aligns the response's rank axis to it, and the
-    classifier checks the weights were calibrated at it. Without that the classifier's
-    feature count follows the weights file while the feature *width* follows whatever
-    `top_logprobs` the caller happened to request.
+    The parser owns the rank axis: it refuses a response carrying fewer than `k` ranks and
+    hands on an array exactly `k` wide, so the entropy step needs no rank count of its own
+    and the classifier only has to check the weights were calibrated at the same `k`.
+    Splitting that ownership is what let a narrow response be zero-filled and scored as
+    though its unfetched ranks held no probability mass.
     """
     if pretrained_model_name_or_path is None:
         raise UncalibratedModelError()
@@ -65,8 +66,8 @@ def _build(
     classifier = PretrainedLogisticRegression.from_pretrained(pretrained_model_name_or_path, registry=registry, k=k)
     return BaseDetector(
         steps=[
-            ("parser", LogProbParser()),
-            ("entropy", EntropyTransformer(reduction=reduction, k=k)),
+            ("parser", LogProbParser(k=k)),
+            ("entropy", EntropyTransformer(reduction=reduction)),
             ("classifier", classifier),
         ],
         **pipeline_kwargs,

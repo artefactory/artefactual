@@ -83,7 +83,7 @@ def test_sklearn_roundtrip():
     from sklearn.base import clone
 
     p = LogProbParser()
-    assert p.get_params() == {}
+    assert p.get_params() == {"k": None}
     clone(p)
 
 

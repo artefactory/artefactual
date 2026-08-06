@@ -2,13 +2,10 @@ import numpy as np
 import pytest
 from conftest import rank_vectors
 from hypothesis import given
-from hypothesis import strategies as st
 
-from artefactual.scoring import EntropyContributionsMixin, RankAlignmentMixin
+from artefactual.scoring import EntropyContributionsMixin
 
 entropy_contributions = EntropyContributionsMixin.entropy_contributions
-align_rank_width = RankAlignmentMixin.align_rank_width
-align_preserving_padding = RankAlignmentMixin.align_preserving_padding
 
 
 def test_compute_entropy_contributions_basic():
@@ -107,7 +104,7 @@ def test_contributions_are_invariant_to_input_order(ranks):
 def test_contributions_are_not_monotonic_in_rank():
     """-p*log(p) peaks at p = 1/e, so rank order is not contribution order.
 
-    `align_rank_width` truncates by rank, which therefore does *not* drop the smallest
+    `LogProbParser` truncates by rank, which therefore does *not* drop the smallest
     contributions. Pinning this stops anyone from "optimising" the truncation into a
     top-k-by-magnitude, which would change the metric.
     """
@@ -134,77 +131,3 @@ def test_padded_positions_stay_nan():
     # LogProbParser pads short sequences with NaN and the reductions rely on it surviving
     result = entropy_contributions(np.array([[-0.5, np.nan]]))
     assert np.isnan(result).sum() == 1
-
-
-# --- align_rank_width ------------------------------------------------------------------
-
-
-@given(width=st.integers(1, 20), k=st.integers(1, 20))
-def test_alignment_always_produces_exactly_k_ranks(width, k):
-    aligned = align_rank_width(np.ones((3, width)), k)
-    assert aligned.shape == (3, k)
-
-
-@given(ranks=rank_vectors(min_ranks=4, max_ranks=10), k=st.integers(1, 3))
-def test_truncation_keeps_the_leading_ranks(ranks, k):
-    contributions = entropy_contributions(np.array([ranks]))
-    np.testing.assert_array_equal(align_rank_width(contributions, k), contributions[:, :k])
-
-
-def test_padding_appends_zeros_and_leaves_real_ranks_untouched():
-    # 0 is the limit of -p*log(p) as p tends to 0, so absent ranks are weightless
-    contributions = np.array([[0.3, 0.2]])
-    aligned = align_rank_width(contributions, 5)
-
-    np.testing.assert_allclose(aligned[:, :2], contributions)
-    assert not aligned[:, 2:].any()
-
-
-def test_alignment_to_the_same_width_is_a_no_op():
-    contributions = np.array([[0.3, 0.2]])
-    assert align_rank_width(contributions, 2) is contributions
-
-
-@given(width=st.integers(1, 12), k=st.integers(1, 12))
-def test_alignment_preserves_dtype(width, k):
-    aligned = align_rank_width(np.ones((2, width), dtype=np.float32), k)
-    assert aligned.dtype == np.float32
-
-
-@given(width=st.integers(1, 12), k=st.integers(1, 12))
-def test_alignment_is_idempotent(width, k):
-    once = align_rank_width(np.ones((2, width)), k)
-    np.testing.assert_array_equal(align_rank_width(once, k), once)
-
-
-@pytest.mark.parametrize("shape", [(2,), (3, 2), (4, 3, 2)])
-def test_alignment_touches_only_the_rank_axis(shape):
-    # the pipeline passes (n_sequences, n_tokens, k); the scorers pass (n_tokens, k)
-    aligned = align_rank_width(np.ones(shape), 5)
-    assert aligned.shape == (*shape[:-1], 5)
-
-
-def test_alignment_rejects_a_non_positive_k():
-    with pytest.raises(ValueError, match="k must be positive"):
-        align_rank_width(np.ones((2, 3)), 0)
-
-
-def test_padded_tokens_stay_fully_nan_when_aligned():
-    # a padded token carries no data; zero-filling it would read as a real zero-entropy token
-    contributions = np.array([[0.3, 0.2], [np.nan, np.nan]])
-
-    aligned = align_preserving_padding(contributions, 4)
-
-    assert np.isnan(aligned[1]).all()
-    np.testing.assert_allclose(aligned[0], [0.3, 0.2, 0.0, 0.0])
-
-
-def test_real_tokens_are_zero_filled_when_aligned():
-    aligned = align_preserving_padding(np.array([[0.3, 0.2]]), 4)
-    np.testing.assert_allclose(aligned, [[0.3, 0.2, 0.0, 0.0]])
-
-
-def test_alignment_rejects_an_array_with_no_rank_axis():
-    # a 0-d array has no rank axis to align; shape[-1] would IndexError
-    with pytest.raises(ValueError, match="at least one axis"):
-        align_rank_width(np.array(1.0), 3)

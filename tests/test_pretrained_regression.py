@@ -12,22 +12,22 @@ caller states it.
 import numpy as np
 import pytest
 from conftest import epr_calibration, wepr_weights, write_json
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, assume, given, settings
+from hypothesis import strategies as st
 from sklearn.utils.validation import check_is_fitted
 
 from artefactual.scoring.pretrained_regression import PretrainedLogisticRegression
 from artefactual.utils.io import MODEL_CALIBRATION_MAP, MODEL_WEIGHT_MAP
 
-EPR_WEIGHTS = {"intercept": -0.5, "coefficients": {"mean_entropy": 1.25}}
-WEPR_WEIGHTS = {
-    "intercept": 0.1,
-    "coefficients": {
-        "mean_rank_1": 0.5,
-        "mean_rank_2": 0.3,
-        "max_rank_1": -0.2,
-        "max_rank_2": -0.1,
-    },
-}
+drawn = settings(suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
+
+# Coefficients are drawn, so assertions compare against the payload that was written
+# rather than against a literal repeated in the test.
+two_rank_weights = wepr_weights(min_k=2, max_k=2)
+
+
+def coefficient_count(payload):
+    return sum(1 for key in payload["coefficients"] if key.startswith("mean_rank_"))
 
 
 def load(tmp_path, payload, **kwargs):
@@ -37,49 +37,70 @@ def load(tmp_path, payload, **kwargs):
 # --- EPR calibrations ------------------------------------------------------------------
 
 
-def test_an_epr_calibration_yields_a_single_feature(tmp_path):
-    clf = load(tmp_path, EPR_WEIGHTS)
+@drawn
+@given(payload=epr_calibration())
+def test_an_epr_calibration_yields_a_single_feature(tmp_path, payload):
+    clf = load(tmp_path, payload)
 
     assert clf.n_features_in_ == 1
-    np.testing.assert_array_almost_equal(clf.coef_, [[1.25]])
-    np.testing.assert_array_almost_equal(clf.intercept_, [-0.5])
+    np.testing.assert_array_almost_equal(clf.coef_, [[payload["coefficients"]["mean_entropy"]]])
+    np.testing.assert_array_almost_equal(clf.intercept_, [payload["intercept"]])
 
 
-def test_an_epr_calibration_ignores_k(tmp_path):
-    # the calibration records no rank count, so k only governs alignment upstream
-    assert load(tmp_path, EPR_WEIGHTS, k=15).n_features_in_ == 1
+@drawn
+@given(payload=epr_calibration(), k=st.integers(1, 30))
+def test_an_epr_calibration_ignores_k(tmp_path, payload, k):
+    # the calibration records no rank count, so k is the parser's business, not its own
+    assert load(tmp_path, payload, k=k).n_features_in_ == 1
 
 
 # --- WEPR weights ----------------------------------------------------------------------
 
 
-def test_wepr_weights_yield_two_features_per_rank(tmp_path):
-    clf = load(tmp_path, WEPR_WEIGHTS)
+@drawn
+@given(payload=two_rank_weights)
+def test_wepr_weights_yield_two_features_per_rank(tmp_path, payload):
+    clf = load(tmp_path, payload)
 
     assert clf.n_features_in_ == 4
     # order is [mean_rank_1..k, max_rank_1..k]
-    np.testing.assert_array_almost_equal(clf.coef_, [[0.5, 0.3, -0.2, -0.1]])
-    np.testing.assert_array_almost_equal(clf.intercept_, [0.1])
+    coefficients = payload["coefficients"]
+    expected = [coefficients["mean_rank_1"], coefficients["mean_rank_2"]]
+    expected += [coefficients["max_rank_1"], coefficients["max_rank_2"]]
+    np.testing.assert_array_almost_equal(clf.coef_, [expected])
+    np.testing.assert_array_almost_equal(clf.intercept_, [payload["intercept"]])
 
 
-def test_wepr_weights_matching_k_are_accepted(tmp_path):
-    assert load(tmp_path, WEPR_WEIGHTS, k=2).n_features_in_ == 4
+@drawn
+@given(payload=wepr_weights())
+def test_wepr_weights_matching_k_are_accepted(tmp_path, payload):
+    file_k = coefficient_count(payload)
+    assert load(tmp_path, payload, k=file_k).n_features_in_ == 2 * file_k
 
 
-@pytest.mark.parametrize("k", [1, 3, 15])
-def test_wepr_weights_disagreeing_with_k_are_rejected(tmp_path, k):
+@drawn
+@given(payload=wepr_weights(), k=st.integers(1, 30))
+def test_wepr_weights_disagreeing_with_k_are_rejected(tmp_path, payload, k):
     """The coefficient vector is fixed at the calibration rank count.
 
     Silently accepting a mismatch is what produced the raw sklearn shape error downstream;
     the message has to name both numbers and what to do about it.
     """
-    with pytest.raises(ValueError, match=rf"cover 2 rank\(s\) but k={k} was requested"):
-        load(tmp_path, WEPR_WEIGHTS, k=k)
+    file_k = coefficient_count(payload)
+    assume(file_k != k)
+
+    with pytest.raises(ValueError, match=rf"cover {file_k} rank\(s\) but k={k} was requested"):
+        load(tmp_path, payload, k=k)
 
 
-def test_the_mismatch_message_suggests_the_file_rank_count(tmp_path):
-    with pytest.raises(ValueError, match="pass k=2"):
-        load(tmp_path, WEPR_WEIGHTS, k=15)
+@drawn
+@given(payload=wepr_weights(), k=st.integers(1, 30))
+def test_the_mismatch_message_suggests_the_file_rank_count(tmp_path, payload, k):
+    file_k = coefficient_count(payload)
+    assume(file_k != k)
+
+    with pytest.raises(ValueError, match=f"pass k={file_k}"):
+        load(tmp_path, payload, k=k)
 
 
 # --- registry selection ----------------------------------------------------------------
@@ -97,9 +118,11 @@ def test_the_calibration_registry_resolves_to_epr_calibrations(model_name):
     assert clf.n_features_in_ == 1
 
 
-def test_the_registry_defaults_to_weights(tmp_path):
+@drawn
+@given(payload=wepr_weights())
+def test_the_registry_defaults_to_weights(tmp_path, payload):
     # wepr() is the caller that omits it; a path bypasses the registry either way
-    assert load(tmp_path, WEPR_WEIGHTS).n_features_in_ == 4
+    assert load(tmp_path, payload).n_features_in_ == 2 * coefficient_count(payload)
 
 
 def test_an_unknown_registry_is_rejected():
@@ -110,13 +133,17 @@ def test_an_unknown_registry_is_rejected():
 # --- behaves as a fitted sklearn classifier --------------------------------------------
 
 
-def test_the_instance_reports_as_fitted(tmp_path):
-    check_is_fitted(load(tmp_path, EPR_WEIGHTS))  # raises if not
+@drawn
+@given(payload=epr_calibration())
+def test_the_instance_reports_as_fitted(tmp_path, payload):
+    check_is_fitted(load(tmp_path, payload))  # raises if not
 
 
-def test_predict_and_predict_proba_work_without_fit(tmp_path):
-    clf = load(tmp_path, EPR_WEIGHTS)
-    x = np.array([[0.8], [0.2]], dtype=np.float32)
+@drawn
+@given(payload=epr_calibration(), x=st.lists(st.floats(0.0, 5.0), min_size=2, max_size=2))
+def test_predict_and_predict_proba_work_without_fit(tmp_path, payload, x):
+    clf = load(tmp_path, payload)
+    x = np.array([[value] for value in x], dtype=np.float32)
 
     assert clf.predict(x).shape == (2,)
     probabilities = clf.predict_proba(x)
@@ -125,13 +152,23 @@ def test_predict_and_predict_proba_work_without_fit(tmp_path):
 
 
 def test_the_decision_boundary_follows_the_loaded_weights(tmp_path):
-    # high entropy -> positive logit -> class 1; low entropy -> class 0
-    clf = load(tmp_path, EPR_WEIGHTS)
-    np.testing.assert_array_equal(clf.predict(np.array([[5.0], [0.0]], dtype=np.float32)), [1, 0])
+    """Fixed coefficients on purpose: this asserts the exact labels, not a property.
+
+    A drawn calibration only says "prediction agrees with the logit", which is true of any
+    logistic regression. Pinning intercept and slope is what checks the *direction*: high
+    entropy must mean class 1.
+    """
+    clf = load(tmp_path, {"intercept": -0.5, "coefficients": {"mean_entropy": 1.25}})
+
+    predicted = clf.predict(np.array([[5.0], [0.0]], dtype=np.float32))
+
+    np.testing.assert_array_equal(predicted, [1, 0])
 
 
-def test_zero_iterations_are_reported(tmp_path):
-    clf = load(tmp_path, EPR_WEIGHTS)
+@drawn
+@given(payload=epr_calibration())
+def test_zero_iterations_are_reported(tmp_path, payload):
+    clf = load(tmp_path, payload)
     np.testing.assert_array_equal(clf.classes_, [0, 1])
     np.testing.assert_array_equal(clf.n_iter_, [0])
 
