@@ -125,12 +125,17 @@ Two reductions ship:
 
 | Reduction | Feature vector | Intuition |
 |---|---|---|
-| `epr` | `mean_j( sum_k s_kj )` — 1 feature | Mean total entropy per token |
+| `epr` | `mean_j( mean_k s_kj )` — 1 feature | Mean entropy contribution per rank, per token |
 | `wepr` | `mean_j(s_kj)` ‖ `max_j(s_kj)` — 2k features | Per-rank mean and peak, weighted separately |
 
-EPR treats every rank alike. WEPR learns a weight per rank, which matters because
-`-p*log(p)` peaks at `p = 1/e` — mid-ranked candidates are more informative than either
-the near-certain top rank or the negligible tail.
+EPR treats every rank alike; the calibrated coefficient is named `mean_entropy` because
+the feature is a *mean* over the `k` ranks, not a sum. A rank the provider never returned
+counts as 0 and still counts in the denominator, which is why `k` is part of the
+definition rather than a display detail.
+
+WEPR learns a weight per rank, which matters because `-p*log(p)` peaks at `p = 1/e` —
+mid-ranked candidates are more informative than either the near-certain top rank or the
+negligible tail.
 
 **3. Calibrate.** A `LogisticRegression` pre-loaded with per-model coefficients maps the
 features to a probability. Because it is a real sklearn classifier, `predict`,
@@ -190,7 +195,8 @@ It is applied at both ends of the pipeline:
 - **Input** — the entropy contributions are truncated or zero-padded to exactly `k` ranks,
   so a response carrying a different `top_logprobs` still scores correctly. (Zero is the
   limit of `-p*log(p)` as `p` tends to 0, so a rank the provider never returned adds
-  nothing.)
+  nothing to the sum — but it does count in the mean, which is why `k` must match the
+  calibration rather than the response.)
 - **Weights** — WEPR coefficients are fixed at their calibration rank count, so loading
   weights that disagree with `k` raises rather than producing a silently mis-shaped score:
 
@@ -232,6 +238,11 @@ coefficients = detector.named_steps["classifier"].coef_
 `trainable=True` is explicit on purpose: calling `wepr()` with neither weights nor
 `trainable=True` raises rather than quietly returning a detector that would train on your
 data and emit probabilities no calibration backs.
+
+To go from a question set to a calibration end to end — generating answers, labelling them
+with an LLM judge, fitting and evaluating — see
+[`scripts/ecir/README.md`](scripts/ecir/README.md). Both LLM stages run under
+`vllm run-batch`; the scripts only prepare its input and read its output.
 
 ## Input formats
 
@@ -303,7 +314,7 @@ uv run jupyter lab docs/examples/epr_usage_demo.ipynb
 | `scoring.BaseDetector` | The `Pipeline` subclass adding `predict_token_proba` |
 | `scoring.EntropyTransformer` | Contributions → features; `reduction` is `"epr"`, `"wepr"` or a callable |
 | `scoring.PretrainedLogisticRegression` | `LogisticRegression` loaded from a weights file |
-| `preprocessing.LogProbParser` | Response objects → dense NaN-padded array |
+| `preprocessing.parser.LogProbParser` | Response objects → dense NaN-padded array |
 | `preprocessing.parse_top_logprobs` | Functional form of the parser |
 | `utils.io.load_weights` / `load_calibration` | Registry and file loading |
 
@@ -316,6 +327,7 @@ uv run pytest tests --cov  # with coverage
 
 uvx ruff check src tests   # lint — a standalone tool, no project env needed
 uvx ruff format src tests
+uvx --from shellcheck-py shellcheck scripts/ecir/*.sh
 ```
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
