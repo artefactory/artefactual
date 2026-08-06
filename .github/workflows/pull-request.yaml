@@ -1,0 +1,22 @@
+name: Pull request
+
+# Merging to main tags and publishes straight away, so packaging faults have to surface
+# here: after the merge there is no step left at which to catch one without yanking a
+# release. Runs the same build the release uses, with publishing switched off.
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yaml
+    with:
+      publish: false
