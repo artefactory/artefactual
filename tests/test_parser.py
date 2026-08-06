@@ -149,3 +149,15 @@ def test_fit_returns_self_and_ignores_its_arguments():
 def test_a_batch_of_empty_sequences_transforms_to_an_empty_cube():
     # every choice parses to {}, so there is no token axis and no rank axis to size
     assert LogProbParser().transform({"choices": [{"logprobs": None}]}).shape == (1, 0, 0)
+
+
+def test_a_response_without_logprobs_names_the_cause():
+    # what a provider returns when logprobs were not requested: the shape parses, but no
+    # position carries ranks, and the reduction downstream would fail on a zero-size axis
+    with pytest.raises(ValueError, match="carry any log-probabilities"):
+        LogProbParser(k=15).transform({"choices": [{"logprobs": None}]})
+
+
+def test_an_empty_parse_without_a_declared_k_is_still_an_empty_cube():
+    # no rank count was declared, so there is no expectation for the empty parse to break
+    assert LogProbParser().transform({"choices": [{"logprobs": None}]}).shape == (1, 0, 0)
