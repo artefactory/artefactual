@@ -9,7 +9,7 @@ and the response shapes the parser accepts.
 shipped file was trained at.
 
 ```python
-detector = wepr("microsoft/phi-4", k=15)
+detector = wepr("chicham/artefactual-wepr-phi4", k=15)
 ```
 
 **Responses must carry at least `k` ranks.** This is an input requirement rather than
@@ -43,15 +43,14 @@ fixed at the rank count they were trained at; pass k=15, or supply weights
 trained at k=20.
 ```
 
-EPR weight files (`calibration_*.json`) record no rank count, so for `epr()` the `k` passed
-governs the input width.
+EPR detectors record no rank count, so for `epr()` the `k` passed governs the input width.
 
-## Weight files
+## Detector files
 
-Locally trained weights are loaded by passing a path instead of a name:
+A locally trained detector is loaded by passing a path instead of a name:
 
 ```python
-detector = wepr("/path/to/my_weights.json")
+detector = wepr("/path/to/my_detector.skops")
 ```
 
 Weight files are JSON. EPR files carry a single coefficient:

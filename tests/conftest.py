@@ -2,8 +2,10 @@ import json
 from pathlib import Path
 
 import numpy as np
+import skops.io as sio
 from beartype.door import is_bearable
 from hypothesis import strategies as st
+from sklearn.linear_model import LogisticRegression
 
 from artefactual.preprocessing.response_models import (
     ChatChoice,
@@ -127,7 +129,7 @@ def logprob_cubes(draw, min_sequences=1, max_sequences=3, min_tokens=1, max_toke
     ])
 
 
-# --- calibration and weight files ------------------------------------------------------
+# --- detector and weight files ------------------------------------------------------
 
 coefficient_values = st.floats(min_value=-10.0, max_value=10.0, allow_nan=False, allow_infinity=False)
 
@@ -144,8 +146,8 @@ def wepr_weights(draw, min_k=1, max_k=15):
 
 
 @st.composite
-def epr_calibration(draw):
-    """An EPR calibration file: an intercept plus a single `mean_entropy` coefficient."""
+def epr_detector(draw):
+    """An EPR detector file: an intercept plus a single `mean_entropy` coefficient."""
     return {
         "intercept": draw(coefficient_values),
         "coefficients": {"mean_entropy": draw(coefficient_values)},
@@ -157,3 +159,46 @@ def write_json(directory, name, payload):
     path = Path(directory) / name
     path.write_text(json.dumps(payload), encoding="utf-8")
     return path
+
+
+# --- estimators on disk --------------------------------------------------------------
+#
+# Detectors are built and written here rather than fetched, so every test names a path.
+# That is the whole reason these tests stay offline: `resolve_estimator` returns a local
+# file without consulting the Hub, so no test crosses the network seam and none has to be
+# skipped, mocked, or given credentials for a private repository.
+
+
+def fitted_logistic(intercept, coefficients):
+    """A `LogisticRegression` presented as fitted, from an intercept and one coefficient row.
+
+    Assigns the attributes `fit` would set. Detectors are coefficients that were fit
+    elsewhere, so there is no training data here to fit from.
+    """
+    estimator = LogisticRegression()
+    estimator.coef_ = np.array([coefficients], dtype=np.float64)
+    estimator.intercept_ = np.array([intercept], dtype=np.float64)
+    estimator.classes_ = np.array([0, 1])
+    estimator.n_features_in_ = len(coefficients)
+    estimator.n_iter_ = np.array([0])
+    return estimator
+
+
+def write_estimator(directory, name, estimator):
+    """Write `estimator` to `directory/name` as skops and return the path."""
+    path = Path(directory) / name
+    sio.dump(estimator, path)
+    return path
+
+
+@st.composite
+def estimators(draw, n_features=None):
+    """A detector: an intercept and one coefficient per feature.
+
+    One strategy for both reductions, because they produce the same object and are loaded
+    by the same code -- EPR is one pooled coefficient, WEPR is `2k` per-rank ones, and
+    nothing else about them differs. Pass `n_features` when the width is what the test is
+    about; leave it out when the test holds for any width.
+    """
+    width = n_features if n_features is not None else draw(st.integers(1, 30))
+    return fitted_logistic(draw(coefficient_values), [draw(coefficient_values) for _ in range(width)])

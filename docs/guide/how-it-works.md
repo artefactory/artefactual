@@ -3,7 +3,7 @@
 Each detector is a three-step scikit-learn pipeline:
 
 ```
-LogProbParser  ->  EntropyTransformer  ->  PretrainedLogisticRegression
+LogProbParser  ->  EntropyTransformer  ->  LogisticRegression       
   response            uncertainty              P(hallucination)
                        features
 ```

@@ -8,13 +8,39 @@ from sklearn.pipeline import Pipeline
 from artefactual.exceptions import UncalibratedModelError
 from artefactual.preprocessing.parser import LogProbParser
 from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
-from artefactual.scoring.pretrained_regression import PretrainedLogisticRegression, Registry
+from artefactual.utils.io import EstimatorPersistenceMixin, Reduction
 
-# Every calibration and weights file shipped with the package was fit at 15 ranks.
+# Every published detector was fit at 15 ranks.
 DEFAULT_K = 15
 
+# Features each reduction produces: EPR pools the ranks into one, WEPR keeps a mean and a
+# max per rank. The loaded estimator is checked against this, since a detector's
+# coefficient vector is fixed at the rank count it was trained at.
+_FEATURE_COUNT = {"epr": lambda _k: 1, "wepr": lambda k: 2 * k}
 
-class BaseDetector(Pipeline):
+
+def _load_pretrained(reduction: Reduction, identifier: str, k: int) -> BaseEstimator:
+    """Load a published detector and check it covers exactly `k` ranks.
+
+    Raises:
+        ValueError: If the detector was fit at a different rank count than `k`.
+    """
+    estimator = BaseDetector.load_estimator(identifier)
+    expected = _FEATURE_COUNT[reduction](k)
+    # Set by fit; every estimator reaching here is a fitted scikit-learn classifier.
+    actual: int = estimator.n_features_in_  # ty: ignore[unresolved-attribute]
+    if actual != expected:
+        implied = actual // 2 if reduction == "wepr" else actual
+        msg = (
+            f"The {reduction} detector at '{identifier}' takes {actual} feature(s), but "
+            f"k={k} needs {expected}. Its coefficients are fixed at the rank count they "
+            f"were trained at; pass k={implied}, or use a detector trained at k={k}."
+        )
+        raise ValueError(msg)
+    return estimator
+
+
+class BaseDetector(Pipeline, EstimatorPersistenceMixin):
     """A `parser -> entropy -> classifier` pipeline returning P(hallucination).
 
     A scikit-learn `Pipeline`, so `predict`, `predict_proba`, `fit`, `get_params` and
@@ -24,6 +50,11 @@ class BaseDetector(Pipeline):
     Class 1 is the hallucination class: `predict_proba(...)[:, 1]` is the score of
     interest.
     """
+
+    @property
+    def estimator(self) -> BaseEstimator:
+        """The final estimator, which is the only fitted step in the pipeline."""
+        return self.steps[-1][1]
 
     def predict_token_proba(self, x) -> np.ndarray:
         """Per-token hallucination probabilities, for locating *where* a response drifts.
@@ -60,7 +91,7 @@ class BaseDetector(Pipeline):
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path: str, reduction: str, k: int = DEFAULT_K) -> "BaseDetector":
-        """Build a calibrated detector, selecting the reduction by name.
+        """Build a trained detector, selecting the reduction by name.
 
         Equivalent to calling `epr()` or `wepr()` directly; provided for callers that hold
         the reduction as data.
@@ -76,10 +107,31 @@ class BaseDetector(Pipeline):
         factory = {"epr": epr, "wepr": wepr}[reduction]
         return factory(pretrained_model_name_or_path, k=k)
 
+    @classmethod
+    def trainable(
+        cls, reduction: Reduction, k: int = DEFAULT_K, *, classifier: BaseEstimator | None = None
+    ) -> "BaseDetector":
+        """An unfitted detector, selecting the reduction by name.
+
+        The counterpart to `from_pretrained` for callers that hold the reduction as data and
+        intend to `fit`, so selecting a reduction never means re-deriving the mapping from
+        its name to a factory.
+
+        Args:
+            reduction: `"epr"` or `"wepr"`.
+            k: Rank count the responses carry.
+            classifier: Final estimator to fit. Defaults to the unregularised logistic
+                regression the published detectors were fit with.
+
+        Returns:
+            A detector ready to `fit`.
+        """
+        factory = {"epr": epr, "wepr": wepr}[reduction]
+        return factory(k=k, trainable=True, classifier=classifier)
+
 
 def _build(
-    reduction: str,
-    registry: Registry,
+    reduction: Reduction,
     pretrained_model_name_or_path: str | None,
     k: int,
     *,
@@ -90,7 +142,7 @@ def _build(
     """Assemble a parser -> entropy -> classifier pipeline pinned to `k` ranks.
 
     `k` is handled at the ends of the pipeline: the parser sizes the rank axis to it, and
-    the classifier checks the loaded weights were calibrated at it. The entropy step in
+    the classifier checks the loaded weights were trained at it. The entropy step in
     between carries no rank count, since its input width is already `k`.
     """
     if trainable:
@@ -107,7 +159,7 @@ def _build(
             raise ValueError(msg)
         if pretrained_model_name_or_path is None:
             raise UncalibratedModelError()
-        final = PretrainedLogisticRegression.from_pretrained(pretrained_model_name_or_path, registry=registry, k=k)
+        final = _load_pretrained(reduction, pretrained_model_name_or_path, k)
 
     return BaseDetector(
         steps=[
@@ -134,7 +186,7 @@ def epr(
     EPR — Entropy Production Rate. A single feature, pooling every rank of the token
     distribution into one number.
 
-    Both detectors need a calibration fit on labelled data, so choosing this one saves no
+    Both estimators need a detector fit on labelled data, so choosing this one saves no
     setup work over `wepr` — only parameters. Prefer `wepr` unless there is too little
     labelled data to fit its larger coefficient vector.
 
@@ -144,16 +196,16 @@ def epr(
 
     Args:
         pretrained_model_name_or_path: A model name from the registry, or a path to a
-            calibration file. Omit it only together with `trainable=True`.
+            detector file. Omit it only together with `trainable=True`.
         k: Rank count the responses carry, and the width EPR averages over. Responses
             carrying fewer than `k` ranks are rejected when parsed.
         trainable: Return an *unfitted* detector to calibrate on your own labelled data.
             Call `fit(responses, y)`, where 1 marks a hallucination.
         classifier: Final estimator, with `trainable=True` only. Defaults to the
-            unregularised logistic regression the shipped calibrations were fit with.
+            unregularised logistic regression the shipped estimators were fit with.
 
     Returns:
-        A `BaseDetector`, calibrated and ready to predict, or unfitted if `trainable`.
+        A `BaseDetector`, trained and ready to predict, or unfitted if `trainable`.
 
     Raises:
         UncalibratedModelError: If neither weights nor `trainable=True` were given.
@@ -161,7 +213,6 @@ def epr(
     """
     return _build(
         "epr",
-        "calibration",
         pretrained_model_name_or_path,
         k,
         trainable=trainable,
@@ -185,7 +236,7 @@ def wepr(
     """Build a hallucination detector that reads each rank of the token distribution.
 
     WEPR — Weighted EPR. `2k` features, one learned coefficient per rank, letting the
-    calibration weight the informative ranks over the rest.
+    detector weight the informative ranks over the rest.
 
     The default choice: it costs the same to calibrate as `epr` and reads strictly more of
     the distribution. Fall back to `epr` only when labelled data is too scarce to fit `2k`
@@ -203,10 +254,10 @@ def wepr(
         trainable: Return an *unfitted* detector to calibrate on your own labelled data.
             Call `fit(responses, y)`, where 1 marks a hallucination.
         classifier: Final estimator, with `trainable=True` only. Defaults to the
-            unregularised logistic regression the shipped calibrations were fit with.
+            unregularised logistic regression the shipped estimators were fit with.
 
     Returns:
-        A `BaseDetector`, calibrated and ready to predict, or unfitted if `trainable`.
+        A `BaseDetector`, trained and ready to predict, or unfitted if `trainable`.
 
     Raises:
         UncalibratedModelError: If neither weights nor `trainable=True` were given.
@@ -215,7 +266,6 @@ def wepr(
     """
     return _build(
         "wepr",
-        "weights",
         pretrained_model_name_or_path,
         k,
         trainable=trainable,

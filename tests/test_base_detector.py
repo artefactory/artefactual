@@ -1,30 +1,41 @@
-from importlib import resources
-
 import numpy as np
 import pytest
-from conftest import chat_payloads_of_fixed_width
+from conftest import chat_payloads_of_fixed_width, fitted_logistic, write_estimator
 from hypothesis import HealthCheck, given, settings
 
 from artefactual.exceptions import UncalibratedModelError
 from artefactual.scoring.base_detector import DEFAULT_K, BaseDetector, epr, wepr
 
-# Load package weights
-_DATA = resources.files("artefactual.data")
-EPR_WEIGHTS = _DATA / "calibration_ministral.json"
-WEPR_WEIGHTS = _DATA / "weights_mistral_small.json"
 
-# The shipped calibrations are fit at DEFAULT_K, and the parser refuses anything narrower,
+@pytest.fixture(scope="session")
+def epr_estimator_path(tmp_path_factory):
+    """A one-feature detector on disk, standing in for a published EPR one.
+
+    Written here rather than read out of the package: estimators are published, not
+    bundled, so a test that loaded one would need the Hub.
+    """
+    return str(write_estimator(tmp_path_factory.mktemp("epr"), "model.skops", fitted_logistic(-2.9, [58.2])))
+
+
+@pytest.fixture(scope="session")
+def wepr_estimator_path(tmp_path_factory):
+    """A `2 * DEFAULT_K` feature detector on disk, standing in for a published WEPR one."""
+    coefficients = [0.5 - 0.05 * index for index in range(2 * DEFAULT_K)]
+    return str(write_estimator(tmp_path_factory.mktemp("wepr"), "model.skops", fitted_logistic(-3.4, coefficients)))
+
+
+# The estimators are fit at DEFAULT_K, and the parser refuses anything narrower,
 # so responses are drawn at or above that width rather than read from a fixed fixture.
 responses = chat_payloads_of_fixed_width(min_ranks=DEFAULT_K, max_ranks=20)
 drawn = settings(suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
 
 
-def test_epr_returns_base_detector():
-    assert isinstance(epr(str(EPR_WEIGHTS)), BaseDetector)
+def test_epr_returns_base_detector(epr_estimator_path):
+    assert isinstance(epr(epr_estimator_path), BaseDetector)
 
 
-def test_wepr_returns_base_detector():
-    assert isinstance(wepr(str(WEPR_WEIGHTS)), BaseDetector)
+def test_wepr_returns_base_detector(wepr_estimator_path):
+    assert isinstance(wepr(wepr_estimator_path), BaseDetector)
 
 
 @pytest.mark.parametrize("factory", [epr, wepr])
@@ -33,56 +44,56 @@ def test_factory_without_weights_raises(factory):
         factory()
 
 
-def test_epr_step_names():
-    assert [name for name, _ in epr(str(EPR_WEIGHTS)).steps] == ["parser", "entropy", "classifier"]
+def test_epr_step_names(epr_estimator_path):
+    assert [name for name, _ in epr(epr_estimator_path).steps] == ["parser", "entropy", "classifier"]
 
 
-def test_epr_entropy_reduction():
-    assert epr(str(EPR_WEIGHTS)).named_steps["entropy"].reduction == "epr"
+def test_epr_entropy_reduction(epr_estimator_path):
+    assert epr(epr_estimator_path).named_steps["entropy"].reduction == "epr"
 
 
-def test_wepr_entropy_reduction():
-    assert wepr(str(WEPR_WEIGHTS)).named_steps["entropy"].reduction == "wepr"
+def test_wepr_entropy_reduction(wepr_estimator_path):
+    assert wepr(wepr_estimator_path).named_steps["entropy"].reduction == "wepr"
 
 
-def test_epr_with_pretrained_has_coef():
-    clf = epr(str(EPR_WEIGHTS)).named_steps["classifier"]
+def test_epr_with_pretrained_has_coef(epr_estimator_path):
+    clf = epr(epr_estimator_path).named_steps["classifier"]
     assert clf.coef_.shape == (1, 1)  # 1 class, 1 feature (mean_entropy)
 
 
-def test_from_pretrained_epr():
-    detector = BaseDetector.from_pretrained(str(EPR_WEIGHTS), reduction="epr")
+def test_from_pretrained_epr(epr_estimator_path):
+    detector = BaseDetector.from_pretrained(epr_estimator_path, reduction="epr")
     assert isinstance(detector, BaseDetector)
     assert detector.named_steps["classifier"].coef_ is not None
 
 
 @drawn
 @given(response=responses)
-def test_predict_proba_output_shape(response):
-    scores = epr(str(EPR_WEIGHTS)).predict_proba(response)
+def test_predict_proba_output_shape(epr_estimator_path, response):
+    scores = epr(epr_estimator_path).predict_proba(response)
     assert scores.shape == (1, 2)  # 1 sequence, 2 classes
 
 
 @drawn
 @given(response=responses)
-def test_predict_proba_valid_probabilities(response):
-    scores = epr(str(EPR_WEIGHTS)).predict_proba(response)
+def test_predict_proba_valid_probabilities(epr_estimator_path, response):
+    scores = epr(epr_estimator_path).predict_proba(response)
     assert np.all(scores >= 0) and np.all(scores <= 1)
     assert np.allclose(scores.sum(axis=1), 1.0)
 
 
 @drawn
 @given(response=responses)
-def test_predict_token_proba_shape(response):
-    token_scores = epr(str(EPR_WEIGHTS)).predict_token_proba(response)
+def test_predict_token_proba_shape(epr_estimator_path, response):
+    token_scores = epr(epr_estimator_path).predict_token_proba(response)
     assert token_scores.shape[0] == 1  # 1 sequence
     assert token_scores.shape[2] == 1
 
 
 @drawn
 @given(response=responses)
-def test_predict_token_proba_valid_scores(response):
-    token_scores = epr(str(EPR_WEIGHTS)).predict_token_proba(response)
+def test_predict_token_proba_valid_scores(epr_estimator_path, response):
+    token_scores = epr(epr_estimator_path).predict_token_proba(response)
     valid = token_scores[~np.isnan(token_scores)]
     assert len(valid) > 0
     assert np.all(valid >= 0) and np.all(valid <= 1)
@@ -108,7 +119,7 @@ def test_trainable_returns_an_unfitted_detector():
 
 
 def test_trainable_defaults_to_an_unregularised_regression():
-    # matches how the shipped calibrations were fit, so coefficients stay comparable
+    # matches how the shipped estimators were fit, so coefficients stay comparable
     classifier = epr(trainable=True).named_steps["classifier"]
 
     assert classifier.C == np.inf
@@ -127,18 +138,18 @@ def test_trainable_pins_the_rank_width():
 
 
 @pytest.mark.parametrize("factory", [epr, wepr])
-def test_asking_for_both_pretrained_and_trainable_is_rejected(factory):
+def test_asking_for_both_pretrained_and_trainable_is_rejected(epr_estimator_path, factory):
     # the two are contradictory; silently preferring one would hide a config mistake
     with pytest.raises(ValueError, match="not both"):
-        factory(str(EPR_WEIGHTS), trainable=True)
+        factory(epr_estimator_path, trainable=True)
 
 
 @pytest.mark.parametrize("factory", [epr, wepr])
-def test_a_classifier_without_trainable_is_rejected(factory):
+def test_a_classifier_without_trainable_is_rejected(wepr_estimator_path, factory):
     from sklearn.linear_model import LogisticRegression
 
     with pytest.raises(ValueError, match="only applies with trainable=True"):
-        factory(str(WEPR_WEIGHTS), classifier=LogisticRegression())
+        factory(wepr_estimator_path, classifier=LogisticRegression())
 
 
 @pytest.mark.parametrize("factory", [epr, wepr])
@@ -146,7 +157,7 @@ def test_neither_weights_nor_trainable_still_raises(factory):
     """No silent fallback to an unfitted classifier.
 
     A config key that resolves to None must not hand back a detector that trains on the
-    caller's data and emits probabilities no calibration backs.
+    caller's data and emits probabilities no detector backs.
     """
     with pytest.raises(UncalibratedModelError, match="trainable"):
         factory()
