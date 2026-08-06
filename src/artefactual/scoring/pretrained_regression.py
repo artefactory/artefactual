@@ -84,7 +84,7 @@ class PretrainedLogisticRegression(LogisticRegression):
         if "mean_entropy" in coeffs:  # epr
             # A single pooled-entropy feature. The calibration records no rank count, so
             # `k` governs only how the rank axis is aligned upstream.
-            coef_array = np.array([[coeffs["mean_entropy"]]], dtype=np.float32)  # (1, 1)
+            coef_array = np.array([[coeffs["mean_entropy"]]], dtype=np.float64)  # (1, 1)
             n_features = 1
         elif "mean_rank_1" in coeffs:  # wepr
             # mean_rank_1 is present, so the count is at least 1
@@ -106,7 +106,7 @@ class PretrainedLogisticRegression(LogisticRegression):
             )
             mean_vals = [coeffs[f"mean_rank_{i}"] for i in range(1, file_k + 1)]
             max_vals = [coeffs[f"max_rank_{i}"] for i in range(1, file_k + 1)]
-            coef_array = np.array([mean_vals + max_vals], dtype=np.float32)  # (1, 2k)
+            coef_array = np.array([mean_vals + max_vals], dtype=np.float64)  # (1, 2k)
             n_features = 2 * file_k
         else:
             # Neither an EPR calibration nor WEPR weights; name what was found so the
@@ -122,7 +122,7 @@ class PretrainedLogisticRegression(LogisticRegression):
 
         # set the attributes that .fit would normally set to trick sklearn into thinking the instance is fitted already
         instance.coef_ = coef_array
-        instance.intercept_ = np.array([weights["intercept"]], dtype=np.float32)  # (1,)
+        instance.intercept_ = np.array([weights["intercept"]], dtype=np.float64)  # (1,)
         instance.classes_ = np.array([0, 1])  # by convention column 0 is calculated as 1-p and column 1 is p
         instance.n_features_in_ = n_features
         instance.n_iter_ = np.array([0])  # indicates that it took 0 iterations to get to the weights
