@@ -14,7 +14,7 @@ model.
 
 | | Why | Where |
 |---|---|---|
-| `vllm` | Runs the two LLM stages | A Linux GPU box — it has no macOS wheels |
+| `vllm` | Runs the two LLM stages | A Linux GPU box — it has no macOS wheels. Run via `uvx`, no install; the wheel must match the driver's CUDA — see [running `vllm`](#running-vllm) |
 | `jq` | Builds the batch request files | Anywhere |
 | This repo, `uv sync`'d | Trains and evaluates the detector | Anywhere |
 | `questions.json` | Your QA pack — see below | You write this |
@@ -120,6 +120,52 @@ hot.
 
 The expensive phase: two `vllm run-batch` passes, and they are **strictly sequential** —
 the judge grades answers that do not exist until generation has finished.
+
+### Running `vllm`
+
+`vllm` is not a dependency of this repo and does not need installing — `uvx` fetches it for
+the duration of the call:
+
+```bash
+uvx --python 3.12 vllm run-batch ...
+```
+
+**Match the wheel to the driver.** Each wheel is built against one CUDA major version. If
+the driver is older than the wheel's CUDA, the engine aborts at startup:
+
+```
+RuntimeError: The NVIDIA driver on your system is too old (found version <NNNNN>)
+```
+
+or, depending on the pairing, `libcudart.so.<N>: cannot open shared object file`. The
+default wheel on PyPI tracks the newest CUDA, so a box a generation behind needs a pinned
+one instead.
+
+Read the driver's CUDA version from `nvidia-smi`, then take the matching build from the
+[vllm releases](https://github.com/vllm-project/vllm/releases) — each release publishes
+several alongside the PyPI default — and point the torch index at the same one:
+
+```bash
+CUDA_TAG=cu129          # the build matching your driver
+VLLM_VERSION=0.26.0
+VLLM_WHEEL=https://github.com/vllm-project/vllm/releases/download/v${VLLM_VERSION}/vllm-${VLLM_VERSION}+${CUDA_TAG}-cp38-abi3-manylinux_2_28_x86_64.whl
+
+uvx --python 3.12 --index-strategy unsafe-best-match \
+    --extra-index-url "https://download.pytorch.org/whl/${CUDA_TAG}" \
+    --from "vllm @ $VLLM_WHEEL" \
+    vllm run-batch ...
+```
+
+`--extra-index-url` matters as much as the wheel: without a matching torch build, the
+resolver installs the default-CUDA torch and the same abort follows from there instead.
+
+This guide was last run end-to-end against a driver reporting **CUDA 12.8**, using the
+`cu129` build shown above under CUDA minor-version compatibility. A driver new enough for
+the default wheel needs none of this — plain `uvx vllm run-batch` is enough.
+
+On a shared box, let the scheduler hand out GPUs rather than pinning `CUDA_VISIBLE_DEVICES`
+by hand, and cap the context if the model's default exceeds what one card holds
+(`--max-model-len 4096 --gpu-memory-utilization 0.90`).
 
 ### Step 3 — generate the answers
 
