@@ -3,7 +3,7 @@
 **Estimating how likely a language model answer is to be a hallucination.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org)
 [![Paper](https://img.shields.io/badge/arXiv-2509.04492-b31b1b.svg)](https://arxiv.org/abs/2509.04492)
 
 Artefactual is a Python module that assigns a language model's answer a probability of
@@ -63,7 +63,7 @@ pip install artefactual
 
 Artefactual requires:
 
-- Python (>= 3.10)
+- Python (>= 3.11)
 - NumPy
 - scikit-learn
 - pydantic

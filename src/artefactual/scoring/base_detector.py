@@ -1,5 +1,7 @@
 """The detector pipeline and the `epr` / `wepr` factories that build it."""
 
+from typing import Any
+
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.linear_model import LogisticRegression
@@ -27,8 +29,12 @@ def _load_pretrained(reduction: Reduction, identifier: str, k: int) -> BaseEstim
     """
     estimator = BaseDetector.load_estimator(identifier)
     expected = _FEATURE_COUNT[reduction](k)
-    # Set by fit; every estimator reaching here is a fitted scikit-learn classifier.
-    actual: int = estimator.n_features_in_  # ty: ignore[unresolved-attribute]
+    # `n_features_in_` is set by fit, so it is absent from the `BaseEstimator` interface
+    # even though every estimator reaching here is fitted. Read it through `Any` rather
+    # than suppressing per type-checker: the suppression is itself reported as unused by
+    # versions that do not raise, which fails the hook the other way round.
+    fitted: Any = estimator
+    actual: int = fitted.n_features_in_
     if actual != expected:
         implied = actual // 2 if reduction == "wepr" else actual
         msg = (

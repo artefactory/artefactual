@@ -3,7 +3,7 @@
 Each detector is a three-step scikit-learn pipeline:
 
 ```
-LogProbParser  ->  EntropyTransformer  ->  LogisticRegression       
+LogProbParser  ->  EntropyTransformer  ->  LogisticRegression
   response            uncertainty              P(hallucination)
                        features
 ```
@@ -44,4 +44,3 @@ from artefactual.scoring import EntropyTransformer
 
 EntropyTransformer(reduction=lambda s, axis: np.nanmax(s, axis=axis))
 ```
-
