@@ -37,6 +37,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra docs
 
+      # nbsphinx shells out to pandoc to convert the notebooks' markdown cells. Without it
+      # every notebook fails to read and the build stops, which -W turns into an error.
+      - name: Install pandoc
+        run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends pandoc
+
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
 

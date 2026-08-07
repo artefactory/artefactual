@@ -11,12 +11,11 @@ authors = [
 ]
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.11,<3.14"
 classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]

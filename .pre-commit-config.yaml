@@ -5,7 +5,12 @@ repos:
     rev: v6.0.0
     hooks:
     -   id: trailing-whitespace
+        # The ECIR prompts reproduce the paper's indented f-string. Their trailing
+        # indentation is part of the prompt the model was given, so stripping it would
+        # change the experiment rather than tidy the file.
+        exclude: ^scripts/ecir/prompts/
     -   id: end-of-file-fixer
+        exclude: ^scripts/ecir/prompts/
     -   id: check-yaml
     -   id: check-added-large-files
     -   id: check-merge-conflict
