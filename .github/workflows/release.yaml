@@ -119,31 +119,71 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
           print-hash: true
+          # A re-run of a release whose upload already landed must reach the check below
+          # rather than stopping at a duplicate-file rejection. Deliberately not set on the
+          # PyPI job, where a version that already exists is a real error.
+          skip-existing: true
 
-      # Installing from TestPyPI rather than from dist/ is the point of publishing there:
-      # it exercises the uploaded metadata and dependency resolution. Dependencies come
-      # from real PyPI, since TestPyPI does not mirror them.
-      - name: Install from TestPyPI and score
-        if: true
-        env:
-          TAG_NAME: ${{ needs.tag.outputs.tag }}
+      # What TestPyPI adds over the build job is the registry's own reading of the upload.
+      # The distributions are already built, checked and proven installable by then, so
+      # what is unverified until now is that the index received exactly those files and
+      # serves usable metadata for them. Wrong here is wrong on PyPI too, and a released
+      # version cannot be reissued.
+      - name: Check the metadata TestPyPI serves
         run: |
           set -euo pipefail
-          version="${TAG_NAME#v}"
-          for attempt in 1 2 3 4 5; do
-            if uv run --isolated --no-project \
-                 --index https://test.pypi.org/simple/ \
-                 --extra-index-url https://pypi.org/simple/ \
-                 --index-strategy unsafe-best-match \
-                 --with "artefactual==$version" \
-                 python -c "from artefactual.scoring import epr; print('installed from TestPyPI:', epr('chicham/artefactual-epr-ministral', k=15).named_steps['classifier'])"; then
-              exit 0
-            fi
-            echo "not indexed yet, retrying in 20s (attempt $attempt)"
-            sleep 20
+          # Taken from the wheel rather than from the tag: the build job has already
+          # checked the two agree, and this is the version as PEP 440 normalises it, which
+          # is the form the index answers to.
+          version=$(basename dist/*.whl | cut -d- -f2)
+          served="$RUNNER_TEMP/served.json"
+
+          # Only "is it served yet" retries. Wrapping the checks below in the retry would
+          # report every one of their failures as a timeout, naming the wrong cause.
+          # Looped rather than left to `curl --retry`, whose backoff against this endpoint
+          # is not bounded by --retry-delay and reports a timeout instead of the HTTP error.
+          for attempt in $(seq 1 10); do
+            curl -sfL -o "$served" "https://test.pypi.org/pypi/artefactual/$version/json" && break
+            echo "$version not served yet, retrying in 15s (attempt $attempt of 10)"
+            sleep 15
           done
-          echo "::error::artefactual==$version never became installable from TestPyPI"
-          exit 1
+          if [ ! -s "$served" ]; then
+            echo "::error::artefactual $version never appeared on TestPyPI"
+            exit 1
+          fi
+
+          # The files served must be exactly the ones just built: same content, none
+          # missing, none extra. This is also what makes `skip-existing` safe -- a version
+          # that already exists carrying different files fails here instead of being
+          # silently kept.
+          jq -r '.urls[] | "\(.digests.sha256)  \(.filename)"' "$served" > "$RUNNER_TEMP/served.sha256"
+          (cd dist && sha256sum -c "$RUNNER_TEMP/served.sha256")
+          # sha256sum -c only checks the files the index lists, so the counts are compared
+          # too: a build that produced a distribution the upload dropped fails here.
+          serving=$(jq '.urls | length' "$served")
+          built=$(ls dist | wc -l)
+          if [ "$serving" -ne "$built" ]; then
+            echo "::error::TestPyPI serves $serving file(s), $built were built"
+            exit 1
+          fi
+
+          problems=$(jq -r '[
+            (if (.info.requires_python // "") == "" then "requires_python is empty: every Python would be offered this release" else empty end),
+            (if (.info.description // "") == "" then "description is empty: the project page would render blank" else empty end),
+            (if .info.description_content_type != "text/markdown" then "description_content_type is \(.info.description_content_type | tojson), expected text/markdown" else empty end),
+            (if (.info.summary // "") == "" then "summary is empty" else empty end),
+            (if (.info.license_expression // "") == "" then "license_expression is empty" else empty end),
+            (if (.info.project_urls // {}) == {} then "project_urls is empty" else empty end)
+          ] | .[]' "$served")
+          if [ -n "$problems" ]; then
+            printf '%s\n' "$problems" | sed 's/^/::error::/'
+            exit 1
+          fi
+
+          jq -r '"metadata checks passed for \(.info.name) \(.info.version):",
+                 "  requires_python: \(.info.requires_python)",
+                 "  dependencies:    \(.info.requires_dist | length) entries",
+                 "  description:     \(.info.description | length) chars of \(.info.description_content_type)"' "$served"
 
   publish:
     needs: [tag, build, publish-testpypi]
