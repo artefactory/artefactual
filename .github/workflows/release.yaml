@@ -213,15 +213,36 @@ jobs:
   publish:
     needs: [tag, build, publish-testpypi]
     runs-on: ubuntu-latest
-    # Everything outward-facing lives behind this environment, so a required reviewer on
-    # it holds the GitHub Release and the PyPI upload together. The tag is already pushed
-    # by then; a tag is cheap to delete, a PyPI version is not reusable.
+    # The reviewer on this environment holds the upload itself, which is the irreversible
+    # step: the tag before it is cheap to delete, a PyPI version is not reusable.
     environment:
       name: pypi
       url: https://pypi.org/p/artefactual
+    # Only the credential needed to upload. Nothing in this job can write to the
+    # repository, so a compromised step here cannot both mint a PyPI token and push.
+    permissions:
+      id-token: write  # Required for PyPI trusted publishing
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e  # v1.13.0
+        with:
+          print-hash: true
+          attestations: true
+
+  # Announced only once PyPI actually has the release. Created before the upload, a failed
+  # publish would leave a Release advertising a version that does not exist and whose tag
+  # cannot be reissued; this way a failure here leaves PyPI correct and a Release to add.
+  github-release:
+    needs: [tag, publish]
+    runs-on: ubuntu-latest
     permissions:
       contents: write  # create the GitHub Release
-      id-token: write  # Required for PyPI trusted publishing
     env:
       TAG_NAME: ${{ needs.tag.outputs.tag }}
     steps:
@@ -260,11 +281,3 @@ jobs:
           files: |
             dist/*.whl
             dist/*.tar.gz
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e  # v1.13.0
-        with:
-          print-hash: true
-          attestations: true
-
-      - run: rm -f RELEASE_NOTES.md
