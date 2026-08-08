@@ -24,7 +24,11 @@ dependencies = [
     "beartype>=0.19.0",
     "pydantic>=2.12.5",
     "numpy>=1.24.0",
-    "scikit-learn>=1.6.0",
+    # 1.8 is the floor the published detectors impose, not a preference: they are skops
+    # dumps of a LogisticRegression fitted under a newer scikit-learn, and 1.7 reads
+    # `multi_class` off the loaded estimator, which those files do not carry. 1.8 also
+    # requires Python >= 3.11, which is where `requires-python` above comes from.
+    "scikit-learn>=1.8.0",
     "skops>=0.14.0",
     "huggingface-hub>=0.30.0",
 ]

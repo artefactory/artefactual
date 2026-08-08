@@ -49,11 +49,68 @@ jobs:
       - name: Build package
         run: uv build
 
+      # The wheel is exercised before it is published anywhere, and from an environment
+      # built only from its own declared dependencies -- not the project's. A dependency
+      # that is needed but unlisted resolves fine in the repo and fails only for a user
+      # installing the wheel, which is precisely what this catches. Publishing to TestPyPI
+      # without this check tests only that an upload succeeds.
+      - name: Smoke-test the built wheel
+        run: |
+          set -euo pipefail
+          wheel=$(ls dist/*.whl)
+          echo "testing $wheel"
+          uv run --isolated --no-project --with "$wheel" python - <<'SMOKE'
+          import artefactual
+          from artefactual.scoring import epr, wepr
+
+          # a published detector, resolved and read through the wheel's own dependencies
+          detector = epr("chicham/artefactual-epr-ministral", k=15)
+          response = {
+              "choices": [{
+                  "index": 0,
+                  "message": {"role": "assistant", "content": "x"},
+                  "logprobs": {"content": [{
+                      "token": "x", "logprob": -0.001,
+                      "top_logprobs": [{"token": f"t{i}", "logprob": -0.001 - i} for i in range(15)],
+                  }]},
+              }]
+          }
+          score = detector.predict_proba(response)[:, 1]
+          assert score.shape == (1,), score.shape
+          assert 0.0 <= float(score[0]) <= 1.0, score
+          print("wheel imports, resolves a published detector and scores:", float(score[0]))
+          SMOKE
+
       - name: Publish to TestPyPI
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e
         with:
           repository-url: https://test.pypi.org/legacy/
           print-hash: true
+
+      # Installing from TestPyPI rather than from dist/ is the point of publishing there:
+      # it exercises the uploaded metadata and dependency resolution. Dependencies come
+      # from real PyPI, since TestPyPI does not mirror them.
+      - name: Install from TestPyPI and score
+        run: |
+          set -euo pipefail
+          version="${TAG_NAME#v}"
+          for attempt in 1 2 3 4 5; do
+            if uv run --isolated --no-project \
+                 --index https://test.pypi.org/simple/ \
+                 --extra-index-url https://pypi.org/simple/ \
+                 --index-strategy unsafe-best-match \
+                 --with "artefactual==$version" \
+                 python -c "
+          from artefactual.scoring import epr
+          print('installed from TestPyPI:', epr('chicham/artefactual-epr-ministral', k=15).named_steps['classifier'])
+          "; then
+              exit 0
+            fi
+            echo "not indexed yet, retrying in 20s (attempt $attempt)"
+            sleep 20
+          done
+          echo "::error::artefactual==$version never became installable from TestPyPI"
+          exit 1
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
