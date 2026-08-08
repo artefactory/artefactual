@@ -50,61 +50,38 @@ This project uses [CalVer](https://calver.org/) versioning with the format `YYYY
 
 ### Creating a Release
 
-Releases are triggered by pushing a version tag.
+Merging to `main` releases. There is no tag to push and no version to edit: the version
+lives in the git tag, and the tag is created by CI.
 
-1. **Bump version (creates commit + tag):**
-    ```bash
-    # For a patch release (e.g., 2026.01.0 -> 2026.01.1)
-    uvx bump-my-version bump patch
+`bump-my-version` computes the next tag from the most recent reachable one and creates it,
+configured to write no files and make no commit. `hatch-vcs` then reads the version back
+off that tag at build time, so what is tagged and what is built cannot disagree — and
+`pyproject.toml` carries no version string to fall out of step.
 
-    # For a new month's release (e.g., 2025.12.5 -> 2026.01.0)
-    uvx bump-my-version bump release
+The chain runs in one workflow, because a tag pushed with `GITHUB_TOKEN` does not start a
+workflow run: chaining on the tag would leave the tag created and nothing built.
 
-    ```
+    merge to main
+      -> tag              bump-my-version creates vYYYY.MM.PATCH
+      -> build            hatch-vcs derives the version; the wheel is smoke-tested
+      -> publish-testpypi uploaded, then installed back from TestPyPI and scored
+      -> publish          GitHub Release + PyPI, held for a required reviewer
 
-    * `patch`: Same month → increment patch (2026.01.0 → 2026.01.1)
-    * `release`: New month → reset patch (2025.12.5 → 2026.01.0)
+The `pypi` environment has a required reviewer, so nothing reaches PyPI unattended. A
+release that should not go out is declined there; the tag is already created by then, and a
+tag is cheap to delete where a PyPI version is not reusable.
 
+Which increment is taken comes from `bump-my-version`'s configuration, following
+[CalVer](https://calver.org/):
 
-2. **Push branch for PR (optional, for testing):**
-    ```bash
-    git push origin your-branch-name
-    gh pr create --title "chore(release): YYYY.MM.PATCH" --body "Version bump"
+* `patch` — same month, increment the patch (2026.01.0 -> 2026.01.1)
+* `release` — a new month, reset the patch (2025.12.5 -> 2026.01.0)
 
-    ```
-
-
-3. **Push the version tag:**
-    ```bash
-    git push origin vYYYY.MM.PATCH
-
-    ```
-
-    The tag push triggers the release workflow which:
-
-    * Validates version in code matches the tag
-    * Generates changelog with git-cliff
-    * Builds the package
-    * Creates GitHub release with artifacts
-    * Triggers PyPI publishing
-
-### Local Changelog Preview
-
-To preview what will be in the next release notes (grouped by the commit types defined above):
+To see what the next tag would be without creating it:
 
 ```bash
-uvx git-cliff --unreleased
-
+uvx bump-my-version show-bump
 ```
 
-### Event-Specific Tags
-
-CalVer tags (e.g., `2026.01.0`) coexist with event-specific tags (e.g., `ECIR2026`). You can create event tags manually:
-
-```bash
-git tag ECIR2026
-git push origin ECIR2026
-
-```
-
-Both tag types can point to the same commit.
+Every pull request runs the same build the release does, with publishing switched off, so a
+packaging fault surfaces before the merge rather than after the tag exists.
