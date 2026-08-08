@@ -43,7 +43,17 @@ jobs:
       - name: Smoke-test the built wheel
         run: |
           set -euo pipefail
-          wheel=$(ls dist/*.whl)
+          # Unglobbed into an array so a second wheel is a failure rather than a word-split
+          # `ls` result that smoke-tests neither of them. nullglob so a missing wheel gives
+          # an empty array rather than the unexpanded pattern, which would otherwise pass
+          # the count check and be handed to `uv run --with` as a literal glob.
+          shopt -s nullglob
+          wheels=(dist/*.whl)
+          if [ "${#wheels[@]}" -ne 1 ]; then
+            echo "::error::expected exactly one wheel in dist/, found ${#wheels[@]}"
+            exit 1
+          fi
+          wheel="${wheels[0]}"
           echo "testing $wheel"
           uv run --isolated --no-project --with "$wheel" python - <<'SMOKE'
           from artefactual.scoring import epr

@@ -132,10 +132,20 @@ jobs:
       - name: Check the metadata TestPyPI serves
         run: |
           set -euo pipefail
+          # Unglobbed into an array first: `basename dist/*.whl` would silently read a
+          # second wheel as a suffix argument and return a truncated name. nullglob so a
+          # missing wheel gives an empty array rather than the unexpanded pattern, which
+          # would otherwise pass the count check and yield a version of "*.whl".
+          shopt -s nullglob
+          wheels=(dist/*.whl)
+          if [ "${#wheels[@]}" -ne 1 ]; then
+            echo "::error::expected exactly one wheel in dist/, found ${#wheels[@]}"
+            exit 1
+          fi
           # Taken from the wheel rather than from the tag: the build job has already
           # checked the two agree, and this is the version as PEP 440 normalises it, which
           # is the form the index answers to.
-          version=$(basename dist/*.whl | cut -d- -f2)
+          version=$(basename "${wheels[0]}" | cut -d- -f2)
           served="$RUNNER_TEMP/served.json"
 
           # Only "is it served yet" retries. Wrapping the checks below in the retry would
@@ -159,9 +169,12 @@ jobs:
           jq -r '.urls[] | "\(.digests.sha256)  \(.filename)"' "$served" > "$RUNNER_TEMP/served.sha256"
           (cd dist && sha256sum -c "$RUNNER_TEMP/served.sha256")
           # sha256sum -c only checks the files the index lists, so the counts are compared
-          # too: a build that produced a distribution the upload dropped fails here.
+          # too: a build that produced a distribution the upload dropped fails here. Only
+          # distributions are counted -- publishing writes a .publish.attestation next to
+          # each file it uploads, and those are not themselves distributions.
+          distributions=(dist/*.whl dist/*.tar.gz)
           serving=$(jq '.urls | length' "$served")
-          built=$(ls dist | wc -l)
+          built=${#distributions[@]}
           if [ "$serving" -ne "$built" ]; then
             echo "::error::TestPyPI serves $serving file(s), $built were built"
             exit 1
