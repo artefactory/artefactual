@@ -1,8 +1,8 @@
 name: Release
 
-# Every merge to main is a release: the tag is created here rather than by hand, and the
-# version is read back off that tag by hatch-vcs, so what is tagged and what is built
-# cannot disagree.
+# A merge to main releases only when its pull request carried the `release` label. The tag
+# is created here rather than by hand, and the version is read back off that tag by
+# hatch-vcs, so what is tagged and what is built cannot disagree.
 #
 # The chain runs inside one workflow. Chaining through `workflow_run` on a pushed tag
 # would never fire: a push made with GITHUB_TOKEN does not start a workflow run, so the
@@ -22,7 +22,39 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  gate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      release: ${{ steps.check.outputs.release }}
+    steps:
+      # A push event carries no labels, so the merged pull request is resolved from the
+      # commit and its labels read back. A commit that belongs to no pull request -- a
+      # direct push to main -- releases nothing, which is the safe default: a version
+      # number is spent permanently and cannot be reissued.
+      - name: Look for the release label on the merged pull request
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          labels=$(gh api "repos/$REPO/commits/$SHA/pulls" --jq '[.[].labels[].name] | join(" ")')
+          echo "labels on the merged pull request: ${labels:-<none>}"
+          if printf '%s' "$labels" | tr ' ' '\n' | grep -qx release; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "labelled release: tagging and publishing"
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "not labelled release: nothing is tagged or published"
+          fi
+
   tag:
+    needs: gate
+    if: needs.gate.outputs.release == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write  # create and push the tag

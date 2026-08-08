@@ -50,8 +50,18 @@ This project uses [CalVer](https://calver.org/) versioning with the format `YYYY
 
 ### Creating a Release
 
-Merging to `main` releases. There is no tag to push and no version to edit: the version
-lives in the git tag, and the tag is created by CI.
+A merge to `main` releases when its pull request carried the **`release`** label, and does
+nothing otherwise. There is no tag to push and no version to edit: the version lives in the
+git tag, and the tag is created by CI.
+
+Label the pull request before merging it:
+
+```bash
+gh pr edit <number> --add-label release
+```
+
+Ordinary merges publish nothing, so a fix to a fix does not spend a version number. A
+commit pushed straight to `main`, belonging to no pull request, never releases.
 
 `bump-my-version` computes the next tag from the most recent reachable one and creates it,
 configured to write no files and make no commit. `hatch-vcs` then reads the version back
@@ -62,6 +72,7 @@ The chain runs in one workflow, because a tag pushed with `GITHUB_TOKEN` does no
 workflow run: chaining on the tag would leave the tag created and nothing built.
 
     merge to main
+      -> gate             is the merged pull request labelled `release`?
       -> tag              bump-my-version creates vYYYY.MM.PATCH
       -> build            hatch-vcs derives the version; the wheel is smoke-tested
       -> publish-testpypi uploaded, then installed back from TestPyPI and scored
