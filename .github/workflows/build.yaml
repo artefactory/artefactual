@@ -7,10 +7,6 @@ name: Build
 on:
   workflow_call:
     inputs:
-      publish:
-        description: Publish the built distributions to TestPyPI.
-        type: boolean
-        default: false
       tag:
         description: >-
           Tag the distributions must carry. The version is derived from the repository's
@@ -93,50 +89,3 @@ jobs:
         with:
           name: python-package-distributions
           path: dist/
-
-  publish-testpypi:
-    if: inputs.publish
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: testpypi
-      url: https://test.pypi.org/p/artefactual
-    permissions:
-      id-token: write  # Required for TestPyPI trusted publishing
-    steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: python-package-distributions
-          path: dist/
-
-      - name: Publish to TestPyPI
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e
-        with:
-          repository-url: https://test.pypi.org/legacy/
-          print-hash: true
-
-      # Installing from TestPyPI rather than from dist/ is the point of publishing there:
-      # it exercises the uploaded metadata and dependency resolution. Dependencies come
-      # from real PyPI, since TestPyPI does not mirror them.
-      - name: Install from TestPyPI and score
-        if: inputs.tag != ''
-        env:
-          TAG_NAME: ${{ inputs.tag }}
-        run: |
-          set -euo pipefail
-          version="${TAG_NAME#v}"
-          for attempt in 1 2 3 4 5; do
-            if uv run --isolated --no-project \
-                 --index https://test.pypi.org/simple/ \
-                 --extra-index-url https://pypi.org/simple/ \
-                 --index-strategy unsafe-best-match \
-                 --with "artefactual==$version" \
-                 python -c "from artefactual.scoring import epr; print('installed from TestPyPI:', epr('chicham/artefactual-epr-ministral', k=15).named_steps['classifier'])"; then
-              exit 0
-            fi
-            echo "not indexed yet, retrying in 20s (attempt $attempt)"
-            sleep 20
-          done
-          echo "::error::artefactual==$version never became installable from TestPyPI"
-          exit 1
