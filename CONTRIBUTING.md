@@ -73,14 +73,22 @@ workflow run: chaining on the tag would leave the tag created and nothing built.
 
     merge to main
       -> gate             is the merged pull request labelled `release`?
+      -> tests            the suite, against the exact commit being released
       -> tag              bump-my-version creates vYYYY.MM.PATCH
-      -> build            hatch-vcs derives the version; the wheel is smoke-tested
-      -> publish-testpypi uploaded, then installed back from TestPyPI and scored
-      -> publish          GitHub Release + PyPI, held for a required reviewer
+      -> build            hatch-vcs derives the version; the distributions are checked
+                          and the wheel is smoke-tested
+      -> publish-testpypi uploaded, then checked against the metadata the index serves
+      -> publish          PyPI, held for a required reviewer
+      -> github-release   the Release, once PyPI has the version
 
 The `pypi` environment has a required reviewer, so nothing reaches PyPI unattended. A
 release that should not go out is declined there; the tag is already created by then, and a
 tag is cheap to delete where a PyPI version is not reusable.
+
+Uploading before announcing is deliberate: a Release created first would advertise a
+version that a failed upload never produced, under a tag that cannot be reissued. The
+upload job holds only the credential to publish and no write access to the repository;
+creating the Release is a separate job holding the reverse.
 
 Which increment is taken comes from `bump-my-version`'s configuration, following
 [CalVer](https://calver.org/):
