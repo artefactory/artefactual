@@ -52,8 +52,20 @@ jobs:
             echo "not labelled release: nothing is tagged or published"
           fi
 
-  tag:
+  # A label says a release is wanted; it says nothing about whether the commit works.
+  # Branch protection gates the pull request, not the merge result, and a re-run is gated
+  # by nothing at all -- so the suite is run here against the exact commit being released.
+  tests:
     needs: gate
+    if: needs.gate.outputs.release == 'true'
+    permissions:
+      contents: read
+      checks: write         # a called workflow cannot hold more than its caller grants
+      pull-requests: write
+    uses: ./.github/workflows/tests.yaml
+
+  tag:
+    needs: [gate, tests]
     if: needs.gate.outputs.release == 'true'
     runs-on: ubuntu-latest
     permissions:
