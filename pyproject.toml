@@ -61,11 +61,37 @@ build-backend = "hatchling.build"
 [tool.hatch.version]
 source = "vcs"
 
+# Without this the default scheme guesses the *next* version by incrementing the last
+# component -- 2026.07.0 becomes 2026.7.1.devN. Under CalVer the next release is
+# 2026.08.0, so that guess names a version that will never exist. `no-guess-dev` counts
+# forward from the released tag instead: 2026.7.0.post1.devN.
+raw-options = { version_scheme = "no-guess-dev" }
+
 # Build output, generated from the tag and never committed, holding the version as a
 # literal for `__init__.py` to import. Written to its own module because the hook
 # overwrites whatever file it targets.
 [tool.hatch.build.hooks.vcs]
 version-file = "src/artefactual/_version.py"
+
+# hatch-vcs offers hatchling every path the VCS knows about, and with no explicit target
+# the sdist takes the repository root -- .jj, .workspaces and the docs build included,
+# which is 22 MB of working state a user never asked for. Both targets are named here so
+# what ships is what the package needs to build and be tested.
+[tool.hatch.build.targets.sdist]
+# Anchored with a leading slash: unanchored, `src/artefactual` also matches
+# `.workspaces/<name>/src/artefactual`, and a jj workspace checked out under the repo
+# would be packaged along with it.
+include = [
+    "/src/artefactual",
+    "/tests",
+    "/pyproject.toml",
+    "/README.md",
+    "/LICENSE",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/artefactual"]
+
 
 [dependency-groups]
 dev = [
