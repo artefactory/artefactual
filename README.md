@@ -17,7 +17,8 @@ from openai import OpenAI
 
 from artefactual.scoring import wepr
 
-MODEL = "mistralai/Ministral-8B-Instruct-2410"
+MODEL = "mistralai/Ministral-8B-Instruct-2410"          # the model being scored
+DETECTOR = "chicham/artefactual-wepr-ministral"        # the detector trained for it
 
 client = OpenAI(base_url="https://your-provider.example/v1")  # any OpenAI-compatible endpoint
 response = client.chat.completions.create(
@@ -32,8 +33,8 @@ print(detector.predict_proba(response)[:, 1])   # P(hallucination) per sequence
 print(detector.predict_token_proba(response))   # ...and per token
 ```
 
-Weights are model-specific, so the name passed to `wepr` must be the model that produced
-the response. There is no default threshold; choosing one is covered in the
+A detector is trained for one model, so `DETECTOR` must be the one published for whatever
+produced the response — see [published detectors](#published-detectors) for the pairs. There is no default threshold; choosing one is covered in the
 [user guide](https://artefactory.github.io/artefactual/guide/scoring.html).
 
 No endpoint is needed to try the library. The
