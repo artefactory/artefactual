@@ -47,8 +47,35 @@ def test_the_notebook_parses(name):
     compile(code_of(load(name)), name, "exec")
 
 
+@pytest.fixture
+def _detectors_resolve_locally(monkeypatch, tmp_path):
+    """Resolve a published detector name to an estimator written here, not fetched.
+
+    The notebooks name a Hugging Face repository, which is what a reader should copy, so
+    running them as written reaches the network -- and a runner blip then fails a build
+    that has nothing to do with the Hub. Only the resolution step is replaced: the
+    notebook's own code, `read_estimator`, and the whole pipeline still run for real.
+
+    The width follows the reduction the name carries, because that is what the classifier
+    is checked against: EPR pools to a single coefficient, WEPR keeps `2k`.
+    """
+    import skops.io as sio
+    from conftest import fitted_logistic
+
+    from artefactual.scoring.base_detector import BaseDetector
+
+    def resolve(identifier, *_args, **_kwargs):
+        n_features = 1 if "-epr-" in str(identifier) else 2 * 15
+        path = tmp_path / f"{n_features}.skops"
+        if not path.exists():
+            sio.dump(fitted_logistic(-0.5, [0.1] * n_features), path)
+        return path
+
+    monkeypatch.setattr(BaseDetector, "resolve_estimator", staticmethod(resolve))
+
+
 @pytest.mark.parametrize("name", OFFLINE_NOTEBOOKS)
-def test_the_notebook_runs_against_the_current_source(name, monkeypatch):
+def test_the_notebook_runs_against_the_current_source(name, monkeypatch, _detectors_resolve_locally):
     """Execute every code cell in order, from the notebook's own directory.
 
     Run in-process rather than through nbconvert: the failure surfaces as an ordinary
