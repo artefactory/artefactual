@@ -36,6 +36,12 @@ jobs:
       - name: Build package
         run: uv build
 
+      # Metadata that fails to render leaves a blank project page, and a release cannot be
+      # reissued to fix it. Checked here rather than at publish time so a pull request that
+      # breaks the description fails before a version number is ever spent on it.
+      - name: Check the distributions render
+        run: uvx twine check --strict dist/*
+
       # The wheel is exercised before it is published anywhere, and from an environment
       # built only from its own declared dependencies -- not the project's. A dependency
       # that is needed but unlisted resolves fine in the repo and fails only for a user
