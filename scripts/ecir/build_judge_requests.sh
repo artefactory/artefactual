@@ -22,7 +22,7 @@
 # Lines are read as the OpenAI Batch output spec defines them -- no other shape is accepted.
 #
 # The prompt is rendered by literal split/join rather than regex substitution, so a
-# question containing backslashes or `&` cannot corrupt it. `tests/test_ecir_prompts.py`
+# question containing backslashes or `&` cannot corrupt it. `tests/test_ecir_pipeline.py`
 # checks the result byte-for-byte against the original Jinja template.
 set -euo pipefail
 
