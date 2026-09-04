@@ -15,15 +15,15 @@ model.
 | | Why | Where |
 |---|---|---|
 | `vllm` | Runs the two LLM stages | A Linux GPU box — it has no macOS wheels. Run via `uvx`, no install; the wheel must match the driver's CUDA — see [running `vllm`](#running-vllm) |
-| `jq` | Builds the batch request files | Anywhere |
+| `jq` | Builds the question pack and the batch request files | Anywhere |
+| `datasets` | Only if step 1 draws from the Hub rather than a hand-written file | Anywhere; `uv run --with datasets` fetches it, no install |
 | This repo, `uv sync`'d | Trains and evaluates the detector | Anywhere |
-| `questions.json` | Your QA pack — see below | You write this |
 
 The work falls into three phases, and only the middle one needs a GPU:
 
 | Phase | What happens | GPU | Cost |
 |---|---|---|---|
-| **A. Prepare the data** | Write the questions, render them as batch requests | no | minutes |
+| **A. Prepare the data** | Draw the questions, render them as batch requests | no | minutes |
 | **B. Run the models** | Generate answers, then grade them — two `vllm run-batch` passes | **yes** | hours |
 | **C. Train and evaluate** | Fit the detector on the labels, score it on held-out data | no | seconds |
 
@@ -38,7 +38,7 @@ The detector is a logistic regression trained on `(response, was_it_a_hallucinat
 You supply the questions and their gold answers; the pipeline produces the responses, and
 the LLM judge produces the labels.
 
-The only file authored by hand is `questions.json`, a list of:
+Every stage reads one file, `questions.json`, a list of:
 
 ```json
 [{"question": "Who sent Augustine to England?",
@@ -54,9 +54,12 @@ The only file authored by hand is `questions.json`, a list of:
 | `short_answer` | yes | The gold answer the judge grades against |
 | `answer_aliases` | no | Other answers the judge should accept; omit or leave empty |
 
-The paper uses **TriviaQA** for training and **WebQuestions** to test generalisation, plus
-a financial RAG corpus (ArGiMi-Ardian) for missing-context detection. Any short-form QA set
-works, including domain-specific question sets. Two properties matter:
+Step 1 writes it either from a Hugging Face QA dataset or by hand. The paper trains on **TriviaQA**, which ships each gold answer with the
+aliases the judge should also accept; it tests generalisation on **WebQuestions**, and uses
+a financial RAG corpus (ArGiMi-Ardian) for missing-context detection.
+
+Any short-form QA set works either way, including a domain-specific one that exists only as
+your own file. Two properties matter:
 
 - **Answers must be short enough to grade automatically.** The judge compares against
   `short_answer`; an essay cannot be scored this way.
@@ -87,10 +90,71 @@ mkdir -p "$OUT"
 
 No GPU. Everything here is cheap and worth getting right before spending GPU hours.
 
-### Step 1 — write `questions.json`
+### Step 1 — build `questions.json`
 
-The only hand-authored file. See [the training data](#the-training-data) above for the
-schema and for the properties of a usable question set.
+Every later stage reads this one file, in the schema [above](#the-training-data). There
+are two ways to produce it, and the rest of the pipeline cannot tell them apart.
+
+**From a Hugging Face QA dataset.** Two commands, split the way the rest of the pipeline
+is: one fetches the rows, and `jq` renames the fields as it does for every other file
+here. TriviaQA's closed-book configuration (`rc.nocontext`) carries every field the pack
+needs, so the rename is all it takes.
+
+```bash
+uv run --with datasets python -c "
+from datasets import load_dataset
+load_dataset('mandarjoshi/trivia_qa', 'rc.nocontext', split='validation').shuffle(seed=42).select(range(500)).to_json('rows.jsonl')
+"
+```
+
+`shuffle` before `select` is the point of doing it this way: the split arrives grouped by
+source, so its first 500 rows are a narrower sample than 500 drawn at random. `to_json`
+writes JSON Lines — one row per line, columns untouched — which is the shape `jq -s`
+reads.
+
+```bash
+jq -s '
+  [ .[]
+    # Bound before the object is built: inside it, `.` is no longer the row.
+    | .answer.value as $gold
+    | {question,
+       question_id,
+       short_answer: $gold,
+       # TriviaQA ships ~20 aliases per question, many differing only in case, and every
+       # one of them is rendered into the judge prompt. Deduplicating keeps that prompt
+       # readable when it is inspected by hand.
+       answer_aliases: ([.answer.aliases[] | select(ascii_downcase != ($gold | ascii_downcase))] | unique)} ]
+' rows.jsonl > questions.json
+```
+
+Another dataset changes only these two lines. WebQuestions — the paper's generalisation
+set — has no id column and one flat answer list, so it is numbered by position and reuses
+that list for both fields:
+
+```jq
+[ to_entries[] | {question: .value.question, question_id: "q-\(.key)",
+                  short_answer: .value.answers[0], answer_aliases: .value.answers[1:]} ]
+```
+
+**By hand.** A JSON list in the same schema, which is the right choice for a
+domain-specific question set where no public dataset applies:
+
+```json
+[{"question": "Who sent Augustine to England?",
+  "question_id": "q-1",
+  "short_answer": "Pope Gregory",
+  "answer_aliases": ["Gregory I", "the Pope"]}]
+```
+
+Either way, check the file before spending GPU time. `question_id` becomes `custom_id` and
+every later stage joins on it, so a duplicate would pair a generation with another
+question's verdict:
+
+```bash
+jq 'length' questions.json                                           # the question count
+jq '[.[].question_id] | length == (unique | length)' questions.json  # true
+jq '.[0]' questions.json
+```
 
 ### Step 2 — build the generation requests
 
@@ -351,8 +415,9 @@ Supplying WEPR weights whose rank count disagrees with `--k` is caught separatel
 coefficient vector:
 
 ```
-ValueError: Weights cover 15 rank(s) but k=20 was requested. WEPR coefficients are fixed
-at the rank count they were trained at; pass k=15, or supply weights trained at k=20.
+ValueError: The wepr detector at 'out/wepr.skops' takes 30 feature(s), but k=20 needs 40.
+Its coefficients are fixed at the rank count they were trained at; pass k=15, or use a
+detector trained at k=20.
 ```
 
 Responses generated at a narrower `k` must be regenerated; a detector trained at another
@@ -392,11 +457,19 @@ jq -r 'select(.response != null) | (.response.body // .response).choices[0].mess
 joins by id — a reordered or partially failed batch can never pair a generation with the
 wrong verdict, but two unrelated batches will not join at all.
 
-**`5-fold cross-validation needs at least 5 of each class` from the evaluation.** The rarer
-class — usually the hallucinations — has fewer members than there are folds, so it cannot
-appear in every one. The message prints the actual counts. Label more data, or lower
-`--folds`; note that fewer folds means a noisier estimate, so treat it as a way to get a
-reading at all rather than a fix.
+**`Both classes are needed to fit a detector`, or `A stratified holdout needs at least 2 of
+each class`.** The labelled set has no hallucinations, or too few to put one on each side
+of the split. Both messages print the actual counts:
+
+```
+ValueError: A stratified holdout needs at least 2 of each class, but the labels are
+{0: 499, 1: 1} (0 = grounded, 1 = hallucination). Label more data, or pass --test_size 0
+to fit without evaluating.
+```
+
+Label more data, or make step 1's questions harder so the model gets more of them wrong.
+`--test_size 0` fits without evaluating, which gets a file written but tells you nothing
+about it.
 
 ## What the scripts read
 
