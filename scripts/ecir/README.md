@@ -420,8 +420,9 @@ Supplying WEPR weights whose rank count disagrees with `--k` is caught separatel
 coefficient vector:
 
 ```
-ValueError: Weights cover 15 rank(s) but k=20 was requested. WEPR coefficients are fixed
-at the rank count they were trained at; pass k=15, or supply weights trained at k=20.
+ValueError: The wepr detector at 'out/wepr.skops' takes 30 feature(s), but k=20 needs 40.
+Its coefficients are fixed at the rank count they were trained at; pass k=15, or use a
+detector trained at k=20.
 ```
 
 Responses generated at a narrower `k` must be regenerated; a detector trained at another
@@ -461,11 +462,19 @@ jq -r 'select(.response != null) | (.response.body // .response).choices[0].mess
 joins by id — a reordered or partially failed batch can never pair a generation with the
 wrong verdict, but two unrelated batches will not join at all.
 
-**`5-fold cross-validation needs at least 5 of each class` from the evaluation.** The rarer
-class — usually the hallucinations — has fewer members than there are folds, so it cannot
-appear in every one. The message prints the actual counts. Label more data, or lower
-`--folds`; note that fewer folds means a noisier estimate, so treat it as a way to get a
-reading at all rather than a fix.
+**`Both classes are needed to fit a detector`, or `A stratified holdout needs at least 2 of
+each class`.** The labelled set has no hallucinations, or too few to put one on each side
+of the split. Both messages print the actual counts:
+
+```
+ValueError: A stratified holdout needs at least 2 of each class, but the labels are
+{0: 499, 1: 1} (0 = grounded, 1 = hallucination). Label more data, or pass --test_size 0
+to fit without evaluating.
+```
+
+Label more data, or make step 1's questions harder so the model gets more of them wrong.
+`--test_size 0` fits without evaluating, which gets a file written but tells you nothing
+about it.
 
 ## What the scripts read
 
