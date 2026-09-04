@@ -201,6 +201,9 @@ perso.py
 
 !docs/examples/*.json
 !tests/open_ai_responses.json
+# scripts/ecir step 1 dumps the dataset split here before jq shapes it into questions.json
+# (which `**/*.json` above already covers). Hundreds of KB of rows nobody wants to commit.
+scripts/ecir/rows.jsonl
 
 # MyST build outputs
 _build

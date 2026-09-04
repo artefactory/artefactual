@@ -33,6 +33,14 @@ QUESTIONS = [
     # backslash, ampersand and quotes: a regex-based renderer would corrupt these
     {"question": 'Capital? A\\B & C "quoted"', "question_id": "q-2", "short_answer": "Paris", "answer_aliases": []},
     {"question": "One alias?", "question_id": "q-3", "short_answer": "X", "answer_aliases": ["Y"]},
+    # Step 1 draws from TriviaQA, whose questions carry a dozen aliases and up to sixty.
+    # The rendering was only ever held to 0, 1 and 2, which is no longer the shape it runs on.
+    {
+        "question": "Many aliases?",
+        "question_id": "q-4",
+        "short_answer": "Hitler",
+        "answer_aliases": [f"alias {i}" for i in range(40)],
+    },
 ]
 
 
