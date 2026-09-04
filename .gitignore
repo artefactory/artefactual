@@ -211,3 +211,6 @@ docs/_extra/
 
 # Build output: the hatch-vcs hook writes the version here from the git tag.
 src/artefactual/_version.py
+
+# Notebook scratch: the training demo writes a detector when it runs.
+docs/examples/*.skops

@@ -1,0 +1,6523 @@
+{
+ "synthetic": true,
+ "note": "SYNTHETIC DATA. The questions and their gold answers are real trivia; everything else is simulated. No language model produced these answers and no judge graded them: for each question a stand-in model answers correctly or, 40% of the time, with a fixed wrong answer, and the per-token top-15 log-probabilities are drawn from a half-normal whose spread is wider when the answer is wrong -- overlapping, so some wrong answers are confident and some right ones hesitant. That is the hesitation EPR and WEPR measure, so the training path exercised by the notebook is the real one -- but the scores it reports describe this simulation, not any model's behaviour: the classes are separable here because they were built that way, and a quarter of 50 is 13 examples, which cannot measure anything. For numbers about a real model, generate against it: see the train_wepr_pipeline notebook, or scripts/ecir for the paper's batch procedure.",
+ "k": 15,
+ "n_examples": 50,
+ "n_hallucinations": 19,
+ "examples": [
+  {
+   "question_id": "q-01",
+   "question": "Who wrote the novel 'Things Fall Apart'?",
+   "short_answer": "Chinua Achebe",
+   "generated_answer": "Wole Soyinka",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-01",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Wole Soyinka"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Wole",
+         "logprob": -0.0177,
+         "top_logprobs": [
+          {
+           "token": "Wole",
+           "logprob": -0.0177
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0181
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.0555
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.1226
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.1247
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.4541
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.4796
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.671
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.7057
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.0663
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.07
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.1379
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.2502
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.2507
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.8233
+          }
+         ]
+        },
+        {
+         "token": "Soyinka",
+         "logprob": -0.0116,
+         "top_logprobs": [
+          {
+           "token": "Soyinka",
+           "logprob": -0.0116
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0183
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.0557
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.3802
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.391
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.4547
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.5593
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.5944
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.6379
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.8243
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.8324
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.8768
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.1501
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.2833
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.6884
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-02",
+   "question": "What is the capital of Mongolia?",
+   "short_answer": "Ulaanbaatar",
+   "generated_answer": "Ulaanbaatar",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-02",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Ulaanbaatar"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Ulaanbaatar",
+         "logprob": -0.2702,
+         "top_logprobs": [
+          {
+           "token": "Ulaanbaatar",
+           "logprob": -0.2702
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.3589
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.4089
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.5043
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.5192
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.5225
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.5816
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.6159
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.7352
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.7686
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.8005
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.8315
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.484
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.6097
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.1151
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-03",
+   "question": "Which element has the atomic number 79?",
+   "short_answer": "Gold",
+   "generated_answer": "Gold",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-03",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Gold"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Gold",
+         "logprob": -0.2437,
+         "top_logprobs": [
+          {
+           "token": "Gold",
+           "logprob": -0.2437
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.2469
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.2617
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.2699
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.3955
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.3989
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.4939
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.5947
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.6622
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.9021
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.9054
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.0283
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.3112
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.7171
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.1529
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-04",
+   "question": "In which year did the Berlin Wall fall?",
+   "short_answer": "1989",
+   "generated_answer": "1989",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-04",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "1989"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "1989",
+         "logprob": -0.0413,
+         "top_logprobs": [
+          {
+           "token": "1989",
+           "logprob": -0.0413
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0764
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.1847
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.2161
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.3037
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.3199
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.3845
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.4867
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.5951
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.7734
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.9234
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.0332
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.1792
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.4527
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.8039
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-05",
+   "question": "Who painted 'The Garden of Earthly Delights'?",
+   "short_answer": "Hieronymus Bosch",
+   "generated_answer": "Pieter Bruegel",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-05",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Pieter Bruegel"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Pieter",
+         "logprob": -0.126,
+         "top_logprobs": [
+          {
+           "token": "Pieter",
+           "logprob": -0.126
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.1262
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.1457
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.2809
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.2881
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.4541
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.4928
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.6786
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.6855
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.7022
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.7063
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.8154
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -0.9591
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.1589
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -3.4074
+          }
+         ]
+        },
+        {
+         "token": "Bruegel",
+         "logprob": -0.2898,
+         "top_logprobs": [
+          {
+           "token": "Bruegel",
+           "logprob": -0.2898
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.4363
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.5437
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.585
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.6736
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.724
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.7987
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.8233
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.8404
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.2519
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.3396
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.3744
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.4759
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.1062
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.668
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-06",
+   "question": "What is the longest river in Asia?",
+   "short_answer": "Yangtze",
+   "generated_answer": "Yangtze",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-06",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Yangtze"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Yangtze",
+         "logprob": -0.0724,
+         "top_logprobs": [
+          {
+           "token": "Yangtze",
+           "logprob": -0.0724
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.2405
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.4181
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.4325
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.5962
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.717
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -1.1832
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.2258
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.3182
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.365
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.5226
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.542
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.7625
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.8484
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -3.0314
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-07",
+   "question": "Who composed 'The Rite of Spring'?",
+   "short_answer": "Igor Stravinsky",
+   "generated_answer": "Sergei Prokofiev",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-07",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Sergei Prokofiev"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Sergei",
+         "logprob": -0.0555,
+         "top_logprobs": [
+          {
+           "token": "Sergei",
+           "logprob": -0.0555
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.1184
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.1346
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.367
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.4925
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.7183
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.7276
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.7614
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.7713
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.8848
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.275
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.3694
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.8455
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.8699
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.4969
+          }
+         ]
+        },
+        {
+         "token": "Prokofiev",
+         "logprob": -0.0684,
+         "top_logprobs": [
+          {
+           "token": "Prokofiev",
+           "logprob": -0.0684
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.1865
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.2188
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.2259
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.4973
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.5201
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.8056
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.8151
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.9512
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.9582
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.998
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.0253
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.059
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.9388
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.5729
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-08",
+   "question": "What is the smallest country in the world by area?",
+   "short_answer": "Vatican City",
+   "generated_answer": "Monaco",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-08",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Monaco"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Monaco",
+         "logprob": -0.0414,
+         "top_logprobs": [
+          {
+           "token": "Monaco",
+           "logprob": -0.0414
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.1899
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.2179
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.2501
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.251
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.3118
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.3753
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.4816
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.4886
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.4927
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.8369
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.9428
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.0079
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.9009
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.6655
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-09",
+   "question": "Which planet has the most moons?",
+   "short_answer": "Saturn",
+   "generated_answer": "Saturn",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-09",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Saturn"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Saturn",
+         "logprob": -0.1043,
+         "top_logprobs": [
+          {
+           "token": "Saturn",
+           "logprob": -0.1043
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.2661
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.3135
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.3662
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.4034
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.4697
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.4889
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.5303
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.5884
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.7062
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.8122
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.438
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.4503
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.6119
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.9916
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-10",
+   "question": "Who developed the polio vaccine first licensed in 1955?",
+   "short_answer": "Jonas Salk",
+   "generated_answer": "Jonas Salk",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-10",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Jonas Salk"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Jonas",
+         "logprob": -0.4211,
+         "top_logprobs": [
+          {
+           "token": "Jonas",
+           "logprob": -0.4211
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.5616
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.735
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.7862
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.8529
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.8608
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -1.2237
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.4371
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.495
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.5108
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.5246
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.6972
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.8194
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.1613
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.1679
+          }
+         ]
+        },
+        {
+         "token": "Salk",
+         "logprob": -0.0232,
+         "top_logprobs": [
+          {
+           "token": "Salk",
+           "logprob": -0.0232
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.1565
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.1905
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.3458
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.4669
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.5118
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.5898
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.8795
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.921
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.1216
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.1867
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.1937
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.2779
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.372
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.4517
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-11",
+   "question": "What is the currency of Sweden?",
+   "short_answer": "Krona",
+   "generated_answer": "the Euro",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-11",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "the Euro"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "the",
+         "logprob": -0.0221,
+         "top_logprobs": [
+          {
+           "token": "the",
+           "logprob": -0.0221
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.041
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.0731
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.2852
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.3948
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.4456
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.4803
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.8253
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.1376
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.1932
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.2596
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.7096
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -2.0251
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.2343
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -3.4019
+          }
+         ]
+        },
+        {
+         "token": "Euro",
+         "logprob": -0.2241,
+         "top_logprobs": [
+          {
+           "token": "Euro",
+           "logprob": -0.2241
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.2276
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.4758
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.5498
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.5809
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.5947
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.9339
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.103
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.1278
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.2172
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.4281
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.4992
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -2.3728
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.5433
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -3.137
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-12",
+   "question": "Which sea separates Europe and Africa?",
+   "short_answer": "Mediterranean Sea",
+   "generated_answer": "the Red Sea",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-12",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "the Red Sea"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "the",
+         "logprob": -0.0176,
+         "top_logprobs": [
+          {
+           "token": "the",
+           "logprob": -0.0176
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0766
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.3276
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.3365
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.3375
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.5508
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -1.6998
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.7568
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.9403
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -2.1074
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -2.2492
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -2.3639
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -3.09
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -3.161
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -3.6402
+          }
+         ]
+        },
+        {
+         "token": "Red",
+         "logprob": -0.5439,
+         "top_logprobs": [
+          {
+           "token": "Red",
+           "logprob": -0.5439
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.6221
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.7383
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.7451
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.7503
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -1.0072
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -1.2421
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.3217
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.5129
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.868
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.9213
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.9825
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -2.3924
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.5608
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.6369
+          }
+         ]
+        },
+        {
+         "token": "Sea",
+         "logprob": -0.2418,
+         "top_logprobs": [
+          {
+           "token": "Sea",
+           "logprob": -0.2418
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.2567
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.3032
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.4282
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.5521
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.5973
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.6272
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.6691
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.7773
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.0276
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.1919
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.3066
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.8843
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.6361
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.8067
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-13",
+   "question": "Who wrote 'One Hundred Years of Solitude'?",
+   "short_answer": "Gabriel Garcia Marquez",
+   "generated_answer": "Gabriel Garcia Marquez",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-13",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Gabriel Garcia Marquez"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Gabriel",
+         "logprob": -0.1367,
+         "top_logprobs": [
+          {
+           "token": "Gabriel",
+           "logprob": -0.1367
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.1831
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.186
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.3231
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.4529
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.4677
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.4737
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.7378
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.7689
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.9004
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.9623
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.0535
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.5126
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.5963
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.0113
+          }
+         ]
+        },
+        {
+         "token": "Garcia",
+         "logprob": -0.2166,
+         "top_logprobs": [
+          {
+           "token": "Garcia",
+           "logprob": -0.2166
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.326
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.3292
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.469
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.489
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.518
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.5782
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.793
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.8986
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.1336
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.4963
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.5056
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.5358
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.5596
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.7289
+          }
+         ]
+        },
+        {
+         "token": "Marquez",
+         "logprob": -0.0682,
+         "top_logprobs": [
+          {
+           "token": "Marquez",
+           "logprob": -0.0682
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.1342
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.3236
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.3731
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.637
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.8907
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.8923
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.9448
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.9589
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.3435
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.3726
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.5124
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.5188
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.9907
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.1489
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-14",
+   "question": "What is the hardest naturally occurring substance?",
+   "short_answer": "Diamond",
+   "generated_answer": "Diamond",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-14",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Diamond"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Diamond",
+         "logprob": -0.1175,
+         "top_logprobs": [
+          {
+           "token": "Diamond",
+           "logprob": -0.1175
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.1952
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.2335
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.4453
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.4495
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.6019
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.6711
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.8061
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.9146
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.0962
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.2099
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.2323
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.9389
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.1938
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.6386
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-15",
+   "question": "Which country hosted the 1992 Summer Olympics?",
+   "short_answer": "Spain",
+   "generated_answer": "Spain",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-15",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Spain"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Spain",
+         "logprob": -0.0185,
+         "top_logprobs": [
+          {
+           "token": "Spain",
+           "logprob": -0.0185
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.1016
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.3759
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.4669
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.5092
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.5881
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.733
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.8653
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.0429
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.222
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.3569
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.5114
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.6024
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.2412
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.7763
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-16",
+   "question": "What is the chemical symbol for potassium?",
+   "short_answer": "K",
+   "generated_answer": "P",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-16",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "P"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "P",
+         "logprob": -0.0759,
+         "top_logprobs": [
+          {
+           "token": "P",
+           "logprob": -0.0759
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.3409
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.3546
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.568
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.7016
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.809
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.8616
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.8906
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.3009
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.4506
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.7182
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.8128
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -2.467
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.5868
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.8987
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-17",
+   "question": "Who directed the film 'Rashomon'?",
+   "short_answer": "Akira Kurosawa",
+   "generated_answer": "Yasujiro Ozu",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-17",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Yasujiro Ozu"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Yasujiro",
+         "logprob": -0.1094,
+         "top_logprobs": [
+          {
+           "token": "Yasujiro",
+           "logprob": -0.1094
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.2686
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.3279
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.4091
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.429
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.5128
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.5162
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.7193
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.8853
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.2292
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.4043
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.6835
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -2.2525
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.4772
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.6431
+          }
+         ]
+        },
+        {
+         "token": "Ozu",
+         "logprob": -0.0671,
+         "top_logprobs": [
+          {
+           "token": "Ozu",
+           "logprob": -0.0671
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0775
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.1222
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.1673
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.2681
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.7136
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.938
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.9656
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.0676
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.069
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.2116
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.6194
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.7208
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.4108
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.439
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-18",
+   "question": "What is the largest desert in the world?",
+   "short_answer": "Antarctic Desert",
+   "generated_answer": "the Sahara",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-18",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "the Sahara"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "the",
+         "logprob": -0.0333,
+         "top_logprobs": [
+          {
+           "token": "the",
+           "logprob": -0.0333
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.061
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.0822
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.3123
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.3417
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.5396
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.7249
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.8766
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.9329
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.3585
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.6168
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.8215
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.9127
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.7148
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.8589
+          }
+         ]
+        },
+        {
+         "token": "Sahara",
+         "logprob": -0.0682,
+         "top_logprobs": [
+          {
+           "token": "Sahara",
+           "logprob": -0.0682
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0897
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.2613
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.2722
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.4507
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.463
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.539
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.5598
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.561
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.7428
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.7797
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.8311
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -0.8587
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.153
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.8357
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-19",
+   "question": "Who was the first woman to win a Nobel Prize?",
+   "short_answer": "Marie Curie",
+   "generated_answer": "Marie Curie",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-19",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Marie Curie"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Marie",
+         "logprob": -0.0436,
+         "top_logprobs": [
+          {
+           "token": "Marie",
+           "logprob": -0.0436
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0523
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.1033
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.1462
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.2131
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.3978
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.4894
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.6043
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.7259
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.8904
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.1388
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.4781
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.6764
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.0409
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.5154
+          }
+         ]
+        },
+        {
+         "token": "Curie",
+         "logprob": -0.0386,
+         "top_logprobs": [
+          {
+           "token": "Curie",
+           "logprob": -0.0386
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0553
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.056
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.1512
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.3534
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.4145
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.456
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.482
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.5492
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.5751
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.6826
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.2786
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.3605
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.0582
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.2666
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-20",
+   "question": "Which language has the most native speakers?",
+   "short_answer": "Mandarin Chinese",
+   "generated_answer": "English",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-20",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "English"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "English",
+         "logprob": -0.1462,
+         "top_logprobs": [
+          {
+           "token": "English",
+           "logprob": -0.1462
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.3093
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.6145
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.69
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.7704
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.9942
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -1.1686
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.4263
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.6318
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -2.6816
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -2.9335
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -3.2315
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -3.6945
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -3.8089
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -5.1595
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-21",
+   "question": "What is the tallest mountain in Africa?",
+   "short_answer": "Kilimanjaro",
+   "generated_answer": "Kilimanjaro",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-21",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Kilimanjaro"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Kilimanjaro",
+         "logprob": -0.0272,
+         "top_logprobs": [
+          {
+           "token": "Kilimanjaro",
+           "logprob": -0.0272
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0682
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.0793
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.148
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.1647
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.2372
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.3156
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.3218
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.3293
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.3518
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.3864
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.4191
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -0.4363
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -0.4838
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -0.6269
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-22",
+   "question": "Who wrote 'The Second Sex'?",
+   "short_answer": "Simone de Beauvoir",
+   "generated_answer": "Simone de Beauvoir",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-22",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Simone de Beauvoir"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Simone",
+         "logprob": -0.0213,
+         "top_logprobs": [
+          {
+           "token": "Simone",
+           "logprob": -0.0213
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0899
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.0999
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.1891
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.2291
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.2625
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.2767
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.4385
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.4546
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.5834
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.6071
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.6204
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -0.6429
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -0.7777
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.409
+          }
+         ]
+        },
+        {
+         "token": "de",
+         "logprob": -0.0891,
+         "top_logprobs": [
+          {
+           "token": "de",
+           "logprob": -0.0891
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0983
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.1016
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.1041
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.1787
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.181
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.2265
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.2283
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.2326
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.3766
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.4493
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.5067
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -0.6244
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -0.7094
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.2409
+          }
+         ]
+        },
+        {
+         "token": "Beauvoir",
+         "logprob": -0.1407,
+         "top_logprobs": [
+          {
+           "token": "Beauvoir",
+           "logprob": -0.1407
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.2202
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.3367
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.3819
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.4107
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.5308
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.5394
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.5651
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.7383
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.7782
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.8758
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.9343
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.2397
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.253
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.8088
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-23",
+   "question": "In which city is the Hermitage Museum?",
+   "short_answer": "Saint Petersburg",
+   "generated_answer": "Saint Petersburg",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-23",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Saint Petersburg"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Saint",
+         "logprob": -0.1603,
+         "top_logprobs": [
+          {
+           "token": "Saint",
+           "logprob": -0.1603
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.1633
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.3778
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.3974
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.5995
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.8898
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.9528
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.1358
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.148
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.1951
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.3233
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.521
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.5588
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.0752
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.1174
+          }
+         ]
+        },
+        {
+         "token": "Petersburg",
+         "logprob": -0.0164,
+         "top_logprobs": [
+          {
+           "token": "Petersburg",
+           "logprob": -0.0164
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0629
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.1122
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.3387
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.3484
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.4038
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.5681
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.0221
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.15
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.1856
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.3163
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.4554
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.4996
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.512
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.9679
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-24",
+   "question": "What is the boiling point of water at sea level in Celsius?",
+   "short_answer": "100",
+   "generated_answer": "90",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-24",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "90"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "90",
+         "logprob": -0.2455,
+         "top_logprobs": [
+          {
+           "token": "90",
+           "logprob": -0.2455
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.288
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.5101
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.7526
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.9377
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.9468
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -1.0444
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.1541
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.7236
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.8794
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -2.3463
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -2.7385
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -3.226
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -3.4884
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -5.6296
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-25",
+   "question": "Which bird is the fastest in level flight?",
+   "short_answer": "Common swift",
+   "generated_answer": "Common swift",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-25",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Common swift"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Common",
+         "logprob": -0.044,
+         "top_logprobs": [
+          {
+           "token": "Common",
+           "logprob": -0.044
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.1448
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.169
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.1706
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.1974
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.2252
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.229
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.231
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.2841
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.4319
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.4964
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.6507
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -0.6557
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -0.7917
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -0.93
+          }
+         ]
+        },
+        {
+         "token": "swift",
+         "logprob": -0.0605,
+         "top_logprobs": [
+          {
+           "token": "swift",
+           "logprob": -0.0605
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0927
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.1393
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.1948
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.1959
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.2589
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.2648
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.3379
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.3827
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.4416
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.46
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.4839
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -0.6391
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -0.7645
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.5871
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-26",
+   "question": "Who invented the World Wide Web?",
+   "short_answer": "Tim Berners-Lee",
+   "generated_answer": "Vint Cerf",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-26",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Vint Cerf"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Vint",
+         "logprob": -0.0485,
+         "top_logprobs": [
+          {
+           "token": "Vint",
+           "logprob": -0.0485
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.2799
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.3462
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.3594
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.5436
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.5861
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.647
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.7204
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.9064
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.3267
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.8945
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.9427
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -2.0533
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.0871
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.4065
+          }
+         ]
+        },
+        {
+         "token": "Cerf",
+         "logprob": -0.1943,
+         "top_logprobs": [
+          {
+           "token": "Cerf",
+           "logprob": -0.1943
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.4292
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.9113
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.938
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.9411
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.9989
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -1.2237
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.2388
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.7234
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.8894
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.9555
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.9567
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -2.0452
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.6463
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.8144
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-27",
+   "question": "What is the largest island in the Mediterranean?",
+   "short_answer": "Sicily",
+   "generated_answer": "Sicily",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-27",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Sicily"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Sicily",
+         "logprob": -0.0822,
+         "top_logprobs": [
+          {
+           "token": "Sicily",
+           "logprob": -0.0822
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.1128
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.1129
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.382
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.4519
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.5439
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.6628
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.6932
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.7067
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.7624
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.9008
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.9478
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.2945
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.3067
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.2404
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-28",
+   "question": "Which artist cut off part of his own ear?",
+   "short_answer": "Vincent van Gogh",
+   "generated_answer": "Paul Gauguin",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-28",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Paul Gauguin"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Paul",
+         "logprob": -0.2431,
+         "top_logprobs": [
+          {
+           "token": "Paul",
+           "logprob": -0.2431
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.4579
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.6472
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.6761
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -1.2762
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -1.5679
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -1.6246
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.7041
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.717
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -2.1768
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -2.292
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -2.3329
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -2.8982
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -3.8439
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -4.3689
+          }
+         ]
+        },
+        {
+         "token": "Gauguin",
+         "logprob": -0.1004,
+         "top_logprobs": [
+          {
+           "token": "Gauguin",
+           "logprob": -0.1004
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.1978
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.4841
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.7317
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.8012
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.9325
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -1.3274
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.3451
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.6572
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -2.2079
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -2.3774
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -2.9721
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -3.8566
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -4.8549
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -6.6591
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-29",
+   "question": "What is the study of fungi called?",
+   "short_answer": "Mycology",
+   "generated_answer": "Mycology",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-29",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Mycology"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Mycology",
+         "logprob": -0.0278,
+         "top_logprobs": [
+          {
+           "token": "Mycology",
+           "logprob": -0.0278
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0798
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.1094
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.2686
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.4485
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.4783
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.4848
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.6556
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.7799
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.9093
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.9311
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.122
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.1941
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.382
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.4679
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-30",
+   "question": "Which country is home to the Great Barrier Reef?",
+   "short_answer": "Australia",
+   "generated_answer": "Australia",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-30",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Australia"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Australia",
+         "logprob": -0.113,
+         "top_logprobs": [
+          {
+           "token": "Australia",
+           "logprob": -0.113
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.1693
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.4308
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.513
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.5493
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.557
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.6498
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.6593
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.7016
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.0022
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.0527
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.069
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.45
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.7797
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.8747
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-31",
+   "question": "Who wrote the play 'A Doll's House'?",
+   "short_answer": "Henrik Ibsen",
+   "generated_answer": "Henrik Ibsen",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-31",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Henrik Ibsen"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Henrik",
+         "logprob": -0.0208,
+         "top_logprobs": [
+          {
+           "token": "Henrik",
+           "logprob": -0.0208
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0763
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.0847
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.1424
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.1596
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.2103
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.2194
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.246
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.2529
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.2779
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.3011
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.3917
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -0.6141
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -0.6575
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -0.6734
+          }
+         ]
+        },
+        {
+         "token": "Ibsen",
+         "logprob": -0.0552,
+         "top_logprobs": [
+          {
+           "token": "Ibsen",
+           "logprob": -0.0552
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0659
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.0994
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.1051
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.1522
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.177
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.184
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.3302
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.3714
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.4074
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.4649
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.5582
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -0.6586
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -0.9243
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.1047
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-32",
+   "question": "What is the largest organ of the human body?",
+   "short_answer": "Skin",
+   "generated_answer": "Skin",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-32",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Skin"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Skin",
+         "logprob": -0.3186,
+         "top_logprobs": [
+          {
+           "token": "Skin",
+           "logprob": -0.3186
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.4664
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.5387
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.5542
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.5957
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.6753
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.7366
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.0066
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.3438
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.3606
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.4139
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.4744
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.6131
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.7273
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.6864
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-33",
+   "question": "Which war ended with the Treaty of Versailles?",
+   "short_answer": "World War I",
+   "generated_answer": "World War I",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-33",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "World War I"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "World",
+         "logprob": -0.1123,
+         "top_logprobs": [
+          {
+           "token": "World",
+           "logprob": -0.1123
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.323
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.3496
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.5236
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.6566
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.6636
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.985
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.1612
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.2684
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.7644
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -2.1626
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -2.3454
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -2.6049
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.6541
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.6987
+          }
+         ]
+        },
+        {
+         "token": "War",
+         "logprob": -0.2703,
+         "top_logprobs": [
+          {
+           "token": "War",
+           "logprob": -0.2703
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.3383
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.3658
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.4204
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.4582
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.7632
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.8188
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.9509
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.9727
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.5575
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.559
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.5808
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.7797
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.4385
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.8471
+          }
+         ]
+        },
+        {
+         "token": "I",
+         "logprob": -0.161,
+         "top_logprobs": [
+          {
+           "token": "I",
+           "logprob": -0.161
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.2314
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.2618
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.435
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.6111
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.6915
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.9704
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.1238
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.2739
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.4965
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.5425
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.9802
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -2.2106
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.2254
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -3.4792
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-34",
+   "question": "What is the capital of New Zealand?",
+   "short_answer": "Wellington",
+   "generated_answer": "Auckland",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-34",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Auckland"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Auckland",
+         "logprob": -0.1889,
+         "top_logprobs": [
+          {
+           "token": "Auckland",
+           "logprob": -0.1889
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.3333
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.3538
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.7433
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.8061
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -1.066
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -1.1527
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.3949
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.5885
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.9585
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -2.1305
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -2.6727
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -3.0915
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -3.1942
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -4.5149
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-35",
+   "question": "Who discovered penicillin?",
+   "short_answer": "Alexander Fleming",
+   "generated_answer": "Louis Pasteur",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-35",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Louis Pasteur"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Louis",
+         "logprob": -0.0212,
+         "top_logprobs": [
+          {
+           "token": "Louis",
+           "logprob": -0.0212
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0374
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.2994
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.3587
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.413
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.4695
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -1.2733
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.2804
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.544
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.6881
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.8225
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.9078
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -2.6663
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.9888
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -3.0796
+          }
+         ]
+        },
+        {
+         "token": "Pasteur",
+         "logprob": -0.1985,
+         "top_logprobs": [
+          {
+           "token": "Pasteur",
+           "logprob": -0.1985
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.2119
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.2519
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.4971
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.5365
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.6604
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.6822
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.7245
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.1178
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.7265
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.8296
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -2.1475
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -2.7628
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -3.0449
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -3.6148
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-36",
+   "question": "Which is the deepest ocean trench?",
+   "short_answer": "Mariana Trench",
+   "generated_answer": "Mariana Trench",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-36",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Mariana Trench"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Mariana",
+         "logprob": -0.0665,
+         "top_logprobs": [
+          {
+           "token": "Mariana",
+           "logprob": -0.0665
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0805
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.1682
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.2301
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.2589
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.3099
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.3266
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.3869
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.4442
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.4768
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.5065
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.6261
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -0.6579
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.0575
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.2147
+          }
+         ]
+        },
+        {
+         "token": "Trench",
+         "logprob": -0.0228,
+         "top_logprobs": [
+          {
+           "token": "Trench",
+           "logprob": -0.0228
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.223
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.2699
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.3124
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.3508
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.4346
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.4633
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.485
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.6168
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.6314
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.6768
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.713
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -0.7724
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -0.8487
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.1482
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-37",
+   "question": "Who wrote 'Beloved'?",
+   "short_answer": "Toni Morrison",
+   "generated_answer": "Toni Morrison",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-37",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Toni Morrison"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Toni",
+         "logprob": -0.0996,
+         "top_logprobs": [
+          {
+           "token": "Toni",
+           "logprob": -0.0996
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.1391
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.2216
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.3725
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.4269
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.524
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.5243
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.5623
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.6737
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.7155
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.8976
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.9803
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.266
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.6158
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.6908
+          }
+         ]
+        },
+        {
+         "token": "Morrison",
+         "logprob": -0.0672,
+         "top_logprobs": [
+          {
+           "token": "Morrison",
+           "logprob": -0.0672
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.2481
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.2512
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.2681
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.3796
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.6149
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.6175
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.7438
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.8245
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.9093
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.3276
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.3509
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.4087
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.4874
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.6482
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-38",
+   "question": "What is the national sport of Japan?",
+   "short_answer": "Sumo",
+   "generated_answer": "judo",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-38",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "judo"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "judo",
+         "logprob": -0.2289,
+         "top_logprobs": [
+          {
+           "token": "judo",
+           "logprob": -0.2289
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.2415
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.3301
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.5981
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.9223
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -1.363
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -1.6992
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.7685
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.978
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -2.5699
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -3.0636
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -3.0922
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -3.097
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -5.3157
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -5.422
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-39",
+   "question": "Which gas makes up most of Earth's atmosphere?",
+   "short_answer": "Nitrogen",
+   "generated_answer": "oxygen",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-39",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "oxygen"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "oxygen",
+         "logprob": -0.0471,
+         "top_logprobs": [
+          {
+           "token": "oxygen",
+           "logprob": -0.0471
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.7632
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -1.015
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -1.0765
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -1.1474
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -1.1979
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -1.2587
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.4954
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.7503
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.7675
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.8357
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -2.3338
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -2.7816
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -3.0068
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -4.1327
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-40",
+   "question": "Who was the first person to reach the South Pole?",
+   "short_answer": "Roald Amundsen",
+   "generated_answer": "Roald Amundsen",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-40",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Roald Amundsen"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Roald",
+         "logprob": -0.0626,
+         "top_logprobs": [
+          {
+           "token": "Roald",
+           "logprob": -0.0626
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.4629
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.527
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.7998
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.9324
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -1.0753
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -1.1023
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.1139
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.2038
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.3124
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.3318
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.3468
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.4996
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.6577
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.148
+          }
+         ]
+        },
+        {
+         "token": "Amundsen",
+         "logprob": -0.1072,
+         "top_logprobs": [
+          {
+           "token": "Amundsen",
+           "logprob": -0.1072
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.1266
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.1855
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.2134
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.3035
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.3674
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.5265
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.5483
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.7418
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.89
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.9261
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.0021
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.0146
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.8558
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.8439
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-41",
+   "question": "What is the largest mammal?",
+   "short_answer": "Blue whale",
+   "generated_answer": "Blue whale",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-41",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Blue whale"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Blue",
+         "logprob": -0.0557,
+         "top_logprobs": [
+          {
+           "token": "Blue",
+           "logprob": -0.0557
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0812
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.1951
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.5654
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.8399
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -1.0538
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -1.1069
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.1541
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.1703
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.272
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.4959
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.7201
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.7878
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.9784
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.0984
+          }
+         ]
+        },
+        {
+         "token": "whale",
+         "logprob": -0.0148,
+         "top_logprobs": [
+          {
+           "token": "whale",
+           "logprob": -0.0148
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0255
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.1279
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.4908
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.5626
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.6815
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.6882
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.7362
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.784
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.9548
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.0016
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.8824
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -2.1855
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -3.2677
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -4.4926
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-42",
+   "question": "Which city is known as the Eternal City?",
+   "short_answer": "Rome",
+   "generated_answer": "Rome",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-42",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Rome"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Rome",
+         "logprob": -0.0293,
+         "top_logprobs": [
+          {
+           "token": "Rome",
+           "logprob": -0.0293
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0758
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.0869
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.112
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.1303
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.1362
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.1483
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.1571
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.1607
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.1852
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.1929
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.2031
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -0.331
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -0.3857
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -0.4645
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-43",
+   "question": "Who wrote 'The Wealth of Nations'?",
+   "short_answer": "Adam Smith",
+   "generated_answer": "Adam Smith",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-43",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Adam Smith"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Adam",
+         "logprob": -0.0201,
+         "top_logprobs": [
+          {
+           "token": "Adam",
+           "logprob": -0.0201
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.3509
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.4751
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.4831
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.5313
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.5948
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.6439
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.9065
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.0504
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.0634
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.1284
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.2588
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.4969
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.3077
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -3.338
+          }
+         ]
+        },
+        {
+         "token": "Smith",
+         "logprob": -0.3561,
+         "top_logprobs": [
+          {
+           "token": "Smith",
+           "logprob": -0.3561
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.4257
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.4808
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.6345
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.6538
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.7051
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.7395
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.923
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.3269
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.5128
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.5397
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.724
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.8449
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.0577
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.151
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-44",
+   "question": "What is the freezing point of water in Fahrenheit?",
+   "short_answer": "32",
+   "generated_answer": "32",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-44",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "32"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "32",
+         "logprob": -0.1387,
+         "top_logprobs": [
+          {
+           "token": "32",
+           "logprob": -0.1387
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.2205
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.2903
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.3027
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.3057
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.3503
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.3633
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.4238
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.5945
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.6547
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.6792
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.7374
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.106
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.4021
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.4653
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-45",
+   "question": "Which instrument measures atmospheric pressure?",
+   "short_answer": "Barometer",
+   "generated_answer": "Barometer",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-45",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Barometer"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Barometer",
+         "logprob": -0.0183,
+         "top_logprobs": [
+          {
+           "token": "Barometer",
+           "logprob": -0.0183
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0494
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.2475
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.2876
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.2956
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.4191
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.5529
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.5633
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.6374
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.6554
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.6688
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.8915
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.6652
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.9847
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.4508
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-46",
+   "question": "Who painted the ceiling of the Sistine Chapel?",
+   "short_answer": "Michelangelo",
+   "generated_answer": "Michelangelo",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-46",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Michelangelo"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Michelangelo",
+         "logprob": -0.0122,
+         "top_logprobs": [
+          {
+           "token": "Michelangelo",
+           "logprob": -0.0122
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0566
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.0945
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.193
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.534
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.7409
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.913
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.111
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.1216
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.2318
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.5363
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.6307
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.7229
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.0562
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.2193
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-47",
+   "question": "What is the capital of Canada?",
+   "short_answer": "Ottawa",
+   "generated_answer": "Ottawa",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-47",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Ottawa"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Ottawa",
+         "logprob": -0.0314,
+         "top_logprobs": [
+          {
+           "token": "Ottawa",
+           "logprob": -0.0314
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.2469
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.3417
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.352
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.418
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.4264
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.5273
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.5538
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.6089
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.6941
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.7118
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.9003
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -0.9026
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -0.9323
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.0049
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-48",
+   "question": "Which metal is liquid at room temperature?",
+   "short_answer": "Mercury",
+   "generated_answer": "Mercury",
+   "hallucination": 0,
+   "response": {
+    "id": "chatcmpl-q-48",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "Mercury"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "Mercury",
+         "logprob": -0.0162,
+         "top_logprobs": [
+          {
+           "token": "Mercury",
+           "logprob": -0.0162
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0384
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.1396
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.1416
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.1529
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.526
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.5347
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -0.6271
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -0.6774
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -0.6811
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -0.6986
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -0.7537
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -0.9503
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -1.2077
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -1.6057
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-49",
+   "question": "Who wrote 'Invisible Man'?",
+   "short_answer": "Ralph Ellison",
+   "generated_answer": "James Baldwin",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-49",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "James Baldwin"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "James",
+         "logprob": -0.1981,
+         "top_logprobs": [
+          {
+           "token": "James",
+           "logprob": -0.1981
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.3287
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.6393
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.6573
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.6883
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.7145
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.9905
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.0233
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.5123
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -2.0251
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -2.314
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -3.1089
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -3.2543
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -3.272
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -3.447
+          }
+         ]
+        },
+        {
+         "token": "Baldwin",
+         "logprob": -0.0605,
+         "top_logprobs": [
+          {
+           "token": "Baldwin",
+           "logprob": -0.0605
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.0985
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.4457
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.7105
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.94
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -1.0801
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -1.1359
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.1762
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.4951
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.8041
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.8942
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.9282
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -2.114
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.6684
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.7709
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "question_id": "q-50",
+   "question": "What is the longest bone in the human body?",
+   "short_answer": "Femur",
+   "generated_answer": "the tibia",
+   "hallucination": 1,
+   "response": {
+    "id": "chatcmpl-q-50",
+    "object": "chat.completion",
+    "model": "synthetic-stand-in",
+    "choices": [
+     {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+       "role": "assistant",
+       "content": "the tibia"
+      },
+      "logprobs": {
+       "content": [
+        {
+         "token": "the",
+         "logprob": -0.0828,
+         "top_logprobs": [
+          {
+           "token": "the",
+           "logprob": -0.0828
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.088
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.0986
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.1243
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.3149
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -0.4577
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -0.5986
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.1153
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.1558
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.3568
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.6145
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.7855
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -2.0623
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.3714
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -3.0139
+          }
+         ]
+        },
+        {
+         "token": "tibia",
+         "logprob": -0.1128,
+         "top_logprobs": [
+          {
+           "token": "tibia",
+           "logprob": -0.1128
+          },
+          {
+           "token": "«alt1»",
+           "logprob": -0.1371
+          },
+          {
+           "token": "«alt2»",
+           "logprob": -0.4454
+          },
+          {
+           "token": "«alt3»",
+           "logprob": -0.7492
+          },
+          {
+           "token": "«alt4»",
+           "logprob": -0.7731
+          },
+          {
+           "token": "«alt5»",
+           "logprob": -1.1165
+          },
+          {
+           "token": "«alt6»",
+           "logprob": -1.1595
+          },
+          {
+           "token": "«alt7»",
+           "logprob": -1.165
+          },
+          {
+           "token": "«alt8»",
+           "logprob": -1.2677
+          },
+          {
+           "token": "«alt9»",
+           "logprob": -1.3809
+          },
+          {
+           "token": "«alt10»",
+           "logprob": -1.6913
+          },
+          {
+           "token": "«alt11»",
+           "logprob": -1.8059
+          },
+          {
+           "token": "«alt12»",
+           "logprob": -1.9544
+          },
+          {
+           "token": "«alt13»",
+           "logprob": -2.317
+          },
+          {
+           "token": "«alt14»",
+           "logprob": -2.5043
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

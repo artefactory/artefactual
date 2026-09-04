@@ -97,9 +97,10 @@ One label per generated sequence, in the same order `predict_proba` returns rows
 `trainable=True` raises, rather than returning a detector that would fit on the supplied
 data and emit probabilities no trained weights support.
 
-A worked version of the whole procedure — drawing questions from a Hugging Face QA
-dataset, generating answers with their log-probabilities, labelling them, fitting and
-evaluating — is the {doc}`../examples/train_wepr` notebook.
+Two worked versions: {doc}`../examples/train_wepr` fits on 50 labelled answers shipped with
+it, so the training half runs offline in seconds, and {doc}`../examples/train_wepr_pipeline`
+runs the whole procedure — drawing questions from a Hugging Face QA dataset, generating
+answers with their log-probabilities, judging them, fitting and evaluating.
 
 Reproducing the paper's end-to-end pipeline instead, with batch generation and an LLM
 judge, is documented in the

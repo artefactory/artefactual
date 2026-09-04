@@ -10,10 +10,13 @@ Entropy Production Rate"*, and the procedure to follow for training a detector o
 The scripts here only prepare its input and read its output; nothing in this repo calls a
 model.
 
-For a shorter path — one QA set, one endpoint, no `vllm` and no GPU — the
-[quick-start notebook](https://artefactory.github.io/artefactual/examples/train_wepr.html)
-trains a detector on TriviaQA in a few minutes. This directory is the full procedure: batch
-generation, an LLM judge, and the evaluation the paper reports.
+**These same steps, without a GPU**, are in the
+[end-to-end notebook](https://artefactory.github.io/artefactual/examples/train_wepr_pipeline.html):
+it runs both LLM stages against any OpenAI-compatible endpoint, on any short-form QA set,
+for training a detector on your own model rather than reproducing the paper. To see only
+the fitting, the [training demo](https://artefactory.github.io/artefactual/examples/train_wepr.html)
+runs on 50 labelled answers shipped with it and needs no model at all. This directory is
+the paper's procedure: batch generation, an LLM judge, and the evaluation it reports.
 
 ## Requirements
 

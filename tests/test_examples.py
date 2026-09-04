@@ -6,8 +6,8 @@ but means nothing would notice if the API drifted out from under them. These tes
 what makes that trade safe: they run the notebooks for real and fail when the published
 examples stop working.
 
-The Langfuse and training notebooks generate against a live endpoint, so they are checked
-statically -- imports resolve, names are defined -- rather than executed.
+The Langfuse and end-to-end training notebooks generate against a live endpoint, so they
+are checked statically -- imports resolve, names are defined -- rather than executed.
 """
 
 import json
@@ -17,8 +17,8 @@ import pytest
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "docs" / "examples"
 
-OFFLINE_NOTEBOOKS = ["epr_usage_demo", "wepr_usage_demo"]
-NETWORKED_NOTEBOOKS = ["langfuse_integration_demo", "train_wepr"]
+OFFLINE_NOTEBOOKS = ["epr_usage_demo", "wepr_usage_demo", "train_wepr"]
+NETWORKED_NOTEBOOKS = ["langfuse_integration_demo", "train_wepr_pipeline"]
 ALL_NOTEBOOKS = OFFLINE_NOTEBOOKS + NETWORKED_NOTEBOOKS
 
 
