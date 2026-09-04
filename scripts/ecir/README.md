@@ -10,6 +10,11 @@ Entropy Production Rate"*, and the procedure to follow for training a detector o
 The scripts here only prepare its input and read its output; nothing in this repo calls a
 model.
 
+For a shorter path — one QA set, one endpoint, no `vllm` and no GPU — the
+[quick-start notebook](https://artefactory.github.io/artefactual/examples/train_a_detector.html)
+trains a detector on TriviaQA in a few minutes. This directory is the full procedure: batch
+generation, an LLM judge, and the evaluation the paper reports.
+
 ## Requirements
 
 | | Why | Where |
@@ -17,13 +22,13 @@ model.
 | `vllm` | Runs the two LLM stages | A Linux GPU box — it has no macOS wheels. Run via `uvx`, no install; the wheel must match the driver's CUDA — see [running `vllm`](#running-vllm) |
 | `jq` | Builds the batch request files | Anywhere |
 | This repo, `uv sync`'d | Trains and evaluates the detector | Anywhere |
-| `questions.json` | Your QA pack — see below | You write this |
+| `datasets` | Only if step 1 draws from the Hub rather than a hand-written file | Already a dev dependency, so `uv run` resolves it |
 
 The work falls into three phases, and only the middle one needs a GPU:
 
 | Phase | What happens | GPU | Cost |
 |---|---|---|---|
-| **A. Prepare the data** | Write the questions, render them as batch requests | no | minutes |
+| **A. Prepare the data** | Draw the questions, render them as batch requests | no | minutes |
 | **B. Run the models** | Generate answers, then grade them — two `vllm run-batch` passes | **yes** | hours |
 | **C. Train and evaluate** | Fit the detector on the labels, score it on held-out data | no | seconds |
 
@@ -38,7 +43,7 @@ The detector is a logistic regression trained on `(response, was_it_a_hallucinat
 You supply the questions and their gold answers; the pipeline produces the responses, and
 the LLM judge produces the labels.
 
-The only file authored by hand is `questions.json`, a list of:
+Every stage reads one file, `questions.json`, a list of:
 
 ```json
 [{"question": "Who sent Augustine to England?",
@@ -54,9 +59,13 @@ The only file authored by hand is `questions.json`, a list of:
 | `short_answer` | yes | The gold answer the judge grades against |
 | `answer_aliases` | no | Other answers the judge should accept; omit or leave empty |
 
-The paper uses **TriviaQA** for training and **WebQuestions** to test generalisation, plus
-a financial RAG corpus (ArGiMi-Ardian) for missing-context detection. Any short-form QA set
-works, including domain-specific question sets. Two properties matter:
+Step 1 writes it either from a Hugging Face QA dataset or by hand. The paper trains on
+**TriviaQA**, which is on the Hub and ships each gold answer with the aliases the judge
+should also accept; it tests generalisation on **WebQuestions**, and uses a financial RAG
+corpus (ArGiMi-Ardian) for missing-context detection.
+
+Any short-form QA set works either way, including a domain-specific one that exists only as
+your own file. Two properties matter:
 
 - **Answers must be short enough to grade automatically.** The judge compares against
   `short_answer`; an essay cannot be scored this way.
@@ -87,10 +96,72 @@ mkdir -p "$OUT"
 
 No GPU. Everything here is cheap and worth getting right before spending GPU hours.
 
-### Step 1 — write `questions.json`
+### Step 1 — build `questions.json`
 
-The only hand-authored file. See [the training data](#the-training-data) above for the
-schema and for the properties of a usable question set.
+Every later stage reads this one file, in the schema
+[above](#the-training-data). There are two ways to produce it, and the rest of the
+pipeline cannot tell them apart.
+
+**From a Hugging Face QA dataset.** TriviaQA's closed-book configuration
+(`rc.nocontext`) carries every field the pack needs — the question, a stable id, the gold
+`answer.value`, and the aliases that also count as correct — so the mapping is a rename:
+
+```bash
+uv run --with datasets python - > questions.json <<'PY'
+import json
+
+from datasets import load_dataset
+
+N, SEED = 500, 42
+rows = load_dataset("mandarjoshi/trivia_qa", "rc.nocontext", split="validation")
+# Shuffled before slicing: the split arrives grouped by source, so the head of it is a
+# narrower sample than the same count drawn at random.
+print(json.dumps([
+    {
+        "question": row["question"],
+        "question_id": row["question_id"],
+        "short_answer": row["answer"]["value"],
+        # TriviaQA ships ~20 aliases per question, many differing only in case, and every
+        # one of them is rendered into the judge prompt. Deduplicating keeps that prompt
+        # readable when it is inspected by hand.
+        "answer_aliases": sorted({
+            alias for alias in row["answer"]["aliases"]
+            if alias.casefold() != row["answer"]["value"].casefold()
+        }),
+    }
+    for row in rows.shuffle(seed=SEED).select(range(N))
+], indent=4))
+PY
+```
+
+Another dataset changes only the field names. WebQuestions — the paper's generalisation
+set — has no id column and one flat answer list, so it is numbered by position and reuses
+that list for both fields:
+
+```python
+{"question": row["question"], "question_id": f"q-{i}",
+ "short_answer": row["answers"][0], "answer_aliases": row["answers"][1:]}
+```
+
+**By hand.** A JSON list in the same schema, which is the right choice for a
+domain-specific question set where no public dataset applies:
+
+```json
+[{"question": "Who sent Augustine to England?",
+  "question_id": "q-1",
+  "short_answer": "Pope Gregory",
+  "answer_aliases": ["Gregory I", "the Pope"]}]
+```
+
+Either way, check the file before spending GPU time. `question_id` becomes `custom_id` and
+every later stage joins on it, so a duplicate would pair a generation with another
+question's verdict:
+
+```bash
+jq 'length' questions.json                                           # the question count
+jq '[.[].question_id] | length == (unique | length)' questions.json  # true
+jq '.[0]' questions.json
+```
 
 ### Step 2 — build the generation requests
 

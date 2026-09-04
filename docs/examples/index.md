@@ -1,6 +1,6 @@
 # Examples
 
-Three runnable notebooks. The first two read committed response fixtures, so they need no
+Four runnable notebooks. The first two read committed response fixtures, so they need no
 GPU, API key or model download.
 
 | Notebook | Shows | Needs |
@@ -8,6 +8,7 @@ GPU, API key or model download.
 | {doc}`epr_usage_demo` | EPR scoring at sequence and token level, on a fixture narrower than the rank count the weights were trained at | Nothing |
 | {doc}`wepr_usage_demo` | WEPR at its trained rank count, with the risky spans highlighted token by token | Nothing |
 | {doc}`langfuse_integration_demo` | Scoring live Langfuse traces through `HallucinationEvaluator` | `[adapters]`, a `logprobs`-capable endpoint, a Langfuse project |
+| {doc}`train_a_detector` | Training a detector for your own model on a Hugging Face QA dataset, end to end | `[adapters]`, `datasets`, a `logprobs`-capable endpoint |
 
 Run one locally from the repository root:
 
@@ -20,6 +21,9 @@ Outputs are committed and the documentation build does not re-execute them
 `tests/test_examples.py` runs the notebooks against the current source, which is what keeps
 those stored outputs honest.
 
+The last two generate against a live endpoint, so they ship without stored outputs and are
+checked statically rather than executed — the numbers are the ones your own run produces.
+
 ```{toctree}
 :maxdepth: 1
 :hidden:
@@ -27,4 +31,5 @@ those stored outputs honest.
 epr_usage_demo
 wepr_usage_demo
 langfuse_integration_demo
+train_a_detector
 ```

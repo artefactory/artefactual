@@ -97,8 +97,12 @@ One label per generated sequence, in the same order `predict_proba` returns rows
 `trainable=True` raises, rather than returning a detector that would fit on the supplied
 data and emit probabilities no trained weights support.
 
-Reproducing the paper's end-to-end pipeline — generating answers, labelling them with an
-LLM judge, fitting and evaluating — is documented in the
+A worked version of the whole procedure — drawing questions from a Hugging Face QA
+dataset, generating answers with their log-probabilities, labelling them, fitting and
+evaluating — is the {doc}`../examples/train_a_detector` notebook.
+
+Reproducing the paper's end-to-end pipeline instead, with batch generation and an LLM
+judge, is documented in the
 [`scripts/ecir`](https://github.com/artefactory/artefactual/tree/main/scripts/ecir)
 subdirectory.
 
