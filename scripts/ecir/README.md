@@ -15,15 +15,15 @@ model.
 | | Why | Where |
 |---|---|---|
 | `vllm` | Runs the two LLM stages | A Linux GPU box — it has no macOS wheels. Run via `uvx`, no install; the wheel must match the driver's CUDA — see [running `vllm`](#running-vllm) |
-| `jq` | Builds the batch request files | Anywhere |
+| `jq` | Every script here shapes JSON with it | Anywhere |
+| `datasets` | Only if step 1 draws from the Hub rather than a hand-written file | Anywhere; `build_questions.sh` fetches it into an ephemeral environment, so no install and no built checkout is needed |
 | This repo, `uv sync`'d | Trains and evaluates the detector | Anywhere |
-| `questions.json` | Your QA pack — see below | You write this |
 
 The work falls into three phases, and only the middle one needs a GPU:
 
 | Phase | What happens | GPU | Cost |
 |---|---|---|---|
-| **A. Prepare the data** | Write the questions, render them as batch requests | no | minutes |
+| **A. Prepare the data** | Draw the questions, render them as batch requests | no | minutes |
 | **B. Run the models** | Generate answers, then grade them — two `vllm run-batch` passes | **yes** | hours |
 | **C. Train and evaluate** | Fit the detector on the labels, score it on held-out data | no | seconds |
 
@@ -38,7 +38,7 @@ The detector is a logistic regression trained on `(response, was_it_a_hallucinat
 You supply the questions and their gold answers; the pipeline produces the responses, and
 the LLM judge produces the labels.
 
-The only file authored by hand is `questions.json`, a list of:
+Steps 2 and 4 read one file, `questions.json`, a list of:
 
 ```json
 [{"question": "Who sent Augustine to England?",
@@ -54,9 +54,12 @@ The only file authored by hand is `questions.json`, a list of:
 | `short_answer` | yes | The gold answer the judge grades against |
 | `answer_aliases` | no | Other answers the judge should accept; omit or leave empty |
 
-The paper uses **TriviaQA** for training and **WebQuestions** to test generalisation, plus
-a financial RAG corpus (ArGiMi-Ardian) for missing-context detection. Any short-form QA set
-works, including domain-specific question sets. Two properties matter:
+Step 1 writes it either from a Hugging Face QA dataset or by hand. The paper trains on **TriviaQA**, which ships each gold answer with the
+aliases the judge should also accept; it tests generalisation on **WebQuestions**, and uses
+a financial RAG corpus (ArGiMi-Ardian) for missing-context detection.
+
+Any short-form QA set works either way, including a domain-specific one that exists only as
+your own file. Two properties matter:
 
 - **Answers must be short enough to grade automatically.** The judge compares against
   `short_answer`; an essay cannot be scored this way.
@@ -87,10 +90,43 @@ mkdir -p "$OUT"
 
 No GPU. Everything here is cheap and worth getting right before spending GPU hours.
 
-### Step 1 — write `questions.json`
+### Step 1 — build `questions.json`
 
-The only hand-authored file. See [the training data](#the-training-data) above for the
-schema and for the properties of a usable question set.
+Steps 2 and 4 read this file, in the schema [above](#the-training-data); after that
+`question_id` travels on as `custom_id` and the later stages join on that.
+
+```bash
+./build_questions.sh triviaqa 500 > questions.json
+```
+
+The paper trains on **TriviaQA**, whose closed-book configuration carries every field the
+pack needs, including the aliases the judge should also accept. 500 rows yield 493
+questions at the default seed: the split concatenates two evidence sources, so some
+questions appear twice
+under one id and the script keeps one of each. `./build_questions.sh --help` explains that
+and the alias handling.
+
+```bash
+./build_questions.sh webquestions > questions.json
+```
+
+**WebQuestions** is the paper's generalisation set. Its test split is 2,032 questions,
+small enough to take whole, so it has no sample size.
+
+Or write the file by hand, which is the right choice for a domain-specific question set
+where no public dataset applies. Three fields are the whole requirement; `answer_aliases`
+is optional, and [the schema](#the-training-data) says what it buys:
+
+```json
+[{"question": "Who sent Augustine to England?",
+  "question_id": "q-1",
+  "short_answer": "Pope Gregory"}]
+```
+
+`question_id` becomes `custom_id` and every later stage joins on it, so a duplicate would
+pair a generation with another question's verdict. Nothing here checks for that, because
+step 2 does: `build_generation_requests.sh` refuses a pack whose ids repeat, names them,
+and reports the question count it is building for.
 
 ### Step 2 — build the generation requests
 
@@ -99,12 +135,8 @@ schema and for the properties of a usable question set.
 ```
 
 One JSON line per question, in the OpenAI batch format, asking for `top_logprobs: $K`.
-Check it before spending GPU time:
-
-```bash
-head -1 "$OUT/gen_requests.jsonl" | jq '{custom_id, model: .body.model, k: .body.top_logprobs}'
-wc -l < "$OUT/gen_requests.jsonl"   # should equal the question count
-```
+The script reports on stderr how many requests it built, for which model and at which `k`
+— read that line before spending GPU time, because `K` here and `--k` in step 6 must agree.
 
 Sampling follows the paper (§4.1.2): non-greedy decoding at `T_samp = 1.0`, `top_p = 1.0`,
 sampling cutoff `K_samp = 50`. Override with `GEN_TEMPERATURE`, `GEN_TOP_P`, `GEN_TOP_K`.
@@ -173,15 +205,15 @@ by hand, and cap the context if the model's default exceeds what one card holds
 vllm run-batch -i "$OUT/gen_requests.jsonl" -o "$OUT/responses.jsonl" --model "$MODEL"
 ```
 
-Confirm every request came back with the right rank width:
+Confirm the batch before spending the judge's GPU hours on it:
 
 ```bash
-jq -r 'select(.response != null)
-       | (.response.body // .response).choices[0].logprobs.content[0].top_logprobs | length' "$OUT/responses.jsonl" | sort -u
+./check_responses.sh "$OUT/responses.jsonl"
 ```
 
-One number should print, and it must equal `$K`. If it is smaller, the generation ignored
-`top_logprobs` — fix that and rerun, because step 6 will refuse the data.
+It reports how many lines carry a completion, names every line that does not with its
+status, and prints the rank widths present. One width should print, and it must equal `$K`
+— if it is smaller the generation ignored `top_logprobs`, and step 6 will refuse the data.
 
 ### Step 4 — build the judge requests
 
@@ -203,10 +235,10 @@ answer was **correct**, so the training label is its negation — 1 marks a hall
 Spot-check a few, then check the class balance:
 
 ```bash
-jq -r 'select(.response != null) | (.response.body // .response).choices[0].message.content' "$OUT/judgments.jsonl" | head -3
+./check_responses.sh "$OUT/judgments.jsonl"
 
-jq -r 'select(.response != null) | (.response.body // .response).choices[0].message.content' "$OUT/judgments.jsonl" \
-  | grep -c '"judgment": *true'
+./verdicts.sh "$OUT/judgments.jsonl" | head -3
+./verdicts.sh "$OUT/judgments.jsonl" | grep -c '"judgment": *true'
 ```
 
 Compare that count against the question count. All-correct or all-wrong cannot be fit;
@@ -239,8 +271,8 @@ refitted and discarded.
 chance of picking up a different install. Numbers here are illustrative:
 
 ```
-joined 400 pairs on custom_id (112 hallucinations)
-fitting on 300 response(s), holding out 100
+joined 495 pairs on custom_id (139 hallucinations)
+fitting on 371 response(s), holding out 124
 intercept: -3.02
 wrote out/wepr.skops
 
@@ -351,8 +383,9 @@ Supplying WEPR weights whose rank count disagrees with `--k` is caught separatel
 coefficient vector:
 
 ```
-ValueError: Weights cover 15 rank(s) but k=20 was requested. WEPR coefficients are fixed
-at the rank count they were trained at; pass k=15, or supply weights trained at k=20.
+ValueError: The wepr detector at 'out/wepr.skops' takes 30 feature(s), but k=20 needs 40.
+Its coefficients are fixed at the rank count they were trained at; pass k=15, or use a
+detector trained at k=20.
 ```
 
 Responses generated at a narrower `k` must be regenerated; a detector trained at another
@@ -364,11 +397,10 @@ was produced with a smaller `top_logprobs` than the fitted `k`, most often becau
 and step 6 were run with different values. The responses can be inspected directly:
 
 ```bash
-jq -r 'select(.response != null)
-       | (.response.body // .response).choices[0].logprobs.content[0].top_logprobs | length' out/responses.jsonl | sort -u
+./check_responses.sh out/responses.jsonl
 ```
 
-One number should come back, and it must be at least `--k`. If it is smaller, rerun
+One width should come back, and it must be at least `--k`. If it is smaller, rerun
 steps 2 and 3 — the judgments are unaffected and do not need regenerating.
 
 **`joined N pairs on custom_id` reports fewer than the question count.** Some requests
@@ -379,21 +411,19 @@ comes back with `error` null, a non-2xx `status_code`, and an error object sitti
 the completion would be.
 
 ```bash
-jq -c 'select(.error != null or .response == null
-              or .response.status_code < 200 or .response.status_code >= 300
-              or .response.body == null)
-       | {custom_id, status: .response.status_code, error}' out/responses.jsonl
+./check_responses.sh out/responses.jsonl
 ```
 
-An envelope with no `status_code` is refused by the script rather than assumed to have
-succeeded, so this triage never reports fewer failures than the run dropped.
+It applies the same rule `build_judge_requests.sh` does, so it never reports fewer failures
+than the run dropped — including an envelope with no `status_code`, which is refused rather
+than assumed to have succeeded.
 
 **`dropped N verdict(s) that could not be parsed`.** The judge is asked for
 `{"judgment": true|false, "explanation": "..."}` and returned something else. Inspect a
 few and, if the model is simply chatty, raise `JUDGE_MAX_TOKENS`:
 
 ```bash
-jq -r 'select(.response != null) | (.response.body // .response).choices[0].message.content' out/judgments.jsonl | head
+./verdicts.sh out/judgments.jsonl | head
 ```
 
 **`No custom_id is present in both files`.** The two files came from different batches.
@@ -401,11 +431,23 @@ jq -r 'select(.response != null) | (.response.body // .response).choices[0].mess
 joins by id — a reordered or partially failed batch can never pair a generation with the
 wrong verdict, but two unrelated batches will not join at all.
 
-**`5-fold cross-validation needs at least 5 of each class` from the evaluation.** The rarer
-class — usually the hallucinations — has fewer members than there are folds, so it cannot
-appear in every one. The message prints the actual counts. Label more data, or lower
-`--folds`; note that fewer folds means a noisier estimate, so treat it as a way to get a
-reading at all rather than a fix.
+**`Both classes are needed to fit a detector`, or `A stratified holdout needs at least 2 of
+each class`.** The labelled set has only one class, or too few of the rarer one to put one
+on each side of the split. Both messages print the actual counts:
+
+```
+ValueError: A stratified holdout needs at least 2 of each class, but the labels are
+{0: 499, 1: 1} (0 = grounded, 1 = hallucination). Label more data, or pass --test_size 0
+to fit without evaluating.
+```
+
+Label more data, or change step 1's questions -- harder if nothing was hallucinated,
+easier if everything was.
+
+`--test_size 0` answers only the second message. It skips the split, so it fits on
+everything and gets a file written, telling you nothing about it. It is no help against the
+first: with one class there is nothing to fit, and skipping the split only moves the error
+into scikit-learn, which raises `This solver needs samples of at least 2 classes`.
 
 ## What the scripts read
 
@@ -423,6 +465,19 @@ its `body`. Steps 3, 6 and 7 unwrap it themselves, so there is no conversion ste
 envelope when inspecting a file by hand: `jq '.response.choices[0]'` silently yields `null`
 rather than failing.
 
+Five scripts, each taking positional arguments and writing to stdout:
+
+| Script | Reads | Writes |
+|---|---|---|
+| `build_questions.sh` | a Hugging Face QA dataset | `questions.json` in the schema above |
+| `build_generation_requests.sh` | `questions.json` | batch requests; refuses repeated ids |
+| `build_judge_requests.sh` | `questions.json`, the generations | batch requests; drops failed lines and says how many |
+| `check_responses.sh` | any batch output | usable count, the dropped ids with their status, the rank widths present |
+| `verdicts.sh` | the judgments | the judge's reply from each line that carries one |
+
+The last two only read, so they are safe to run against a batch at any point. The three
+that read a batch decide what a line carries the same way: `error` null, a 2xx `status_code`, and a body.
+
 ## Prompts
 
 `prompts/generate.txt` and `prompts/judge.txt` hold the paper's prompts verbatim.
@@ -430,8 +485,10 @@ Placeholders are substituted by `jq` with literal split/join, so a question cont
 backslashes, `&` or quotes cannot corrupt the rendering.
 
 `prompts/judge.jinja` is the original jinja2 template, kept so the rendering can be
-re-checked against it — it was verified byte-identical for 0, 1 and 2 aliases. Edit the
-prompts and the run no longer reproduces the paper.
+re-checked against it — it is verified byte-identical for 0, 1, 2 and 40 aliases, the
+last because TriviaQA questions carry a median of 8 and a long tail: measured over a
+500-row sample, the mean is 13 and the widest question has 158. Edit the prompts and the
+run no longer reproduces the paper.
 
 The judge's `judgment: true` means the answer was correct, so the training label is its
 negation: **1 marks a hallucination**.

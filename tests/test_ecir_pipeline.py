@@ -33,6 +33,15 @@ QUESTIONS = [
     # backslash, ampersand and quotes: a regex-based renderer would corrupt these
     {"question": 'Capital? A\\B & C "quoted"', "question_id": "q-2", "short_answer": "Paris", "answer_aliases": []},
     {"question": "One alias?", "question_id": "q-3", "short_answer": "X", "answer_aliases": ["Y"]},
+    # Step 1 draws from TriviaQA, whose questions carry a median of 8 aliases and a long
+    # tail -- 158 at the widest, measured over a 500-row sample. The rendering was only ever
+    # held to 0, 1 and 2, which is no longer the shape it runs on.
+    {
+        "question": "Many aliases?",
+        "question_id": "q-4",
+        "short_answer": "Ada Lovelace",
+        "answer_aliases": [f"alias {i}" for i in range(40)],
+    },
 ]
 
 
@@ -170,6 +179,71 @@ def test_a_rejected_generation_is_dropped_even_though_error_is_null(pack):
     rows = [json.loads(line) for line in result.stdout.splitlines()]
     assert [row["custom_id"] for row in rows] == [q["question_id"] for q in QUESTIONS]
     assert "dropping 1/" in result.stderr
+
+
+# --- the scripts that guard a run ------------------------------------------------------
+
+
+def test_a_pack_whose_ids_repeat_is_refused_before_any_gpu_time(pack):
+    """`custom_id` is the only join key, so a repeat would pair a generation with the
+    wrong verdict. The script names the offending id rather than failing at the join."""
+    path = pack / "duplicated.json"
+    repeated = [*QUESTIONS, {**QUESTIONS[0], "question": "asked twice under one id"}]
+    path.write_text(json.dumps(repeated), encoding="utf-8")
+
+    result = subprocess.run(
+        [str(ECIR / "build_generation_requests.sh"), str(path), "m", "15"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert QUESTIONS[0]["question_id"] in result.stderr
+    assert result.stdout == ""
+
+
+def test_the_triage_names_a_rejected_line_and_reports_the_rank_width(pack):
+    path = pack / "with_rejection.jsonl"
+    path.write_text(json.dumps(rejected_line("q-9")) + "\n" + (pack / "responses.jsonl").read_text(), encoding="utf-8")
+
+    out = run(ECIR / "check_responses.sh", path)
+
+    assert f"{len(QUESTIONS)}/{len(QUESTIONS) + 1} line(s) carry a completion" in out
+    assert "dropped q-9: status=400" in out
+    # batch_line builds three ranks per token, and every usable line agrees on that
+    assert "rank width(s) present:\n  3\n" in out
+
+
+def test_the_triage_says_so_rather_than_reporting_a_width_of_zero_for_judgments(pack):
+    """A judge batch asks for no logprobs; a width of 0 would read as a bad generation."""
+    line = batch_line("q-1", '{"judgment": true}')
+    del line["response"]["body"]["choices"][0]["logprobs"]
+    path = pack / "judgments.jsonl"
+    path.write_text(json.dumps(line) + "\n", encoding="utf-8")
+
+    out = run(ECIR / "check_responses.sh", path)
+
+    assert "no logprobs in this batch" in out
+    assert "rank width" not in out
+
+
+def test_the_triage_fails_when_no_line_carries_a_completion(pack):
+    path = pack / "all_rejected.jsonl"
+    path.write_text("\n".join(json.dumps(rejected_line(q["question_id"])) for q in QUESTIONS) + "\n", encoding="utf-8")
+
+    result = subprocess.run([str(ECIR / "check_responses.sh"), str(path)], capture_output=True, text=True, check=False)
+
+    assert result.returncode != 0
+    assert "no line carries a completion" in result.stderr
+
+
+def test_verdicts_prints_only_the_lines_that_carry_a_reply(pack):
+    path = pack / "judgments.jsonl"
+    kept = batch_line("q-1", '{"judgment": true, "explanation": "ok"}')
+    path.write_text(json.dumps(kept) + "\n" + json.dumps(rejected_line("q-9")) + "\n", encoding="utf-8")
+
+    assert run(ECIR / "verdicts.sh", path).splitlines() == ['{"judgment": true, "explanation": "ok"}']
 
 
 def test_an_envelope_with_no_status_code_stops_the_run_and_names_the_line(pack):

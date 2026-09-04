@@ -18,7 +18,9 @@
 #                    one, it only notes the tasks yield short answers)
 #
 # `question_id` becomes `custom_id`, which run-batch carries into its output so every
-# later stage joins by id rather than by line order.
+# later stage joins by id rather than by line order. A pack whose ids repeat is refused
+# here rather than at the join, where the symptom is a generation paired with another
+# question's verdict and nothing says so.
 #
 # `k` must match the `--k` passed when fitting: EPR averages over exactly k ranks, so the
 # rank count is part of the feature definition, and the fit refuses narrower responses.
@@ -43,6 +45,16 @@ top_k=${GEN_TOP_K:-50}
 max_tokens=${GEN_MAX_TOKENS:-200}
 
 [ -f "$questions" ] || { echo "error: no such question pack: $questions" >&2; exit 1; }
+
+total=$(jq 'length' "$questions")
+distinct=$(jq '[.[].question_id] | unique | length' "$questions")
+if [ "$distinct" -ne "$total" ]; then
+  echo "error: $questions has $total question(s) under $distinct id(s); ids must be unique" >&2
+  jq -r '[.[].question_id] | group_by(.) | map(select(length > 1)) | .[] | "  repeated: \(.[0])"' \
+    "$questions" >&2
+  exit 1
+fi
+echo "building $total request(s) for $model at k=$k" >&2
 
 jq -c \
   --rawfile tpl "$here/prompts/generate.txt" \
