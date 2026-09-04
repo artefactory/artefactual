@@ -99,7 +99,7 @@ data and emit probabilities no trained weights support.
 
 A worked version of the whole procedure — drawing questions from a Hugging Face QA
 dataset, generating answers with their log-probabilities, labelling them, fitting and
-evaluating — is the {doc}`../examples/train_a_detector` notebook.
+evaluating — is the {doc}`../examples/train_wepr` notebook.
 
 Reproducing the paper's end-to-end pipeline instead, with batch generation and an LLM
 judge, is documented in the

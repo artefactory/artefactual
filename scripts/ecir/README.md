@@ -11,7 +11,7 @@ The scripts here only prepare its input and read its output; nothing in this rep
 model.
 
 For a shorter path — one QA set, one endpoint, no `vllm` and no GPU — the
-[quick-start notebook](https://artefactory.github.io/artefactual/examples/train_a_detector.html)
+[quick-start notebook](https://artefactory.github.io/artefactual/examples/train_wepr.html)
 trains a detector on TriviaQA in a few minutes. This directory is the full procedure: batch
 generation, an LLM judge, and the evaluation the paper reports.
 

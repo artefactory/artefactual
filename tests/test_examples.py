@@ -18,7 +18,7 @@ import pytest
 EXAMPLES = Path(__file__).resolve().parents[1] / "docs" / "examples"
 
 OFFLINE_NOTEBOOKS = ["epr_usage_demo", "wepr_usage_demo"]
-NETWORKED_NOTEBOOKS = ["langfuse_integration_demo", "train_a_detector"]
+NETWORKED_NOTEBOOKS = ["langfuse_integration_demo", "train_wepr"]
 ALL_NOTEBOOKS = OFFLINE_NOTEBOOKS + NETWORKED_NOTEBOOKS
 
 
