@@ -21,6 +21,7 @@ generation, an LLM judge, and the evaluation the paper reports.
 |---|---|---|
 | `vllm` | Runs the two LLM stages | A Linux GPU box — it has no macOS wheels. Run via `uvx`, no install; the wheel must match the driver's CUDA — see [running `vllm`](#running-vllm) |
 | `jq` | Builds the question pack and the batch request files | Anywhere |
+| `datasets` | Only if step 1 draws from the Hub rather than a hand-written file | Anywhere; `uv run --with datasets` fetches it, no install |
 | This repo, `uv sync`'d | Trains and evaluates the detector | Anywhere |
 
 The work falls into three phases, and only the middle one needs a GPU:
@@ -58,8 +59,7 @@ Every stage reads one file, `questions.json`, a list of:
 | `short_answer` | yes | The gold answer the judge grades against |
 | `answer_aliases` | no | Other answers the judge should accept; omit or leave empty |
 
-Step 1 writes it either from a Hugging Face QA dataset, over the dataset viewer's JSON
-API, or by hand. The paper trains on **TriviaQA**, which ships each gold answer with the
+Step 1 writes it either from a Hugging Face QA dataset or by hand. The paper trains on **TriviaQA**, which ships each gold answer with the
 aliases the judge should also accept; it tests generalisation on **WebQuestions**, and uses
 a financial RAG corpus (ArGiMi-Ardian) for missing-context detection.
 
@@ -100,30 +100,26 @@ No GPU. Everything here is cheap and worth getting right before spending GPU hou
 Every later stage reads this one file, in the schema [above](#the-training-data). There
 are two ways to produce it, and the rest of the pipeline cannot tell them apart.
 
-**From a Hugging Face QA dataset.** The [dataset
-viewer](https://huggingface.co/docs/dataset-viewer) serves rows as JSON, so this stays
-`curl` and `jq` like the rest of the pipeline — no Python, and nothing to install.
-TriviaQA's closed-book configuration (`rc.nocontext`) carries every field the pack needs,
-so the transform is a rename:
+**From a Hugging Face QA dataset.** Two commands, split the way the rest of the pipeline
+is: one fetches the rows, and `jq` renames the fields as it does for every other file
+here. TriviaQA's closed-book configuration (`rc.nocontext`) carries every field the pack
+needs, so the rename is all it takes.
 
 ```bash
-DATASET=mandarjoshi/trivia_qa   # any short-form QA set with the viewer enabled
-CONFIG=rc.nocontext             # closed book: question and answer, no evidence documents
-SPLIT=validation
-N=500
+uv run --with datasets python -c "
+from datasets import load_dataset
+load_dataset('mandarjoshi/trivia_qa', 'rc.nocontext', split='validation').shuffle(seed=42).select(range(500)).to_json('rows.jsonl')
+"
+```
 
-# The viewer serves at most 100 rows per request, so N/100 requests are concatenated and
-# `jq -s` reads them as one stream. HF_TOKEN is needed only for a gated dataset.
-for offset in $(seq 0 100 $((N - 1))); do
-  curl -sS --get "https://datasets-server.huggingface.co/rows" \
-       --data-urlencode "dataset=$DATASET" \
-       --data-urlencode "config=$CONFIG" \
-       --data-urlencode "split=$SPLIT" \
-       --data-urlencode "offset=$offset" \
-       --data-urlencode "length=100" \
-       ${HF_TOKEN:+--header "Authorization: Bearer $HF_TOKEN"}
-done | jq -s '
-  [ .[].rows[].row
+`shuffle` before `select` is the point of doing it this way: the split arrives grouped by
+source, so its first 500 rows are a narrower sample than 500 drawn at random. `to_json`
+writes JSON Lines — one row per line, columns untouched — which is the shape `jq -s`
+reads.
+
+```bash
+jq -s '
+  [ .[]
     # Bound before the object is built: inside it, `.` is no longer the row.
     | .answer.value as $gold
     | {question,
@@ -133,24 +129,16 @@ done | jq -s '
        # one of them is rendered into the judge prompt. Deduplicating keeps that prompt
        # readable when it is inspected by hand.
        answer_aliases: ([.answer.aliases[] | select(ascii_downcase != ($gold | ascii_downcase))] | unique)} ]
-' > questions.json
+' rows.jsonl > questions.json
 ```
 
-Rows come back in dataset order, so this is the head of the split rather than a sample of
-it. If that head is unrepresentative — grouped by source, say — spread the offsets
-instead, and let the uniqueness check below catch any overlap:
-
-```bash
-for offset in $(shuf -i 0-11000 -n $((N / 100))); do ...
-```
-
-Another dataset changes only the `jq`. WebQuestions — the paper's generalisation set — has
-no id column and one flat answer list, so it is numbered from `row_idx`, which the viewer
-supplies on the wrapper, and reuses that list for both fields:
+Another dataset changes only these two lines. WebQuestions — the paper's generalisation
+set — has no id column and one flat answer list, so it is numbered by position and reuses
+that list for both fields:
 
 ```jq
-[ .[].rows[] | {question: .row.question, question_id: "q-\(.row_idx)",
-                short_answer: .row.answers[0], answer_aliases: .row.answers[1:]} ]
+[ to_entries[] | {question: .value.question, question_id: "q-\(.key)",
+                  short_answer: .value.answers[0], answer_aliases: .value.answers[1:]} ]
 ```
 
 **By hand.** A JSON list in the same schema, which is the right choice for a
