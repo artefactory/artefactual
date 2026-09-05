@@ -97,8 +97,12 @@ One label per generated sequence, in the same order `predict_proba` returns rows
 `trainable=True` raises, rather than returning a detector that would fit on the supplied
 data and emit probabilities no trained weights support.
 
-Reproducing the paper's end-to-end pipeline — generating answers, labelling them with an
-LLM judge, fitting and evaluating — is documented in the
+{doc}`../examples/train_wepr` is a worked version of exactly this: it validates a set of
+answers and their verdicts — both in the OpenAI Batch output shape — fits and evaluates a
+detector, and needs no GPU or endpoint because the answers are already in hand.
+
+Reproducing the paper's end-to-end pipeline instead, with batch generation and an LLM
+judge, is documented in the
 [`scripts/ecir`](https://github.com/artefactory/artefactual/tree/main/scripts/ecir)
 subdirectory.
 

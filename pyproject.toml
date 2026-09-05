@@ -228,6 +228,23 @@ max-complexity = 10
 max-args = 8
 
 [tool.ruff.lint.per-file-ignores]
+# Notebooks under docs/examples/. E402 because a notebook introduces an import where it
+# introduces the topic -- numpy where training starts, scikit-learn's metrics where
+# evaluation does -- and because the setup cell each notebook opens with puts code above
+# the preamble. Read as one module, which is how the linter sees a notebook, every one of
+# those is an import after code, and hoisting them into the first cell would move each away
+# from the paragraph that explains it.
+#
+# S404 and S603 are that same setup cell importing subprocess and calling it, and S310 is
+# its fixture download: the argument list is string literals and `sys.executable`, and the
+# URL is a literal https constant, so there is no untrusted input for the audit these rules
+# ask for.
+#
+# The glob is `docs/examples/*`, not `*.ipynb`: nbQA lints a notebook by writing it out as a
+# `.py` beside itself and running ruff on that, so an `.ipynb` pattern silently misses the
+# pre-commit hook while still covering `ruff check` run by hand. It matches at any depth, so
+# a `.py` added anywhere under `docs/examples/` is covered too.
+"docs/examples/*" = ["E402", "S310", "S404", "S603"]
 "**/scripts/*" = [
     "INP001",
     "T201",

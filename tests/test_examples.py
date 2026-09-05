@@ -17,7 +17,7 @@ import pytest
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "docs" / "examples"
 
-OFFLINE_NOTEBOOKS = ["epr_usage_demo", "wepr_usage_demo"]
+OFFLINE_NOTEBOOKS = ["epr_usage_demo", "wepr_usage_demo", "train_wepr"]
 NETWORKED_NOTEBOOKS = ["langfuse_integration_demo"]
 ALL_NOTEBOOKS = OFFLINE_NOTEBOOKS + NETWORKED_NOTEBOOKS
 
@@ -65,6 +65,12 @@ def _detectors_resolve_locally(monkeypatch, tmp_path):
     from artefactual.scoring.base_detector import BaseDetector
 
     def resolve(identifier, *_args, **_kwargs):
+        # A local path resolves to itself. train_wepr saves weights and loads them straight
+        # back, and standing in for that too would have the notebook reload this stub
+        # instead of the file it just wrote -- so the one cell that claims saved weights
+        # reload like published ones would never test it.
+        if (local := BaseDetector.local_estimator(identifier)) is not None:
+            return local
         n_features = 1 if "-epr-" in str(identifier) else 2 * 15
         path = tmp_path / f"{n_features}.skops"
         if not path.exists():
@@ -85,6 +91,59 @@ def test_the_notebook_runs_against_the_current_source(name, monkeypatch, _detect
     namespace = {"__name__": "__main__"}
 
     exec(compile(code_of(load(name)), name, "exec"), namespace)
+
+
+BATCH_FIXTURES = ["responses_sample.jsonl", "judgments_sample.jsonl"]
+
+
+@pytest.mark.parametrize("name", BATCH_FIXTURES)
+def test_the_fixture_is_openai_batch_output(name):
+    """Every line is the OpenAI Batch output envelope, validated by the SDK itself.
+
+    The training notebook's premise is that its inputs need no conversion: the same files
+    `vllm run-batch` writes and `scripts/train_detector.py` reads. Hand-written fixtures
+    drift from that shape silently, so the completion inside each envelope is validated
+    against `openai.types.chat.ChatCompletion` rather than against our own reading of it.
+    """
+    chat = pytest.importorskip("openai.types.chat")
+
+    lines = [line for line in (EXAMPLES / name).read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert lines, f"{name} is empty"
+
+    validated = 0
+    for number, line in enumerate(lines, start=1):
+        record = json.loads(line)
+        assert set(record) >= {"id", "custom_id", "response", "error"}, f"{name}:{number} is not a batch envelope"
+        if record["error"] is not None or record["response"] is None:
+            continue
+        envelope = record["response"]
+        # The Batch spec wraps the completion in `body`; older vllm emitted it bare.
+        chat.ChatCompletion.model_validate(envelope.get("body", envelope))
+        validated += 1
+
+    assert validated, f"{name} carried no usable completions"
+
+
+def test_the_response_fixture_is_wide_enough_to_train_on():
+    """The notebook fits at k=15, and refuses responses narrower than that.
+
+    Checked on every token rather than the first: a fixture regenerated narrower would
+    otherwise fail inside the notebook's own `fit`, far from the file that caused it.
+    """
+    widths = []
+    for line in (EXAMPLES / "responses_sample.jsonl").read_text(encoding="utf-8").splitlines():
+        # The blank-line guard first: parsing one raises JSONDecodeError, which would make
+        # this test stricter than the notebook it guards, and confusingly so.
+        if not line.strip():
+            continue
+        record = json.loads(line)
+        if record["error"] is not None or record["response"] is None:
+            continue
+        content = record["response"]["body"]["choices"][0]["logprobs"]["content"]
+        widths.extend(len(token["top_logprobs"]) for token in content)
+
+    assert widths, "no log-probabilities in the fixture"
+    assert min(widths) >= 15, f"fixture carries {min(widths)} ranks per token, the notebook fits at k=15"
 
 
 @pytest.mark.parametrize("name", OFFLINE_NOTEBOOKS)

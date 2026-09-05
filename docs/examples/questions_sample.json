@@ -1,0 +1,740 @@
+[
+  {
+    "question": "Which Lloyd Webber musical premiered in the US on 10th December 1993?",
+    "question_id": "tc_33",
+    "short_answer": "Sunset Boulevard",
+    "answer_aliases": [
+      "Sunset Blvd",
+      "Sunset Blvd.",
+      "Sunset Bulevard",
+      "West Sunset Boulevard"
+    ]
+  },
+  {
+    "question": "Who wrote the novel 'Things Fall Apart'?",
+    "question_id": "q-001",
+    "short_answer": "Chinua Achebe",
+    "answer_aliases": [
+      "Achebe"
+    ]
+  },
+  {
+    "question": "What is the capital of Mongolia?",
+    "question_id": "q-002",
+    "short_answer": "Ulaanbaatar",
+    "answer_aliases": [
+      "Ulan Bator"
+    ]
+  },
+  {
+    "question": "Which element has the atomic number 79?",
+    "question_id": "q-003",
+    "short_answer": "Gold",
+    "answer_aliases": [
+      "Au"
+    ]
+  },
+  {
+    "question": "In which year did the Berlin Wall fall?",
+    "question_id": "q-004",
+    "short_answer": "1989",
+    "answer_aliases": []
+  },
+  {
+    "question": "Who painted 'The Garden of Earthly Delights'?",
+    "question_id": "q-005",
+    "short_answer": "Hieronymus Bosch",
+    "answer_aliases": [
+      "Bosch"
+    ]
+  },
+  {
+    "question": "What is the longest river in Asia?",
+    "question_id": "q-006",
+    "short_answer": "Yangtze",
+    "answer_aliases": [
+      "Yangtze River",
+      "Chang Jiang"
+    ]
+  },
+  {
+    "question": "Who composed 'The Rite of Spring'?",
+    "question_id": "q-007",
+    "short_answer": "Igor Stravinsky",
+    "answer_aliases": [
+      "Stravinsky"
+    ]
+  },
+  {
+    "question": "What is the smallest country in the world by area?",
+    "question_id": "q-008",
+    "short_answer": "Vatican City",
+    "answer_aliases": [
+      "the Vatican"
+    ]
+  },
+  {
+    "question": "Which planet is known as the Red Planet?",
+    "question_id": "q-009",
+    "short_answer": "Mars",
+    "answer_aliases": []
+  },
+  {
+    "question": "Who developed the polio vaccine first licensed in 1955?",
+    "question_id": "q-010",
+    "short_answer": "Jonas Salk",
+    "answer_aliases": [
+      "Salk"
+    ]
+  },
+  {
+    "question": "What is the currency of Sweden?",
+    "question_id": "q-011",
+    "short_answer": "Krona",
+    "answer_aliases": [
+      "Swedish krona"
+    ]
+  },
+  {
+    "question": "Which sea separates Europe and Africa?",
+    "question_id": "q-012",
+    "short_answer": "Mediterranean Sea",
+    "answer_aliases": [
+      "the Mediterranean"
+    ]
+  },
+  {
+    "question": "Who wrote 'One Hundred Years of Solitude'?",
+    "question_id": "q-013",
+    "short_answer": "Gabriel Garcia Marquez",
+    "answer_aliases": [
+      "Garcia Marquez"
+    ]
+  },
+  {
+    "question": "What is the hardest naturally occurring substance?",
+    "question_id": "q-014",
+    "short_answer": "Diamond",
+    "answer_aliases": []
+  },
+  {
+    "question": "Which country hosted the 1992 Summer Olympics?",
+    "question_id": "q-015",
+    "short_answer": "Spain",
+    "answer_aliases": [
+      "Barcelona, Spain"
+    ]
+  },
+  {
+    "question": "What is the chemical symbol for potassium?",
+    "question_id": "q-016",
+    "short_answer": "K",
+    "answer_aliases": []
+  },
+  {
+    "question": "Who directed the film 'Rashomon'?",
+    "question_id": "q-017",
+    "short_answer": "Akira Kurosawa",
+    "answer_aliases": [
+      "Kurosawa"
+    ]
+  },
+  {
+    "question": "What is the largest desert in the world?",
+    "question_id": "q-018",
+    "short_answer": "Antarctic Desert",
+    "answer_aliases": [
+      "Antarctica"
+    ]
+  },
+  {
+    "question": "Who was the first woman to win a Nobel Prize?",
+    "question_id": "q-019",
+    "short_answer": "Marie Curie",
+    "answer_aliases": [
+      "Curie"
+    ]
+  },
+  {
+    "question": "Which language has the most native speakers?",
+    "question_id": "q-020",
+    "short_answer": "Mandarin Chinese",
+    "answer_aliases": [
+      "Mandarin"
+    ]
+  },
+  {
+    "question": "What is the tallest mountain in Africa?",
+    "question_id": "q-021",
+    "short_answer": "Kilimanjaro",
+    "answer_aliases": [
+      "Mount Kilimanjaro"
+    ]
+  },
+  {
+    "question": "Who wrote 'The Second Sex'?",
+    "question_id": "q-022",
+    "short_answer": "Simone de Beauvoir",
+    "answer_aliases": [
+      "de Beauvoir"
+    ]
+  },
+  {
+    "question": "In which city is the Hermitage Museum?",
+    "question_id": "q-023",
+    "short_answer": "Saint Petersburg",
+    "answer_aliases": [
+      "St Petersburg"
+    ]
+  },
+  {
+    "question": "What is the boiling point of water at sea level in Celsius?",
+    "question_id": "q-024",
+    "short_answer": "100",
+    "answer_aliases": [
+      "100 degrees"
+    ]
+  },
+  {
+    "question": "Who invented the World Wide Web?",
+    "question_id": "q-025",
+    "short_answer": "Tim Berners-Lee",
+    "answer_aliases": [
+      "Berners-Lee"
+    ]
+  },
+  {
+    "question": "What is the largest island in the Mediterranean?",
+    "question_id": "q-026",
+    "short_answer": "Sicily",
+    "answer_aliases": []
+  },
+  {
+    "question": "Which artist cut off part of his own ear?",
+    "question_id": "q-027",
+    "short_answer": "Vincent van Gogh",
+    "answer_aliases": [
+      "van Gogh"
+    ]
+  },
+  {
+    "question": "What is the study of fungi called?",
+    "question_id": "q-028",
+    "short_answer": "Mycology",
+    "answer_aliases": []
+  },
+  {
+    "question": "Which country is home to the Great Barrier Reef?",
+    "question_id": "q-029",
+    "short_answer": "Australia",
+    "answer_aliases": []
+  },
+  {
+    "question": "Who wrote the play 'A Doll's House'?",
+    "question_id": "q-030",
+    "short_answer": "Henrik Ibsen",
+    "answer_aliases": [
+      "Ibsen"
+    ]
+  },
+  {
+    "question": "What is the largest organ of the human body?",
+    "question_id": "q-031",
+    "short_answer": "Skin",
+    "answer_aliases": [
+      "the skin"
+    ]
+  },
+  {
+    "question": "Which war ended with the Treaty of Versailles?",
+    "question_id": "q-032",
+    "short_answer": "World War I",
+    "answer_aliases": [
+      "the First World War",
+      "WWI"
+    ]
+  },
+  {
+    "question": "What is the capital of New Zealand?",
+    "question_id": "q-033",
+    "short_answer": "Wellington",
+    "answer_aliases": []
+  },
+  {
+    "question": "Who discovered penicillin?",
+    "question_id": "q-034",
+    "short_answer": "Alexander Fleming",
+    "answer_aliases": [
+      "Fleming"
+    ]
+  },
+  {
+    "question": "Which is the deepest ocean trench?",
+    "question_id": "q-035",
+    "short_answer": "Mariana Trench",
+    "answer_aliases": [
+      "the Marianas Trench"
+    ]
+  },
+  {
+    "question": "Who wrote 'Beloved'?",
+    "question_id": "q-036",
+    "short_answer": "Toni Morrison",
+    "answer_aliases": [
+      "Morrison"
+    ]
+  },
+  {
+    "question": "What is the national sport of Japan?",
+    "question_id": "q-037",
+    "short_answer": "Sumo",
+    "answer_aliases": [
+      "sumo wrestling"
+    ]
+  },
+  {
+    "question": "Which gas makes up most of Earth's atmosphere?",
+    "question_id": "q-038",
+    "short_answer": "Nitrogen",
+    "answer_aliases": []
+  },
+  {
+    "question": "Who was the first person to reach the South Pole?",
+    "question_id": "q-039",
+    "short_answer": "Roald Amundsen",
+    "answer_aliases": [
+      "Amundsen"
+    ]
+  },
+  {
+    "question": "What is the largest mammal?",
+    "question_id": "q-040",
+    "short_answer": "Blue whale",
+    "answer_aliases": [
+      "the blue whale"
+    ]
+  },
+  {
+    "question": "Which city is known as the Eternal City?",
+    "question_id": "q-041",
+    "short_answer": "Rome",
+    "answer_aliases": []
+  },
+  {
+    "question": "Who wrote 'The Wealth of Nations'?",
+    "question_id": "q-042",
+    "short_answer": "Adam Smith",
+    "answer_aliases": []
+  },
+  {
+    "question": "What is the freezing point of water in Fahrenheit?",
+    "question_id": "q-043",
+    "short_answer": "32",
+    "answer_aliases": [
+      "32 degrees"
+    ]
+  },
+  {
+    "question": "Which instrument measures atmospheric pressure?",
+    "question_id": "q-044",
+    "short_answer": "Barometer",
+    "answer_aliases": [
+      "a barometer"
+    ]
+  },
+  {
+    "question": "Who painted the ceiling of the Sistine Chapel?",
+    "question_id": "q-045",
+    "short_answer": "Michelangelo",
+    "answer_aliases": []
+  },
+  {
+    "question": "What is the capital of Canada?",
+    "question_id": "q-046",
+    "short_answer": "Ottawa",
+    "answer_aliases": []
+  },
+  {
+    "question": "Which metal is liquid at room temperature?",
+    "question_id": "q-047",
+    "short_answer": "Mercury",
+    "answer_aliases": []
+  },
+  {
+    "question": "Who wrote 'Invisible Man'?",
+    "question_id": "q-048",
+    "short_answer": "Ralph Ellison",
+    "answer_aliases": [
+      "Ellison"
+    ]
+  },
+  {
+    "question": "What is the longest bone in the human body?",
+    "question_id": "q-049",
+    "short_answer": "Femur",
+    "answer_aliases": [
+      "the femur",
+      "thigh bone"
+    ]
+  },
+  {
+    "question": "Which ocean lies between Africa and Australia?",
+    "question_id": "q-050",
+    "short_answer": "Indian Ocean",
+    "answer_aliases": [
+      "the Indian Ocean"
+    ]
+  },
+  {
+    "question": "Who wrote 'Crime and Punishment'?",
+    "question_id": "q-051",
+    "short_answer": "Fyodor Dostoevsky",
+    "answer_aliases": [
+      "Dostoevsky"
+    ]
+  },
+  {
+    "question": "What is the capital of Peru?",
+    "question_id": "q-052",
+    "short_answer": "Lima",
+    "answer_aliases": []
+  },
+  {
+    "question": "Which vitamin is produced when skin is exposed to sunlight?",
+    "question_id": "q-053",
+    "short_answer": "Vitamin D",
+    "answer_aliases": [
+      "D"
+    ]
+  },
+  {
+    "question": "Who was the first president of the United States?",
+    "question_id": "q-054",
+    "short_answer": "George Washington",
+    "answer_aliases": [
+      "Washington"
+    ]
+  },
+  {
+    "question": "What is the chemical formula for table salt?",
+    "question_id": "q-055",
+    "short_answer": "NaCl",
+    "answer_aliases": [
+      "sodium chloride"
+    ]
+  },
+  {
+    "question": "Which composer wrote the 'Moonlight Sonata'?",
+    "question_id": "q-056",
+    "short_answer": "Beethoven",
+    "answer_aliases": [
+      "Ludwig van Beethoven"
+    ]
+  },
+  {
+    "question": "What is the largest planet in the solar system?",
+    "question_id": "q-057",
+    "short_answer": "Jupiter",
+    "answer_aliases": []
+  },
+  {
+    "question": "Who wrote 'Mrs Dalloway'?",
+    "question_id": "q-058",
+    "short_answer": "Virginia Woolf",
+    "answer_aliases": [
+      "Woolf"
+    ]
+  },
+  {
+    "question": "Which country invented paper?",
+    "question_id": "q-059",
+    "short_answer": "China",
+    "answer_aliases": []
+  },
+  {
+    "question": "What is the capital of Morocco?",
+    "question_id": "q-060",
+    "short_answer": "Rabat",
+    "answer_aliases": []
+  },
+  {
+    "question": "Who formulated the theory of general relativity?",
+    "question_id": "q-061",
+    "short_answer": "Albert Einstein",
+    "answer_aliases": [
+      "Einstein"
+    ]
+  },
+  {
+    "question": "Which bird cannot fly and is native to New Zealand?",
+    "question_id": "q-062",
+    "short_answer": "Kiwi",
+    "answer_aliases": [
+      "the kiwi"
+    ]
+  },
+  {
+    "question": "What is the main ingredient in guacamole?",
+    "question_id": "q-063",
+    "short_answer": "Avocado",
+    "answer_aliases": [
+      "avocados"
+    ]
+  },
+  {
+    "question": "Who wrote 'The Old Man and the Sea'?",
+    "question_id": "q-064",
+    "short_answer": "Ernest Hemingway",
+    "answer_aliases": [
+      "Hemingway"
+    ]
+  },
+  {
+    "question": "Which planet has the Great Red Spot?",
+    "question_id": "q-065",
+    "short_answer": "Jupiter",
+    "answer_aliases": []
+  },
+  {
+    "question": "What is the capital of Egypt?",
+    "question_id": "q-066",
+    "short_answer": "Cairo",
+    "answer_aliases": []
+  },
+  {
+    "question": "Who was the ancient Greek god of the sea?",
+    "question_id": "q-067",
+    "short_answer": "Poseidon",
+    "answer_aliases": []
+  },
+  {
+    "question": "Which country has the most time zones?",
+    "question_id": "q-068",
+    "short_answer": "France",
+    "answer_aliases": []
+  },
+  {
+    "question": "What does DNA stand for?",
+    "question_id": "q-069",
+    "short_answer": "Deoxyribonucleic acid",
+    "answer_aliases": [
+      "deoxyribonucleic"
+    ]
+  },
+  {
+    "question": "Who wrote 'Pride and Prejudice'?",
+    "question_id": "q-070",
+    "short_answer": "Jane Austen",
+    "answer_aliases": [
+      "Austen"
+    ]
+  },
+  {
+    "question": "What is the smallest prime number?",
+    "question_id": "q-071",
+    "short_answer": "2",
+    "answer_aliases": [
+      "two"
+    ]
+  },
+  {
+    "question": "Which city hosted the first modern Olympic Games?",
+    "question_id": "q-072",
+    "short_answer": "Athens",
+    "answer_aliases": []
+  },
+  {
+    "question": "What is the capital of Argentina?",
+    "question_id": "q-073",
+    "short_answer": "Buenos Aires",
+    "answer_aliases": []
+  },
+  {
+    "question": "Who invented the telephone?",
+    "question_id": "q-074",
+    "short_answer": "Alexander Graham Bell",
+    "answer_aliases": [
+      "Bell"
+    ]
+  },
+  {
+    "question": "Which is the longest river in South America?",
+    "question_id": "q-075",
+    "short_answer": "Amazon",
+    "answer_aliases": [
+      "the Amazon"
+    ]
+  },
+  {
+    "question": "What is the study of earthquakes called?",
+    "question_id": "q-076",
+    "short_answer": "Seismology",
+    "answer_aliases": []
+  },
+  {
+    "question": "Who wrote 'Don Quixote'?",
+    "question_id": "q-077",
+    "short_answer": "Miguel de Cervantes",
+    "answer_aliases": [
+      "Cervantes"
+    ]
+  },
+  {
+    "question": "Which metal is the best conductor of electricity?",
+    "question_id": "q-078",
+    "short_answer": "Silver",
+    "answer_aliases": []
+  },
+  {
+    "question": "What is the capital of Vietnam?",
+    "question_id": "q-079",
+    "short_answer": "Hanoi",
+    "answer_aliases": []
+  },
+  {
+    "question": "Who directed 'Seven Samurai'?",
+    "question_id": "q-080",
+    "short_answer": "Akira Kurosawa",
+    "answer_aliases": [
+      "Kurosawa"
+    ]
+  },
+  {
+    "question": "Which planet is closest to the Sun?",
+    "question_id": "q-081",
+    "short_answer": "Mercury",
+    "answer_aliases": []
+  },
+  {
+    "question": "What is the largest lake in Africa?",
+    "question_id": "q-082",
+    "short_answer": "Lake Victoria",
+    "answer_aliases": [
+      "Victoria"
+    ]
+  },
+  {
+    "question": "Who wrote 'Frankenstein'?",
+    "question_id": "q-083",
+    "short_answer": "Mary Shelley",
+    "answer_aliases": [
+      "Shelley"
+    ]
+  },
+  {
+    "question": "What is the currency of Japan?",
+    "question_id": "q-084",
+    "short_answer": "Yen",
+    "answer_aliases": [
+      "the yen"
+    ]
+  },
+  {
+    "question": "Which mountain range separates Europe and Asia?",
+    "question_id": "q-085",
+    "short_answer": "Ural Mountains",
+    "answer_aliases": [
+      "the Urals"
+    ]
+  },
+  {
+    "question": "Who painted 'Guernica'?",
+    "question_id": "q-086",
+    "short_answer": "Pablo Picasso",
+    "answer_aliases": [
+      "Picasso"
+    ]
+  },
+  {
+    "question": "What is the capital of Norway?",
+    "question_id": "q-087",
+    "short_answer": "Oslo",
+    "answer_aliases": []
+  },
+  {
+    "question": "Which blood type is the universal donor?",
+    "question_id": "q-088",
+    "short_answer": "O negative",
+    "answer_aliases": [
+      "O-"
+    ]
+  },
+  {
+    "question": "Who wrote 'Waiting for Godot'?",
+    "question_id": "q-089",
+    "short_answer": "Samuel Beckett",
+    "answer_aliases": [
+      "Beckett"
+    ]
+  },
+  {
+    "question": "What is the tallest waterfall in the world?",
+    "question_id": "q-090",
+    "short_answer": "Angel Falls",
+    "answer_aliases": []
+  },
+  {
+    "question": "Which country is Machu Picchu in?",
+    "question_id": "q-091",
+    "short_answer": "Peru",
+    "answer_aliases": []
+  },
+  {
+    "question": "What is the chemical symbol for iron?",
+    "question_id": "q-092",
+    "short_answer": "Fe",
+    "answer_aliases": []
+  },
+  {
+    "question": "Who composed 'The Four Seasons'?",
+    "question_id": "q-093",
+    "short_answer": "Antonio Vivaldi",
+    "answer_aliases": [
+      "Vivaldi"
+    ]
+  },
+  {
+    "question": "What is the capital of Kenya?",
+    "question_id": "q-094",
+    "short_answer": "Nairobi",
+    "answer_aliases": []
+  },
+  {
+    "question": "Which sense is most closely linked to memory?",
+    "question_id": "q-095",
+    "short_answer": "Smell",
+    "answer_aliases": [
+      "olfaction"
+    ]
+  },
+  {
+    "question": "Who wrote 'The Trial'?",
+    "question_id": "q-096",
+    "short_answer": "Franz Kafka",
+    "answer_aliases": [
+      "Kafka"
+    ]
+  },
+  {
+    "question": "What is the largest bone in the human foot?",
+    "question_id": "q-097",
+    "short_answer": "Calcaneus",
+    "answer_aliases": [
+      "heel bone"
+    ]
+  },
+  {
+    "question": "Which country produces the most coffee?",
+    "question_id": "q-098",
+    "short_answer": "Brazil",
+    "answer_aliases": []
+  },
+  {
+    "question": "What is the capital of Portugal?",
+    "question_id": "q-099",
+    "short_answer": "Lisbon",
+    "answer_aliases": [
+      "Lisboa"
+    ]
+  }
+]

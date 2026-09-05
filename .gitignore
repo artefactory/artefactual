@@ -211,3 +211,9 @@ docs/_extra/
 
 # Build output: the hatch-vcs hook writes the version here from the git tag.
 src/artefactual/_version.py
+
+# Notebook scratch: the training notebook writes a detector when it runs.
+docs/examples/*.skops
+# nbQA lints a notebook by writing it out as a `.py` beside itself; an interrupted hook
+# leaves those behind, in the one directory whose contents are otherwise all deliberate.
+docs/examples/*_nbqa_ipynb.py

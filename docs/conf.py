@@ -78,7 +78,15 @@ nbsphinx_execute = "never"
 # The API is supplied instead as the source itself, via `llms_txt_code_files`. That is
 # strictly more than autodoc would have rendered: the same docstrings, plus the code and
 # the comments explaining it.
-llms_txt_exclude = ["_autosummary/*", "examples/*_demo", "presentations/index"]
+#
+# The notebooks are globbed rather than matched by name. `examples/*_demo` covered the three
+# that existed when this was written, and a notebook called anything else silently landed in
+# llms-full.txt as its own source -- one of them carrying a fixture of per-token logprob
+# arrays. Globbing the directory cannot go stale that way. `examples/index` is prose and
+# stays.
+_DOCS = Path(__file__).parent
+_NOTEBOOKS = [f"examples/{path.stem}" for path in sorted((_DOCS / "examples").glob("*.ipynb"))]
+llms_txt_exclude = ["_autosummary/*", *_NOTEBOOKS, "presentations/index"]
 # Each file is listed explicitly rather than globbed with `+:../src/artefactual/**/*.py`,
 # because the extension's `-:` exclusions do not work for paths outside the source
 # directory: it compares resolved include paths against unresolved exclude globs, so
@@ -91,7 +99,6 @@ llms_txt_exclude = ["_autosummary/*", "examples/*_demo", "presentations/index"]
 # Located through the imported package rather than an assumed repo layout, so the list
 # follows the installed source wherever it lives. os.path.relpath rather than
 # Path.relative_to(walk_up=True): the latter is 3.12+, and the docs build runs on 3.11.
-_DOCS = Path(__file__).parent
 _PACKAGE = Path(artefactual.__file__).parent
 llms_txt_code_files = [
     f"+:{os.path.relpath(path, _DOCS)}" for path in sorted(_PACKAGE.rglob("*.py")) if path.name != "__init__.py"
