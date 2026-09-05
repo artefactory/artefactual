@@ -10,6 +10,7 @@ The Langfuse notebook generates against a live endpoint, so it is checked static
 imports resolve, names are defined -- rather than executed.
 """
 
+import ast
 import json
 from pathlib import Path
 
@@ -102,3 +103,78 @@ def test_the_committed_outputs_carry_no_errors(name):
     errors = [o for c in notebook["cells"] for o in c.get("outputs", []) if o.get("output_type") == "error"]
 
     assert not errors, f"{name} was committed with an error output: {errors[:1]}"
+
+
+@pytest.mark.parametrize("name", ALL_NOTEBOOKS)
+def test_the_notebook_opens_with_a_setup_cell(name):
+    """The first code cell installs the package on a kernel that does not have it.
+
+    `nbsphinx_prolog` badges every notebook page with an Open in Colab link, and it does so
+    for whatever nbsphinx renders -- a notebook added later gets the badge with no further
+    edit. Colab starts from a runtime with neither the package nor the files beside the
+    notebook, so a notebook that skips the setup cell gets a badge leading to an ImportError
+    on its first import. This is what pairs the two.
+
+    Checked by walking the parsed cell rather than by searching its text, so a mention in a
+    comment does not satisfy it and a rewrite that keeps the shape still passes.
+    """
+    code = [cell for cell in load(name)["cells"] if cell["cell_type"] == "code"]
+    assert code, f"{name} has no code cells, so its Colab badge leads to nothing to run"
+
+    tree = ast.parse("".join(code[0]["source"]))
+    installs = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and any(isinstance(argument, ast.Constant) and argument.value == "install" for argument in ast.walk(node))
+    ]
+
+    assert installs, (
+        f"{name} opens on a cell that installs nothing; its Colab badge would lead to a runtime without the package"
+    )
+
+
+# Defined identically in every notebook's setup cell. The cells are not identical as a
+# whole -- only the notebooks that read a fixture carry `fetch`, and each names its own
+# distributions -- so these three are the part that can drift apart unnoticed.
+SHARED_HELPERS = ("missing", "shadowed", "install")
+
+
+def setup_helpers(name):
+    """The source lines of each shared helper in the notebook's setup cell, by name.
+
+    Located by parsing, then read as raw lines rather than through
+    `ast.get_source_segment`: that returns the span the AST covers, which ends at the last
+    statement and so drops a comment trailing it. The reasons these helpers are written the
+    way they are live in their comments, and a copy that kept the code and lost the reason
+    is exactly the drift worth catching.
+    """
+    lines = next(cell for cell in load(name)["cells"] if cell["cell_type"] == "code")["source"]
+    tree = ast.parse("".join(lines))
+    found = {}
+    for node in tree.body:
+        match node:
+            case ast.FunctionDef(name=helper) if helper in SHARED_HELPERS:
+                found[helper] = "".join(lines[node.lineno - 1 : node.end_lineno])
+    return found
+
+
+@pytest.mark.parametrize("helper", SHARED_HELPERS)
+def test_the_setup_cells_define_the_same_helper_everywhere(helper):
+    """One copy of this code per notebook, so a fix to one is a fix to none of the others.
+
+    Each copy is what a reader running that notebook in Colab depends on, and the reasons
+    they are written the way they are -- the metadata check rather than an import, the
+    captured install output -- are the kind that get discovered once and then have to be
+    applied everywhere. Nothing else notices when they diverge: every notebook keeps
+    working with its own copy, correct or not.
+    """
+    written = {name: setup_helpers(name).get(helper) for name in ALL_NOTEBOOKS}
+
+    assert all(source is not None for source in written.values()), (
+        f"{[name for name, source in written.items() if source is None]} define no {helper}() in their setup cell"
+    )
+    assert len(set(written.values())) == 1, (
+        f"{helper}() differs between notebooks; the copies are meant to be identical, so "
+        f"apply the change to all of {list(written)}"
+    )
