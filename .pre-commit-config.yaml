@@ -19,11 +19,6 @@ repos:
         args: [--branch, main]
     -   id: mixed-line-ending
 
--  repo: https://github.com/mwouts/jupytext
-   rev: v1.19.0.dev0
-   hooks:
-   - id: jupytext
-     args: [--sync, pipe]
 -  repo: https://github.com/astral-sh/ruff-pre-commit
    rev: v0.14.11
    hooks:
@@ -41,9 +36,18 @@ repos:
 - repo: https://github.com/nbQA-dev/nbQA
   rev: 1.9.1
   hooks:
+    # nbQA does not pin the tool it drives, so these two floated to whatever ruff was
+    # newest -- 0.16.6 against the 0.14.x this project pins in `pyproject.toml` and in the
+    # ruff hook above. That is not a cosmetic gap: 0.16 migrates `# noqa: RULE` to the new
+    # `# ruff: ignore[rule-name]` suppression syntax and rewrites the file to match, and
+    # 0.14 does not know that syntax and reports RUF103 on it. So the hook edited notebooks
+    # into a state the project's own `ruff check` rejected, on every run. Held to the same
+    # range as the dev group.
     - id: nbqa-ruff
+      additional_dependencies: ["ruff>=0.14.8,<0.15"]
       args: ["--fix", "--extend-ignore=T201,T203,ANN,B905,E501,PLR2004,S101,ERA001,F401,INP001"]
     - id: nbqa-ruff-format
+      additional_dependencies: ["ruff>=0.14.8,<0.15"]
     - id: nbqa-pyupgrade
       args: [--py310-plus]
 - repo: https://github.com/codespell-project/codespell
