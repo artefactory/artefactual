@@ -103,6 +103,10 @@ dev = [
     "ipython>=8.31.0",
     "jinja2>=3.1.5",
     "jupytext>=1.16.6",
+    # tests/test_notebook_structure.py parses the notebooks' markdown as CommonMark rather
+    # than scanning it. Arrives with myst-parser in the `docs` extra too, but CI runs the
+    # tests on a bare `uv sync`, so it is named here rather than left to a transitive.
+    "markdown-it-py>=3.0.0",
     "plum-dispatch>=2.5.7",
     "scikeras>=0.13.0",
     "toolz>=1.0.0",
