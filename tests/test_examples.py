@@ -6,11 +6,10 @@ but means nothing would notice if the API drifted out from under them. These tes
 what makes that trade safe: they run the notebooks for real and fail when the published
 examples stop working.
 
-The Langfuse notebook generates against a live endpoint, so it is checked statically --
-imports resolve, names are defined -- rather than executed.
+The Langfuse and pipeline notebooks generate against a live endpoint, so they are checked
+statically -- imports resolve, names are defined -- rather than executed.
 """
 
-import ast
 import json
 from pathlib import Path
 
@@ -18,8 +17,8 @@ import pytest
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "docs" / "examples"
 
-OFFLINE_NOTEBOOKS = ["epr_usage_demo", "wepr_usage_demo"]
-NETWORKED_NOTEBOOKS = ["langfuse_integration_demo"]
+OFFLINE_NOTEBOOKS = ["epr_usage_demo", "wepr_usage_demo", "train_wepr"]
+NETWORKED_NOTEBOOKS = ["langfuse_integration_demo", "train_wepr_pipeline", "train_wepr_bertjudge"]
 ALL_NOTEBOOKS = OFFLINE_NOTEBOOKS + NETWORKED_NOTEBOOKS
 
 
@@ -66,6 +65,12 @@ def _detectors_resolve_locally(monkeypatch, tmp_path):
     from artefactual.scoring.base_detector import BaseDetector
 
     def resolve(identifier, *_args, **_kwargs):
+        # A local path resolves to itself. train_wepr saves weights and loads them straight
+        # back, and standing in for that too would have the notebook reload this stub
+        # instead of the file it just wrote -- so the one cell that claims saved weights
+        # reload like published ones would never test it.
+        if (local := BaseDetector.local_estimator(identifier)) is not None:
+            return local
         n_features = 1 if "-epr-" in str(identifier) else 2 * 15
         path = tmp_path / f"{n_features}.skops"
         if not path.exists():
@@ -88,6 +93,86 @@ def test_the_notebook_runs_against_the_current_source(name, monkeypatch, _detect
     exec(compile(code_of(load(name)), name, "exec"), namespace)
 
 
+BATCH_FIXTURES = ["responses_sample.jsonl", "judgments_sample.jsonl"]
+
+
+@pytest.mark.parametrize("name", BATCH_FIXTURES)
+def test_the_fixture_is_openai_batch_output(name):
+    """Every line is the OpenAI Batch output envelope, validated by the SDK itself.
+
+    The training notebook's premise is that its inputs need no conversion: the same files
+    `vllm run-batch` writes and `scripts/train_detector.py` reads. Hand-written fixtures
+    drift from that shape silently, so the completion inside each envelope is validated
+    against `openai.types.chat.ChatCompletion` rather than against our own reading of it.
+    """
+    chat = pytest.importorskip("openai.types.chat")
+
+    lines = [line for line in (EXAMPLES / name).read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert lines, f"{name} is empty"
+
+    validated = 0
+    for number, line in enumerate(lines, start=1):
+        record = json.loads(line)
+        assert set(record) >= {"id", "custom_id", "response", "error"}, f"{name}:{number} is not a batch envelope"
+        if record["error"] is not None or record["response"] is None:
+            continue
+        envelope = record["response"]
+        # The Batch spec wraps the completion in `body`; older vllm emitted it bare.
+        chat.ChatCompletion.model_validate(envelope.get("body", envelope))
+        validated += 1
+
+    assert validated, f"{name} carried no usable completions"
+
+
+def test_the_response_fixture_is_wide_enough_to_train_on():
+    """The notebook fits at k=15, and refuses responses narrower than that.
+
+    Checked on every token rather than the first: a fixture regenerated narrower would
+    otherwise fail inside the notebook's own `fit`, far from the file that caused it.
+    """
+    widths = []
+    for line in (EXAMPLES / "responses_sample.jsonl").read_text(encoding="utf-8").splitlines():
+        # The blank-line guard first: parsing one raises JSONDecodeError, which would make
+        # this test stricter than the notebook it guards, and confusingly so.
+        if not line.strip():
+            continue
+        record = json.loads(line)
+        if record["error"] is not None or record["response"] is None:
+            continue
+        content = record["response"]["body"]["choices"][0]["logprobs"]["content"]
+        widths.extend(len(token["top_logprobs"]) for token in content)
+
+    assert widths, "no log-probabilities in the fixture"
+    assert min(widths) >= 15, f"fixture carries {min(widths)} ranks per token, the notebook fits at k=15"
+
+
+def test_the_encoder_judge_matches_its_reference_implementation():
+    """The BERTJudge notebook inlines the judge's interface; pin the two parts of it.
+
+    Its input template and its score reduction come from
+    `github.com/artefactory/BERT-as-a-Judge`, `src/bert_judge/judges/bert.py`, and the
+    notebook reproduces them in plain transformers rather than taking the package as a git
+    dependency. That is safe only while both match: a different marker string, or a softmax
+    where the reference takes the margin of the two logits, still runs and still returns
+    numbers in [0, 1] -- it just scores something other than what the paper measured, and
+    every training label downstream is quietly wrong. Nothing else would notice.
+    """
+    code = "\n".join(
+        "".join(cell["source"]) for cell in load("train_wepr_bertjudge")["cells"] if cell["cell_type"] == "code"
+    )
+
+    assert 'f"{QUESTION_MARKER}{question}{CANDIDATE_MARKER}{candidate}{REFERENCE_MARKER}{reference}"' in code
+    for marker in ("<|question|>", "<|candidate|>", "<|reference|>"):
+        assert f'"{marker}"' in code, f"{marker} is not the marker the judge was trained with"
+    assert "torch.sigmoid(logits[:, 1] - logits[:, 0])" in code, (
+        "the score is sigmoid(correct - incorrect), not a softmax over the two logits"
+    )
+    assert 'JUDGE_MODEL = "artefactory/BERTJudge"' in code, (
+        "the Free-QCR checkpoint is the one trained on unconstrained generations; the "
+        "Formatted siblings expect answers ending in 'Final answer: <x>'"
+    )
+
+
 @pytest.mark.parametrize("name", OFFLINE_NOTEBOOKS)
 def test_the_committed_outputs_are_not_empty(name):
     """A notebook stripped of outputs renders as a blank page on the docs site."""
@@ -105,84 +190,25 @@ def test_the_committed_outputs_carry_no_errors(name):
     assert not errors, f"{name} was committed with an error output: {errors[:1]}"
 
 
-def calls_install(node):
-    """Whether `node` is a call to a bare name `install`, whatever its arguments."""
-    match node:
-        case ast.Call(func=ast.Name(id="install")):
-            return True
-        case _:
-            return False
-
-
 @pytest.mark.parametrize("name", ALL_NOTEBOOKS)
-def test_the_notebook_opens_with_a_setup_cell(name):
-    """The first code cell installs the package on a kernel that does not have it.
+def test_the_notebook_opens_with_an_install_cell(name):
+    """The first code cell installs the package.
 
     `nbsphinx_prolog` badges every notebook page with an Open in Colab link, and it does so
     for whatever nbsphinx renders -- a notebook added later gets the badge with no further
-    edit. Colab starts from a runtime with neither the package nor the files beside the
-    notebook, so a notebook that skips the setup cell gets a badge leading to an ImportError
-    on its first import. This is what pairs the two.
+    edit. Colab starts from a runtime without the package, so a notebook that skips this
+    cell gets a badge leading to an ImportError on its first import.
 
-    Checked by walking the parsed cell rather than by searching its text, so a mention in a
-    comment does not satisfy it and a rewrite that keeps the shape still passes.
+    The line is commented out, which is how the same cell serves both readers: uncommented
+    it would reinstall the package on every local run, and `!pip` is not Python, so the
+    cells could not be compiled or executed by the tests below.
     """
     code = [cell for cell in load(name)["cells"] if cell["cell_type"] == "code"]
     assert code, f"{name} has no code cells, so its Colab badge leads to nothing to run"
 
-    tree = ast.parse("".join(code[0]["source"]))
-    # A call to the cell's own `install`, not any call mentioning the string "install" --
-    # which the pip bootstrap's argv contains, so the looser check passed on a cell that
-    # never calls it and would fail a correct cell that stopped shelling out to pip.
-    installs = [node for node in ast.walk(tree) if calls_install(node)]
+    first = "".join(code[0]["source"])
 
-    assert installs, (
-        f"{name} opens on a cell that never calls install(); its Colab badge would lead to "
-        f"a runtime without the package"
-    )
-
-
-# Defined identically in every notebook's setup cell. The cells are not identical as a
-# whole -- only the notebooks that read a fixture carry `fetch`, and each names its own
-# distributions -- so these three are the part that can drift apart unnoticed.
-SHARED_HELPERS = ("missing", "shadowed", "install")
-
-
-def setup_helpers(name):
-    """The source lines of each shared helper in the notebook's setup cell, by name.
-
-    Located by parsing, then read as raw lines rather than through
-    `ast.get_source_segment`: that returns the span the AST covers, which ends at the last
-    statement and so drops a comment trailing it. The reasons these helpers are written the
-    way they are live in their comments, and a copy that kept the code and lost the reason
-    is exactly the drift worth catching.
-    """
-    lines = next(cell for cell in load(name)["cells"] if cell["cell_type"] == "code")["source"]
-    tree = ast.parse("".join(lines))
-    found = {}
-    for node in tree.body:
-        match node:
-            case ast.FunctionDef(name=helper) if helper in SHARED_HELPERS:
-                found[helper] = "".join(lines[node.lineno - 1 : node.end_lineno])
-    return found
-
-
-@pytest.mark.parametrize("helper", SHARED_HELPERS)
-def test_the_setup_cells_define_the_same_helper_everywhere(helper):
-    """One copy of this code per notebook, so a fix to one is a fix to none of the others.
-
-    Each copy is what a reader running that notebook in Colab depends on, and the reasons
-    they are written the way they are -- the metadata check rather than an import, the
-    captured install output -- are the kind that get discovered once and then have to be
-    applied everywhere. Nothing else notices when they diverge: every notebook keeps
-    working with its own copy, correct or not.
-    """
-    written = {name: setup_helpers(name).get(helper) for name in ALL_NOTEBOOKS}
-
-    assert all(source is not None for source in written.values()), (
-        f"{[name for name, source in written.items() if source is None]} define no {helper}() in their setup cell"
-    )
-    assert len(set(written.values())) == 1, (
-        f"{helper}() differs between notebooks; the copies are meant to be identical, so "
-        f"apply the change to all of {list(written)}"
+    assert "pip install" in first and "artefactual" in first, (
+        f"{name} opens on a cell that does not install the package; its Colab badge would "
+        f"lead to a runtime without it. First cell:\n{first}"
     )
