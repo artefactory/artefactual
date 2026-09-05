@@ -31,6 +31,7 @@ The fitted estimator is written to `--output` as a `.skops` file, the shape
 `epr()` and `wepr()` read back; the evaluation report goes to `--report` as JSON.
 """
 
+import contextlib
 import json
 from pathlib import Path
 from typing import Any
@@ -41,6 +42,7 @@ from sklearn.metrics import average_precision_score, classification_report, roc_
 from sklearn.model_selection import train_test_split
 from sklearn.utils import resample
 
+from artefactual.preprocessing.response_models import BatchRequestOutput
 from artefactual.scoring import BaseDetector
 from artefactual.scoring.base_detector import DEFAULT_K
 from artefactual.scoring.entropy_methods.entropy_transformer import STRATEGIES
@@ -68,23 +70,27 @@ flags.mark_flags_as_required(["responses", "judgments"])
 def read_batch_output(path: Path) -> dict[str, Any]:
     """Index a `vllm run-batch` output file by `custom_id`.
 
-    Lines whose request failed carry `error` and a null `response`; they are dropped and
-    counted rather than crashing the run, because one bad row should not cost a batch.
-
-    `run-batch` follows the OpenAI Batch output spec, so `response` is an envelope --
-    `{status_code, request_id, body}` -- and the ChatCompletion is its `body`. Older vllm
-    put the completion directly in `response`, so unwrap only when the envelope is there.
+    `BatchRequestOutput` owns the shape: the OpenAI Batch envelope, the older vllm lines
+    that put the completion straight in `response`, and the `custom_id` every stage joins
+    on. Lines whose request failed yield no completion; they are dropped and counted
+    rather than crashing the run, because one bad row should not cost a batch. A repeated
+    `custom_id` is a different matter and does raise -- it is the key the responses are
+    paired to their verdicts by, and a silent overwrite here is a mislabelled row later.
     """
     rows, failed = {}, 0
     for line in path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
-        record = json.loads(line)
-        if record.get("error") is not None or record.get("response") is None:
+        record = BatchRequestOutput.model_validate_json(line)
+        if record.completion is None:
             failed += 1
             continue
-        response = record["response"]
-        rows[record["custom_id"]] = response.get("body", response)
+        if record.custom_id in rows:
+            # Indexing by custom_id, so a repeat would silently replace the first line and
+            # the count would still look right. The whole pipeline joins on this id.
+            msg = f"{path.name}: custom_id {record.custom_id!r} appears more than once; the join would be ambiguous."
+            raise ValueError(msg)
+        rows[record.custom_id] = record.completion
     if failed:
         logging.warning(f"{path.name}: dropped {failed} failed request(s)")
     return rows
@@ -96,17 +102,24 @@ def parse_judgment(completion: Any) -> bool | None:
     The judge is asked for `{"judgment": true/false, "explanation": ...}`. Models wrap
     that in prose or fences often enough that a bare `json.loads` is not safe, so fall
     back to scanning for the literal token.
+
+    Only a real boolean is taken from the parsed object. `bool("false")` is True, so a
+    judge that emits the value as a string -- which a loose schema invites -- would mark
+    every wrong answer correct, silently, leaving a label distribution that still looks
+    plausible. Such a reply falls through to the scan, and is counted as unparsed if that
+    finds nothing either.
     """
     content = completion["choices"][0]["message"]["content"]
-    try:
-        return bool(json.loads(content)["judgment"])
-    except (json.JSONDecodeError, KeyError, TypeError):
-        lowered = content.lower()
-        if '"judgment": true' in lowered or lowered.strip() in {"true", "true."}:
-            return True
-        if '"judgment": false' in lowered or lowered.strip() in {"false", "false."}:
-            return False
-        return None
+    with contextlib.suppress(json.JSONDecodeError, KeyError, TypeError):
+        judgment = json.loads(content)["judgment"]
+        if isinstance(judgment, bool):
+            return judgment
+    lowered = content.lower() if isinstance(content, str) else ""
+    if '"judgment": true' in lowered or lowered.strip() in {"true", "true."}:
+        return True
+    if '"judgment": false' in lowered or lowered.strip() in {"false", "false."}:
+        return False
+    return None
 
 
 def join_on_custom_id(responses: dict[str, Any], judgments: dict[str, Any]) -> tuple[list[Any], np.ndarray]:
