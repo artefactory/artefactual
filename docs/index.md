@@ -21,7 +21,7 @@ requirements and the published results. This site covers using a detector in dep
 - {doc}`guide/scoring` — choosing a detector, thresholds, batches, traces, training
 - {doc}`guide/how-it-works` — the three pipeline stages and the two entropy reductions
 - {doc}`guide/reference` — the rank count, weight-file layout, accepted response shapes
-- {doc}`examples/index` — runnable notebooks, no GPU or API key required
+- {doc}`examples/index` — runnable notebooks; three of the six need no GPU or API key
 - {doc}`api` — generated signatures
 
 Reproducing the ECIR 2026 experiments end to end is documented in the
