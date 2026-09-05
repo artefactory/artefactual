@@ -212,8 +212,22 @@ docs/_extra/
 # Build output: the hatch-vcs hook writes the version here from the git tag.
 src/artefactual/_version.py
 
-# Notebook scratch: the training notebook writes a detector when it runs.
+# Notebook scratch. The training notebook writes a detector; the pipeline notebook
+# writes the three files it produces. Listed after the `!docs/examples/*.json`
+# un-ignore above, so the later rule wins for questions.json -- the shipped *_sample.*
+# fixtures are named differently and stay tracked.
 docs/examples/*.skops
 # nbQA lints a notebook by writing it out as a `.py` beside itself; an interrupted hook
 # leaves those behind, in the one directory whose contents are otherwise all deliberate.
 docs/examples/*_nbqa_ipynb.py
+docs/examples/questions.json
+docs/examples/responses.jsonl
+docs/examples/judgments.jsonl
+
+# The same files again at the root, because a notebook writes to the kernel's working
+# directory and `docs/examples/index.md` tells the reader to launch Jupyter from the
+# repository root. Anchored with a leading slash so they only match there; `**/*.json`
+# above already covers questions.json wherever it lands.
+/responses.jsonl
+/judgments.jsonl
+/*.skops
