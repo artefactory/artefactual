@@ -10,6 +10,7 @@ The Langfuse notebook generates against a live endpoint, so it is checked static
 imports resolve, names are defined -- rather than executed.
 """
 
+import ast
 import json
 from pathlib import Path
 
@@ -102,3 +103,32 @@ def test_the_committed_outputs_carry_no_errors(name):
     errors = [o for c in notebook["cells"] for o in c.get("outputs", []) if o.get("output_type") == "error"]
 
     assert not errors, f"{name} was committed with an error output: {errors[:1]}"
+
+
+@pytest.mark.parametrize("name", ALL_NOTEBOOKS)
+def test_the_notebook_opens_with_a_setup_cell(name):
+    """The first code cell installs the package on a kernel that does not have it.
+
+    `nbsphinx_prolog` badges every notebook page with an Open in Colab link, and it does so
+    for whatever nbsphinx renders -- a notebook added later gets the badge with no further
+    edit. Colab starts from a runtime with neither the package nor the files beside the
+    notebook, so a notebook that skips the setup cell gets a badge leading to an ImportError
+    on its first import. This is what pairs the two.
+
+    Checked by walking the parsed cell rather than by searching its text, so a mention in a
+    comment does not satisfy it and a rewrite that keeps the shape still passes.
+    """
+    code = [cell for cell in load(name)["cells"] if cell["cell_type"] == "code"]
+    assert code, f"{name} has no code cells, so its Colab badge leads to nothing to run"
+
+    tree = ast.parse("".join(code[0]["source"]))
+    installs = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and any(isinstance(argument, ast.Constant) and argument.value == "install" for argument in ast.walk(node))
+    ]
+
+    assert installs, (
+        f"{name} opens on a cell that installs nothing; its Colab badge would lead to a runtime without the package"
+    )

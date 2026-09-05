@@ -64,6 +64,42 @@ myst_enable_extensions = [
 # nbsphinx settings
 nbsphinx_execute = "never"
 
+# A badge above every notebook page that opens the same file in Colab, so a reader can run
+# the example without a checkout. Colab loads a notebook from GitHub by owner, repo, branch
+# and path, and all four have to be right or the link 404s -- so the first three come from
+# the environment where CI sets them, and fall back to this repository's own values for a
+# local build. A fork's docs then link into the fork, and a renamed default branch does not
+# silently break every badge on the site.
+#
+# A notebook on an unmerged branch still gets a badge that 404s on a `main` build: the file
+# is not there yet. That resolves itself when the branch lands.
+#
+# `env.doc2path(..., base=None)` is the source file relative to the source directory,
+# extension included (`examples/epr_usage_demo.ipynb`), so prefixing `docs/` gives the
+# file's path in the repository. `|string` is required rather than decorative: doc2path
+# returns a `_StrPath`, which subclasses `PurePath` and not `str`, so `+` on it raises.
+#
+# The prolog applies to every notebook nbsphinx renders. The Quarto decks under
+# `presentations/` are excluded from the build by `exclude_patterns` below, so they never
+# see it.
+_REPOSITORY = os.environ.get("GITHUB_REPOSITORY", "artefactory/artefactual")
+_BRANCH = os.environ.get("GITHUB_REF_NAME", "main")
+# One placeholder and one substitution, rather than Jinja variables: the prolog is
+# rendered per document with a context nbsphinx owns, so values from here reach it by
+# being in the string already.
+nbsphinx_prolog = """
+{% set docname = "docs/" + env.doc2path(env.docname, base=None)|string %}
+
+.. raw:: html
+
+    <p style="margin-bottom: 1.5rem">
+      <a href="COLAB_PREFIX{{ docname }}" target="_blank" rel="noopener">
+        <img src="https://colab.research.google.com/assets/colab-badge.svg"
+             alt="Open {{ docname }} in Colab" style="vertical-align: middle">
+      </a>
+    </p>
+""".replace("COLAB_PREFIX", f"https://colab.research.google.com/github/{_REPOSITORY}/blob/{_BRANCH}/")
+
 # sphinx-llms-txt settings
 #
 # The extension reads Sphinx *source* files, not rendered output, which decides everything
