@@ -274,6 +274,9 @@ ban-relative-imports = "all"
 fixture-parentheses = false
 mark-parentheses = false
 
+# Not a pairing directive and not read by any hook -- pairing needs `formats`, which
+# nothing here sets. It shapes `jupytext --to py:percent`, the ad-hoc conversion that is
+# the reason jupytext stays in the dev group at all, so it stays with it.
 [tool.jupytext]
 cell_markers = '"""'
 
