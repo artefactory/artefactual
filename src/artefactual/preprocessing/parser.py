@@ -20,9 +20,42 @@ from artefactual.preprocessing.openai_parser import (
     sampled_tokens_logprobs_chat_completion_api,
     sampled_tokens_logprobs_responses_api,
 )
-from artefactual.preprocessing.response_models import ChatCompletion, ResponsesPayload
+from artefactual.preprocessing.response_models import BatchRequestOutput, ChatCompletion, ResponsesPayload
 
-_RESPONSE_ADAPTER = TypeAdapter(ChatCompletion | ResponsesPayload)
+_RESPONSE_ADAPTER = TypeAdapter(ChatCompletion | ResponsesPayload | BatchRequestOutput)
+
+# The payloads a batch line can carry. `BatchRequestOutput` is deliberately absent: a body
+# is a completion, never another batch line, and including it would let a body with a
+# `custom_id` validate as an envelope and recurse.
+_PAYLOAD_ADAPTER = TypeAdapter(ChatCompletion | ResponsesPayload)
+
+
+def _payload_of(record: BatchRequestOutput) -> ChatCompletion | ResponsesPayload:
+    """The payload a batch line carries, refusing a line that carries none.
+
+    Refused rather than skipped. This step emits one row per sampled sequence, so dropping
+    a failed line here would shift every later response against its label -- a silently
+    mistrained detector rather than an error. Filter the failed lines out before parsing,
+    which is where their failure can still be reported against a `custom_id`.
+
+    The body goes back through the same union the entry points use, so a batch of
+    Responses-API calls parses like any other and neither failure arrives as a bare
+    `ValidationError` that names no line.
+    """
+    if record.completion is None:
+        msg = (
+            f"Batch line {record.custom_id!r} carries no completion: {record.failure}. "
+            f"Drop failed lines before parsing -- keeping them would pair every later "
+            f"response with the wrong label."
+        )
+        raise ValueError(msg)
+    try:
+        return _PAYLOAD_ADAPTER.validate_python(record.completion)
+    except ValidationError as error:
+        msg = (
+            f"Batch line {record.custom_id!r} carries a body that is neither a chat completion nor a Responses payload."
+        )
+        raise TypeError(msg) from error
 
 
 @singledispatch
@@ -42,6 +75,11 @@ def _(response: ResponsesPayload) -> list[dict[int, list[float]]]:
     return process_openai_responses_api(response)
 
 
+@_top_logprobs.register
+def _(response: BatchRequestOutput) -> list[dict[int, list[float]]]:
+    return _top_logprobs(_payload_of(response))
+
+
 @singledispatch
 def _sampled_logprobs(response: Any) -> list[np.ndarray]:
     """Extract sampled-token logprobs from a validated response. Register one per format."""
@@ -57,6 +95,11 @@ def _(response: ChatCompletion) -> list[np.ndarray]:
 @_sampled_logprobs.register
 def _(response: ResponsesPayload) -> list[np.ndarray]:
     return sampled_tokens_logprobs_responses_api(response)
+
+
+@_sampled_logprobs.register
+def _(response: BatchRequestOutput) -> list[np.ndarray]:
+    return _sampled_logprobs(_payload_of(response))
 
 
 class LogProbParser(BaseEstimator, TransformerMixin):
@@ -94,10 +137,11 @@ class LogProbParser(BaseEstimator, TransformerMixin):
             an empty `(0, 0, 0)` array.
 
         Raises:
-            TypeError: If a response is not a recognised completion format.
+            TypeError: If a response is not a recognised completion format, including a
+                batch line whose body is not one.
             ValueError: If a logprob is missing, non-finite or positive, if no response
-                carries any log-probabilities, or if a response carries fewer than `k`
-                ranks per token.
+                carries any log-probabilities, if a response carries fewer than `k` ranks
+                per token, or if a batch line carries no completion at all.
         """
         parsed = parse_top_logprobs(X)
         if not parsed:
@@ -198,7 +242,9 @@ def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
         position is still counted so token indices track the generated text.
 
     Raises:
-        TypeError: If the output is not a recognised completion format.
+        TypeError: If the output is not a recognised completion format, including a batch
+            line whose body is not one.
+        ValueError: If a batch line carries no completion, because its request failed.
     """
     if is_bearable(outputs, list | tuple):
         return [sequence for response in outputs for sequence in parse_top_logprobs(response)]
@@ -225,7 +271,9 @@ def parse_sampled_token_logprobs(outputs: Any) -> list[np.ndarray]:
         One 1-D array per sequence, holding the sampled token logprobs in order.
 
     Raises:
-        TypeError: If the output is not a recognised completion format.
+        TypeError: If the output is not a recognised completion format, including a batch
+            line whose body is not one.
+        ValueError: If a batch line carries no completion, because its request failed.
     """
     try:
         response = _RESPONSE_ADAPTER.validate_python(outputs, from_attributes=True)

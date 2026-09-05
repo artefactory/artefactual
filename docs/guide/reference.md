@@ -67,8 +67,14 @@ WEPR weights carry a `mean_rank_i` and `max_rank_i` pair for each rank `1..k`:
 
 ## Input formats
 
-Both OpenAI wire formats are accepted, as SDK objects or plain mappings. A minimal
-Responses API payload looks like:
+Three shapes are accepted, as SDK objects or plain mappings: a chat completion, a
+Responses API payload, and one line of an OpenAI Batch output file -- which is also what
+`vllm run-batch` writes, so a batch file is scored as it is read. A batch line whose
+request failed is *refused*, not skipped: this step emits one row per line, and dropping
+one would shift every later response against its label. Filter the failed lines out first,
+where their `custom_id` can still be reported.
+
+A minimal Responses API payload looks like:
 
 ```python
 response = {
