@@ -188,3 +188,23 @@ def test_training_refuses_a_batch_with_no_shared_ids(pack, tmp_path):
 
     with pytest.raises(ValueError, match="No custom_id is present in both files"):
         tc.join_on_custom_id(tc.read_batch_output(pack / "responses.jsonl"), tc.read_batch_output(other))
+
+
+def test_training_refuses_a_file_that_repeats_a_custom_id(pack, tmp_path):
+    """A repeat would replace the first line and leave the pair count looking right.
+
+    The id is what pairs a generation with its verdict, so two lines claiming the same one
+    make the join ambiguous -- and the ambiguity resolves silently, which is why it raises
+    here rather than being logged.
+    """
+    import sys
+
+    sys.path.insert(0, str(TRAIN.parent))
+    import train_detector as tc
+
+    responses = (pack / "responses.jsonl").read_text(encoding="utf-8")
+    doubled = tmp_path / "doubled.jsonl"
+    doubled.write_text(responses + responses.splitlines()[0] + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="appears more than once"):
+        tc.read_batch_output(doubled)

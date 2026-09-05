@@ -372,12 +372,19 @@ One number should come back, and it must be at least `--k`. If it is smaller, re
 steps 2 and 3 — the judgments are unaffected and do not need regenerating.
 
 **`joined N pairs on custom_id` reports fewer than the question count.** Some requests
-failed. Lines whose request errored carry `"error"` and a null `"response"`; they are
-dropped and counted rather than crashing the run. Check the count in the log and inspect:
+failed, and a failed line is dropped and counted rather than crashing the run. A line
+reports its failure in one of two ways, so looking only at `error` misses half of them:
+`vllm run-batch` sets `error` and leaves `response` null, while a request the server
+rejects comes back with `error` null, a non-2xx `status_code`, and an error object sitting
+where the completion would be.
 
 ```bash
-jq -c 'select(.error != null) | {custom_id, error}' out/responses.jsonl
+jq -c 'select(.error != null or (.response.status_code // 200) >= 300)
+       | {custom_id, status: .response.status_code, error}' out/responses.jsonl
 ```
+
+(A line carrying neither a completion nor a stated failure is dropped and counted too; the
+log's number is the one to trust.)
 
 **`dropped N verdict(s) that could not be parsed`.** The judge is asked for
 `{"judgment": true|false, "explanation": "..."}` and returned something else. Inspect a
