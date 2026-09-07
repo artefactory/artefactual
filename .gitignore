@@ -223,6 +223,7 @@ docs/examples/*_nbqa_ipynb.py
 docs/examples/questions.json
 docs/examples/responses.jsonl
 docs/examples/judgments.jsonl
+docs/examples/scores.jsonl
 
 # The same files again at the root, because a notebook writes to the kernel's working
 # directory and `docs/examples/index.md` tells the reader to launch Jupyter from the
@@ -230,4 +231,5 @@ docs/examples/judgments.jsonl
 # above already covers questions.json wherever it lands.
 /responses.jsonl
 /judgments.jsonl
+/scores.jsonl
 /*.skops
