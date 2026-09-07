@@ -26,9 +26,9 @@ class UncalibratedModelError(ArtefactualError):
     """
 
     _MESSAGE = (
-        "To enable this detector specify a `pretrained_model_name_or_path` — a model name "
-        "from the registry or a path to a weights file. To fit your own calibration "
-        "instead, pass `trainable=True` and call `fit`."
+        "To enable this detector specify a `pretrained_model_name_or_path` — a detector's "
+        "Hugging Face repository id or a path to a weights file. To fit your own "
+        "calibration instead, pass `trainable=True` and call `fit`."
     )
 
     def __init__(self, message: str = _MESSAGE) -> None:

@@ -103,7 +103,8 @@ class BaseDetector(Pipeline, EstimatorPersistenceMixin):
         the reduction as data.
 
         Args:
-            pretrained_model_name_or_path: A registry model name, or a path to a file.
+            pretrained_model_name_or_path: A detector's Hugging Face repository id, or a
+                path to a file.
             reduction: `"epr"` or `"wepr"`.
             k: Rank count the responses carry.
 
@@ -197,12 +198,14 @@ def epr(
     labelled data to fit its larger coefficient vector.
 
     Example:
-        >>> detector = epr("mistralai/Ministral-8B-Instruct-2410")
+        >>> detector = epr("chicham/artefactual-epr-ministral")
         >>> detector.predict_proba(response)[:, 1]  # doctest: +SKIP
 
     Args:
-        pretrained_model_name_or_path: A model name from the registry, or a path to a
-            detector file. Omit it only together with `trainable=True`.
+        pretrained_model_name_or_path: A detector's Hugging Face repository id, or a path
+            to a detector file. The detector trained for the model being scored, not
+            that model: a generator's repository holds no `model.skops`. Omit it only
+            together with `trainable=True`.
         k: Rank count the responses carry, and the width EPR averages over. Responses
             carrying fewer than `k` ranks are rejected when parsed.
         trainable: Return an *unfitted* detector to calibrate on your own labelled data.
@@ -249,12 +252,14 @@ def wepr(
     coefficients.
 
     Example:
-        >>> detector = wepr("mistralai/Ministral-8B-Instruct-2410")
+        >>> detector = wepr("chicham/artefactual-wepr-ministral")
         >>> detector.predict_proba(response)[:, 1]  # doctest: +SKIP
 
     Args:
-        pretrained_model_name_or_path: A model name from the registry, or a path to a
-            weights file. Omit it only together with `trainable=True`.
+        pretrained_model_name_or_path: A detector's Hugging Face repository id, or a path
+            to a weights file. The detector trained for the model being scored, not that
+            model: a generator's repository holds no `model.skops`. Omit it only
+            together with `trainable=True`.
         k: Rank count the responses carry. The weights must cover exactly this many ranks,
             and responses carrying fewer are rejected when parsed.
         trainable: Return an *unfitted* detector to calibrate on your own labelled data.
