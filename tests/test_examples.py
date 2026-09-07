@@ -105,6 +105,15 @@ def test_the_committed_outputs_carry_no_errors(name):
     assert not errors, f"{name} was committed with an error output: {errors[:1]}"
 
 
+def calls_install(node):
+    """Whether `node` is a call to a bare name `install`, whatever its arguments."""
+    match node:
+        case ast.Call(func=ast.Name(id="install")):
+            return True
+        case _:
+            return False
+
+
 @pytest.mark.parametrize("name", ALL_NOTEBOOKS)
 def test_the_notebook_opens_with_a_setup_cell(name):
     """The first code cell installs the package on a kernel that does not have it.
@@ -122,15 +131,14 @@ def test_the_notebook_opens_with_a_setup_cell(name):
     assert code, f"{name} has no code cells, so its Colab badge leads to nothing to run"
 
     tree = ast.parse("".join(code[0]["source"]))
-    installs = [
-        node
-        for node in ast.walk(tree)
-        if isinstance(node, ast.Call)
-        and any(isinstance(argument, ast.Constant) and argument.value == "install" for argument in ast.walk(node))
-    ]
+    # A call to the cell's own `install`, not any call mentioning the string "install" --
+    # which the pip bootstrap's argv contains, so the looser check passed on a cell that
+    # never calls it and would fail a correct cell that stopped shelling out to pip.
+    installs = [node for node in ast.walk(tree) if calls_install(node)]
 
     assert installs, (
-        f"{name} opens on a cell that installs nothing; its Colab badge would lead to a runtime without the package"
+        f"{name} opens on a cell that never calls install(); its Colab badge would lead to "
+        f"a runtime without the package"
     )
 
 
