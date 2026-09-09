@@ -13,8 +13,9 @@ from hypothesis import given
 from hypothesis import strategies as st
 from pydantic import ValidationError
 
+from artefactual.preprocessing import index_by_custom_id, read_batch, read_judgment
 from artefactual.preprocessing.parser import _RESPONSE_ADAPTER, LogProbParser
-from artefactual.preprocessing.response_models import BatchRequestOutput
+from artefactual.preprocessing.response_models import BatchRequestOutput, ChatCompletion
 
 COMPLETION = {
     "id": "chatcmpl-1",
@@ -277,3 +278,146 @@ def test_a_line_with_no_envelope_never_carries_a_completion(error):
 
     assert record.completion is None
     assert record.failure is not None
+
+
+# --- the generated text, which the scoring path does not read but a caller labels from ---
+
+
+def test_a_chat_completion_carries_its_generated_text():
+    """`message.content` survives validation, so labelling never re-indexes the raw dict.
+
+    A batch file is scored and labelled from the same line: the detector reads the
+    distribution, and whoever assigns `y` reads what the model actually said -- or, for a
+    judge's reply, the verdict written in it. Modelling only the logprob path would leave
+    that second reader digging through `["choices"][0]["message"]["content"]` on a payload
+    the envelope had already validated.
+    """
+    completion = ChatCompletion.model_validate(COMPLETION)
+
+    assert completion.choices[0].message.content == "Sunset Boulevard"
+
+
+def test_a_choice_without_a_message_validates():
+    """A Responses-API payload and a streamed delta both arrive without one."""
+    completion = ChatCompletion.model_validate({"choices": [{"index": 0, "logprobs": None}]})
+
+    assert completion.choices[0].message is None
+
+
+def test_the_text_is_read_through_the_envelope_a_batch_line_carries():
+    """The two halves compose: the line yields a completion, the completion yields its text."""
+    record = BatchRequestOutput.model_validate(line(response={"status_code": 200, "body": COMPLETION}))
+
+    assert ChatCompletion.model_validate(record.completion).choices[0].message.content == "Sunset Boulevard"
+
+
+@pytest.mark.parametrize(
+    ("content", "expected"),
+    [
+        pytest.param('{"judgment": true, "explanation": "matched"}', True, id="as-asked"),
+        pytest.param('{"judgment": false}', False, id="no-explanation"),
+        pytest.param('```json\n{"judgment": true}\n```', True, id="fenced"),
+        pytest.param('Sure!\n```\n{"judgment": false}\n```\nHope that helps.', False, id="fenced-in-prose"),
+        pytest.param("true", True, id="bare-word"),
+        pytest.param("False.", False, id="bare-word-punctuated"),
+        pytest.param('{"judgment": "false"}', None, id="boolean-as-a-string"),
+        pytest.param("I cannot decide.", None, id="no-verdict"),
+        pytest.param("", None, id="empty"),
+    ],
+)
+def test_a_judge_reply_is_read_however_the_model_wrapped_it(content, expected):
+    """`bool("false")` is True, so a stringified verdict must not be taken for one.
+
+    The rest are shapes a judge actually returns: the object it was asked for, that object
+    inside a Markdown fence, the fence inside an apology, and the bare word.
+    """
+    assert read_judgment({"choices": [{"message": {"content": content}}]}) is expected
+
+
+@pytest.mark.parametrize(
+    "completion",
+    [
+        pytest.param(None, id="a-failed-line-carries-none"),
+        pytest.param({"error": {"message": "boom"}}, id="a-rejected-request-carries-an-error-object"),
+        pytest.param({"choices": []}, id="no-choices"),
+        pytest.param({"choices": [{"index": 0}]}, id="no-message"),
+        pytest.param({"choices": [{"message": {"role": "assistant"}}]}, id="no-content"),
+    ],
+)
+def test_a_completion_carrying_no_reply_yields_no_verdict(completion):
+    """Every kind of nothing answers the same way, so a caller branches once, not five times."""
+    assert read_judgment(completion) is None
+
+
+def write_batch(tmp_path, records):
+    path = tmp_path / "batch.jsonl"
+    path.write_text("".join(json.dumps(record) + "\n" for record in records), encoding="utf-8")
+    return path
+
+
+def test_a_batch_file_is_read_line_by_line_in_file_order(tmp_path):
+    path = write_batch(
+        tmp_path,
+        [
+            line(custom_id="q-2", response={"status_code": 200, "body": COMPLETION}),
+            line(custom_id="q-1", response={"status_code": 200, "body": COMPLETION}),
+        ],
+    )
+
+    assert [row.custom_id for row in read_batch(path)] == ["q-2", "q-1"]
+
+
+def test_blank_lines_are_skipped(tmp_path):
+    path = write_batch(tmp_path, [line(response={"status_code": 200, "body": COMPLETION})])
+    path.write_text("\n" + path.read_text(encoding="utf-8") + "   \n", encoding="utf-8")
+
+    assert len(read_batch(path)) == 1
+
+
+def test_a_failed_line_is_returned_rather_than_dropped(tmp_path):
+    path = write_batch(
+        tmp_path,
+        [
+            line(custom_id="q-1", response={"status_code": 200, "body": COMPLETION}),
+            line(custom_id="q-2", error={"message": "upstream timeout"}),
+        ],
+    )
+
+    rows = read_batch(path)
+
+    assert [row.failure is None for row in rows] == [True, False]
+    assert list(index_by_custom_id(rows)) == ["q-1"]
+
+
+def test_a_repeated_custom_id_is_refused(tmp_path):
+    path = write_batch(
+        tmp_path,
+        [
+            line(custom_id="q-1", response={"status_code": 200, "body": COMPLETION}),
+            line(custom_id="q-1", response={"status_code": 200, "body": COMPLETION}),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="'q-1' appears more than once"):
+        read_batch(path)
+
+
+def test_a_repeated_custom_id_is_refused_even_when_one_of_the_two_failed(tmp_path):
+    """The ambiguity is in the key, not in the payload: a failed first occurrence still collides."""
+    path = write_batch(
+        tmp_path,
+        [
+            line(custom_id="q-1", error={"message": "upstream timeout"}),
+            line(custom_id="q-1", response={"status_code": 200, "body": COMPLETION}),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="'q-1' appears more than once"):
+        read_batch(path)
+
+
+def test_a_line_that_is_not_a_batch_record_is_refused(tmp_path):
+    path = write_batch(tmp_path, [{"custom_id": "q-1"}])
+
+    with pytest.raises(ValidationError):
+        read_batch(path)

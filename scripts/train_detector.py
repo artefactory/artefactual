@@ -13,7 +13,8 @@ so a reordered or partially failed batch cannot silently train on mismatched pai
 `--responses` holds the generations, whose `logprobs`/`top_logprobs` the detector scores.
 `--judgments` holds the LLM-as-a-judge verdicts, as JSON `{"judgment": true|false}` in the
 message content; `judgment: true` means the answer was correct, so the training label is
-its negation -- 1 marks a hallucination.
+its negation -- 1 marks a hallucination. `read_judgment` owns that reading, including the
+fenced and prose-wrapped replies a model actually returns.
 
 The labelled set is split once, stratified: the detector is fitted on the training part and
 then scored on the held-out part. The numbers therefore describe *the model in `--output`*,
@@ -31,7 +32,6 @@ The fitted estimator is written to `--output` as a `.skops` file, the shape
 `epr()` and `wepr()` read back; the evaluation report goes to `--report` as JSON.
 """
 
-import contextlib
 import json
 from pathlib import Path
 from typing import Any
@@ -42,7 +42,7 @@ from sklearn.metrics import average_precision_score, classification_report, roc_
 from sklearn.model_selection import train_test_split
 from sklearn.utils import resample
 
-from artefactual.preprocessing.response_models import BatchRequestOutput
+from artefactual.preprocessing import index_by_custom_id, read_batch, read_judgment
 from artefactual.scoring import BaseDetector
 from artefactual.scoring.base_detector import DEFAULT_K
 from artefactual.scoring.entropy_methods.entropy_transformer import STRATEGIES
@@ -67,62 +67,18 @@ flags.DEFINE_integer("seed", SEED, "seed for the split and the resampling")
 flags.mark_flags_as_required(["responses", "judgments"])
 
 
-def read_batch_output(path: Path) -> dict[str, Any]:
-    """Index a `vllm run-batch` output file by `custom_id`.
+def read_responses(path: Path) -> dict[str, Any]:
+    """Index a `vllm run-batch` output file by `custom_id`, dropping the failed requests.
 
-    `BatchRequestOutput` owns the shape: the OpenAI Batch envelope and the `custom_id`
-    every stage joins on. Lines whose request failed yield no completion; they are dropped
-    and counted
-    rather than crashing the run, because one bad row should not cost a batch. A repeated
-    `custom_id` is a different matter and does raise, whether or not either line failed --
-    it is the key the responses are paired to their verdicts by, and a silent overwrite
-    here is a mislabelled row later.
+    `read_batch` owns the shape and the duplicate-`custom_id` refusal. What is added here is
+    the count: a line whose request failed carries no completion, and dropping it silently
+    would hide a batch that half succeeded.
     """
-    rows, seen, failed = {}, set(), 0
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
-            continue
-        record = BatchRequestOutput.model_validate_json(line)
-        # Checked against every id read, not just the ones that produced a row: a repeat
-        # whose first occurrence failed is as ambiguous as any other, and it would slip
-        # past a check made after the failure skip.
-        if record.custom_id in seen:
-            msg = f"{path.name}: custom_id {record.custom_id!r} appears more than once; the join would be ambiguous."
-            raise ValueError(msg)
-        seen.add(record.custom_id)
-        if record.completion is None:
-            failed += 1
-            continue
-        rows[record.custom_id] = record.completion
-    if failed:
+    rows = read_batch(path)
+    kept = index_by_custom_id(rows)
+    if failed := len(rows) - len(kept):
         logging.warning(f"{path.name}: dropped {failed} failed request(s)")
-    return rows
-
-
-def parse_judgment(completion: Any) -> bool | None:
-    """Read the judge verdict out of a completion.
-
-    The judge is asked for `{"judgment": true/false, "explanation": ...}`. Models wrap
-    that in prose or fences often enough that a bare `json.loads` is not safe, so fall
-    back to scanning for the literal token.
-
-    Only a real boolean is taken from the parsed object. `bool("false")` is True, so a
-    judge that emits the value as a string -- which a loose schema invites -- would mark
-    every wrong answer correct, silently, leaving a label distribution that still looks
-    plausible. Such a reply falls through to the scan, and is counted as unparsed if that
-    finds nothing either.
-    """
-    content = completion["choices"][0]["message"]["content"]
-    with contextlib.suppress(json.JSONDecodeError, KeyError, TypeError):
-        judgment = json.loads(content)["judgment"]
-        if isinstance(judgment, bool):
-            return judgment
-    lowered = content.lower() if isinstance(content, str) else ""
-    if '"judgment": true' in lowered or lowered.strip() in {"true", "true."}:
-        return True
-    if '"judgment": false' in lowered or lowered.strip() in {"false", "false."}:
-        return False
-    return None
+    return {custom_id: row.completion for custom_id, row in kept.items()}
 
 
 def join_on_custom_id(responses: dict[str, Any], judgments: dict[str, Any]) -> tuple[list[Any], np.ndarray]:
@@ -145,7 +101,7 @@ def join_on_custom_id(responses: dict[str, Any], judgments: dict[str, Any]) -> t
 
     x, y, unparsed = [], [], 0
     for custom_id in shared:
-        judgment = parse_judgment(judgments[custom_id])
+        judgment = read_judgment(judgments[custom_id])
         if judgment is None:
             unparsed += 1
             continue
@@ -234,7 +190,7 @@ def main(argv: list[str]) -> None:
         msg = f"unexpected positional argument(s): {argv[1:]}"
         raise app.UsageError(msg)
 
-    x, y = join_on_custom_id(read_batch_output(Path(FLAGS.responses)), read_batch_output(Path(FLAGS.judgments)))
+    x, y = join_on_custom_id(read_responses(Path(FLAGS.responses)), read_responses(Path(FLAGS.judgments)))
 
     if FLAGS.test_size > 0:
         x_train, x_test, y_train, y_test = split_labelled_set(x, y, FLAGS.test_size, FLAGS.seed)
