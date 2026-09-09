@@ -1,7 +1,8 @@
 """Typed models for the completion formats the parsers consume.
 
-Only the logprob path is modelled; `extra="ignore"` drops the rest of the payload.
-`from_attributes=True` accepts both a raw mapping and an attribute-style object.
+The logprob path and the generated text are modelled; `extra="ignore"` drops the rest of
+the payload. `from_attributes=True` accepts both a raw mapping and an attribute-style
+object.
 """
 
 from typing import Any
@@ -41,12 +42,25 @@ class ChatChoiceLogprobs(BaseModel):
     content: list[TokenLogprobs] = []
 
 
+class ChatMessage(BaseModel):
+    """The assistant message a chat choice carries."""
+
+    model_config = _ACCEPTS_DICT_OR_OBJECT
+
+    content: str | None = None
+
+
 class ChatChoice(BaseModel):
     """One sampled sequence of a chat completion."""
 
     model_config = _ACCEPTS_DICT_OR_OBJECT
 
     logprobs: ChatChoiceLogprobs | None = None
+    # The generated text. Nothing in the scoring path reads it -- a detector scores the
+    # distribution, not the words -- but the same file is what a caller labels from, and
+    # digging the text back out with `["choices"][0]["message"]["content"]` after the
+    # envelope has already been validated is the one step that would stay untyped.
+    message: ChatMessage | None = None
 
 
 class ChatCompletion(BaseModel):
@@ -91,11 +105,9 @@ class BatchResponseData(BaseModel):
     `status_code` has to be read rather than merely modelled, and why it carries no
     default: an absent status is not evidence of success either.
 
-    The completion is carried as it arrived rather than narrowed to `ChatCompletion`.
-    That model covers the logprob path only -- by design, since that is all the detector
-    reads -- so validating into it here would discard `message.content`, which is where an
-    LLM-as-a-judge verdict lives. Consumers validate the payload for their own purpose;
-    this envelope's job is the envelope.
+    The completion is carried as it arrived rather than narrowed to `ChatCompletion`,
+    because a batch line can carry a `ResponsesPayload` just as well. Consumers validate the
+    payload for their own purpose; this envelope's job is the envelope.
     """
 
     model_config = _ACCEPTS_DICT_OR_OBJECT
