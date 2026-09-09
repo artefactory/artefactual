@@ -7,19 +7,19 @@ Face Hub; {doc}`train_wepr` fits its own and is the one that runs entirely offli
 
 **Training a detector for your own model?** Start with {doc}`train_wepr_pipeline` if you
 need to produce the answers, or {doc}`train_wepr` if you already have them.
-{doc}`train_wepr_bertjudge` is the same pipeline with its LLM judge swapped for an
-encoder: N requests instead of 2N, and labels that reproduce exactly — at the cost of the
-judge's written explanation, the alias list, and a conversion before {doc}`train_wepr` or
-the CLI can read its verdicts. Prefer the LLM judge unless judging cost or label
-determinism is the binding constraint.
+{doc}`train_wepr_bertjudge` starts where {doc}`train_wepr` does — from responses you
+already have — but produces the verdicts itself, with `artefactory/BERTJudge`: a 210M
+encoder that grades an answer against a reference and is efficient enough to run on CPU, so
+labelling costs no API requests. It reads only the gold answer and not the alias list, and
+explains itself with a number rather than a sentence.
 
 | Notebook | Shows | Needs |
 |---|---|---|
 | {doc}`epr_usage_demo` | EPR scoring at sequence and token level, against a published detector | Network, for the detector |
 | {doc}`wepr_usage_demo` | WEPR with the risky spans highlighted token by token | Network, for the detector |
-| {doc}`train_wepr` | Fitting a WEPR detector on answers and verdicts you already have | Nothing |
+| {doc}`train_wepr` | Fitting a WEPR detector on answers and verdicts you already have, and tuning it with scikit-learn | `matplotlib`, for the two figures |
 | {doc}`train_wepr_pipeline` | Producing those answers and verdicts: your questions, generation with logprobs, an LLM judge | `[adapters]`, a `logprobs`-capable endpoint |
-| {doc}`train_wepr_bertjudge` | The same pipeline, judged by a 210M encoder that runs locally instead of a second round of API calls | `[adapters]`, `datasets`, `torch`, `transformers`, a `logprobs`-capable endpoint, a 420 MB judge download |
+| {doc}`train_wepr_bertjudge` | Labelling responses you already have with a 210M encoder judge, then fitting on the pair | `bert-judge`, `torch`, `transformers>=4.57,<5`, a 420 MB judge download |
 | {doc}`langfuse_integration_demo` | Scoring live Langfuse traces through `HallucinationEvaluator` | `[adapters]`, a `logprobs`-capable endpoint, a Langfuse project |
 
 Run one locally from the repository root:
@@ -33,18 +33,20 @@ Outputs are committed and the documentation build does not re-execute them
 `tests/test_examples.py` runs the notebooks against the current source, so a published
 example cannot silently stop working — it checks the code, not the numbers beside it.
 
-{doc}`langfuse_integration_demo`, {doc}`train_wepr_pipeline` and
-{doc}`train_wepr_bertjudge` generate against a live endpoint, so they ship without stored
-outputs and are checked statically rather than executed — the numbers are the ones your own run produces.
+{doc}`langfuse_integration_demo` and {doc}`train_wepr_pipeline` generate against a live
+endpoint, and {doc}`train_wepr_bertjudge` downloads a 420 MB judge, so all three ship
+without stored outputs and are checked statically rather than executed — the numbers are
+the ones your own run produces.
 
 {doc}`train_wepr_pipeline` writes the two file *formats* {doc}`train_wepr` reads, under
 its own names, so the two compose once you point the second at the first's output. Both are
 the OpenAI Batch output shape, which is what `scripts/train_detector.py` reads as well:
 produce once, refit as often as you like.
 
-{doc}`train_wepr_bertjudge` is the exception, deliberately. An encoder judge returns a
-probability rather than a chat completion, so its verdicts go to a flat `scores.jsonl`
-instead — its own last section shows the conversion that `train_wepr` and the CLI need.
+{doc}`train_wepr_bertjudge` reads the same responses {doc}`train_wepr` does and writes the
+other half itself, in the same `judgments.jsonl` format — the verdict object is the
+pipeline's contract, not any one API's, so an encoder judge conforms to it like a generative
+one and `scripts/train_detector.py` reads either without knowing which wrote it.
 
 {doc}`train_wepr`'s own answers and log-probabilities are **synthetic**; it opens by
 saying so.

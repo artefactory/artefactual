@@ -6,8 +6,9 @@ but means nothing would notice if the API drifted out from under them. These tes
 what makes that trade safe: they run the notebooks for real and fail when the published
 examples stop working.
 
-The Langfuse and pipeline notebooks generate against a live endpoint, so they are checked
-statically -- imports resolve, names are defined -- rather than executed.
+The Langfuse and pipeline notebooks generate against a live endpoint and the BERTJudge one
+downloads a 420 MB judge, so those three are checked statically -- imports resolve, names
+are defined -- rather than executed.
 """
 
 import json
@@ -88,6 +89,9 @@ def test_the_notebook_runs_against_the_current_source(name, monkeypatch, _detect
     traceback pointing at the offending cell, and there is no kernel to install.
     """
     monkeypatch.chdir(EXAMPLES)
+    # Headless: the notebooks draw figures, and this path executes them with plain `exec`
+    # rather than through a kernel, so the backend is whatever the machine defaults to.
+    monkeypatch.setenv("MPLBACKEND", "Agg")
     namespace = {"__name__": "__main__"}
 
     exec(compile(code_of(load(name)), name, "exec"), namespace)
@@ -144,33 +148,6 @@ def test_the_response_fixture_is_wide_enough_to_train_on():
 
     assert widths, "no log-probabilities in the fixture"
     assert min(widths) >= 15, f"fixture carries {min(widths)} ranks per token, the notebook fits at k=15"
-
-
-def test_the_encoder_judge_matches_its_reference_implementation():
-    """The BERTJudge notebook inlines the judge's interface; pin the two parts of it.
-
-    Its input template and its score reduction come from
-    `github.com/artefactory/BERT-as-a-Judge`, `src/bert_judge/judges/bert.py`, and the
-    notebook reproduces them in plain transformers rather than taking the package as a git
-    dependency. That is safe only while both match: a different marker string, or a softmax
-    where the reference takes the margin of the two logits, still runs and still returns
-    numbers in [0, 1] -- it just scores something other than what the paper measured, and
-    every training label downstream is quietly wrong. Nothing else would notice.
-    """
-    code = "\n".join(
-        "".join(cell["source"]) for cell in load("train_wepr_bertjudge")["cells"] if cell["cell_type"] == "code"
-    )
-
-    assert 'f"{QUESTION_MARKER}{question}{CANDIDATE_MARKER}{candidate}{REFERENCE_MARKER}{reference}"' in code
-    for marker in ("<|question|>", "<|candidate|>", "<|reference|>"):
-        assert f'"{marker}"' in code, f"{marker} is not the marker the judge was trained with"
-    assert "torch.sigmoid(logits[:, 1] - logits[:, 0])" in code, (
-        "the score is sigmoid(correct - incorrect), not a softmax over the two logits"
-    )
-    assert 'JUDGE_MODEL = "artefactory/BERTJudge"' in code, (
-        "the Free-QCR checkpoint is the one trained on unconstrained generations; the "
-        "Formatted siblings expect answers ending in 'Final answer: <x>'"
-    )
 
 
 @pytest.mark.parametrize("name", OFFLINE_NOTEBOOKS)
