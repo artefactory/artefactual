@@ -37,7 +37,7 @@ QUESTIONS = [
 
 
 def batch_line(custom_id, content, ranks=(-0.1, -0.9, -2.0)):
-    """A `vllm run-batch` output line: `response` is the ChatCompletion itself."""
+    """One line of a Batch output file: `response` is the envelope, the completion its body."""
     token = {"token": "t", "logprob": ranks[0], "top_logprobs": [{"token": "t", "logprob": r} for r in ranks]}
     choice = {
         "index": 0,
@@ -45,9 +45,9 @@ def batch_line(custom_id, content, ranks=(-0.1, -0.9, -2.0)):
         "logprobs": {"content": [token, token]},
     }
     return {
-        "id": f"vllm-{custom_id}",
+        "id": f"batch_req_{custom_id}",
         "custom_id": custom_id,
-        "response": {"choices": [choice]},
+        "response": {"status_code": 200, "request_id": f"batch_{custom_id}", "body": {"choices": [choice]}},
         "error": None,
     }
 
@@ -136,7 +136,7 @@ def test_the_judge_gets_room_to_answer_in_json(pack):
 
 
 def test_failed_generations_are_dropped_not_propagated(pack):
-    failed = {"id": "vllm-x", "custom_id": "q-1", "response": None, "error": "out of memory"}
+    failed = {"id": "batch_req_x", "custom_id": "q-1", "response": None, "error": "out of memory"}
     path = pack / "with_failure.jsonl"
     path.write_text(json.dumps(failed) + "\n" + (pack / "responses.jsonl").read_text(), encoding="utf-8")
 
@@ -205,6 +205,26 @@ def test_training_refuses_a_file_that_repeats_a_custom_id(pack, tmp_path):
     responses = (pack / "responses.jsonl").read_text(encoding="utf-8")
     doubled = tmp_path / "doubled.jsonl"
     doubled.write_text(responses + responses.splitlines()[0] + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="appears more than once"):
+        tc.read_batch_output(doubled)
+
+
+def test_training_refuses_a_repeat_whose_first_line_failed(pack, tmp_path):
+    """The repeat is ambiguous whether or not either line produced a row.
+
+    Checking only the ids that made it into the index would let this pair through, and the
+    join would then silently take the second line's answer for that question.
+    """
+    import sys
+
+    sys.path.insert(0, str(TRAIN.parent))
+    import train_detector as tc
+
+    first = json.loads((pack / "responses.jsonl").read_text(encoding="utf-8").splitlines()[0])
+    failed = json.dumps({"custom_id": first["custom_id"], "response": None, "error": {"message": "boom"}})
+    doubled = tmp_path / "doubled.jsonl"
+    doubled.write_text(failed + "\n" + (pack / "responses.jsonl").read_text(encoding="utf-8"), encoding="utf-8")
 
     with pytest.raises(ValueError, match="appears more than once"):
         tc.read_batch_output(doubled)

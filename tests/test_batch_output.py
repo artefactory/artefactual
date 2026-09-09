@@ -1,9 +1,8 @@
 """Tests for the OpenAI Batch output envelope.
 
-The Batch API returns JSONL -- one `BatchRequestOutput` per line -- and `vllm run-batch`
-writes the same shape. Neither the OpenAI SDK nor this package modelled it before, so
-every reader unwrapped it by hand; these hold the model to the shapes actually in the
-wild, including the older vllm lines that put the completion straight in `response`.
+The Batch API returns JSONL -- one `BatchRequestOutput` per line -- and any
+OpenAI-compatible server writes the same shape. These hold the model to it, and in
+particular to the two ways the spec reports a failed request.
 """
 
 import json
@@ -31,7 +30,7 @@ COMPLETION = {
 
 
 def line(**overrides):
-    record = {"id": "vllm-1", "custom_id": "q-1", "response": None, "error": None}
+    record = {"id": "batch_req_1", "custom_id": "q-1", "response": None, "error": None}
     record.update(overrides)
     return record
 
@@ -46,13 +45,6 @@ def test_the_spec_envelope_yields_its_completion():
     assert record.completion == COMPLETION
 
 
-def test_a_bare_completion_is_accepted_as_older_vllm_wrote_it():
-    """Versions before the Batch spec put the ChatCompletion directly in `response`."""
-    record = BatchRequestOutput.model_validate(line(response=COMPLETION))
-
-    assert record.completion == COMPLETION
-
-
 def test_a_failed_request_carries_no_completion():
     record = BatchRequestOutput.model_validate(line(response=None, error={"message": "boom"}))
 
@@ -61,7 +53,7 @@ def test_a_failed_request_carries_no_completion():
 
 
 def test_an_error_envelope_without_a_body_carries_no_completion():
-    """vllm fills status_code and omits the body when the request itself failed."""
+    """The non-HTTP failure shape: `error` is set and the envelope carries no body."""
     record = BatchRequestOutput.model_validate(
         line(response={"status_code": 400, "request_id": "batch-1"}, error={"message": "bad request"})
     )
@@ -70,7 +62,7 @@ def test_an_error_envelope_without_a_body_carries_no_completion():
 
 
 def test_a_rejected_request_carries_no_completion_even_though_it_has_a_body():
-    """The OpenAI failure shape, which is not vllm's and is the one that looks like success.
+    """The failure shape that looks like success.
 
     The Batch API documents top-level `error` as non-HTTP failures only. A request the API
     rejects comes back with `error: null`, a 4xx status and an *error object* where the
@@ -92,9 +84,9 @@ def test_a_rejected_request_carries_no_completion_even_though_it_has_a_body():
     assert record.failure == "HTTP 400"
 
 
-def test_an_empty_envelope_is_reported_as_empty_rather_than_as_a_failure():
-    """`response: {}` did not fail; it carries nothing, and the message should say which."""
-    record = BatchRequestOutput.model_validate(line(response={}))
+def test_a_successful_envelope_with_no_body_is_reported_as_empty_rather_than_as_a_failure():
+    """A 200 that carries nothing did not fail; the message should say which of the two."""
+    record = BatchRequestOutput.model_validate(line(response={"status_code": 200}))
 
     assert record.completion is None
     assert record.failure == "an empty response body"
@@ -103,32 +95,24 @@ def test_an_empty_envelope_is_reported_as_empty_rather_than_as_a_failure():
 def test_custom_id_is_required():
     """It is the only id that says which request this was; the rest are provider-assigned."""
     with pytest.raises(ValidationError):
-        BatchRequestOutput.model_validate({"id": "vllm-1", "response": None, "error": None})
+        BatchRequestOutput.model_validate({"id": "batch_req_1", "response": None, "error": None})
 
 
 def test_a_line_parses_straight_from_json():
-    record = BatchRequestOutput.model_validate_json(json.dumps(line(response={"body": COMPLETION})))
+    record = BatchRequestOutput.model_validate_json(json.dumps(line(response={"status_code": 200, "body": COMPLETION})))
 
     assert record.completion == COMPLETION
 
 
 def test_unmodelled_fields_are_ignored():
     """Providers add fields; a reader should not have to enumerate them."""
-    record = BatchRequestOutput.model_validate(
-        line(response={"body": COMPLETION, "headers": {"x-request-id": "abc"}}, unexpected="ignored")
-    )
+    envelope = {"status_code": 200, "body": COMPLETION, "headers": {"x-request-id": "abc"}}
+    record = BatchRequestOutput.model_validate(line(response=envelope, unexpected="ignored"))
 
     assert record.completion == COMPLETION
 
 
-def test_the_bare_completion_rule_does_not_catch_an_envelope_with_choices():
-    """An envelope is recognised by `body`, which is checked before `choices`."""
-    record = BatchRequestOutput.model_validate(line(response={"body": COMPLETION, "choices": "not the completion"}))
-
-    assert record.completion == COMPLETION
-
-
-# --- the parser reads a batch line as readily as a bare completion --------------------
+# --- the parser reads a batch line as readily as a plain completion -------------------
 
 
 def wide(k=3):
@@ -145,7 +129,7 @@ def completion(k=3):
 @pytest.mark.parametrize(
     ("payload", "expected"),
     [
-        pytest.param(completion(), "ChatCompletion", id="bare-completion"),
+        pytest.param(completion(), "ChatCompletion", id="plain-completion"),
         pytest.param(line(response={"status_code": 200, "body": completion()}), "BatchRequestOutput", id="batch-line"),
         pytest.param({"output": [{"content": [{"logprobs": [wide()]}]}]}, "ResponsesPayload", id="responses-payload"),
     ],
@@ -156,20 +140,16 @@ def test_each_payload_validates_as_its_own_type(payload, expected):
     assert type(_RESPONSE_ADAPTER.validate_python(payload)).__name__ == expected
 
 
-@pytest.mark.parametrize(
-    "response",
-    [
-        pytest.param({"status_code": 200, "request_id": "r", "body": completion()}, id="spec-envelope"),
-        pytest.param(completion(), id="bare-completion-in-response"),
-    ],
-)
-def test_a_batch_line_parses_without_being_unwrapped(response):
-    """A run-batch output file can be fed to the parser as it is read."""
-    assert LogProbParser(k=3).transform([BatchRequestOutput.model_validate(line(response=response))]).shape == (1, 1, 3)
+def test_a_batch_line_parses_without_being_unwrapped():
+    """A batch output file can be fed to the parser as it is read."""
+    envelope = {"status_code": 200, "request_id": "r", "body": completion()}
+    record = BatchRequestOutput.model_validate(line(response=envelope))
+
+    assert LogProbParser(k=3).transform([record]).shape == (1, 1, 3)
 
 
 def test_batch_lines_and_completions_mix_in_one_batch():
-    payloads = [completion(), line(response={"body": completion()}), completion()]
+    payloads = [completion(), line(response={"status_code": 200, "body": completion()}), completion()]
 
     assert LogProbParser(k=3).transform(payloads).shape == (3, 1, 3)
 
@@ -195,7 +175,7 @@ def test_a_body_that_is_not_a_completion_names_the_line_it_came_from():
     """Validating the body inside the union would raise about `choices` and no `custom_id`,
     which is unusable against a file of thousands of lines."""
     with pytest.raises(TypeError, match="q-1"):
-        LogProbParser(k=3).transform([line(response={"body": {"unexpected": "shape"}})])
+        LogProbParser(k=3).transform([line(response={"status_code": 200, "body": {"unexpected": "shape"}})])
 
 
 def test_a_batch_line_carrying_a_responses_payload_parses():
@@ -203,38 +183,15 @@ def test_a_batch_line_carrying_a_responses_payload_parses():
     so the body is dispatched rather than assumed to be a chat completion."""
     payload = {"output": [{"content": [{"logprobs": [wide()]}]}]}
 
-    assert LogProbParser(k=3).transform([line(response={"body": payload})]).shape == (1, 1, 3)
-
-
-def object_completion(k=3):
-    """The same completion as attributes rather than keys, as an SDK object arrives."""
-    ranks = [SimpleNamespace(token=f"t{i}", logprob=-0.1 * (i + 1)) for i in range(k)]
-    token = SimpleNamespace(token="t", logprob=-0.1, top_logprobs=ranks)
-    return SimpleNamespace(choices=[SimpleNamespace(logprobs=SimpleNamespace(content=[token]))])
-
-
-@pytest.mark.parametrize(
-    "record",
-    [
-        pytest.param(
-            SimpleNamespace(id="vllm-1", custom_id="q-1", response=object_completion(), error=None),
-            id="object-line",
-        ),
-        pytest.param(line(response=object_completion()), id="dict-line-object-response"),
-    ],
-)
-def test_a_bare_completion_is_recognised_when_it_is_an_object(record):
-    """An in-process vllm `BatchRequestOutput` is an object, not a mapping. Sniffing for
-    keys only would leave it with no body -- reported as a request that never failed."""
-    assert LogProbParser(k=3).transform([record]).shape == (1, 1, 3)
+    assert LogProbParser(k=3).transform([line(response={"status_code": 200, "body": payload})]).shape == (1, 1, 3)
 
 
 def test_the_sampled_logprob_path_reads_a_batch_line_too():
-    """`_top_logprobs` and `_sampled_logprobs` are separate dispatches; both are entry
-    points, and only one of them was covered."""
+    """`parse_top_logprobs` and `parse_sampled_token_logprobs` unwrap the line separately,
+    so both entry points need holding to it."""
     from artefactual.preprocessing.parser import parse_sampled_token_logprobs
 
-    sampled = parse_sampled_token_logprobs(line(response={"body": completion()}))
+    sampled = parse_sampled_token_logprobs(line(response={"status_code": 200, "body": completion()}))
 
     assert len(sampled) == 1
 
@@ -254,3 +211,28 @@ def test_an_empty_custom_id_is_refused():
     """It is the key every stage joins on; an empty one joins everything to everything."""
     with pytest.raises(ValidationError):
         BatchRequestOutput.model_validate(line(custom_id="", response={"body": COMPLETION}))
+
+
+@pytest.mark.parametrize(
+    "record",
+    [
+        pytest.param({"custom_id": "q-1", "error": None}, id="no-response-key"),
+        pytest.param({"custom_id": "q-1", "response": None}, id="no-error-key"),
+        pytest.param(SimpleNamespace(custom_id="q-1", method="POST", url="/v1/chat/completions", body={}), id="object"),
+    ],
+)
+def test_a_payload_carrying_neither_response_nor_error_is_not_a_batch_line(record):
+    """Both keys are required, so the rule holds for an object as well as a mapping.
+
+    A `BatchRequestInput` object fed here by mistake carries a `custom_id` and neither of
+    them. Without the requirement it validated into this model and was reported as a batch
+    line whose request failed -- an answer about the wrong thing.
+    """
+    with pytest.raises(ValidationError):
+        BatchRequestOutput.model_validate(record)
+
+
+def test_an_envelope_with_no_status_code_is_refused():
+    """An absent status is not evidence of success: the body could be an error object."""
+    with pytest.raises(ValidationError):
+        BatchRequestOutput.model_validate(line(response={"body": {"error": {"message": "boom"}}}))

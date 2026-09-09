@@ -16,8 +16,10 @@
 #                      truncated and train_detector.py reports unparsed judgments)
 #
 # Joins the generations back to their gold answers on `custom_id`, which
-# `vllm run-batch` carries through from the generation request. Rows where
-# generation failed (`error != null`) are dropped and counted on stderr.
+# `vllm run-batch` carries through from the generation request. Rows whose generation
+# failed are dropped and counted on stderr; a request the server rejected reports that as
+# a non-2xx `status_code` with `error` still null, so the status decides, not `error`.
+# Lines are read as the OpenAI Batch output spec defines them -- no other shape is accepted.
 #
 # The prompt is rendered by literal split/join rather than regex substitution, so a
 # question containing backslashes or `&` cannot corrupt it. `tests/test_ecir_prompts.py`
@@ -43,8 +45,22 @@ done
 temperature=${JUDGE_TEMPERATURE:-0}
 max_tokens=${JUDGE_MAX_TOKENS:-200}
 
+# A line carries a usable generation only when the request succeeded. The Batch spec says
+# that two ways: top-level `error` for non-HTTP failures, and -- for a request the server
+# rejects -- `error` null with a non-2xx `status_code` and an error object sitting where
+# the completion would be. So a body is not evidence of a completion.
+read -r -d '' usable <<'JQ' || true
+def usable:
+  if .error != null or .response == null then false
+  else
+    (.response.status_code
+     // error("custom_id \(.custom_id): response envelope carries no status_code")) as $status
+    | $status >= 200 and $status < 300 and .response.body != null
+  end;
+JQ
+
 total=$(wc -l <"$responses" | tr -d " ")
-kept=$(jq -s 'map(select(.error == null and .response != null)) | length' "$responses")
+kept=$(jq -s "$usable"' map(select(usable)) | length' "$responses")
 if [ "$kept" -ne "$total" ]; then
   echo "warning: dropping $((total - kept))/$total generations that failed" >&2
 fi
@@ -54,16 +70,15 @@ jq -c -s \
   --slurpfile questions "$questions" \
   --arg model "$model" \
   --argjson temperature "$temperature" \
-  --argjson max_tokens "$max_tokens" '
+  --argjson max_tokens "$max_tokens" "$usable"'
   ($questions[0] | INDEX(.question_id)) as $gold
   | .[]
-  | select(.error == null and .response != null)
+  | select(usable)
   | .custom_id as $id
   | ($gold[$id] // error("no question for custom_id \($id)")) as $q
-  # `run-batch` follows the OpenAI Batch output spec, which wraps the ChatCompletion in an
-  # envelope: .response is {status_code, request_id, body}, and the completion is the body.
-  # Older vllm emitted the completion directly as .response, so accept both.
-  | (.response.body // .response) as $completion
+  # The Batch output spec: .response is {status_code, request_id, body} and the completion
+  # is the body.
+  | .response.body as $completion
   # Bound before the template chain: inside join(), `.` is the array split() produced,
   # not the response object.
   | $completion.choices[0].message.content as $answer
