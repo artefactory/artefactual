@@ -9,6 +9,8 @@ import json
 from types import SimpleNamespace
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 from pydantic import ValidationError
 
 from artefactual.preprocessing.parser import _RESPONSE_ADAPTER, LogProbParser
@@ -173,9 +175,14 @@ def test_a_rejected_line_is_refused_by_the_parser_too():
 
 def test_a_body_that_is_not_a_completion_names_the_line_it_came_from():
     """Validating the body inside the union would raise about `choices` and no `custom_id`,
-    which is unusable against a file of thousands of lines."""
-    with pytest.raises(TypeError, match="q-1"):
+    which is unusable against a file of thousands of lines.
+
+    The pydantic error stays as the cause, so the detail is one `__cause__` away.
+    """
+    with pytest.raises(TypeError, match="q-1") as raised:
         LogProbParser(k=3).transform([line(response={"status_code": 200, "body": {"unexpected": "shape"}})])
+
+    assert isinstance(raised.value.__cause__, ValidationError)
 
 
 def test_a_batch_line_carrying_a_responses_payload_parses():
@@ -236,3 +243,37 @@ def test_an_envelope_with_no_status_code_is_refused():
     """An absent status is not evidence of success: the body could be an error object."""
     with pytest.raises(ValidationError):
         BatchRequestOutput.model_validate(line(response={"body": {"error": {"message": "boom"}}}))
+
+
+# --- the invariant the two properties share --------------------------------------------
+
+
+@given(
+    status=st.integers(min_value=0, max_value=999),
+    body=st.none() | st.dictionaries(st.text(max_size=8), st.integers(), max_size=3),
+    error=st.none() | st.text(max_size=16) | st.dictionaries(st.text(max_size=8), st.text(max_size=8), max_size=2),
+)
+def test_a_line_carries_a_completion_exactly_when_no_failure_is_named(status, body, error):
+    """`completion` and `failure` are two readings of one question, and must never disagree.
+
+    Every caller branches on one or the other -- `read_batch_output` counts on `completion`
+    being `None`, the parser's message quotes `failure` -- so a line that reported a
+    completion and a reason for having none would put an error object into training data
+    under a label that looks fine.
+    """
+    record = BatchRequestOutput.model_validate(line(response={"status_code": status, "body": body}, error=error))
+
+    assert (record.completion is None) == (record.failure is not None)
+    if record.completion is not None:
+        assert error is None
+        assert 200 <= status < 300
+        assert body is not None
+
+
+@given(error=st.none() | st.text(max_size=16))
+def test_a_line_with_no_envelope_never_carries_a_completion(error):
+    """`response: null` is how the spec reports a non-HTTP failure, with or without `error`."""
+    record = BatchRequestOutput.model_validate(line(response=None, error=error))
+
+    assert record.completion is None
+    assert record.failure is not None

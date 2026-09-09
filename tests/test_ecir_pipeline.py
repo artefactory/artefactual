@@ -7,7 +7,7 @@ jinja2 template produced -- these tests hold it to that.
 
 `vllm` itself is not exercised: it has no darwin wheels and is not a dependency. The
 batch envelopes here follow the documented OpenAI Batch shape that `run-batch` reads and
-writes, with `response` holding the ChatCompletion directly.
+writes: `response` is `{status_code, request_id, body}` and the completion is the body.
 """
 
 import json
@@ -133,6 +133,60 @@ def test_the_judge_gets_room_to_answer_in_json(pack):
 
     assert all(r["body"]["max_completion_tokens"] > 1 for r in rows)
     assert all(r["body"]["temperature"] == 0 for r in rows)
+
+
+def rejected_line(custom_id):
+    """The failure shape that looks like success: a 4xx whose body is an error object.
+
+    The spec reserves top-level `error` for non-HTTP failures, so a rejected request
+    leaves it null. Filtering on `error` alone reads this line's error object as the
+    model's answer and sends it to the judge.
+    """
+    return {
+        "id": f"batch_req_{custom_id}",
+        "custom_id": custom_id,
+        "response": {
+            "status_code": 400,
+            "request_id": f"batch_{custom_id}",
+            "body": {"error": {"message": "context_length_exceeded", "type": "invalid_request_error"}},
+        },
+        "error": None,
+    }
+
+
+def test_a_rejected_generation_is_dropped_even_though_error_is_null(pack):
+    """The status decides, not `error` -- otherwise the error object becomes an answer."""
+    path = pack / "with_rejection.jsonl"
+    path.write_text(json.dumps(rejected_line("q-4")) + "\n" + (pack / "responses.jsonl").read_text(), encoding="utf-8")
+
+    result = subprocess.run(
+        [str(ECIR / "build_judge_requests.sh"), str(pack / "questions.json"), str(path), "j"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    rows = [json.loads(line) for line in result.stdout.splitlines()]
+    assert [row["custom_id"] for row in rows] == [q["question_id"] for q in QUESTIONS]
+    assert "dropping 1/" in result.stderr
+
+
+def test_an_envelope_with_no_status_code_stops_the_run_and_names_the_line(pack):
+    """An absent status is not evidence of success, so the script refuses rather than guesses."""
+    unstatused = {"id": "batch_req_x", "custom_id": "q-9", "response": {"body": {"choices": []}}, "error": None}
+    path = pack / "no_status.jsonl"
+    path.write_text(json.dumps(unstatused) + "\n" + (pack / "responses.jsonl").read_text(), encoding="utf-8")
+
+    result = subprocess.run(
+        [str(ECIR / "build_judge_requests.sh"), str(pack / "questions.json"), str(path), "j"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "q-9" in result.stderr
 
 
 def test_failed_generations_are_dropped_not_propagated(pack):
