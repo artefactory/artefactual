@@ -70,26 +70,29 @@ flags.mark_flags_as_required(["responses", "judgments"])
 def read_batch_output(path: Path) -> dict[str, Any]:
     """Index a `vllm run-batch` output file by `custom_id`.
 
-    `BatchRequestOutput` owns the shape: the OpenAI Batch envelope, the older vllm lines
-    that put the completion straight in `response`, and the `custom_id` every stage joins
-    on. Lines whose request failed yield no completion; they are dropped and counted
+    `BatchRequestOutput` owns the shape: the OpenAI Batch envelope and the `custom_id`
+    every stage joins on. Lines whose request failed yield no completion; they are dropped
+    and counted
     rather than crashing the run, because one bad row should not cost a batch. A repeated
-    `custom_id` is a different matter and does raise -- it is the key the responses are
-    paired to their verdicts by, and a silent overwrite here is a mislabelled row later.
+    `custom_id` is a different matter and does raise, whether or not either line failed --
+    it is the key the responses are paired to their verdicts by, and a silent overwrite
+    here is a mislabelled row later.
     """
-    rows, failed = {}, 0
+    rows, seen, failed = {}, set(), 0
     for line in path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
         record = BatchRequestOutput.model_validate_json(line)
+        # Checked against every id read, not just the ones that produced a row: a repeat
+        # whose first occurrence failed is as ambiguous as any other, and it would slip
+        # past a check made after the failure skip.
+        if record.custom_id in seen:
+            msg = f"{path.name}: custom_id {record.custom_id!r} appears more than once; the join would be ambiguous."
+            raise ValueError(msg)
+        seen.add(record.custom_id)
         if record.completion is None:
             failed += 1
             continue
-        if record.custom_id in rows:
-            # Indexing by custom_id, so a repeat would silently replace the first line and
-            # the count would still look right. The whole pipeline joins on this id.
-            msg = f"{path.name}: custom_id {record.custom_id!r} appears more than once; the join would be ambiguous."
-            raise ValueError(msg)
         rows[record.custom_id] = record.completion
     if failed:
         logging.warning(f"{path.name}: dropped {failed} failed request(s)")

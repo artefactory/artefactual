@@ -75,11 +75,6 @@ def _(response: ResponsesPayload) -> list[dict[int, list[float]]]:
     return process_openai_responses_api(response)
 
 
-@_top_logprobs.register
-def _(response: BatchRequestOutput) -> list[dict[int, list[float]]]:
-    return _top_logprobs(_payload_of(response))
-
-
 @singledispatch
 def _sampled_logprobs(response: Any) -> list[np.ndarray]:
     """Extract sampled-token logprobs from a validated response. Register one per format."""
@@ -95,11 +90,6 @@ def _(response: ChatCompletion) -> list[np.ndarray]:
 @_sampled_logprobs.register
 def _(response: ResponsesPayload) -> list[np.ndarray]:
     return sampled_tokens_logprobs_responses_api(response)
-
-
-@_sampled_logprobs.register
-def _(response: BatchRequestOutput) -> list[np.ndarray]:
-    return _sampled_logprobs(_payload_of(response))
 
 
 class LogProbParser(BaseEstimator, TransformerMixin):
@@ -255,6 +245,10 @@ def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
         msg = f"Unsupported output format: {type(outputs).__name__}. Expected a completion response carrying logprobs."
         raise TypeError(msg) from error
 
+    # A batch line is an envelope around one of the formats below, not a fourth one,
+    # so it is opened here and the extractors stay keyed to what they actually read.
+    if is_bearable(response, BatchRequestOutput):
+        response = _payload_of(response)
     return _top_logprobs(response)
 
 
@@ -281,4 +275,8 @@ def parse_sampled_token_logprobs(outputs: Any) -> list[np.ndarray]:
         msg = f"Unsupported output format: {type(outputs).__name__}. Expected a completion response carrying logprobs."
         raise TypeError(msg) from error
 
+    # A batch line is an envelope around one of the formats below, not a fourth one,
+    # so it is opened here and the extractors stay keyed to what they actually read.
+    if is_bearable(response, BatchRequestOutput):
+        response = _payload_of(response)
     return _sampled_logprobs(response)
