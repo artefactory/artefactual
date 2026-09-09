@@ -296,12 +296,12 @@ def test_training_pairs_by_id_regardless_of_file_order(pack, tmp_path):
     verdicts = {"q-1": True, "q-2": False, "q-3": True}
     judgments = judgments_file(tmp_path / "judgments.jsonl", verdicts)
 
-    forward = tc.read_batch_output(pack / "responses.jsonl")
+    forward = tc.read_responses(pack / "responses.jsonl")
     reversed_rows = "\n".join(reversed(judgments.read_text().strip().splitlines())) + "\n"
     (tmp_path / "reversed.jsonl").write_text(reversed_rows, encoding="utf-8")
 
-    _, y_forward = tc.join_on_custom_id(forward, tc.read_batch_output(judgments))
-    _, y_reversed = tc.join_on_custom_id(forward, tc.read_batch_output(tmp_path / "reversed.jsonl"))
+    _, y_forward = tc.join_on_custom_id(forward, tc.read_responses(judgments))
+    _, y_reversed = tc.join_on_custom_id(forward, tc.read_responses(tmp_path / "reversed.jsonl"))
 
     assert y_forward.tolist() == y_reversed.tolist() == [0, 1, 0]  # judgment True -> not a hallucination
 
@@ -315,7 +315,7 @@ def test_training_refuses_a_batch_with_no_shared_ids(pack, tmp_path):
     other = judgments_file(tmp_path / "other.jsonl", {"z-9": True})
 
     with pytest.raises(ValueError, match="No custom_id is present in both files"):
-        tc.join_on_custom_id(tc.read_batch_output(pack / "responses.jsonl"), tc.read_batch_output(other))
+        tc.join_on_custom_id(tc.read_responses(pack / "responses.jsonl"), tc.read_responses(other))
 
 
 def test_training_refuses_a_file_that_repeats_a_custom_id(pack, tmp_path):
@@ -335,7 +335,7 @@ def test_training_refuses_a_file_that_repeats_a_custom_id(pack, tmp_path):
     doubled.write_text(responses + responses.splitlines()[0] + "\n", encoding="utf-8")
 
     with pytest.raises(ValueError, match="appears more than once"):
-        tc.read_batch_output(doubled)
+        tc.read_responses(doubled)
 
 
 def test_training_refuses_a_repeat_whose_first_line_failed(pack, tmp_path):
@@ -355,4 +355,4 @@ def test_training_refuses_a_repeat_whose_first_line_failed(pack, tmp_path):
     doubled.write_text(failed + "\n" + (pack / "responses.jsonl").read_text(encoding="utf-8"), encoding="utf-8")
 
     with pytest.raises(ValueError, match="appears more than once"):
-        tc.read_batch_output(doubled)
+        tc.read_responses(doubled)
