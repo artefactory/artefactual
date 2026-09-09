@@ -103,8 +103,8 @@ detector, and needs no GPU or endpoint because the answers are already in hand.
 
 Producing those answers first takes {doc}`../examples/train_wepr_pipeline`, which runs
 against any OpenAI-compatible endpoint and needs no GPU either;
-{doc}`../examples/train_wepr_bertjudge` is the same pipeline with a local encoder judge in
-place of the LLM one. At batch scale, the paper's own end-to-end run — `vllm run-batch`
+{doc}`../examples/train_wepr_bertjudge` starts from responses you already have and labels
+them with a local encoder judge instead of asking an LLM. At batch scale, the paper's own end-to-end run — `vllm run-batch`
 over a GPU box — is documented in the
 [`scripts/ecir`](https://github.com/artefactory/artefactual/tree/main/scripts/ecir)
 subdirectory.
