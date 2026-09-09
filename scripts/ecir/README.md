@@ -372,19 +372,21 @@ One number should come back, and it must be at least `--k`. If it is smaller, re
 steps 2 and 3 — the judgments are unaffected and do not need regenerating.
 
 **`joined N pairs on custom_id` reports fewer than the question count.** Some requests
-failed, and a failed line is dropped and counted rather than crashing the run. A line
-reports its failure in one of two ways, so looking only at `error` misses half of them:
-`vllm run-batch` sets `error` and leaves `response` null, while a request the server
-rejects comes back with `error` null, a non-2xx `status_code`, and an error object sitting
-where the completion would be.
+failed, and a failed line is dropped and counted rather than crashing the run. The Batch
+spec reports failure in two ways, so looking only at `error` misses half of them: `error`
+carries non-HTTP failures and leaves `response` null, while a request the server rejects
+comes back with `error` null, a non-2xx `status_code`, and an error object sitting where
+the completion would be.
 
 ```bash
-jq -c 'select(.error != null or (.response.status_code // 200) >= 300)
+jq -c 'select(.error != null or .response == null
+              or .response.status_code < 200 or .response.status_code >= 300
+              or .response.body == null)
        | {custom_id, status: .response.status_code, error}' out/responses.jsonl
 ```
 
-(A line carrying neither a completion nor a stated failure is dropped and counted too; the
-log's number is the one to trust.)
+An envelope with no `status_code` is refused by the script rather than assumed to have
+succeeded, so this triage never reports fewer failures than the run dropped.
 
 **`dropped N verdict(s) that could not be parsed`.** The judge is asked for
 `{"judgment": true|false, "explanation": "..."}` and returned something else. Inspect a
@@ -417,12 +419,9 @@ reading at all rather than a fix.
 ```
 
 This is the OpenAI Batch output spec: `response` is an envelope, and the ChatCompletion is
-its `body`. Steps 3, 6 and 7 unwrap it themselves, so there is no conversion step.
-
-Older vllm put the completion directly in `response`, with no envelope. The scripts accept
-either, so batch files produced before the change still read — but note the difference when
-inspecting a file by hand, because `jq '.response.choices[0]'` silently yields `null` on a
-current file rather than failing.
+its `body`. Steps 3, 6 and 7 unwrap it themselves, so there is no conversion step. Note the
+envelope when inspecting a file by hand: `jq '.response.choices[0]'` silently yields `null`
+rather than failing.
 
 ## Prompts
 

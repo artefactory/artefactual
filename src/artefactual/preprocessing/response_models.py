@@ -6,7 +6,7 @@ Only the logprob path is modelled; `extra="ignore"` drops the rest of the payloa
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 _ACCEPTS_DICT_OR_OBJECT = ConfigDict(from_attributes=True, extra="ignore")
 
@@ -84,12 +84,12 @@ class ResponsesPayload(BaseModel):
 class BatchResponseData(BaseModel):
     """The `response` envelope of one Batch output line.
 
-    A failed request fills this envelope differently depending on who wrote the file.
-    `vllm run-batch` leaves `body` out and reports the reason in the line's top-level
-    `error`; the OpenAI Batch API leaves top-level `error` null -- it documents that field
-    as carrying non-HTTP failures only -- and puts an *error object* in `body` under a 4xx
-    or 5xx `status_code`. A body is therefore not evidence of a completion, which is why
-    `status_code` has to be read rather than merely modelled.
+    The spec fills a failed envelope two ways. Top-level `error` carries non-HTTP failures
+    and leaves the envelope empty; a request the server *rejects* leaves top-level `error`
+    null and puts an *error object* in `body` under a 4xx or 5xx `status_code`. A body is
+    therefore not evidence of a completion, which is why
+    `status_code` has to be read rather than merely modelled, and why it carries no
+    default: an absent status is not evidence of success either.
 
     The completion is carried as it arrived rather than narrowed to `ChatCompletion`.
     That model covers the logprob path only -- by design, since that is all the detector
@@ -100,33 +100,16 @@ class BatchResponseData(BaseModel):
 
     model_config = _ACCEPTS_DICT_OR_OBJECT
 
-    status_code: int = 200
+    status_code: int
     request_id: str | None = None
     body: Any = None
-
-
-def _is_bare_completion(response: Any) -> bool:
-    """Whether `response` is a payload put straight where the envelope belongs.
-
-    Told apart by what a payload has and an envelope does not: `choices` on a chat
-    completion, `output` on a Responses payload. The envelope's own marker, `body`, is
-    checked first so an envelope carrying either key inside is never mistaken for one.
-    """
-    if response is None:
-        return False
-    if isinstance(response, dict):
-        return "body" not in response and ("choices" in response or "output" in response)
-    return not hasattr(response, "body") and (hasattr(response, "choices") or hasattr(response, "output"))
 
 
 class BatchRequestOutput(BaseModel):
     """One line of an OpenAI Batch output file.
 
-    The Batch API returns JSONL -- one of these per line -- and this is the shape
-    `vllm run-batch` writes. Neither the OpenAI SDK nor this package modelled it, so every
-    reader unwrapped it by hand: `scripts/train_detector.py` in Python and
-    `scripts/ecir/build_judge_requests.sh` in jq, each with its own copy of the same
-    `(.response.body // .response)` fallback.
+    The Batch API returns JSONL -- one of these per line -- and any OpenAI-compatible
+    server writes the same shape. The completion is always nested under `response.body`.
 
     `custom_id` is the only id that identifies the request: `id` is assigned by the
     provider, as is `response.request_id`, and so is the completion's own `id`. It is the
@@ -143,42 +126,12 @@ class BatchRequestOutput(BaseModel):
 
     id: str | None = None
     custom_id: str = Field(min_length=1)
-    response: BatchResponseData | None = None
-    error: Any = None
-
-    @model_validator(mode="before")
-    @classmethod
-    def _accept_bare_completion(cls, data: Any) -> Any:
-        """Wrap a completion that was put directly in `response`, as older vllm did.
-
-        The Batch spec nests it under `body`; versions before that emitted it bare. Both
-        are still in the wild, so the older shape is normalised here rather than left for
-        every caller to sniff.
-
-        The attribute-style branch is not symmetry for its own sake: an in-process
-        `vllm.entrypoints.openai.protocol.BatchRequestOutput` is an object, not a mapping,
-        and without it the line would validate with no body and be reported as a request
-        that failed -- a silent misread rather than an error.
-        """
-        if isinstance(data, dict):
-            # A mapping with a `custom_id` and neither of the two keys that say how the
-            # request went is not a batch line; without this it validates into one, and an
-            # unrecognised payload that happens to carry that key is reported as a batch
-            # line whose request failed rather than as an unsupported format.
-            if not ({"response", "error"} & data.keys()):
-                message = "a Batch output line carries `response` or `error`"
-                raise ValueError(message)
-            if _is_bare_completion(data.get("response")):
-                return {**data, "response": {"body": data["response"]}}
-            return data
-        if _is_bare_completion(getattr(data, "response", None)):
-            return {
-                "id": getattr(data, "id", None),
-                "custom_id": getattr(data, "custom_id", None),
-                "response": {"body": data.response},
-                "error": getattr(data, "error", None),
-            }
-        return data
+    # Required, with no default. Every writer emits both keys -- one of them null -- and a
+    # payload carrying neither is not a batch line. Requiring them is what says so for a
+    # mapping and an attribute-style object alike, rather than letting an unrecognised
+    # payload with a `custom_id` validate here and be reported as a request that failed.
+    response: BatchResponseData | None
+    error: Any
 
     @property
     def failure(self) -> str | None:
