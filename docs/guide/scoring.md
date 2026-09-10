@@ -9,7 +9,7 @@ The examples below assume a `response` generated with `logprobs=True` and
 data, so `epr` saves no preparation work — only parameters. The training cost is identical
 and `wepr` is the more accurate of the two.
 
-| | `wepr(...)` — default | `epr(...)` |
+| | `wepr` — default | `epr` |
 |---|---|---|
 | Features | 2 × `k` | 1 |
 | Reads | Each rank separately | Overall confidence per token |
@@ -72,7 +72,7 @@ from langfuse import get_client
 
 from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator
 
-evaluator = HallucinationEvaluator("wepr", get_client(), wepr("chicham/artefactual-wepr-phi4"))
+evaluator = HallucinationEvaluator("wepr", get_client(), BaseDetector.from_pretrained("chicham/artefactual-wepr-phi4", "wepr"))
 evaluator.score_trace(trace_id)
 ```
 
@@ -80,22 +80,22 @@ A worked version is in the [example notebooks](../examples/index.md).
 
 ## Training a detector for another model
 
-Any model that returns `top_logprobs` can be scored, not only the four shipped ones. The
-same factory returns an unfitted detector, which is fitted on 0/1 labels where 1 marks a
-hallucination:
+Any model that returns `top_logprobs` can be scored, not only the four shipped ones.
+`wepr()` and `epr()` return an unfitted detector, which is fitted on 0/1 labels where 1
+marks a hallucination:
 
 ```python
 # responses: a list of completion responses, each generated with top_logprobs >= k
 # y:         a matching list of 0/1 labels, 1 marking a hallucination
-detector = wepr(k=15, trainable=True).fit(responses, y)
+detector = wepr(k=15).fit(responses, y)
 coefficients = detector.named_steps["classifier"].coef_
 ```
 
 One label per generated sequence, in the same order `predict_proba` returns rows.
 
-`trainable=True` is explicit by design: calling `wepr()` with neither weights nor
-`trainable=True` raises, rather than returning a detector that would fit on the supplied
-data and emit probabilities no trained weights support.
+A detector is unfitted until `fit`, as every scikit-learn estimator is. Published weights
+are never a constructor default — a detector's coefficients are model-specific, so there is
+nothing sensible to default to — and `BaseDetector.from_pretrained` is what loads them.
 
 {doc}`../examples/train_wepr` is a worked version of exactly this: it validates a set of
 answers and their verdicts — both in the OpenAI Batch output shape — fits and evaluates a
@@ -117,7 +117,7 @@ work:
 ```python
 from sklearn.base import clone
 
-detector = wepr("chicham/artefactual-wepr-ministral")
+detector = BaseDetector.from_pretrained("chicham/artefactual-wepr-ministral", "wepr")
 detector.named_steps  # {'parser': ..., 'entropy': ..., 'classifier': ...}
 clone(detector)  # get_params / set_params round-trip
 ```
