@@ -37,10 +37,11 @@ A detector is trained for one model, so `DETECTOR` must be the one published for
 produced the response — see [published detectors](#published-detectors) for the pairs. There is no default threshold; choosing one is covered in the
 [user guide](https://artefactory.github.io/artefactual/guide/scoring.html).
 
-No endpoint is needed to try the library. Three of the
+No endpoint is needed to try the library: two of the
 [example notebooks](https://artefactory.github.io/artefactual/examples/) run against
-checked-in fixtures and need no GPU and no API key; the other three generate against an
-OpenAI-compatible endpoint.
+checked-in fixtures and need no GPU and no API key. Training a detector for a model with no
+published weights is covered, with three more notebooks, in
+[how it works](https://artefactory.github.io/artefactual/guide/how-it-works.html).
 
 ## Requirements
 
