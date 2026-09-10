@@ -13,7 +13,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 from pydantic import ValidationError
 
-from artefactual.preprocessing import index_by_custom_id, read_batch, read_judgment
+from artefactual.preprocessing import index_by_custom_id, read_batch, read_judgment, read_message
 from artefactual.preprocessing.parser import _RESPONSE_ADAPTER, LogProbParser
 from artefactual.preprocessing.response_models import BatchRequestOutput, ChatCompletion
 
@@ -308,7 +308,27 @@ def test_the_text_is_read_through_the_envelope_a_batch_line_carries():
     """The two halves compose: the line yields a completion, the completion yields its text."""
     record = BatchRequestOutput.model_validate(line(response={"status_code": 200, "body": COMPLETION}))
 
-    assert ChatCompletion.model_validate(record.completion).choices[0].message.content == "Sunset Boulevard"
+    assert read_message(record.completion) == "Sunset Boulevard"
+
+
+def test_the_text_is_returned_as_the_model_wrote_it():
+    """No stripping: what a caller does with the whitespace is the caller's decision."""
+    assert read_message({"choices": [{"message": {"content": "  Sunset Boulevard\n"}}]}) == "  Sunset Boulevard\n"
+
+
+@pytest.mark.parametrize(
+    "completion",
+    [
+        pytest.param(None, id="a-failed-line-carries-none"),
+        pytest.param({"error": {"message": "boom"}}, id="a-rejected-request-carries-an-error-object"),
+        pytest.param({"choices": []}, id="no-choices"),
+        pytest.param({"choices": [{"index": 0}]}, id="no-message"),
+        pytest.param({"choices": [{"message": {"role": "assistant"}}]}, id="no-content"),
+    ],
+)
+def test_a_completion_carrying_no_text_reads_as_none(completion):
+    """Every kind of nothing answers the same way, so a caller branches once, not five times."""
+    assert read_message(completion) is None
 
 
 @pytest.mark.parametrize(
