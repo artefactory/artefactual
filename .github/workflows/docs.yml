@@ -47,11 +47,11 @@ jobs:
       - name: Install pandoc
         run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends pandoc
 
-      - name: Set up Quarto
-        uses: quarto-dev/quarto-actions/setup@v2
-
+      # Quarto comes from the docs extra (the PyPI package ships the binary), so the
+      # deck toolchain is the one pinned in pyproject.toml and a local build renders the
+      # decks exactly as this job does.
       - name: Render presentation decks
-        run: quarto render docs/presentations
+        run: uv run quarto render docs/presentations
 
       - name: Build documentation
         # -W: a page Sphinx declines to build -- a notebook nbsphinx skips, a missing
