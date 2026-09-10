@@ -5,13 +5,24 @@ Six runnable notebooks. Three of them — {doc}`epr_usage_demo`, {doc}`wepr_usag
 GPU and no API key. The first two still fetch their detector's weights from the Hugging
 Face Hub; {doc}`train_wepr` fits its own and is the one that runs entirely offline.
 
-**Training a detector for your own model?** Start with {doc}`train_wepr_pipeline` if you
-need to produce the answers, or {doc}`train_wepr` if you already have them.
-{doc}`train_wepr_bertjudge` starts where {doc}`train_wepr` does — from responses you
-already have — but produces the verdicts itself, with `artefactory/BERTJudge`: a 210M
-encoder that grades an answer against a reference and is efficient enough to run on CPU, so
-labelling costs no API requests. It reads only the gold answer and not the alias list, and
-explains itself with a number rather than a sentence.
+The package reads results and never produces them: a completion an API returned, or a line
+of a Batch output file. Generating those results is the caller's business —
+{doc}`train_wepr_pipeline` shows one way of doing it, against any OpenAI-compatible
+endpoint.
+
+**Training a detector for your own model?** Pick by what you already have.
+
+| You have | Start with | What you change |
+|---|---|---|
+| An endpoint, and nothing else | {doc}`train_wepr_pipeline` | nothing — it runs on a hundred TriviaQA questions out of the box |
+| Your own questions, each with a gold answer | {doc}`train_wepr_pipeline` | one cell, the question list; the rest is unchanged |
+| Responses with `top_logprobs`, and a verdict on each | {doc}`train_wepr` | two file paths |
+| Responses with `top_logprobs`, but nothing judged yet | {doc}`train_wepr_bertjudge` | two file paths; it writes the verdicts itself |
+
+The last one judges with `artefactory/BERTJudge`: a 210M encoder that grades an answer
+against a reference and is efficient enough to run on CPU, so labelling costs no API
+requests. It reads only the gold answer and not the alias list, and explains itself with a
+number rather than a sentence.
 
 | Notebook | Shows | Needs |
 |---|---|---|
