@@ -75,6 +75,25 @@ request failed is *refused*, not skipped: this step emits one row per line, and 
 one would shift every later response against its label. Filter the failed lines out first,
 where their `custom_id` can still be reported.
 
+`artefactual.preprocessing` owns that reading:
+
+```python
+from artefactual.preprocessing import index_by_custom_id, read_batch, read_judgment, read_message
+
+rows = read_batch("responses.jsonl")     # validates each line; refuses a repeated custom_id
+for row in rows:
+    if row.failure:                      # why this line carries no completion, or None
+        print(f"dropped {row.custom_id}: {row.failure}")
+
+responses = index_by_custom_id(rows)     # the lines that carry a completion, keyed to join on
+read_message(row.completion)             # what the model said, or None
+read_judgment(row.completion)            # a judge's True / False verdict, or None
+```
+
+`failure` names each way a line can carry nothing -- a non-HTTP error, a status outside
+2xx, a missing envelope or body -- and `completion` is `None` for every one of them, so a
+caller counts failures in one place instead of branching on which kind it got.
+
 A minimal Responses API payload looks like:
 
 ```python
