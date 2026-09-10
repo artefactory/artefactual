@@ -14,7 +14,7 @@ and `wepr` is the more accurate of the two.
 | Features | 2 × `k` | 1 |
 | Reads | Each rank separately | Overall confidence per token |
 | Output | Sigmoid, scaled to `[0, 1]` | Unscaled entropy rate |
-| Ships pre-trained | For the four shipped models | For the four shipped models |
+| Ships pre-trained | For every published model | For every published model |
 | Training needed | Only for another model | Only for another model |
 | Applicable when | Almost always | Too few labelled examples to fit `2k` coefficients |
 
@@ -80,7 +80,7 @@ A worked version is in the [example notebooks](../examples/index.md).
 
 ## Training a detector for another model
 
-Any model that returns `top_logprobs` can be scored, not only the four shipped ones.
+Any model that returns `top_logprobs` can be scored, not only the published ones.
 `wepr()` and `epr()` return an unfitted detector, which is fitted on 0/1 labels where 1
 marks a hallucination:
 
@@ -97,17 +97,8 @@ A detector is unfitted until `fit`, as every scikit-learn estimator is. Publishe
 are never a constructor default — a detector's coefficients are model-specific, so there is
 nothing sensible to default to — and `BaseDetector.from_pretrained` is what loads them.
 
-{doc}`../examples/train_wepr` is a worked version of exactly this: it validates a set of
-answers and their verdicts — both in the OpenAI Batch output shape — fits and evaluates a
-detector, and needs no GPU or endpoint because the answers are already in hand.
-
-Producing those answers first takes {doc}`../examples/train_wepr_pipeline`, which runs
-against any OpenAI-compatible endpoint and needs no GPU either;
-{doc}`../examples/train_wepr_bertjudge` starts from responses you already have and labels
-them with a local encoder judge instead of asking an LLM. At batch scale, the paper's own end-to-end run — `vllm run-batch`
-over a GPU box — is documented in the
-[`scripts/ecir`](https://github.com/artefactory/artefactual/tree/main/scripts/ecir)
-subdirectory.
+Producing those answers and verdicts, the label polarity a judge's reply needs, and the
+three notebooks that do it end to end are in {doc}`training`.
 
 ## Composing with scikit-learn
 
