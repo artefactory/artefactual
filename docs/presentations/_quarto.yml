@@ -7,9 +7,10 @@
 #      notebooks are excluded from the Sphinx sources, so an unlisted deck ships
 #      but stays unreachable.
 #   3. Preview while writing:
-#        uvx --from quarto-cli quarto preview docs/presentations/<folder>/<deck>.ipynb
-#   4. Build the site the way CI does:
-#        uvx --from quarto-cli quarto render docs/presentations
+#        uv run quarto preview docs/presentations/<folder>/<deck>.ipynb
+#   4. Build the site the way CI does (Quarto comes with the docs extra):
+#        uv sync --extra docs
+#        uv run quarto render docs/presentations
 #        uv run sphinx-build -b html docs docs/_build/html
 
 project:
