@@ -29,7 +29,7 @@ model's scores, which answers "how precisely do I know this model's ROC-AUC" rat
 Table 1's and not directly comparable to them.
 
 The fitted estimator is written to `--output` as a `.skops` file, the shape
-`epr()` and `wepr()` read back; the evaluation report goes to `--report` as JSON.
+`BaseDetector.from_pretrained` reads back; the evaluation report goes to `--report` as JSON.
 """
 
 import json
