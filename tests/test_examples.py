@@ -38,9 +38,12 @@ def test_the_notebook_is_shipped_with_the_docs(name):
 
 
 @pytest.mark.parametrize("name", ALL_NOTEBOOKS)
-def test_the_notebook_is_listed_in_the_toctree(name):
-    # a notebook not in the toctree builds to an orphan page Sphinx warns about
-    assert name in (EXAMPLES / "index.md").read_text(encoding="utf-8")
+def test_the_notebook_is_listed_in_a_toctree(name):
+    # A notebook in no toctree builds to an orphan page Sphinx warns about. Which page
+    # carries it is an editorial choice -- the demos sit under examples/, the training
+    # notebooks under the guide -- so every source file is searched rather than one.
+    pages = [path.read_text(encoding="utf-8") for path in (EXAMPLES.parent).rglob("*.md")]
+    assert any(name in page for page in pages)
 
 
 @pytest.mark.parametrize("name", ALL_NOTEBOOKS)

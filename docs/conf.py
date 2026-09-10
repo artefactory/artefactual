@@ -22,6 +22,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx_autodoc_typehints",
     "sphinx_llms_txt",
+    "sphinxcontrib.mermaid",
 ]
 
 # Optional extras autodoc must not need installed to document the modules that guard
@@ -160,8 +161,15 @@ html_theme_options = {
     "navigation_depth": 3,
 }
 
+# Mermaid renders in the browser, so a diagram is live SVG rather than an image: it selects,
+# it scales, and with d3 zoom it pans like the ones GitHub renders. The palette it bakes in
+# is light-only, which `_static/mermaid-theme.css` restates in the theme's own variables.
+mermaid_d3_zoom = True
+
 # General
 templates_path = ["_templates"]
+html_static_path = ["_static"]
+html_css_files = ["mermaid-theme.css", "notebook-buttons.css"]
 exclude_patterns = [
     "_build",
     "Thumbs.db",

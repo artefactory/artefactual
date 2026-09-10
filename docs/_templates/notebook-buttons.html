@@ -3,12 +3,12 @@
    two values, so every other page emits nothing. #}
 {% if notebook_filename %}
   <div class="notebook-buttons">
-    <a class="btn btn-sm navbar-btn" href="{{ colab_url }}" target="_blank" rel="noopener"
+    <a class="notebook-colab" href="{{ colab_url }}" target="_blank" rel="noopener"
        title="Run {{ notebook_filename }} in Google Colab">
       <img src="https://colab.research.google.com/assets/colab-badge.svg"
            alt="Open in Colab" style="vertical-align: middle; height: 1.25rem">
     </a>
-    <a class="btn btn-sm navbar-btn" href="{{ notebook_filename }}" download
+    <a class="notebook-download" href="{{ notebook_filename }}" download
        title="Download {{ notebook_filename }}">
       <i class="fa-solid fa-download"></i> {{ notebook_filename }}
     </a>
