@@ -1,7 +1,7 @@
 """Sphinx configuration for Artefactual documentation."""
 
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import artefactual
 
@@ -64,41 +64,46 @@ myst_enable_extensions = [
 # nbsphinx settings
 nbsphinx_execute = "never"
 
-# A badge above every notebook page that opens the same file in Colab, so a reader can run
-# the example without a checkout. Colab loads a notebook from GitHub by owner, repo, branch
-# and path, and all four have to be right or the link 404s -- so the first three come from
-# the environment where CI sets them, and fall back to this repository's own values for a
-# local build. A fork's docs then link into the fork, and a renamed default branch does not
-# silently break every badge on the site.
+# Every notebook page carries its own two entry points in the article header: open the
+# notebook in Colab, or download the `.ipynb`. They live in a theme component
+# (`_templates/notebook-buttons.html`) filled in by the `html-page-context` handler below,
+# rather than in `nbsphinx_prolog`, so they render as part of the page furniture instead of
+# as the first paragraph of the notebook's own content.
 #
-# A notebook on an unmerged branch still gets a badge that 404s on a `main` build: the file
-# is not there yet. That resolves itself when the branch lands.
-#
-# `env.doc2path(..., base=None)` is the source file relative to the source directory,
-# extension included (`examples/epr_usage_demo.ipynb`), so prefixing `docs/` gives the
-# file's path in the repository. `|string` is required rather than decorative: doc2path
-# returns a `_StrPath`, which subclasses `PurePath` and not `str`, so `+` on it raises.
-#
-# The prolog applies to every notebook nbsphinx renders. The Quarto decks under
-# `presentations/` are excluded from the build by `exclude_patterns` below, so they never
-# see it.
+# Colab loads a notebook from GitHub by owner, repo, branch and path, and all four have to
+# be right or the link 404s -- so the first three come from the environment where CI sets
+# them, and fall back to this repository's own values for a local build. A fork's docs then
+# link into the fork, and a renamed default branch does not silently break every badge on
+# the site. A notebook on an unmerged branch still gets a badge that 404s on a `main`
+# build: the file is not there yet, and that resolves itself when the branch lands.
 _REPOSITORY = os.environ.get("GITHUB_REPOSITORY", "artefactory/artefactual")
 _BRANCH = os.environ.get("GITHUB_REF_NAME", "main")
-# One placeholder and one substitution, rather than Jinja variables: the prolog is
-# rendered per document with a context nbsphinx owns, so values from here reach it by
-# being in the string already.
-nbsphinx_prolog = """
-{% set docname = "docs/" + env.doc2path(env.docname, base=None)|string %}
+_COLAB = f"https://colab.research.google.com/github/{_REPOSITORY}/blob/{_BRANCH}/docs/"
 
-.. raw:: html
 
-    <p style="margin-bottom: 1.5rem">
-      <a href="COLAB_PREFIX{{ docname }}" target="_blank" rel="noopener">
-        <img src="https://colab.research.google.com/assets/colab-badge.svg"
-             alt="Open {{ docname }} in Colab" style="vertical-align: middle">
-      </a>
-    </p>
-""".replace("COLAB_PREFIX", f"https://colab.research.google.com/github/{_REPOSITORY}/blob/{_BRANCH}/")
+def _notebook_buttons(app, pagename: str, templatename: str, context: dict, doctree) -> None:  # noqa: ARG001
+    """Give a notebook page the two values its header component renders, and others none.
+
+    `env.nbsphinx_notebooks` maps a notebook's docname to the path nbsphinx copies it to in
+    the output, next to the page it produced -- so the download href is a bare filename and
+    resolves whatever the depth of the page. Same origin, which is what makes the browser
+    honour `download` rather than navigating to a screenful of JSON; the theme's own "Show
+    Source" link is not this, it serves `_sources/<name>.ipynb.txt`, which renders as text.
+
+    Membership of that mapping is also what identifies a notebook page. Every other page
+    leaves `notebook_filename` unset, and the component renders nothing.
+    """
+    notebook = getattr(app.env, "nbsphinx_notebooks", {}).get(pagename)
+    if notebook is None:
+        return
+    context["notebook_filename"] = PurePosixPath(notebook).name
+    context["colab_url"] = _COLAB + notebook
+
+
+def setup(app) -> None:
+    """Register the handler that fills the notebook header buttons."""
+    app.connect("html-page-context", _notebook_buttons)
+
 
 # sphinx-llms-txt settings
 #
@@ -148,6 +153,9 @@ html_baseurl = "https://artefactory.github.io/artefactual/"
 html_theme = "pydata_sphinx_theme"
 html_theme_options = {
     "github_url": "https://github.com/artefactory/artefactual",
+    # The slot is empty by default; the theme puts downloads out of scope, so the component
+    # is this repository's own.
+    "article_header_end": ["notebook-buttons.html"],
     "show_nav_level": 2,
     "navigation_depth": 3,
 }

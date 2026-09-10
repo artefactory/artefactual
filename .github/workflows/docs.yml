@@ -82,6 +82,12 @@ jobs:
             if [ ! -f "$page" ]; then
               echo "::error::$nb did not build to $page"
               missing=1
+            elif [ ! -f "${page%.html}.ipynb" ]; then
+              # Every page offers its notebook as a download, and the file that link
+              # points at is the copy nbsphinx writes beside the page. Its absence is
+              # silent under -W, so it is asserted here alongside the page itself.
+              echo "::error::$nb built a page but no downloadable notebook beside it"
+              missing=1
             else
               echo "deployed example: $page"
             fi
