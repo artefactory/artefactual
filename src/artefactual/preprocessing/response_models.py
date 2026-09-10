@@ -1,13 +1,16 @@
-"""Typed models for the completion formats the parsers consume.
+"""Typed models for the completion formats the parsers consume, and the readers over them.
 
 The logprob path and the generated text are modelled; `extra="ignore"` drops the rest of
 the payload. `from_attributes=True` accepts both a raw mapping and an attribute-style
 object.
+
+`read_message` is the way to the generated text: every caller that wants what the model
+said goes through the validated envelope rather than indexing a raw payload.
 """
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 _ACCEPTS_DICT_OR_OBJECT = ConfigDict(from_attributes=True, extra="ignore")
 
@@ -173,3 +176,28 @@ class BatchRequestOutput(BaseModel):
         if self.failure is not None or self.response is None:
             return None
         return self.response.body
+
+
+def read_message(completion: Any) -> str | None:
+    """What the model said, or `None` if the payload carries no text.
+
+    The single reading of `choices[0].message.content`, so no caller has to index a raw
+    payload and none has to decide what an unusable one means. `None` covers every way the
+    text can be absent -- no completion at all, as a failed batch line yields; an error
+    object where the completion belongs; a completion with no choices; a choice whose
+    message or content is null.
+
+    Args:
+        completion: A chat completion, as a mapping or an attribute-style object. A batch
+            line's `completion` is exactly this.
+
+    Returns:
+        The assistant's text, unmodified, or `None`.
+    """
+    try:
+        choices = ChatCompletion.model_validate(completion).choices
+    except ValidationError:
+        return None
+    if not choices or choices[0].message is None:
+        return None
+    return choices[0].message.content

@@ -10,9 +10,7 @@ import contextlib
 import json
 from typing import Any
 
-from pydantic import ValidationError
-
-from artefactual.preprocessing.response_models import ChatCompletion
+from artefactual.preprocessing.response_models import read_message
 
 # What the judge prompt asks for, and what a reply that ignored the format is scanned for.
 _JUDGMENT = "judgment"
@@ -89,17 +87,13 @@ def read_judgment(completion: Any) -> bool | None:
         `None` when there is no readable verdict -- an unreadable reply, a completion with
         no message, or no completion at all.
     """
-    # A failed batch line yields `None` here, and a request that was rejected yields an
-    # error object where the completion belongs. Neither is a verdict, and neither is worth
-    # a different answer than a reply that simply could not be read: all three are a row to
-    # drop and count. Raising would make the caller branch on which kind of nothing it got.
-    try:
-        choices = ChatCompletion.model_validate(completion).choices
-    except ValidationError:
+    # A failed batch line, a rejected request's error object and a reply with no text are
+    # all `None` from `read_message`, and none of them is worth a different answer than a
+    # reply that simply could not be read: all of them are a row to drop and count. Raising
+    # would make the caller branch on which kind of nothing it got.
+    content = read_message(completion)
+    if content is None:
         return None
-    if not choices or choices[0].message is None or choices[0].message.content is None:
-        return None
-    content = choices[0].message.content
     for reading in (_from_json, _from_fence, _from_scan):
         verdict = reading(content)
         if verdict is not None:
