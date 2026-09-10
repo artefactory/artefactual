@@ -16,8 +16,7 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.exceptions import NotFittedError
 
-from artefactual.scoring import epr, wepr
-from artefactual.scoring.base_detector import BaseDetector
+from artefactual.scoring import BaseDetector
 
 
 class AlwaysSure(ClassifierMixin, BaseEstimator):
@@ -105,7 +104,7 @@ def test_wepr_scores_with_the_model_it_was_given(tmp_path_factory, k, data):
     published = data.draw(estimators(n_features=2 * k))
     path = write_estimator(tmp_path_factory.mktemp("wepr"), "model.skops", published)
 
-    built = wepr(str(path), k=k)
+    built = BaseDetector.from_pretrained(str(path), "wepr", k=k)
 
     assert built.estimator.n_features_in_ == 2 * k
     assert np.array_equal(built.estimator.coef_, published.coef_)
@@ -116,7 +115,7 @@ def test_a_detector_fit_at_another_rank_count_is_refused(tmp_path):
     path = write_estimator(tmp_path, "model.skops", detector)
 
     with pytest.raises(ValueError, match="pass k=10"):
-        wepr(str(path), k=15)
+        BaseDetector.from_pretrained(str(path), "wepr", k=15)
 
 
 def test_an_epr_detector_in_a_wepr_detector_is_refused(tmp_path):
@@ -124,19 +123,19 @@ def test_an_epr_detector_in_a_wepr_detector_is_refused(tmp_path):
     path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
 
     with pytest.raises(ValueError, match="takes 1 feature"):
-        wepr(str(path), k=15)
+        BaseDetector.from_pretrained(str(path), "wepr", k=15)
 
 
 def test_a_detector_saves_the_calibration_it_scores_with(tmp_path):
     detector = fitted_logistic(-0.5, [2.0])
     source = write_estimator(tmp_path, "model.skops", detector)
-    detector = epr(str(source), k=15)
+    detector = BaseDetector.from_pretrained(str(source), "epr", k=15)
 
     destination = tmp_path / "saved"
     destination.mkdir()
     written = detector.save_estimator(destination)
 
-    reloaded = epr(str(written), k=15)
+    reloaded = BaseDetector.from_pretrained(str(written), "epr", k=15)
     x = np.linspace(-2, 2, 5).reshape(-1, 1)
     assert np.array_equal(
         reloaded.estimator.predict_proba(x),
@@ -158,7 +157,9 @@ def test_saving_an_unfitted_detector_is_refused(tmp_path):
 
 def test_saving_creates_the_parent_directory(tmp_path):
     # the tutorial writes into an output directory the caller has not necessarily made yet
-    detector = epr(str(write_estimator(tmp_path, "model.skops", fitted_logistic(-0.5, [2.0]))), k=15)
+    detector = BaseDetector.from_pretrained(
+        str(write_estimator(tmp_path, "model.skops", fitted_logistic(-0.5, [2.0]))), "epr", k=15
+    )
 
     written = detector.save_estimator(tmp_path / "new" / "nested" / "model.skops")
 

@@ -26,7 +26,8 @@ class HallucinationEvaluator:
         Args:
             name: Score name recorded in Langfuse, used as the metric label in its UI.
             langfuse_client: An authenticated `Langfuse` client.
-            detector: A calibrated detector, e.g. `epr("chicham/artefactual-epr-ministral")`.
+            detector: A fitted detector, e.g.
+                `BaseDetector.from_pretrained("chicham/artefactual-epr-ministral", "epr")`.
         """
         self.name = name
         self.langfuse = langfuse_client
