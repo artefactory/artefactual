@@ -134,6 +134,30 @@ dev = [
     "pytest-cov>=6.0.0",
 ]
 
+# What the notebooks under docs/examples need beyond the package: `uv sync --group
+# notebooks`, then `uv run jupyter lab docs/examples/<name>.ipynb`.
+#
+# A group rather than a [project.optional-dependencies] extra, because `bert-judge` is a
+# git URL: a direct reference in a distribution's metadata is rejected on upload to PyPI,
+# and groups are not part of that metadata. It is also the right scope -- these are for
+# running the examples from a clone, not for anything that imports the package.
+notebooks = [
+    # train_wepr_pipeline.ipynb and langfuse_integration_demo.ipynb call an endpoint.
+    "artefactual[adapters]",
+    "jupyterlab>=4.3.5",
+    # The judge's progress bar asks for it, and warns on every call without it.
+    "ipywidgets>=8.1.0",
+    # train_wepr.ipynb draws a learning curve and a precision-recall comparison.
+    "matplotlib>=3.9.0",
+    # train_wepr_bertjudge.ipynb. `bert-judge` declares no dependencies of its own, so the
+    # judge's runtime is named here. The transformers range is the checkpoint's: outside
+    # it the load fails, on `torch_dtype=` below 4.57 and `KeyError: 'default'` at 5.x.
+    "bert-judge @ git+https://github.com/artefactory/BERT-as-a-Judge.git",
+    "torch>=2.0.0",
+    "transformers>=4.57,<5",
+    "datasets>=3.2.0",
+]
+
 [tool.coverage.run]
 # `source` (not `--cov=artefactual`) so the namespace package under adapters/ lands in
 # the denominator too — it has no __init__.py, and the package-name scanner walks

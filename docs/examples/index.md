@@ -22,9 +22,11 @@ explains itself with a number rather than a sentence.
 | {doc}`train_wepr_bertjudge` | Labelling responses you already have with a 210M encoder judge, then fitting on the pair | `bert-judge`, `torch`, `transformers>=4.57,<5`, a 420 MB judge download |
 | {doc}`langfuse_integration_demo` | Scoring live Langfuse traces through `HallucinationEvaluator` | `[adapters]`, a `logprobs`-capable endpoint, a Langfuse project |
 
-Run one locally from the repository root:
+Run one locally from the repository root. The `notebooks` group holds what they need
+beyond the package — `matplotlib`, the adapters, and the encoder judge's runtime:
 
 ```bash
+uv sync --group notebooks
 uv run jupyter lab docs/examples/epr_usage_demo.ipynb
 ```
 
