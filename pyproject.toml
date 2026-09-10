@@ -145,6 +145,9 @@ notebooks = [
     # train_wepr_pipeline.ipynb and langfuse_integration_demo.ipynb call an endpoint.
     "artefactual[adapters]",
     "jupyterlab>=4.3.5",
+    # train_wepr_pipeline.ipynb renders its two prompts, the paper's, as the templates they
+    # are.
+    "jinja2>=3.1.5",
     # The judge's progress bar asks for it, and warns on every call without it.
     "ipywidgets>=8.1.0",
     # train_wepr.ipynb draws a learning curve and a precision-recall comparison.
