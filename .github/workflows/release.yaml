@@ -384,15 +384,31 @@ jobs:
   # is the one docs-build uploaded in this same run, so the pages deployed are the ones
   # that gated the tag.
   docs-deploy:
-    needs: [docs-build, publish, github-release]
+    needs: [gate, docs-build, publish, github-release]
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     permissions:
+      contents: write   # push the archive branch
       pages: write
       id-token: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+          sparse-checkout-cone-mode: false
+
+      # docs.yml built the pages but did not deploy them: it is called with deploy: false so
+      # that nothing reaches the site until PyPI has the version. The assembly happens here
+      # instead, from the artifact that build uploaded in this same run.
+      - name: Assemble the versioned site
+        uses: ./.github/actions/publish-site
+        with:
+          version: ${{ needs.gate.outputs.version }}
+          site-url: https://artefactory.github.io/artefactual
+          token: ${{ github.token }}
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

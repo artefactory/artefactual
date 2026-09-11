@@ -112,7 +112,9 @@ workflow run: chaining on the tag would leave the tag created and nothing built.
       -> publish-testpypi uploaded, then checked against the metadata the index serves
       -> publish          PyPI, held for a required reviewer
       -> github-release   the Release, once PyPI has the version
-      -> docs-deploy      the pages built above, published last
+      -> docs-deploy      the pages built above, added to the archive of previous
+                          releases under their own version directory, and published
+                          as the whole site
 
 Everything that can fail without leaving a trace runs before the tag; the tag is the last
 recoverable step, and the PyPI upload is the first irreversible one. So a failing test or a
@@ -122,6 +124,15 @@ The `pypi` environment has a required reviewer, so nothing reaches PyPI unattend
 release that should not go out is declined there; the tag is already created by then, and a
 tag is cheap to delete -- `git push origin :vYYYY.MM.PATCH` -- where a PyPI version is not
 reusable.
+
+The site keeps every release. Each one is published under its own version directory, with
+`stable/` a copy of the newest and a switcher in the navbar to move between them, so a
+reader pinned to an older version still has documentation that matches what they installed.
+The archive lives on the `gh-pages` branch because `actions/deploy-pages` replaces the whole
+site on every run; that branch is rewritten as a single commit each time, so the repository
+grows with the number of versions kept online rather than the number of deploys. At roughly
+20 MB a version, prune the oldest directories from `gh-pages` if the site approaches the
+1 GB Pages limit.
 
 Uploading before announcing is deliberate: a Release created first would advertise a
 version that a failed upload never produced, under a tag that cannot be reissued. The

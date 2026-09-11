@@ -17,6 +17,21 @@ release = artefactual.__version__
 version = ".".join(release.split(".")[:2])
 _is_development_build = ".dev" in release
 
+# Where the published site lives. Fixed rather than derived, because the version switcher
+# has to name one URL that every version of the site agrees on: each release ships a copy
+# of this file, and they must all point at the same switcher.json, or an old page cannot
+# offer the versions released after it.
+SITE_URL = "https://artefactory.github.io/artefactual"
+
+# The site is one directory per release, so a page has to say which release it belongs to.
+html_baseurl = f"{SITE_URL}/{release}/" if not _is_development_build else SITE_URL
+
+# Just the project. The version belongs in the switcher, which names it once and makes it
+# navigable; repeating it here would also put the full local version
+# (2026.8.1.post1.dev36+j772a71f36.d20260911) in the site's most prominent label on every
+# build that is not a release.
+html_title = f"{project} documentation"
+
 # Extensions
 extensions = [
     "myst_parser",
@@ -174,6 +189,21 @@ html_baseurl = "https://artefactory.github.io/artefactual/"
 html_theme = "pydata_sphinx_theme"
 html_theme_options = {
     "github_url": "https://github.com/artefactory/artefactual",
+    # The released versions, and which one you are reading. `version_match` is the release
+    # string, matching the `version` key the deploy writes into switcher.json; on a
+    # development build it matches nothing, which leaves the dropdown listing the releases
+    # with none marked current -- correct, because an unreleased build is not among them.
+    "navbar_start": ["navbar-logo", "version-switcher"],
+    "switcher": {
+        "json_url": f"{SITE_URL}/switcher.json",
+        "version_match": release,
+    },
+    # The theme fetches json_url at build time and *warns* when it cannot be read, which
+    # -W turns into a failed build. That fetch would have to succeed before the deploy that
+    # publishes the file -- impossible for the release that introduces the switcher, and a
+    # network dependency in every build after it. The file's shape is asserted by the deploy
+    # that generates it instead.
+    "check_switcher": False,
     # The slot is empty by default; the theme puts downloads out of scope, so the component
     # is this repository's own.
     "article_header_end": ["notebook-buttons.html"],
