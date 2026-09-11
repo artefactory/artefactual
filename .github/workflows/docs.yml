@@ -24,10 +24,13 @@ on:
         description: Run the notebooks and publish the outputs they produce.
         type: boolean
         default: true
+      # Republishing a release means building its tag, not main: run
+      # `gh workflow run docs.yml --ref v2026.09.0 -f version=2026.09.0`. Dispatching from
+      # main with a released version here would overwrite that version's pages with main.
       version:
-        description: Version the built pages name. Empty means read it from the git tag.
+        description: Version the built pages name, as its tag spells it (e.g. 2026.09.0).
         type: string
-        default: ""
+        required: true
   workflow_call:
     inputs:
       deploy:
@@ -156,10 +159,15 @@ jobs:
           done
           exit $missing
 
+      # A plain artifact, not a Pages one: on a release the deploy job assembles this build
+      # into the archive of every previous release and publishes *that* tree. A pull request
+      # never reaches the deploy job, so for it this upload is only a build product.
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
+          name: site
           path: docs/_build/html
+          retention-days: 1
 
   deploy:
     # `inputs.deploy` alone, never `github.event_name`: in a called workflow the event is
@@ -173,7 +181,25 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      contents: write   # push the archive branch
+      pages: write
+      id-token: write
     steps:
+      # Only the scripts and the composite action are needed from the repository here;
+      # the built pages arrive as an artifact and the archive as a branch.
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+          sparse-checkout-cone-mode: false
+
+      - name: Assemble the versioned site
+        uses: ./.github/actions/publish-site
+        with:
+          version: ${{ inputs.version }}
+          site-url: https://artefactory.github.io/artefactual
+          token: ${{ github.token }}
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

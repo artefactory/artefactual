@@ -1,0 +1,107 @@
+name: Publish the versioned site
+description: >-
+  Place a documentation build in the archive of every release published so far, refresh the
+  version switcher, and upload the whole tree as the GitHub Pages artifact.
+
+# Both the release pipeline and a manual docs dispatch publish the site, and they must
+# assemble it the same way: `actions/deploy-pages` replaces the entire site on every run,
+# so a caller that deployed only its own build would take every previous version offline.
+
+inputs:
+  version:
+    description: Version this build documents, as the tag spells it (zero-padded month).
+    required: true
+  site-url:
+    description: Base URL the published site is read from.
+    required: true
+  artifact:
+    description: Name of the build artifact to place in the archive.
+    required: false
+    default: site
+  token:
+    description: Token used to push the archive branch.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # `git clone`, not actions/checkout: the branch does not exist before the first
+    # versioned deploy and a composite step cannot carry continue-on-error, and checkout
+    # would leave a .git whose history the archive commit would then extend.
+    - name: Fetch the published archive
+      shell: bash
+      env:
+        TOKEN: ${{ inputs.token }}
+        REPO: ${{ github.repository }}
+      run: |
+        set -euo pipefail
+        git clone --quiet --depth 1 --branch gh-pages \
+          "https://x-access-token:${TOKEN}@github.com/${REPO}.git" site || true
+        mkdir -p site
+        rm -rf site/.git
+
+    - uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.artifact }}
+        path: new-build
+
+    - name: Place this release in the archive
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        SITE_URL: ${{ inputs.site-url }}
+      run: |
+        set -euo pipefail
+        if [ -z "$VERSION" ]; then
+          echo "::error::a deploy needs the version it is publishing; the release passes it"
+          exit 1
+        fi
+        # The release is spelled two ways: the tag and the gate carry the zero-padded
+        # CalVer month (2026.09.0), while PEP 440 normalisation strips it, so the
+        # installed package -- and the `version_match` the theme compares against --
+        # says 2026.9.0. The site uses the package's spelling, or the dropdown never
+        # marks the version being read as current.
+        VERSION=$(python3 "$GITHUB_ACTION_PATH/../../scripts/build_switcher.py" canonical "$VERSION")
+        echo "publishing as $VERSION"
+
+        rm -rf "site/$VERSION"
+        cp -r new-build "site/$VERSION"
+
+        # `stable` is what documentation links point at, so it must not move to a new URL
+        # each release: it is a copy of the newest one, not a redirect, so that every
+        # relative link inside the site keeps working when read from under it.
+        rm -rf site/stable
+        cp -r new-build site/stable
+
+        # Generated from what is on disk rather than maintained by hand, so the
+        # dropdown cannot list a version that was never published or miss one that was.
+        python3 "$GITHUB_ACTION_PATH/../../scripts/build_switcher.py" index site "$SITE_URL"
+
+        # Anyone landing on the bare site gets the newest release rather than a listing.
+        printf '<!doctype html><meta http-equiv="refresh" content="0; url=./stable/">\n' > site/index.html
+        # Jekyll would drop the _static and _sources directories Sphinx emits.
+        touch site/.nojekyll
+
+    - name: Update the archive branch
+      shell: bash
+      env:
+        TOKEN: ${{ inputs.token }}
+        REPO: ${{ github.repository }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        cd site
+        git init -q -b gh-pages
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add -A
+        git commit -q -m "docs: publish ${VERSION}"
+        # Force, onto a branch with no history by construction: the archive is a
+        # snapshot of what is online, and keeping every past snapshot would grow the
+        # repository by the size of the site on every release.
+        git push -q --force "https://x-access-token:${TOKEN}@github.com/${REPO}.git" gh-pages
+        rm -rf .git
+
+    - uses: actions/upload-pages-artifact@v3
+      with:
+        path: site
