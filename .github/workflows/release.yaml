@@ -370,7 +370,11 @@ jobs:
     needs: [gate, tests]
     if: needs.gate.outputs.release == 'true'
     permissions:
-      contents: read
+      # Write, although this call never deploys: the permissions a caller passes cap every
+      # job in the called workflow, and docs.yml's deploy job asks for write to push the
+      # archive branch. GitHub checks that cap when it loads the file, so `deploy: false`
+      # -- which decides at run time -- does not spare the workflow from failing to start.
+      contents: write
       pages: write
       id-token: write
     uses: ./.github/workflows/docs.yml
