@@ -17,8 +17,8 @@ from openai import OpenAI
 
 from artefactual.scoring import BaseDetector
 
-MODEL = "mistralai/Ministral-8B-Instruct-2410"          # the model being scored
-DETECTOR = "chicham/artefactual-wepr-ministral"        # the detector trained for it
+MODEL = "mistralai/Ministral-8B-Instruct-2410"  # the model being scored
+DETECTOR = "artefactory/wepr-ministral"         # the detector trained for it
 
 client = OpenAI(base_url="https://your-provider.example/v1")  # any OpenAI-compatible endpoint
 response = client.chat.completions.create(
@@ -97,9 +97,9 @@ from artefactual.scoring import BaseDetector, wepr
 wepr(k=15).fit(responses, y)
 
 # Published weights, or your own file, are loaded rather than fitted
-BaseDetector.from_pretrained("chicham/artefactual-wepr-phi4", "wepr")
+BaseDetector.from_pretrained("artefactory/wepr-phi4", "wepr")
 BaseDetector.from_pretrained("/path/to/my_detector.skops", "wepr")
-BaseDetector.from_pretrained("chicham/artefactual-epr-phi4", "epr")   # the single-coefficient variant
+BaseDetector.from_pretrained("artefactory/epr-phi4", "epr")   # the single-coefficient variant
 ```
 
 Scoring a batch, reading per-token scores, scoring Langfuse traces, composing into
@@ -113,10 +113,10 @@ the row for the model that produced the responses, and the column for the reduct
 
 | Model that produced the responses | `"epr"` | `"wepr"` |
 |---|---|---|
-| `mistralai/Ministral-8B-Instruct-2410` | `chicham/artefactual-epr-ministral` | `chicham/artefactual-wepr-ministral` |
-| `mistralai/Mistral-Small-3.1-24B-Instruct-2503` | `chicham/artefactual-epr-mistral-small` | `chicham/artefactual-wepr-mistral-small` |
-| `tiiuae/Falcon3-10B-Instruct` | `chicham/artefactual-epr-falcon3` | `chicham/artefactual-wepr-falcon3` |
-| `microsoft/phi-4` | `chicham/artefactual-epr-phi4` | `chicham/artefactual-wepr-phi4` |
+| `mistralai/Ministral-8B-Instruct-2410` | `artefactory/epr-ministral` | `artefactory/wepr-ministral` |
+| `mistralai/Mistral-Small-3.1-24B-Instruct-2503` | `artefactory/epr-mistral-small` | `artefactory/wepr-mistral-small` |
+| `tiiuae/Falcon3-10B-Instruct` | `artefactory/epr-falcon3` | `artefactory/wepr-falcon3` |
+| `microsoft/phi-4` | `artefactory/epr-phi4` | `artefactory/wepr-phi4` |
 
 All are trained at `k = 15`. Both factories also accept a path to a `.skops` file, so a
 detector you trained yourself is named the same way one published here is — the package
