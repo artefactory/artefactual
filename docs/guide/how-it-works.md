@@ -13,7 +13,7 @@ flowchart LR
     R --> P --> E --> C --> O
 ```
 
-Each box below is one of its steps.
+The three middle boxes are the three sections below.
 
 ## Parse
 
