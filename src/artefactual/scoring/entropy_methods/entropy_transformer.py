@@ -80,7 +80,7 @@ class EntropyTransformer(BaseEstimator, TransformerMixin, EntropyContributionsMi
         tags.input_tags.allow_nan = True  # consumes NaN-padded input on purpose (else check_estimators_nan_inf fails)
         return tags
 
-    def fit(self, _x, _y=None) -> "EntropyTransformer":
+    def fit(self, X, y=None) -> "EntropyTransformer":  # noqa: ARG002, N803 — X / y unused but required by the sklearn fit signature
         """No-op, present so the step composes in a `Pipeline`. Returns self."""
         return self
 

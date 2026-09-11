@@ -6,6 +6,7 @@ sklearn itself would run, restricted to the ones that make sense for estimators 
 deliberately opt out of array validation.
 """
 
+import inspect
 import warnings
 
 import numpy as np
@@ -102,6 +103,15 @@ def test_parser_opts_out_of_array_validation():
     assert tags.no_validation is True
     assert tags.requires_fit is False
     assert tags.input_tags.two_d_array is False
+
+
+@pytest.mark.parametrize("estimator", [EntropyTransformer(), LogProbParser()])
+def test_fit_names_its_two_arguments_x_and_y(estimator):
+    # sklearn reads `fit`'s signature by name, not by position: `check_estimator` fails on
+    # any other spelling before it runs a single behavioural check, and `Pipeline` passes
+    # `y` through by keyword when a later step needs it.
+    parameters = list(inspect.signature(estimator.fit).parameters)
+    assert parameters[:2] == ["X", "y"]
 
 
 # --- reduction shapes ------------------------------------------------------------------
