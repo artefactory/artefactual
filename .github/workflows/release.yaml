@@ -137,7 +137,7 @@ jobs:
         run: git push origin "$TAG_NAME"
 
   build:
-    needs: tag
+    needs: [tag, docs-build]
     permissions:
       contents: read
       id-token: write  # a called workflow cannot hold more than its caller grants
@@ -315,3 +315,43 @@ jobs:
           files: |
             dist/*.whl
             dist/*.tar.gz
+
+  # After the tag and before anything is published, so it gates the release at the last
+  # point where stopping still costs nothing: executing the notebooks is part of what a
+  # release is checked against, and a published example that no longer runs should stop the
+  # release rather than be discovered on the site afterwards. It cannot run any earlier --
+  # conf.py reads the version from the installed package, which hatch-vcs derives from the
+  # most recent tag, so a build before the tag exists would name the release .dev and put
+  # the development banner on the released site. A failure here leaves the tag behind with
+  # nothing published; delete it with `git push origin :vYYYY.MM.PATCH`, as for a declined
+  # pypi environment. Deploying is a separate job below -- this one only builds and uploads
+  # the pages artifact.
+  docs-build:
+    needs: [gate, tag]
+    if: needs.gate.outputs.release == 'true'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/docs.yml
+    with:
+      execute: true
+      deploy: false
+
+  # Last, and only once PyPI has the version: the site names the version it documents, so
+  # publishing it earlier would advertise an API that cannot yet be installed. The artifact
+  # is the one docs-build uploaded in this same run, built from the tagged commit, so the
+  # pages deployed are the ones that gated the publish.
+  docs-deploy:
+    needs: [docs-build, publish, github-release]
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

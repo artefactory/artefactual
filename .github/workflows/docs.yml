@@ -1,11 +1,39 @@
 name: Build and Deploy Documentation
 
+# The site is published by the release pipeline, not by a merge. A merge to main and a
+# pull request still build it -- a broken build is worth catching where it is introduced --
+# but only a release deploys, so the published pages always describe the version on PyPI.
+#
+# Called rather than triggered by the tag: a tag pushed with GITHUB_TOKEN starts no
+# workflow run, so `on: push: tags:` would never fire. `release.yaml` calls this after the
+# GitHub Release exists.
 on:
   push:
     branches:
       - main
   pull_request:
+  # Republish the site without cutting a version: executing by default, since the outputs
+  # committed in the notebooks are not what the site is meant to show.
   workflow_dispatch:
+    inputs:
+      deploy:
+        description: Publish the built site to GitHub Pages.
+        type: boolean
+        default: true
+      execute:
+        description: Run the notebooks and publish the outputs they produce.
+        type: boolean
+        default: true
+  workflow_call:
+    inputs:
+      deploy:
+        description: Publish the built site to GitHub Pages.
+        type: boolean
+        default: false
+      execute:
+        description: Run the notebooks and publish the outputs they produce.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -18,10 +46,19 @@ concurrency:
 
 env:
   FORCE_COLOR: "1"
+  # Read by docs/conf.py, which switches nbsphinx to "always" when it is set. Only the
+  # release build sets it: executing reaches the Hugging Face Hub, which a pull request
+  # should not have to wait on.
+  ARTEFACTUAL_EXECUTE_NOTEBOOKS: ${{ inputs.execute && '1' || '' }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    # A build that executes downloads the checkpoints its notebooks load (some 500 MB) and
+    # runs the encoder judge on CPU -- around five minutes on a cold runner. nbsphinx_timeout
+    # in conf.py caps a single cell; this caps the job, well under the 6 h GitHub would
+    # otherwise allow it to burn.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,8 +76,12 @@ jobs:
             pyproject.toml
             uv.lock
 
+      # The notebooks group already depends on the docs extra, so an executing build names
+      # only the group. A build that does not execute reads the outputs stored in the .ipynb
+      # files and needs none of the runtime the group adds -- torch alone is 2 GB -- so it
+      # installs the extra by itself.
       - name: Install dependencies
-        run: uv sync --extra docs
+        run: uv sync ${{ inputs.execute && '--group notebooks' || '--extra docs' }}
 
       # nbsphinx shells out to pandoc to convert the notebooks' markdown cells. Without it
       # every notebook fails to read and the build stops, which -W turns into an error.
@@ -100,7 +141,12 @@ jobs:
           path: docs/_build/html
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # `inputs.deploy` alone, never `github.event_name`: in a called workflow the event is
+    # the *caller's*, so a release started by `gh workflow run release.yaml` would read as a
+    # manual run and deploy the site here -- before PyPI has the version, and even if the
+    # required reviewer declines it. On a push or a pull request there are no inputs at all
+    # and this is null, which is falsy.
+    if: inputs.deploy
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
