@@ -98,24 +98,30 @@ workflow run: chaining on the tag would leave the tag created and nothing built.
 
     `gh workflow run release.yaml --ref main`, or a merge to main
       -> gate             a dispatch is the decision itself; a merge releases only if
-                          the pull request it came from carried `release`
+                          the pull request it came from carried `release`. Refuses a
+                          HEAD that already carries a tag, and names the version this
+                          release will be -- computed, not written down anywhere
       -> tests            the suite, against the exact commit being released
-      -> tag              bump-my-version creates vYYYY.MM.PATCH, refusing a HEAD
-                          that already carries one
-      -> docs-build       the site, with its notebooks executed -- a published
-                          example that stopped running stops the release here,
-                          before anything is uploaded. After the tag, because the
-                          version the pages name is read back off it
-      -> build            hatch-vcs derives the version; the distributions are checked
-                          and the wheel is smoke-tested
+      -> docs-build       the site, with its notebooks executed -- a published example
+                          that stopped running stops the release here. The pages are
+                          told the version the gate named, since the tag does not
+                          exist yet
+      -> tag              bump-my-version creates that same version as vYYYY.MM.PATCH
+      -> build            hatch-vcs derives the version from the tag; the distributions
+                          are checked and the wheel is smoke-tested
       -> publish-testpypi uploaded, then checked against the metadata the index serves
       -> publish          PyPI, held for a required reviewer
       -> github-release   the Release, once PyPI has the version
       -> docs-deploy      the pages built above, published last
 
+Everything that can fail without leaving a trace runs before the tag; the tag is the last
+recoverable step, and the PyPI upload is the first irreversible one. So a failing test or a
+notebook that stopped running costs nothing but a re-run.
+
 The `pypi` environment has a required reviewer, so nothing reaches PyPI unattended. A
 release that should not go out is declined there; the tag is already created by then, and a
-tag is cheap to delete where a PyPI version is not reusable.
+tag is cheap to delete -- `git push origin :vYYYY.MM.PATCH` -- where a PyPI version is not
+reusable.
 
 Uploading before announcing is deliberate: a Release created first would advertise a
 version that a failed upload never produced, under a tag that cannot be reissued. The
