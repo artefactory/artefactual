@@ -182,18 +182,19 @@ in the [release notes](https://github.com/artefactory/artefactual/releases).
 
 ## Citation
 
-If `artefactual` is useful in your research, please cite our paper, accepted for
-publication at ECIR 2026:
+If `artefactual` is useful in your research, please cite the ECIR 2026 paper:
 
 ```bibtex
-@misc{moslonka2025learnedhallucinationdetectionblackbox,
-      title={Learned Hallucination Detection in Black-Box LLMs using Token-level Entropy Production Rate},
-      author={Charles Moslonka and Hicham Randrianarivo and Arthur Garnier and Emmanuel Malherbe},
-      year={2025},
-      eprint={2509.04492},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2509.04492},
+@inproceedings{moslonka2026learned,
+  title     = {Learned Hallucination Detection in Black-Box LLMs Using Token-Level Entropy Production Rate},
+  author    = {Moslonka, Charles and Randrianarivo, Hicham and Garnier, Arthur and Malherbe, Emmanuel},
+  booktitle = {Advances in Information Retrieval},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {16483},
+  pages     = {115--130},
+  publisher = {Springer, Cham},
+  year      = {2026},
+  doi       = {10.1007/978-3-032-21289-4_8},
 }
 ```
 
