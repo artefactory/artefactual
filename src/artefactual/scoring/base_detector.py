@@ -83,7 +83,20 @@ class BaseDetector(Pipeline, EstimatorPersistenceMixin):
                 step_transform = transformer.transform
             raw_output = step_transform(raw_output)
 
-        token_features = raw_output
+        token_features = np.asarray(raw_output)
+
+        # A step that reduces over the token axis in `transform` and declares no
+        # `transform_tokens` is driven through `transform` here, and silently hands back
+        # sequence-level features. Unpacking that below fails on the arity alone, naming
+        # neither the step nor the reason, so the shape is read first.
+        if token_features.ndim != 3:
+            reduced = ", ".join(name for name, step in self.steps[:-1] if not hasattr(step, "transform_tokens"))
+            msg = (
+                f"Token mode produced a {token_features.ndim}D array, expected 3D "
+                f"(n_sequences, max_tokens, n_features). A pipeline step reduced the token axis away: "
+                f"{reduced or 'no step'} declares no transform_tokens, so it ran in sequence mode."
+            )
+            raise ValueError(msg)
 
         n_samples, max_tokens, n_features = token_features.shape
         flat_features = np.asarray(token_features).reshape(n_samples * max_tokens, n_features)
