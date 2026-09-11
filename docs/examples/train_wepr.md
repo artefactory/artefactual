@@ -113,11 +113,6 @@ features = EntropyTransformer(reduction="wepr").transform(logprobs)
 logprobs.shape, s_kj.shape, features.shape
 ```
 
-```{code-cell} ipython3
-# The same three steps, assembled: this is what `fit` runs, in this order.
-print(" -> ".join(name for name, _ in WEPR(k=K).steps))
-```
-
 ## Fit
 
 `WEPR()` returns the pipeline unfitted, so `fit` takes the batch lines directly and
@@ -220,7 +215,6 @@ search = GridSearchCV(WEPR(), {"parser__k": [5, 10, 15]}, cv=folds, scoring="roc
 search.fit(responses, y)
 for k, mean in zip(search.cv_results_["param_parser__k"], search.cv_results_["mean_test_score"], strict=True):
     print(f"  k={k:>2}: {mean:.2f}")
-print(f"best: k={search.best_params_['parser__k']}, ROC-AUC {search.best_score_:.2f}")
 ```
 
 ```{code-cell} ipython3

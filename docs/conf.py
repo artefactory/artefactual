@@ -120,6 +120,28 @@ nb_output_stderr = "warn"
 # ``{py:class}`~artefactual.scoring.WEPR` `` links to the page documenting it.
 nb_render_markdown_format = "myst"
 
+# Progress bars, off before any kernel starts. MyST-NB spawns the kernel from this process,
+# so it inherits what is set here -- which makes a local build behave as the release build
+# does without every contributor having to know the list. Each of these is read by a
+# different library, and any one of them left on puts a bar in the page.
+for _quiet in (
+    "HF_HUB_DISABLE_PROGRESS_BARS",
+    "HF_DATASETS_DISABLE_PROGRESS_BARS",
+    "TQDM_DISABLE",
+):
+    os.environ.setdefault(_quiet, "1")
+os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
+
+# A progress bar under a kernel is an ipywidget, and its output carries a widget-view mime
+# the published page has no widget runtime to render. MyST-NB falls back to printing that
+# payload, so the page showed a line of raw JSON -- a model id and a schema version -- where
+# the bar had been. Dropping the mime makes it fall through to the plain-text alternative
+# the same output carries, which for a finished bar is nothing.
+nb_mime_priority_overrides = [
+    ("html", "application/vnd.jupyter.widget-view+json", None),
+    ("html", "application/vnd.jupyter.widget-state+json", None),
+]
+
 # A `{glue:text}` reads a value a cell computed, so a build that runs no cells has none to
 # read and warns once per reference -- which -W would turn into a failure of every pull
 # request. Suppressed only there. The release build executes, so a key that is misspelled
