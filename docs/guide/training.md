@@ -7,7 +7,7 @@ or not. It takes answers that model generated and a verdict on each. The pipelin
 ```python
 # responses: what the model answered, generated with top_logprobs >= k
 # y:         one 0/1 label per answer, 1 marking a hallucination
-detector = wepr(k=15).fit(responses, y)
+detector = WEPR(k=15).fit(responses, y)
 ```
 
 A fit needs two things, both in the OpenAI Batch output shape and joined on `custom_id`:

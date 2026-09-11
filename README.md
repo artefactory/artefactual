@@ -28,7 +28,7 @@ response = client.chat.completions.create(
     top_logprobs=15,
 )
 
-detector = BaseDetector.from_pretrained(DETECTOR, "wepr")
+detector = WEPR.from_pretrained(DETECTOR)
 print(detector.predict_proba(response)[:, 1])   # P(hallucination) per sequence
 print(detector.predict_token_proba(response))   # ...and per token
 ```
@@ -94,12 +94,12 @@ arguments and return the same type.
 from artefactual.scoring import BaseDetector, wepr
 
 # Unfitted, as a scikit-learn estimator is; y is 0/1 per sequence, 1 marking a hallucination
-wepr(k=15).fit(responses, y)
+WEPR(k=15).fit(responses, y)
 
 # Published weights, or your own file, are loaded rather than fitted
-BaseDetector.from_pretrained("artefactory/wepr-phi4", "wepr")
-BaseDetector.from_pretrained("/path/to/my_detector.skops", "wepr")
-BaseDetector.from_pretrained("artefactory/epr-phi4", "epr")   # the single-coefficient variant
+WEPR.from_pretrained("artefactory/wepr-phi4")
+WEPR.from_pretrained("/path/to/my_detector.skops")
+EPR.from_pretrained("artefactory/epr-phi4")   # the single-coefficient variant
 ```
 
 Scoring a batch, reading per-token scores, scoring Langfuse traces, composing into
