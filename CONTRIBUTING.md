@@ -50,18 +50,43 @@ This project uses [CalVer](https://calver.org/) versioning with the format `YYYY
 
 ### Creating a Release
 
-A merge to `main` releases when its pull request carried the **`release`** label, and does
-nothing otherwise. There is no tag to push and no version to edit: the version lives in the
-git tag, and the tag is created by CI.
+There is no tag to push and no version to edit: the version lives in the git tag, and the
+tag is created by CI. Two things start it.
 
-Label the pull request before merging it:
+**Land the changes, then say when.** Nothing about a merge releases by itself, so the
+pull requests go in normally and the release is a separate decision, taken once they are
+all on `main`:
+
+```bash
+gh workflow run release.yaml --ref main
+```
+
+Starting a workflow needs write access and the `pypi` environment still holds its required
+reviewer, so this is a way to ask rather than a way around the gate. It refuses any ref but
+`main`: the tag is created on `HEAD`, and a tag on a side branch is not reachable by
+`git describe` from `main`, which is where `hatch-vcs` reads the version back from. A
+`HEAD` that already carries a tag is refused too — that commit has been released, and a
+second tag on it would spend a version number on an identical tree.
+
+**Or decide at merge time**, with the **`release`** label on the pull request. A merge to
+`main` releases when the pull request it came from carried the label, and does nothing
+otherwise:
 
 ```bash
 gh pr edit <number> --add-label release
 ```
 
+This is the shorter path when one pull request is the whole release. It is also the one
+that has to be remembered in the middle of merging, and the label is not visible in the
+diff being reviewed, so prefer it for a single change and dispatch for a batch.
+
 Ordinary merges publish nothing, so a fix to a fix does not spend a version number. A
 commit pushed straight to `main`, belonging to no pull request, never releases.
+
+Do not start a dispatch while a labelled merge is still releasing: the two are serialised
+rather than rejected, so the second would run against whatever `main` is by then. The tag
+job refuses an already-released `HEAD`, which catches the common case, but the Actions tab
+is the thing to check first.
 
 `bump-my-version` computes the next tag from the most recent reachable one and creates it,
 configured to write no files and make no commit. `hatch-vcs` then reads the version back
@@ -71,10 +96,12 @@ off that tag at build time, so what is tagged and what is built cannot disagree 
 The chain runs in one workflow, because a tag pushed with `GITHUB_TOKEN` does not start a
 workflow run: chaining on the tag would leave the tag created and nothing built.
 
-    merge to main
-      -> gate             is the merged pull request labelled `release`?
+    `gh workflow run release.yaml --ref main`, or a merge to main
+      -> gate             a dispatch is the decision itself; a merge releases only if
+                          the pull request it came from carried `release`
       -> tests            the suite, against the exact commit being released
-      -> tag              bump-my-version creates vYYYY.MM.PATCH
+      -> tag              bump-my-version creates vYYYY.MM.PATCH, refusing a HEAD
+                          that already carries one
       -> build            hatch-vcs derives the version; the distributions are checked
                           and the wheel is smoke-tested
       -> publish-testpypi uploaded, then checked against the metadata the index serves

@@ -7,9 +7,14 @@ name: Release
 # The chain runs inside one workflow. Chaining through `workflow_run` on a pushed tag
 # would never fire: a push made with GITHUB_TOKEN does not start a workflow run, so the
 # tag would appear and nothing would build.
+#
+# A commit already on main can still be released, by running this workflow by hand: the
+# label is read off a pull request, so a merge that carried none has no second chance
+# otherwise, and opening a throwaway pull request to carry a label is not one.
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -34,14 +39,32 @@ jobs:
       # commit and its labels read back. A commit that belongs to no pull request -- a
       # direct push to main -- releases nothing, which is the safe default: a version
       # number is spent permanently and cannot be reissued.
+      #
+      # Run by hand, the request itself is the decision and there is no pull request to
+      # read. Starting a workflow needs write access, and the pypi environment still holds
+      # its required reviewer, so this is a second way to ask, not a way around the gate.
+      # Refused off main: the tag is created on HEAD, and a tag on a side branch is not
+      # reachable by `git describe` from main, which is what hatch-vcs reads the version
+      # back from.
       - name: Look for the release label on the merged pull request
         id: check
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
         run: |
           set -euo pipefail
+          if [ "$EVENT" = workflow_dispatch ]; then
+            if [ "$REF" != refs/heads/main ]; then
+              echo "::error::a manual release runs from main only, not $REF"
+              exit 1
+            fi
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "started by hand from main: tagging and publishing"
+            exit 0
+          fi
           labels=$(gh api "repos/$REPO/commits/$SHA/pulls" --jq '[.[].labels[].name] | join(" ")')
           echo "labels on the merged pull request: ${labels:-<none>}"
           if printf '%s' "$labels" | tr ' ' '\n' | grep -qx release; then
@@ -87,6 +110,17 @@ jobs:
       - name: Compute and create the next tag
         id: bump
         run: |
+          # Two triggers reach this job, and the concurrency group serialises them rather
+          # than rejecting the second: a hand-started run queued behind a labelled merge
+          # would bump again off the same HEAD and spend a second version number on an
+          # identical tree, with an empty changelog between the two tags. A commit that is
+          # already tagged has already been released, so this stops rather than releasing
+          # it twice -- a version number cannot be reissued, and the fix for a missed
+          # release is another dispatch, not another tag on the same commit.
+          if tagged=$(git describe --tags --exact-match HEAD 2>/dev/null); then
+            echo "::error::HEAD is already released as $tagged; nothing to tag"
+            exit 1
+          fi
           # Annotated tags carry a tagger, which a runner has no identity for by default.
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
