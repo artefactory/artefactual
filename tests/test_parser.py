@@ -3,6 +3,7 @@ import pytest
 from hypothesis import assume, given
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
+from pydantic import ValidationError
 
 from artefactual.preprocessing.parser import (
     LogProbParser,
@@ -113,6 +114,21 @@ def test_unsupported_payloads_are_rejected_by_both_entry_points(payload):
         parse_top_logprobs(payload)
     with pytest.raises(TypeError, match="Unsupported output format"):
         parse_sampled_token_logprobs(payload)
+
+
+# A payload that matches no schema and one that matches a schema but carries bad data are
+# different failures: the first names an unsupported provider, the second a field the
+# caller can go and fix. Reporting both as "unsupported output format" sends the reader
+# looking for the wrong problem.
+
+MALFORMED = {"choices": [{"logprobs": {"content": [{"top_logprobs": [{"logprob": "abc"}]}]}}]}
+
+
+@pytest.mark.parametrize("parse", [parse_top_logprobs, parse_sampled_token_logprobs])
+def test_a_recognised_payload_with_bad_data_names_the_field(parse):
+    with pytest.raises(ValidationError) as failure:
+        parse(MALFORMED)
+    assert any(error["loc"][-1] == "logprob" for error in failure.value.errors())
 
 
 def test_a_content_part_without_logprobs_is_skipped():
