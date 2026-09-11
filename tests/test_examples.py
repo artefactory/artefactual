@@ -155,6 +155,29 @@ def test_the_response_fixture_is_wide_enough_to_train_on():
     assert min(widths) >= 15, f"fixture carries {min(widths)} ranks per token, the notebook fits at k=15"
 
 
+def test_the_encoder_judge_is_read_the_way_it_was_trained():
+    """Pin the two choices in the BERTJudge notebook that fail silently.
+
+    Neither is caught by running the notebook: both leave it producing numbers in the
+    right range, and every metric downstream still reads as plausible.
+
+    The checkpoint is one of a family. The Formatted siblings expect answers ending in
+    "Final answer: <x>"; scoring unconstrained generations with one grades the format
+    rather than the answer.
+
+    The polarity is inverted between the two sides. `read_judgment` answers True when the
+    judge said the response was CORRECT, and the detector's positive class is the
+    hallucination, so the label is the negation. Dropping it trains the detector to
+    recognise correct answers and reports the result as hallucination detection.
+    """
+    code = code_of(load("train_wepr_bertjudge"))
+
+    assert 'JUDGE_MODEL = "artefactory/BERTJudge"' in code, (
+        "the Free-QCR checkpoint is the one trained on unconstrained generations"
+    )
+    assert "int(not verdict)" in code, "the label is the negation of the judge's verdict"
+
+
 @pytest.mark.parametrize("name", OFFLINE_NOTEBOOKS)
 def test_the_committed_outputs_are_not_empty(name):
     """A notebook stripped of outputs renders as a blank page on the docs site."""
