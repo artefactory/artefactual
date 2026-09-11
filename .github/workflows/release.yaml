@@ -197,7 +197,13 @@ jobs:
           path: dist/
 
       - name: Publish to TestPyPI
-        uses: pypa/gh-action-pypi-publish@a892a5a61159132606e93a2fa6f4358831b04d26  # v1.14.2
+        # The COMMIT a tag points at, never the annotated tag object's own sha: this is a
+        # Docker action, and the image on ghcr is tagged by commit. A tag-object sha fails
+        # at `docker run` with `manifest unknown`, after the release has already tagged.
+        # Resolve it with: gh api repos/pypa/gh-action-pypi-publish/git/ref/tags/vX.Y.Z
+        #   --jq '.object.sha'  then, if .object.type is "tag", dereference:
+        #   gh api repos/pypa/gh-action-pypi-publish/git/tags/<sha> --jq '.object.sha'
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
         with:
           repository-url: https://test.pypi.org/legacy/
           print-hash: true
@@ -300,7 +306,7 @@ jobs:
           path: dist/
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@a892a5a61159132606e93a2fa6f4358831b04d26  # v1.14.2
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
         with:
           print-hash: true
           attestations: true
