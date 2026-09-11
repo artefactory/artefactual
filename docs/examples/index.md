@@ -1,6 +1,6 @@
 # Examples
 
-Three runnable notebooks, each scoring with a detector rather than building one. Training
+Three runnable examples, each scoring with a detector rather than building one. Training
 one for your own model is in {doc}`../guide/training`.
 
 | Notebook | Shows | Needs |
@@ -12,24 +12,28 @@ one for your own model is in {doc}`../guide/training`.
 The first two read a committed fixture rather than calling a model, so they need no GPU and
 no API key; they still fetch their detector's weights from the Hugging Face Hub.
 
-Run one locally from the repository root. The `notebooks` group holds what they need beyond
-the package — `matplotlib`, the adapters, and the encoder judge's runtime:
+Run one locally from the repository root. The `notebooks` group holds what they need
+beyond the package — `matplotlib`, the adapters, and the encoder judge's runtime — and
+`jupytext` turns the Markdown into a notebook to open:
 
 ```bash
 uv sync --group notebooks
+uv run jupytext --to ipynb docs/examples/epr_usage_demo.md
 uv run jupyter lab docs/examples/epr_usage_demo.ipynb
 ```
 
-Every page also offers the notebook itself, as a download or in Colab.
+Every page also offers that notebook ready-made, as a download or in Colab.
 
-Outputs are committed and the documentation build does not re-execute them
-(`nbsphinx_execute = "never"`), so the published pages stay reproducible offline.
-`tests/test_examples.py` runs the notebooks against the current source, so a published
-example cannot silently stop working — it checks the code, not the numbers beside it.
+The source of an example is its `.md`: code and prose, no stored outputs and no execution
+counts, so a change to one reads as a diff. The published pages carry outputs because the
+release build runs the notebooks and publishes what it got — which is also why a page you
+are reading on a pull request preview shows code with nothing under it.
 
-{doc}`langfuse_integration_demo` generates against a live endpoint, so it ships without
-stored outputs and is checked statically rather than executed — the numbers are the ones
-your own run produces.
+`tests/test_examples.py` runs them against the current source, so a published example
+cannot silently stop working.
+
+{doc}`langfuse_integration_demo` needs a live endpoint and a Langfuse project, so the build
+never runs it: its cells are the record of a session you run yourself.
 
 ```{toctree}
 :maxdepth: 1

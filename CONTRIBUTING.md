@@ -131,7 +131,7 @@ reader pinned to an older version still has documentation that matches what they
 The archive lives on the `gh-pages` branch because `actions/deploy-pages` replaces the whole
 site on every run; that branch is rewritten as a single commit each time, so the repository
 grows with the number of versions kept online rather than the number of deploys. At roughly
-20 MB a version, prune the oldest directories from `gh-pages` if the site approaches the
+10 MB a version, prune the oldest directories from `gh-pages` if the site approaches the
 1 GB Pages limit.
 
 Uploading before announcing is deliberate: a Release created first would advertise a
@@ -153,3 +153,26 @@ uvx bump-my-version show-bump
 
 Every pull request runs the same build the release does, with publishing switched off, so a
 packaging fault surfaces before the merge rather than after the tag exists.
+
+## The example notebooks
+
+The examples under `docs/examples/` are MyST Markdown, not `.ipynb`. The source is code and
+prose: no stored outputs, no execution counts, no base64 images, so a change to one is
+reviewable as an ordinary diff. The `.ipynb` a reader downloads or opens in Colab is written
+by the documentation build, into the site, and never committed -- `docs/examples/*.ipynb` is
+ignored for that reason.
+
+To work on one in Jupyter, convert it and convert it back:
+
+```bash
+uv run jupytext --to ipynb docs/examples/train_wepr.md   # edit train_wepr.ipynb in Jupyter
+uv run jupytext --to md:myst docs/examples/train_wepr.ipynb
+```
+
+Commit only the `.md`. Pre-commit pipes its code cells through the same `ruff` as the rest
+of the repository, so formatting stays consistent without nbQA unpacking a notebook first.
+
+The release build runs every example and publishes what it got, so the pages carry real
+outputs while the repository carries none. An example that needs credentials opts out in its
+own front matter (`mystnb: {execution_mode: "off"}`) -- which is also why a documentation
+preview on a pull request shows the code with nothing under it: that build executes nothing.

@@ -6,8 +6,9 @@ markdown starts at `##` still renders `<h1>` there, and a `#` to `###` jump stil
 correct.
 
 It matters everywhere the notebook is rendered *without* that normalisation -- GitHub's
-notebook preview, nbviewer, Colab -- which is how most readers meet a notebook in a pull
-request. There a skipped level shows as a skipped level and a `##` title shows undersized.
+markdown and notebook previews, nbviewer, Colab -- which is how most readers meet an example
+outside the site. There a skipped level shows as a skipped level and a `##` title shows
+undersized.
 
 Cheap to check and impossible to notice by eye, which is the case for a test.
 
@@ -16,10 +17,10 @@ against the shipped notebooks also runs against notebooks written here to carry 
 A check nothing has ever been seen to fail is a check that might not be able to.
 """
 
-import json
 from itertools import pairwise
 from pathlib import Path
 
+import jupytext
 import pytest
 from markdown_it import MarkdownIt
 
@@ -28,11 +29,12 @@ from markdown_it import MarkdownIt
 _COMMONMARK = MarkdownIt("commonmark")
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "docs" / "examples"
-NOTEBOOKS = sorted(path.stem for path in EXAMPLES.glob("*.ipynb"))
+# The examples are MyST Markdown; `index.md` is an ordinary page beside them, not one.
+NOTEBOOKS = sorted(path.stem for path in EXAMPLES.glob("*.md") if path.stem != "index")
 
 
 def load(name):
-    return json.loads((EXAMPLES / f"{name}.ipynb").read_text(encoding="utf-8"))
+    return jupytext.read(EXAMPLES / f"{name}.md")
 
 
 def notebook_of(*cells):
@@ -41,27 +43,7 @@ def notebook_of(*cells):
 
 
 def markdown_cell(text):
-    return {"cell_type": "markdown", "metadata": {}, "source": text.splitlines(keepends=True)}
-
-
-def code_cell(execution_count, outputs=()):
-    return {
-        "cell_type": "code",
-        "execution_count": execution_count,
-        "metadata": {},
-        "outputs": list(outputs),
-        "source": ["pass\n"],
-    }
-
-
-def result(execution_count):
-    """An `execute_result` output, which carries a second copy of its cell's run count."""
-    return {
-        "data": {"text/plain": ["1"]},
-        "execution_count": execution_count,
-        "metadata": {},
-        "output_type": "execute_result",
-    }
+    return {"cell_type": "markdown", "metadata": {}, "source": text}
 
 
 def headings(notebook):
@@ -81,7 +63,7 @@ def headings(notebook):
         (int(opening.tag.removeprefix("h")), inline.content)
         for cell in notebook["cells"]
         if cell["cell_type"] == "markdown"
-        for opening, inline in pairwise(_COMMONMARK.parse("".join(cell["source"])))
+        for opening, inline in pairwise(_COMMONMARK.parse(cell["source"]))
         if opening.type == "heading_open"
     ]
 
@@ -109,46 +91,6 @@ def skipped_levels(found):
     ]
 
 
-def stale_run_complaints(notebook):
-    """Why the committed outputs cannot have come from one top-to-bottom run, if they cannot.
-
-    All-absent counts are the deliberate state of the notebooks that ship without outputs
-    because they need a live endpoint -- so that is an escape hatch only when the outputs
-    are absent too. Counts stripped from a notebook that kept its outputs is the same
-    stale-output defect wearing the exemption, and a jupytext or nbstripout round-trip
-    produces exactly that.
-
-    An output carries the count of the run that produced it, which is a second copy of the
-    same fact and disagrees when a single cell was re-run in place.
-    """
-    code = [cell for cell in notebook["cells"] if cell["cell_type"] == "code"]
-    counts = [cell.get("execution_count") for cell in code]
-    ran = [count for count in counts if count is not None]
-
-    if not ran:
-        carrying = [cell for cell in code if cell.get("outputs")]
-        if carrying:
-            complaint = (
-                f"carries outputs on {len(carrying)} cell(s) but no execution counts, so "
-                f"nothing says the outputs came from the code beside them"
-            )
-            return [complaint]
-        return []
-
-    if ran != list(range(1, len(counts) + 1)):
-        return [f"has execution counts {counts}"]
-
-    disagree = [
-        (cell["execution_count"], output["execution_count"])
-        for cell in code
-        for output in cell.get("outputs", [])
-        if output.get("execution_count") not in (None, cell["execution_count"])
-    ]
-    if disagree:
-        return [f"has cells whose output was produced by a different run (cell, output): {disagree}"]
-    return []
-
-
 # --- the shipped notebooks -------------------------------------------------------------
 
 
@@ -167,26 +109,6 @@ def test_the_notebook_never_skips_a_heading_level(name):
         f"{name} jumps more than one heading level at: {skips}. Promote the second, or give "
         f"it a parent one level below the first."
     )
-
-
-@pytest.mark.parametrize("name", NOTEBOOKS)
-def test_the_outputs_come_from_one_top_to_bottom_run(name):
-    """Execution counts read 1..N, or are absent throughout.
-
-    Editing one cell and re-running only that cell leaves its neighbours' outputs
-    describing the code that used to be above them. Every other check still passes --
-    the outputs are there and none of them is an error -- and the published page shows
-    results that never came from the code beside them. The counts are the only trace of
-    it left in the file.
-
-    This catches the partial re-run, which is the accident that happens. It cannot catch
-    an edit followed by no run at all; nothing short of executing the notebook can, and
-    two of these download published weights to run, so executing them here would compare
-    against numbers this suite deliberately does not reproduce.
-    """
-    complaints = stale_run_complaints(load(name))
-
-    assert not complaints, f"{name} {complaints[0]}; re-run it top to bottom before committing"
 
 
 def test_every_notebook_is_classified_by_the_execution_tests():
@@ -282,39 +204,3 @@ def test_returning_to_a_shallower_level_is_not_a_skip():
     )
 
     assert skipped_levels(found) == []
-
-
-@pytest.mark.parametrize(
-    ("cells", "complaint"),
-    [
-        pytest.param(
-            [code_cell(1), code_cell(3), code_cell(2)],
-            "execution counts [1, 3, 2]",
-            id="re-run-out-of-order",
-        ),
-        pytest.param(
-            [code_cell(1), code_cell(None), code_cell(3)],
-            "execution counts [1, None, 3]",
-            id="one-cell-never-run",
-        ),
-        pytest.param(
-            [code_cell(1), code_cell(2, [result(1)])],
-            "produced by a different run",
-            id="output-from-an-earlier-run",
-        ),
-        pytest.param(
-            [code_cell(None, [result(None)])],
-            "no execution counts",
-            id="counts-stripped-outputs-kept",
-        ),
-    ],
-)
-def test_outputs_that_cannot_come_from_one_run_are_refused(cells, complaint):
-    complaints = stale_run_complaints(notebook_of(*cells))
-
-    assert any(complaint in line for line in complaints), complaints
-
-
-def test_a_notebook_that_ships_without_outputs_is_accepted():
-    """The deliberate state of the notebooks that need a live endpoint to run."""
-    assert stale_run_complaints(notebook_of(code_cell(None), code_cell(None))) == []
