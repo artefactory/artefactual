@@ -1,7 +1,7 @@
 # Examples
 
 Three runnable notebooks, each scoring with a detector rather than building one. Training
-one for your own model is in {doc}`../guide/how-it-works`.
+one for your own model is in {doc}`../guide/training`.
 
 | Notebook | Shows | Needs |
 |---|---|---|

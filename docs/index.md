@@ -11,9 +11,21 @@ pip install artefactual
 ```python
 from artefactual.scoring import BaseDetector
 
+# response is what any OpenAI-compatible client returns with logprobs=True, top_logprobs=15
 detector = BaseDetector.from_pretrained("artefactory/wepr-ministral", "wepr")
 detector.predict_proba(response)[:, 1]   # P(hallucination) per sequence
 ```
+
+Two answers from the same model, scored by the same detector:
+
+| The model was asked | It answered | P(hallucination) |
+|---|---|---|
+| What is the capital city of France? | Paris. | 0.08 |
+| Who is Charles Moslonka? Where was he born? | Charles Moslonka is a French singer born in Lyon in 1985. | 0.99 |
+
+Neither answer was checked against anything. The second scores high because the model was
+uncertain while generating it. Both numbers are the ones {doc}`examples/wepr_usage_demo`
+prints, and it also marks which tokens drove them.
 
 The [project README](https://github.com/artefactory/artefactual) covers installation,
 requirements and the published results. This site covers using a detector in depth.

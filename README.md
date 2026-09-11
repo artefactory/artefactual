@@ -41,7 +41,7 @@ No endpoint is needed to try the library: two of the
 [example notebooks](https://artefactory.github.io/artefactual/examples/) run against
 checked-in fixtures and need no GPU and no API key. Training a detector for a model with no
 published weights is covered, with three more notebooks, in
-[how it works](https://artefactory.github.io/artefactual/guide/how-it-works.html).
+[training a detector](https://artefactory.github.io/artefactual/guide/training.html).
 
 ## Requirements
 
@@ -155,6 +155,7 @@ subdirectory.
 
 - Documentation and user guide: https://artefactory.github.io/artefactual/
 - Example notebooks: https://artefactory.github.io/artefactual/examples/
+- Training a detector: https://artefactory.github.io/artefactual/guide/training.html
 - How it works: https://artefactory.github.io/artefactual/guide/how-it-works.html
 
 ## Development
