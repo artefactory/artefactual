@@ -9,7 +9,7 @@ and the response shapes the parser accepts.
 shipped file was trained at.
 
 ```python
-detector = BaseDetector.from_pretrained("artefactory/wepr-phi4", "wepr", k=15)
+detector = WEPR.from_pretrained("artefactory/wepr-phi4", k=15)
 ```
 
 **Responses must carry at least `k` ranks.** This is an input requirement rather than
@@ -51,7 +51,7 @@ input width.
 A locally trained detector is loaded by passing a path instead of a name:
 
 ```python
-detector = BaseDetector.from_pretrained("/path/to/my_detector.skops", "wepr")
+detector = WEPR.from_pretrained("/path/to/my_detector.skops")
 ```
 
 Weight files are JSON. EPR files carry a single coefficient:

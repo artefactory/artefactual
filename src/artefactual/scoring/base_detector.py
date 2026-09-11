@@ -1,6 +1,7 @@
-"""The detector pipeline and the `epr` / `wepr` factories that build it."""
+"""The detector pipeline and the `EPR` / `WEPR` detectors built on it."""
 
-from typing import Any
+from pathlib import Path
+from typing import Any, ClassVar
 
 import numpy as np
 from sklearn.base import BaseEstimator
@@ -14,53 +15,176 @@ from artefactual.utils.io import EstimatorPersistenceMixin, Reduction
 # Every published detector was fit at 15 ranks.
 DEFAULT_K = 15
 
-# Features each reduction produces: EPR pools the ranks into one, WEPR keeps a mean and a
-# max per rank. The loaded estimator is checked against this, since a detector's
-# coefficient vector is fixed at the rank count it was trained at.
-_FEATURE_COUNT = {"epr": lambda _k: 1, "wepr": lambda k: 2 * k}
-
-
-def _load_pretrained(reduction: Reduction, identifier: str, k: int) -> BaseEstimator:
-    """Load a published detector and check it covers exactly `k` ranks.
-
-    Raises:
-        ValueError: If the detector was fit at a different rank count than `k`.
-    """
-    estimator = BaseDetector.load_estimator(identifier)
-    expected = _FEATURE_COUNT[reduction](k)
-    # `n_features_in_` is set by fit, so it is absent from the `BaseEstimator` interface
-    # even though every estimator reaching here is fitted. Read it through `Any` rather
-    # than suppressing per type-checker: the suppression is itself reported as unused by
-    # versions that do not raise, which fails the hook the other way round.
-    fitted: Any = estimator
-    actual: int = fitted.n_features_in_
-    if actual != expected:
-        implied = actual // 2 if reduction == "wepr" else actual
-        msg = (
-            f"The {reduction} detector at '{identifier}' takes {actual} feature(s), but "
-            f"k={k} needs {expected}. Its coefficients are fixed at the rank count they "
-            f"were trained at; pass k={implied}, or use a detector trained at k={k}."
-        )
-        raise ValueError(msg)
-    return estimator
-
 
 class BaseDetector(Pipeline, EstimatorPersistenceMixin):
     """A `parser -> entropy -> classifier` pipeline returning P(hallucination).
 
     A scikit-learn `Pipeline`, so `predict`, `predict_proba`, `fit`, `get_params` and
     `clone` behave as expected and the detector composes into `GridSearchCV` and friends.
-    Build one with `epr()` or `wepr()` to fit, or `from_pretrained` to load published
-    weights, rather than constructing it directly.
+
+    Abstract in the reduction: `EPR` and `WEPR` are the detectors to construct. Each
+    subclass fixes `reduction` and the coefficient width that reduction implies, which is
+    all that distinguishes one detector from another.
 
     Class 1 is the hallucination class: `predict_proba(...)[:, 1]` is the score of
     interest.
     """
 
+    #: The entropy reduction this detector scores with. Set by each subclass.
+    reduction: ClassVar[Reduction | None] = None
+
+    def __init__(
+        self,
+        k: int = DEFAULT_K,
+        estimator: BaseEstimator | None = None,
+        *,
+        transform_input=None,
+        memory=None,
+        verbose=False,
+    ) -> None:
+        """Assemble a parser -> entropy -> classifier pipeline pinned to `k` ranks.
+
+        `k` is handled at the ends of the pipeline: the parser sizes the rank axis to it,
+        and any loaded weights were checked against it beforehand. The entropy step in
+        between carries no rank count, since its input width is already `k`.
+
+        Args:
+            k: Rank count the responses carry. Responses carrying fewer are rejected when
+                parsed, rather than padded, since the missing ranks were never fetched.
+            estimator: Final estimator. Unfitted by default -- the unregularised logistic
+                regression the published detectors were fit with, so coefficients fitted
+                here are comparable to the shipped ones. `C=np.inf` rather than
+                `penalty=None`: the latter is deprecated in scikit-learn 1.8 and removed in
+                1.10, and the two produce identical coefficients.
+            transform_input: Passed to `Pipeline`.
+            memory: Passed to `Pipeline`.
+            verbose: Passed to `Pipeline`.
+
+        Raises:
+            TypeError: If constructed directly rather than through `EPR` or `WEPR`.
+        """
+        if self.reduction is None:
+            msg = f"{type(self).__name__} fixes no reduction. Construct an EPR or a WEPR detector."
+            raise TypeError(msg)
+        super().__init__(
+            steps=[
+                ("parser", LogProbParser(k=k)),
+                ("entropy", EntropyTransformer(reduction=self.reduction)),
+                ("classifier", estimator if estimator is not None else LogisticRegression(C=np.inf, max_iter=1000)),
+            ],
+            transform_input=transform_input,
+            memory=memory,
+            verbose=verbose,
+        )
+
+    @property
+    def k(self) -> int:
+        """Rank count the parser reads, and the width the reduction covers.
+
+        Read from the parser step rather than stored alongside it, so that `set_params(k=)`
+        -- which is how `GridSearchCV` sweeps it -- reaches the step that acts on it
+        instead of setting an attribute nothing consults.
+        """
+        return self.named_steps["parser"].k
+
+    @k.setter
+    def k(self, value: int) -> None:
+        self.named_steps["parser"].k = value
+
+    @classmethod
+    def _feature_count(cls, k: int) -> int:
+        """Features this reduction produces at `k` ranks.
+
+        What a loaded estimator's coefficient vector is checked against: a detector's
+        coefficients are fixed at the rank count they were trained at.
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def _from_estimator(cls, estimator: BaseEstimator, identifier: str | Path, **kwargs: Any) -> "BaseDetector":
+        """A detector carrying `estimator` as its classifier, if the widths agree.
+
+        Args:
+            estimator: The fitted estimator read from the published file.
+            identifier: What named it, for the error below.
+            **kwargs: `k`, and anything else `__init__` takes.
+
+        Returns:
+            A detector ready to `predict_proba`.
+
+        Raises:
+            ValueError: If the estimator does not cover exactly `k` ranks.
+        """
+        k = kwargs.get("k", DEFAULT_K)
+        expected = cls._feature_count(k)
+        # `n_features_in_` is set by fit, so it is absent from the `BaseEstimator` interface
+        # even though every estimator reaching here is fitted. Read it through `Any` rather
+        # than suppressing per type-checker: the suppression is itself reported as unused by
+        # versions that do not raise, which fails the hook the other way round.
+        fitted: Any = estimator
+        actual: int = fitted.n_features_in_
+        if actual != expected:
+            msg = (
+                f"The {cls.__name__} detector at '{identifier}' takes {actual} feature(s), "
+                f"but k={k} needs {expected}. Its coefficients are fixed at the rank count "
+                f"they were trained at; pass k={cls._implied_k(actual)}, or use a detector "
+                f"trained at k={k}."
+            )
+            raise ValueError(msg)
+        return cls(estimator=estimator, **kwargs)
+
+    @classmethod
+    def _implied_k(cls, n_features: int) -> int:
+        """The rank count `n_features` coefficients were trained at."""
+        raise NotImplementedError
+
     @property
     def estimator(self) -> BaseEstimator:
-        """The final estimator, which is the only fitted step in the pipeline."""
+        """The final estimator, which is the only fitted step in the pipeline.
+
+        The constructor parameter of the same name, read back off the step it became, so
+        that `get_params` and `clone` see the estimator actually in use rather than a copy
+        of what was passed.
+        """
         return self.steps[-1][1]
+
+    @estimator.setter
+    def estimator(self, value: BaseEstimator) -> None:
+        self.steps[-1] = (self.steps[-1][0], value)
+
+    def __getitem__(self, ind):
+        """A step, or a plain `Pipeline` over a slice of them.
+
+        `Pipeline.__getitem__` rebuilds `self.__class__` from a list of steps, which a
+        detector's constructor does not take: a detector is the whole
+        parser -> entropy -> classifier chain, and any slice of it is something else. The
+        slice is returned as the `Pipeline` it is, which is what makes
+        `detector[:-1].transform(...)` -- the features without the classifier -- work.
+        """
+        if isinstance(ind, slice):
+            return Pipeline(self.steps[ind], memory=self.memory, verbose=self.verbose)
+        return super().__getitem__(ind)
+
+    @classmethod
+    def trainable(
+        cls, reduction: Reduction, k: int = DEFAULT_K, *, estimator: BaseEstimator | None = None
+    ) -> "BaseDetector":
+        """An unfitted detector, selecting the reduction by name.
+
+        For callers that hold the reduction as data -- a CLI argument, a column in a sweep
+        -- so that selecting one never means re-deriving the mapping from its name to a
+        class.
+
+        Args:
+            reduction: `"epr"` or `"wepr"`.
+            k: Rank count the responses carry.
+            estimator: Final estimator to fit. Defaults to the unregularised logistic
+                regression the published detectors were fit with.
+
+        Returns:
+            A detector ready to `fit`.
+        """
+        return {"epr": EPR, "wepr": WEPR}[reduction](k=k, estimator=estimator)
 
     def predict_token_proba(self, x) -> np.ndarray:
         """Per-token hallucination probabilities, for locating *where* a response drifts.
@@ -108,163 +232,54 @@ class BaseDetector(Pipeline, EstimatorPersistenceMixin):
 
         return flat_scores.reshape(n_samples, max_tokens, 1)
 
-    @classmethod
-    def from_pretrained(
-        cls, pretrained_model_name_or_path: str, reduction: Reduction, k: int = DEFAULT_K
-    ) -> "BaseDetector":
-        """A detector carrying published weights, ready to `predict_proba`.
 
-        The only way to obtain a fitted detector without calling `fit`: `epr()` and `wepr()`
-        return unfitted estimators, as scikit-learn estimators are.
+class EPR(BaseDetector):
+    """A detector that pools a response's uncertainty into one number.
 
-        Args:
-            pretrained_model_name_or_path: A detector's Hugging Face repository id, or a
-                path to a `.skops` file or a directory holding `model.skops`. This is the
-                detector trained for the model being scored, not that model.
-            reduction: `"epr"` or `"wepr"`. The weights do not record which they were fit
-                for, and the two read the same file differently.
-            k: Rank count the responses carry. The weights must cover exactly this many
-                ranks.
+    EPR -- Entropy Production Rate. A single feature, pooling every rank of the token
+    distribution into one number, so the calibration fits one coefficient.
 
-        Returns:
-            A detector ready to `predict_proba`.
-
-        Raises:
-            ValueError: If the weights do not cover exactly `k` ranks.
-        """
-        return _build(reduction, k, _load_pretrained(reduction, pretrained_model_name_or_path, k))
-
-    @classmethod
-    def trainable(
-        cls, reduction: Reduction, k: int = DEFAULT_K, *, classifier: BaseEstimator | None = None
-    ) -> "BaseDetector":
-        """An unfitted detector, selecting the reduction by name.
-
-        What `epr()` and `wepr()` return, for callers that hold the reduction as data, so
-        selecting a reduction never means re-deriving the mapping from its name to a
-        factory.
-
-        Args:
-            reduction: `"epr"` or `"wepr"`.
-            k: Rank count the responses carry.
-            classifier: Final estimator to fit. Defaults to the unregularised logistic
-                regression the published detectors were fit with.
-
-        Returns:
-            A detector ready to `fit`.
-        """
-        factory = {"epr": epr, "wepr": wepr}[reduction]
-        return factory(k=k, classifier=classifier)
-
-
-def _build(reduction: Reduction, k: int, final: BaseEstimator, **pipeline_kwargs) -> "BaseDetector":
-    """Assemble a parser -> entropy -> classifier pipeline pinned to `k` ranks.
-
-    `k` is handled at the ends of the pipeline: the parser sizes the rank axis to it, and
-    the caller has already checked any loaded weights were trained at it. The entropy step
-    in between carries no rank count, since its input width is already `k`.
-    """
-    return BaseDetector(
-        steps=[
-            ("parser", LogProbParser(k=k)),
-            ("entropy", EntropyTransformer(reduction=reduction)),
-            ("classifier", final),
-        ],
-        **pipeline_kwargs,
-    )
-
-
-def _classifier(classifier: BaseEstimator | None) -> BaseEstimator:
-    """The final step of an unfitted detector.
-
-    Unregularised by default, so the fitted coefficients are comparable to the shipped
-    files. `C=np.inf` rather than `penalty=None`: the latter is deprecated in scikit-learn
-    1.8 and removed in 1.10, and the two produce identical coefficients.
-    """
-    return classifier if classifier is not None else LogisticRegression(C=np.inf, max_iter=1000)
-
-
-def epr(
-    *,
-    k: int = DEFAULT_K,
-    classifier: BaseEstimator | None = None,
-    transform_input=None,
-    memory=None,
-    verbose=False,
-) -> "BaseDetector":
-    """An unfitted detector that pools a response's uncertainty into one number.
-
-    EPR — Entropy Production Rate. A single feature, pooling every rank of the token
-    distribution into one number.
-
-    Unfitted, like any scikit-learn estimator: call `fit(responses, y)`, where 1 marks a
-    hallucination. `BaseDetector.from_pretrained` is what loads published weights instead.
-
-    Both variants need a detector fit on labelled data, so choosing this one saves no setup
-    work over `wepr` — only parameters. Prefer `wepr` unless there is too little labelled
+    Both detectors need weights fit on labelled data, so choosing this one saves no setup
+    work over `WEPR` -- only parameters. Prefer `WEPR` unless there is too little labelled
     data to fit its larger coefficient vector.
 
     Example:
-        >>> detector = epr().fit(responses, y)  # doctest: +SKIP
-        >>> detector.predict_proba(response)[:, 1]  # doctest: +SKIP
-
-    Args:
-        k: Rank count the responses carry, and the width EPR averages over. Responses
-            carrying fewer than `k` ranks are rejected when parsed.
-        classifier: Final estimator to fit. Defaults to the unregularised logistic
-            regression the shipped estimators were fit with.
-
-    Returns:
-        A `BaseDetector` ready to `fit`.
+        >>> detector = EPR().fit(responses, y)  # doctest: +SKIP
+        >>> published = EPR.from_pretrained("artefactory/epr-phi4")  # doctest: +SKIP
+        >>> published.predict_proba(response)[:, 1]  # doctest: +SKIP
     """
-    return _build(
-        "epr",
-        k,
-        _classifier(classifier),
-        transform_input=transform_input,
-        memory=memory,
-        verbose=verbose,
-    )
+
+    reduction: ClassVar[Reduction | None] = "epr"
+
+    @classmethod
+    def _feature_count(cls, k: int) -> int:  # noqa: ARG003 — EPR pools every rank into one feature, whatever k is
+        return 1
+
+    @classmethod
+    def _implied_k(cls, n_features: int) -> int:
+        return n_features
 
 
-def wepr(
-    *,
-    k: int = DEFAULT_K,
-    classifier: BaseEstimator | None = None,
-    transform_input=None,
-    memory=None,
-    verbose=False,
-) -> "BaseDetector":
-    """An unfitted detector that reads each rank of the token distribution.
+class WEPR(BaseDetector):
+    """A detector that reads each rank of the token distribution.
 
-    WEPR — Weighted EPR. `2k` features, one learned coefficient per rank, letting the
-    detector weight the informative ranks over the rest.
-
-    Unfitted, like any scikit-learn estimator: call `fit(responses, y)`, where 1 marks a
-    hallucination. `BaseDetector.from_pretrained` is what loads published weights instead.
-
-    The default choice: it costs the same to fit as `epr` and reads strictly more of the
-    distribution. Fall back to `epr` only when labelled data is too scarce to fit `2k`
-    coefficients.
+    WEPR -- Weighted EPR. `2k` features, a mean and a max per rank, letting the
+    calibration weight the informative ranks over the rest. It reads strictly more of the
+    distribution than `EPR` at the same calibration cost, which makes it the default
+    choice.
 
     Example:
-        >>> detector = wepr().fit(responses, y)  # doctest: +SKIP
-        >>> detector.predict_proba(response)[:, 1]  # doctest: +SKIP
-
-    Args:
-        k: Rank count the responses carry. A detector is only ever used at the `k` it was
-            fit at, and responses carrying fewer ranks are rejected when parsed.
-        classifier: Final estimator to fit. Defaults to the unregularised logistic
-            regression the shipped estimators were fit with.
-
-    Returns:
-        A `BaseDetector` ready to `fit`.
+        >>> detector = WEPR().fit(responses, y)  # doctest: +SKIP
+        >>> published = WEPR.from_pretrained("artefactory/wepr-phi4")  # doctest: +SKIP
+        >>> published.predict_proba(response)[:, 1]  # doctest: +SKIP
     """
-    return _build(
-        "wepr",
-        k,
-        _classifier(classifier),
-        transform_input=transform_input,
-        memory=memory,
-        verbose=verbose,
-    )
+
+    reduction: ClassVar[Reduction | None] = "wepr"
+
+    @classmethod
+    def _feature_count(cls, k: int) -> int:
+        return 2 * k
+
+    @classmethod
+    def _implied_k(cls, n_features: int) -> int:
+        return n_features // 2

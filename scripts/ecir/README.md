@@ -319,7 +319,7 @@ cost; generating narrow can only be corrected with more GPU time.
 ```python
 from artefactual.scoring import BaseDetector
 
-detector = BaseDetector.from_pretrained("out/wepr.skops", "wepr", k=15)
+detector = WEPR.from_pretrained("out/wepr.skops", k=15)
 detector.predict_proba(response)[:, 1]
 ```
 

@@ -16,7 +16,8 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.exceptions import NotFittedError
 
-from artefactual.scoring import BaseDetector
+from artefactual.scoring import EPR, WEPR, BaseDetector
+from artefactual.utils.io import EstimatorPersistenceMixin
 
 
 class AlwaysSure(ClassifierMixin, BaseEstimator):
@@ -104,7 +105,7 @@ def test_wepr_scores_with_the_model_it_was_given(tmp_path_factory, k, data):
     published = data.draw(estimators(n_features=2 * k))
     path = write_estimator(tmp_path_factory.mktemp("wepr"), "model.skops", published)
 
-    built = BaseDetector.from_pretrained(str(path), "wepr", k=k)
+    built = WEPR.from_pretrained(str(path), k=k)
 
     assert built.estimator.n_features_in_ == 2 * k
     assert np.array_equal(built.estimator.coef_, published.coef_)
@@ -115,7 +116,7 @@ def test_a_detector_fit_at_another_rank_count_is_refused(tmp_path):
     path = write_estimator(tmp_path, "model.skops", detector)
 
     with pytest.raises(ValueError, match="pass k=10"):
-        BaseDetector.from_pretrained(str(path), "wepr", k=15)
+        WEPR.from_pretrained(str(path), k=15)
 
 
 def test_an_epr_detector_in_a_wepr_detector_is_refused(tmp_path):
@@ -123,19 +124,19 @@ def test_an_epr_detector_in_a_wepr_detector_is_refused(tmp_path):
     path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
 
     with pytest.raises(ValueError, match="takes 1 feature"):
-        BaseDetector.from_pretrained(str(path), "wepr", k=15)
+        WEPR.from_pretrained(str(path), k=15)
 
 
 def test_a_detector_saves_the_calibration_it_scores_with(tmp_path):
     detector = fitted_logistic(-0.5, [2.0])
     source = write_estimator(tmp_path, "model.skops", detector)
-    detector = BaseDetector.from_pretrained(str(source), "epr", k=15)
+    detector = EPR.from_pretrained(str(source), k=15)
 
     destination = tmp_path / "saved"
     destination.mkdir()
     written = detector.save_estimator(destination)
 
-    reloaded = BaseDetector.from_pretrained(str(written), "epr", k=15)
+    reloaded = EPR.from_pretrained(str(written), k=15)
     x = np.linspace(-2, 2, 5).reshape(-1, 1)
     assert np.array_equal(
         reloaded.estimator.predict_proba(x),
@@ -157,10 +158,85 @@ def test_saving_an_unfitted_detector_is_refused(tmp_path):
 
 def test_saving_creates_the_parent_directory(tmp_path):
     # the tutorial writes into an output directory the caller has not necessarily made yet
-    detector = BaseDetector.from_pretrained(
-        str(write_estimator(tmp_path, "model.skops", fitted_logistic(-0.5, [2.0]))), "epr", k=15
-    )
+    detector = EPR.from_pretrained(str(write_estimator(tmp_path, "model.skops", fitted_logistic(-0.5, [2.0]))), k=15)
 
     written = detector.save_estimator(tmp_path / "new" / "nested" / "model.skops")
 
     assert written.is_file()
+
+
+# --- building an owner from published weights -------------------------------------------
+
+
+class Owner(EstimatorPersistenceMixin):
+    """A minimal owner of an estimator, of the kind the mixin is written for.
+
+    Deliberately not a detector: the mixin resolves, reads and hands over a file, and the
+    tests below pin that it does so without knowing what the estimator is for.
+    """
+
+    def __init__(self, estimator, label="unlabelled"):
+        self._estimator = estimator
+        self.label = label
+
+    @property
+    def estimator(self):
+        return self._estimator
+
+    @classmethod
+    def _from_estimator(cls, estimator, _identifier, **kwargs):
+        return cls(estimator, **kwargs)
+
+
+class PickyOwner(Owner):
+    """An owner that rejects an estimator whose width it cannot score with."""
+
+    @classmethod
+    def _from_estimator(cls, estimator, identifier, *, n_features, **kwargs):
+        if estimator.n_features_in_ != n_features:
+            msg = f"'{identifier}' takes {estimator.n_features_in_} feature(s), not {n_features}."
+            raise ValueError(msg)
+        return cls(estimator, **kwargs)
+
+
+def test_an_owner_is_built_from_the_file_it_names(tmp_path):
+    path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
+
+    owner = Owner.from_pretrained(path)
+
+    assert owner.estimator.n_features_in_ == 1
+    assert owner.label == "unlabelled"
+
+
+def test_keywords_reach_the_owner_rather_than_the_reader(tmp_path):
+    path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
+
+    assert Owner.from_pretrained(path, label="named").label == "named"
+
+
+def test_an_owner_may_refuse_the_estimator_it_is_handed(tmp_path):
+    path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0, 2.0]))
+
+    with pytest.raises(ValueError, match="takes 2 feature"):
+        PickyOwner.from_pretrained(path, n_features=1)
+
+    assert PickyOwner.from_pretrained(path, n_features=2).estimator.n_features_in_ == 2
+
+
+def test_an_owner_that_does_not_implement_the_hook_says_so(tmp_path):
+    path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
+
+    class Bare(EstimatorPersistenceMixin):
+        pass
+
+    with pytest.raises(NotImplementedError):
+        Bare.from_pretrained(path)
+
+
+def test_an_untrusted_type_is_refused_before_the_owner_sees_it(tmp_path):
+    path = write_estimator(tmp_path, "model.skops", AlwaysSure().fit(np.zeros((2, 1)), [0, 1]))
+
+    with pytest.raises(ValueError, match="AlwaysSure"):
+        Owner.from_pretrained(path)
+
+    assert Owner.from_pretrained(path, trusted=["test_estimator_persistence.AlwaysSure"])

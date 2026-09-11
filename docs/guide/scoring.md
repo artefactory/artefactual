@@ -72,7 +72,7 @@ from langfuse import get_client
 
 from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator
 
-evaluator = HallucinationEvaluator("wepr", get_client(), BaseDetector.from_pretrained("artefactory/wepr-phi4", "wepr"))
+evaluator = HallucinationEvaluator("wepr", get_client(), WEPR.from_pretrained("artefactory/wepr-phi4"))
 evaluator.score_trace(trace_id)
 ```
 
@@ -81,13 +81,13 @@ A worked version is in the [example notebooks](../examples/index.md).
 ## Training a detector for another model
 
 Any model that returns `top_logprobs` can be scored, not only the published ones.
-`wepr()` and `epr()` return an unfitted detector, which is fitted on 0/1 labels where 1
+`WEPR()` and `EPR()` return an unfitted detector, which is fitted on 0/1 labels where 1
 marks a hallucination:
 
 ```python
 # responses: a list of completion responses, each generated with top_logprobs >= k
 # y:         a matching list of 0/1 labels, 1 marking a hallucination
-detector = wepr(k=15).fit(responses, y)
+detector = WEPR(k=15).fit(responses, y)
 coefficients = detector.named_steps["classifier"].coef_
 ```
 
@@ -95,7 +95,8 @@ One label per generated sequence, in the same order `predict_proba` returns rows
 
 A detector is unfitted until `fit`, as every scikit-learn estimator is. Published weights
 are never a constructor default — a detector's coefficients are model-specific, so there is
-nothing sensible to default to — and `BaseDetector.from_pretrained` is what loads them.
+nothing sensible to default to — and `EPR.from_pretrained` / `WEPR.from_pretrained` are
+what load them.
 
 Producing those answers and verdicts, the label polarity a judge's reply needs, and the
 three notebooks that do it end to end are in {doc}`training`.
@@ -108,7 +109,7 @@ work:
 ```python
 from sklearn.base import clone
 
-detector = BaseDetector.from_pretrained("artefactory/wepr-ministral", "wepr")
+detector = WEPR.from_pretrained("artefactory/wepr-ministral")
 detector.named_steps  # {'parser': ..., 'entropy': ..., 'classifier': ...}
 clone(detector)  # get_params / set_params round-trip
 ```

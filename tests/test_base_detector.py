@@ -3,7 +3,7 @@ import pytest
 from conftest import chat_payloads_of_fixed_width, fitted_logistic, write_estimator
 from hypothesis import HealthCheck, given, settings
 
-from artefactual.scoring.base_detector import DEFAULT_K, BaseDetector, epr, wepr
+from artefactual.scoring.base_detector import DEFAULT_K, EPR, WEPR, BaseDetector
 
 
 @pytest.fixture(scope="session")
@@ -30,15 +30,15 @@ drawn = settings(suppress_health_check=[HealthCheck.function_scoped_fixture], de
 
 
 def test_epr_returns_base_detector(epr_estimator_path):
-    assert isinstance(BaseDetector.from_pretrained(epr_estimator_path, "epr"), BaseDetector)
+    assert isinstance(EPR.from_pretrained(epr_estimator_path), BaseDetector)
 
 
 def test_wepr_returns_base_detector(wepr_estimator_path):
-    assert isinstance(BaseDetector.from_pretrained(wepr_estimator_path, "wepr"), BaseDetector)
+    assert isinstance(WEPR.from_pretrained(wepr_estimator_path), BaseDetector)
 
 
 def test_epr_step_names(epr_estimator_path):
-    assert [name for name, _ in BaseDetector.from_pretrained(epr_estimator_path, "epr").steps] == [
+    assert [name for name, _ in EPR.from_pretrained(epr_estimator_path).steps] == [
         "parser",
         "entropy",
         "classifier",
@@ -46,20 +46,20 @@ def test_epr_step_names(epr_estimator_path):
 
 
 def test_epr_entropy_reduction(epr_estimator_path):
-    assert BaseDetector.from_pretrained(epr_estimator_path, "epr").named_steps["entropy"].reduction == "epr"
+    assert EPR.from_pretrained(epr_estimator_path).named_steps["entropy"].reduction == "epr"
 
 
 def test_wepr_entropy_reduction(wepr_estimator_path):
-    assert BaseDetector.from_pretrained(wepr_estimator_path, "wepr").named_steps["entropy"].reduction == "wepr"
+    assert WEPR.from_pretrained(wepr_estimator_path).named_steps["entropy"].reduction == "wepr"
 
 
 def test_epr_with_pretrained_has_coef(epr_estimator_path):
-    clf = BaseDetector.from_pretrained(epr_estimator_path, "epr").named_steps["classifier"]
+    clf = EPR.from_pretrained(epr_estimator_path).named_steps["classifier"]
     assert clf.coef_.shape == (1, 1)  # 1 class, 1 feature (mean_entropy)
 
 
 def test_from_pretrained_epr(epr_estimator_path):
-    detector = BaseDetector.from_pretrained(epr_estimator_path, reduction="epr")
+    detector = EPR.from_pretrained(epr_estimator_path)
     assert isinstance(detector, BaseDetector)
     assert detector.named_steps["classifier"].coef_ is not None
 
@@ -67,14 +67,14 @@ def test_from_pretrained_epr(epr_estimator_path):
 @drawn
 @given(response=responses)
 def test_predict_proba_output_shape(epr_estimator_path, response):
-    scores = BaseDetector.from_pretrained(epr_estimator_path, "epr").predict_proba(response)
+    scores = EPR.from_pretrained(epr_estimator_path).predict_proba(response)
     assert scores.shape == (1, 2)  # 1 sequence, 2 classes
 
 
 @drawn
 @given(response=responses)
 def test_predict_proba_valid_probabilities(epr_estimator_path, response):
-    scores = BaseDetector.from_pretrained(epr_estimator_path, "epr").predict_proba(response)
+    scores = EPR.from_pretrained(epr_estimator_path).predict_proba(response)
     assert np.all(scores >= 0) and np.all(scores <= 1)
     assert np.allclose(scores.sum(axis=1), 1.0)
 
@@ -82,7 +82,7 @@ def test_predict_proba_valid_probabilities(epr_estimator_path, response):
 @drawn
 @given(response=responses)
 def test_predict_token_proba_shape(epr_estimator_path, response):
-    token_scores = BaseDetector.from_pretrained(epr_estimator_path, "epr").predict_token_proba(response)
+    token_scores = EPR.from_pretrained(epr_estimator_path).predict_token_proba(response)
     assert token_scores.shape[0] == 1  # 1 sequence
     assert token_scores.shape[2] == 1
 
@@ -90,7 +90,7 @@ def test_predict_token_proba_shape(epr_estimator_path, response):
 @drawn
 @given(response=responses)
 def test_predict_token_proba_valid_scores(epr_estimator_path, response):
-    token_scores = BaseDetector.from_pretrained(epr_estimator_path, "epr").predict_token_proba(response)
+    token_scores = EPR.from_pretrained(epr_estimator_path).predict_token_proba(response)
     valid = token_scores[~np.isnan(token_scores)]
     assert len(valid) > 0
     assert np.all(valid >= 0) and np.all(valid <= 1)
@@ -104,45 +104,49 @@ def _chat(ranks, n_tokens=2):
     return {"choices": [{"logprobs": {"content": [token] * n_tokens}}]}
 
 
-def test_trainable_returns_an_unfitted_detector():
+def test_a_constructed_detector_is_unfitted():
     from sklearn.exceptions import NotFittedError
     from sklearn.utils.validation import check_is_fitted
 
-    detector = epr(k=3)
+    detector = EPR(k=3)
 
     assert [name for name, _ in detector.steps] == ["parser", "entropy", "classifier"]
     with pytest.raises(NotFittedError):
         check_is_fitted(detector.named_steps["classifier"])
 
 
-def test_trainable_defaults_to_an_unregularised_regression():
+def test_a_detector_defaults_to_an_unregularised_regression():
     # matches how the shipped estimators were fit, so coefficients stay comparable
-    classifier = epr().named_steps["classifier"]
+    classifier = EPR().named_steps["classifier"]
 
     assert classifier.C == np.inf
     assert classifier.max_iter == 1000
 
 
-def test_trainable_accepts_a_custom_classifier():
+def test_a_detector_accepts_a_custom_estimator():
     from sklearn.ensemble import RandomForestClassifier
 
     forest = RandomForestClassifier(n_estimators=2)
-    assert epr(classifier=forest).named_steps["classifier"] is forest
+    assert EPR(estimator=forest).named_steps["classifier"] is forest
 
 
-def test_trainable_pins_the_rank_width():
-    assert wepr(k=7).named_steps["parser"].k == 7
+def test_a_detector_pins_the_rank_width():
+    assert WEPR(k=7).named_steps["parser"].k == 7
 
 
-@pytest.mark.parametrize("factory", [epr, wepr])
-def test_a_weights_identifier_is_not_accepted_positionally(factory, epr_estimator_path):
-    """The factories build unfitted detectors; weights are loaded by `from_pretrained`.
+@pytest.mark.parametrize("detector_class", [EPR, WEPR])
+def test_a_weights_identifier_is_not_accepted_as_a_rank_count(detector_class, epr_estimator_path):
+    """Constructing a detector never loads weights; `from_pretrained` is what does.
 
-    `k` is keyword-only so that a call written for the old signature fails here rather
-    than binding a repository id to the rank count and failing inside the parser.
+    The first constructor argument is `k`, so a call written for the old factory signature
+    hands a repository id to the parser as a rank count. It is refused when the pipeline
+    runs rather than scoring against a width nothing checked.
     """
-    with pytest.raises(TypeError):
-        factory(epr_estimator_path)
+    detector = detector_class(epr_estimator_path)
+
+    assert detector.k == epr_estimator_path
+    with pytest.raises((TypeError, ValueError)):
+        detector.predict_proba([_chat([-0.1, -0.2, -0.3])])
 
 
 @pytest.mark.parametrize("reduction", ["epr", "wepr"])
@@ -165,14 +169,14 @@ def test_a_trained_detector_scores_like_a_pretrained_one(reduction):
 
 def test_a_trained_epr_detector_yields_one_coefficient():
     x = [_chat([-0.001, -8.0, -9.0]), _chat([-1.0, -1.1, -1.2])]
-    detector = epr(k=3).fit(x, np.array([0, 1]))
+    detector = EPR(k=3).fit(x, np.array([0, 1]))
 
     assert detector.named_steps["classifier"].coef_.shape == (1, 1)
 
 
 def test_a_trained_wepr_detector_yields_two_coefficients_per_rank():
     x = [_chat([-0.001, -8.0, -9.0]), _chat([-1.0, -1.1, -1.2])]
-    detector = wepr(k=3).fit(x, np.array([0, 1]))
+    detector = WEPR(k=3).fit(x, np.array([0, 1]))
 
     assert detector.named_steps["classifier"].coef_.shape == (1, 6)
 
@@ -215,8 +219,15 @@ class _BrokenTokenMode:
 
 
 def _detector(step):
-    classifier = fitted_logistic(-1.0, [1.0])
-    return BaseDetector(steps=[("step", step), ("classifier", classifier)])
+    """A detector whose transformer steps are stubs, to drive the token-mode dispatch alone.
+
+    Built as an `EPR` and then re-stepped: what is under test is how `predict_token_proba`
+    drives whatever steps it finds, not the parser and entropy steps a detector assembles
+    for itself.
+    """
+    detector = EPR(k=1)
+    detector.steps = [("step", step), ("classifier", fitted_logistic(-1.0, [1.0]))]
+    return detector
 
 
 TOKEN_FEATURES = np.array([[[0.1], [0.2], [0.3]]])

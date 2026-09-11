@@ -47,7 +47,7 @@ negligible tail.
 A `LogisticRegression` maps the features to a probability. It is fitted on 0/1 labels,
 one per generated sequence, where 1 marks a hallucination; the published detectors
 are that same estimator with its coefficients already fitted, loaded by
-`BaseDetector.from_pretrained`. Because it is a real sklearn classifier, `predict`,
+`EPR.from_pretrained` or `WEPR.from_pretrained`. Because it is a real sklearn classifier, `predict`,
 `predict_proba` and `decision_function` all work as expected.
 
 The measurement step is a plain transformer, so any callable can replace the reduction:
