@@ -102,11 +102,16 @@ workflow run: chaining on the tag would leave the tag created and nothing built.
       -> tests            the suite, against the exact commit being released
       -> tag              bump-my-version creates vYYYY.MM.PATCH, refusing a HEAD
                           that already carries one
+      -> docs-build       the site, with its notebooks executed -- a published
+                          example that stopped running stops the release here,
+                          before anything is uploaded. After the tag, because the
+                          version the pages name is read back off it
       -> build            hatch-vcs derives the version; the distributions are checked
                           and the wheel is smoke-tested
       -> publish-testpypi uploaded, then checked against the metadata the index serves
       -> publish          PyPI, held for a required reviewer
       -> github-release   the Release, once PyPI has the version
+      -> docs-deploy      the pages built above, published last
 
 The `pypi` environment has a required reviewer, so nothing reaches PyPI unattended. A
 release that should not go out is declined there; the tag is already created by then, and a

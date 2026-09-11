@@ -142,16 +142,21 @@ dev = [
     "pytest-cov>=6.0.0",
 ]
 
-# What the notebooks under docs/examples need beyond the package: `uv sync --group
-# notebooks`, then `uv run jupyter lab docs/examples/<name>.ipynb`.
+# Everything needed to build the site with its notebooks executed: `uv sync --group
+# notebooks` is the one command, for CI and for a clone alike. It layers the runtime the
+# examples need on top of the `docs` extra, because a published page showing a notebook's
+# output only exists if the notebook ran.
 #
 # A group rather than a [project.optional-dependencies] extra, because `bert-judge` is a
 # git URL: a direct reference in a distribution's metadata is rejected on upload to PyPI,
-# and groups are not part of that metadata. It is also the right scope -- these are for
-# running the examples from a clone, not for anything that imports the package.
+# and groups are not part of that metadata. That is also why the merge goes this way round
+# -- the group may depend on the extra, never the reverse.
 notebooks = [
     # train_wepr_pipeline.ipynb and langfuse_integration_demo.ipynb call an endpoint.
     "artefactual[adapters]",
+    # nbsphinx executes the notebooks in-process, so Sphinx and the judge's runtime have to
+    # be the same environment.
+    "artefactual[docs]",
     "jupyterlab>=4.3.5",
     # train_wepr_pipeline.ipynb renders its two prompts, the paper's, as the templates they
     # are.
@@ -168,6 +173,18 @@ notebooks = [
     "transformers>=4.57,<5",
     "datasets>=3.2.0",
 ]
+
+# The notebooks run the encoder judge on CPU -- there is no GPU on a docs runner, and no
+# GPU in a clone's default environment either. Left to PyPI, `torch` resolves to the CUDA
+# build and drags in some 40 nvidia-* wheels, several GB that nothing here ever loads, so
+# Linux takes the CPU wheels instead. macOS wheels are CPU-only already and are unaffected.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [tool.coverage.run]
 # `source` (not `--cov=artefactual`) so the namespace package under adapters/ lands in
