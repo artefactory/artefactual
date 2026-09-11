@@ -175,3 +175,79 @@ def test_a_trained_wepr_detector_yields_two_coefficients_per_rank():
     detector = wepr(k=3).fit(x, np.array([0, 1]))
 
     assert detector.named_steps["classifier"].coef_.shape == (1, 6)
+
+
+# --- token-mode dispatch ---------------------------------------------------------------
+#
+# `predict_token_proba` routes each transformer through `transform_tokens` where the step
+# offers one and `transform` otherwise. The capability has to be read off the step before
+# anything is called: deciding it from whether a call raised `AttributeError` cannot tell
+# a step that lacks the method from one whose method raised internally, and the second
+# case silently produces sequence-reduced data in the token path.
+
+
+class _TokenAware:
+    """A step that reduces over the token axis in `transform` and keeps it in token mode."""
+
+    def transform(self, x):
+        return np.nanmean(x, axis=1)
+
+    def transform_tokens(self, x):
+        return x
+
+
+class _TokenBlind:
+    """A step with no token mode, which must be driven through `transform`."""
+
+    def transform(self, x):
+        return x
+
+
+class _BrokenTokenMode:
+    """A step whose token mode is broken by a bug of its own, not by being absent."""
+
+    def transform(self, x):
+        return np.nanmean(x, axis=1)
+
+    def transform_tokens(self, x):  # noqa: ARG002 — the bug is the raise, not the argument
+        msg = "this step's own bug, not a missing method"
+        raise AttributeError(msg)
+
+
+def _detector(step):
+    classifier = fitted_logistic(-1.0, [1.0])
+    return BaseDetector(steps=[("step", step), ("classifier", classifier)])
+
+
+TOKEN_FEATURES = np.array([[[0.1], [0.2], [0.3]]])
+
+
+def test_a_step_with_a_token_mode_is_driven_through_it():
+    scores = _detector(_TokenAware()).predict_token_proba(TOKEN_FEATURES)
+    assert scores.shape == (1, 3, 1)
+
+
+def test_a_step_without_a_token_mode_falls_back_to_transform():
+    scores = _detector(_TokenBlind()).predict_token_proba(TOKEN_FEATURES)
+    assert scores.shape == (1, 3, 1)
+
+
+def test_a_broken_token_mode_is_reported_not_swallowed():
+    # The bug this pins: an `AttributeError` raised *inside* `transform_tokens` used to be
+    # read as "this step has no token mode", rerouting to `transform` and reducing the
+    # token axis away. The failure then surfaced far downstream as a shape error, or not
+    # at all.
+    with pytest.raises(AttributeError, match="this step's own bug"):
+        _detector(_BrokenTokenMode()).predict_token_proba(TOKEN_FEATURES)
+
+
+class _ReducingTokenBlind:
+    """A step that reduces the token axis away and declares no token mode."""
+
+    def transform(self, x):
+        return np.nanmean(x, axis=1)
+
+
+def test_a_step_that_reduces_the_token_axis_away_is_named():
+    with pytest.raises(ValueError, match="declares no transform_tokens"):
+        _detector(_ReducingTokenBlind()).predict_token_proba(TOKEN_FEATURES)
