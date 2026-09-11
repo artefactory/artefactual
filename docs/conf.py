@@ -10,6 +10,13 @@ project = "Artefactual"
 copyright = "2025, Artefact Research Center"  # noqa: A001
 author = "Hicham Randrianarivo, Gauthier Jeannin, Charles Moslonka"
 
+# Read from the installed package, which hatch-vcs derives from the git tag, so the site
+# names a version that exists rather than one restated here and left to drift. A build
+# from an untagged commit carries a `.dev` segment, which is what marks it unreleased.
+release = artefactual.__version__
+version = ".".join(release.split(".")[:2])
+_is_development_build = ".dev" in release
+
 # Extensions
 extensions = [
     "myst_parser",
@@ -63,7 +70,20 @@ myst_enable_extensions = [
 ]
 
 # nbsphinx settings
-nbsphinx_execute = "never"
+#
+# The published site runs its notebooks. Committed outputs are whatever the last person to
+# open the notebook happened to produce -- which has already put an absolute path from a
+# contributor's home directory on the public site -- so the release build executes them
+# and publishes what it got. Every other build reads the committed outputs instead, because
+# executing needs the network and would make a pull request wait on the Hugging Face Hub.
+#
+# A notebook that cannot run unattended opts out in its own metadata
+# (`"nbsphinx": {"execute": "never"}`), which is where the reason belongs: it travels with
+# the notebook rather than sitting in a list here that nobody updates.
+nbsphinx_execute = "always" if os.environ.get("ARTEFACTUAL_EXECUTE_NOTEBOOKS") else "never"
+
+# A notebook that reaches the Hub has to survive a slow answer; the default is 30 seconds.
+nbsphinx_timeout = 600
 
 # Every notebook page carries its own two entry points in the article header: open the
 # notebook in Colab, or download the `.ipynb`. They live in a theme component
@@ -160,6 +180,17 @@ html_theme_options = {
     "show_nav_level": 2,
     "navigation_depth": 3,
 }
+
+# The site is published from the release pipeline, so what it documents is a released
+# version and the two cannot disagree. A build from anywhere else -- a pull request, a
+# working copy -- says so, because the alternative is a page that reads as published while
+# describing an API `pip install artefactual` does not give you.
+if _is_development_build:
+    html_theme_options["announcement"] = (
+        "This is the development version of the documentation. It describes unreleased "
+        "changes. The released version is on "
+        '<a href="https://pypi.org/project/artefactual/">PyPI</a>.'
+    )
 
 # Mermaid renders in the browser, so a diagram is live SVG rather than an image: it selects,
 # it scales, and with d3 zoom it pans like the ones GitHub renders. The palette it bakes in
