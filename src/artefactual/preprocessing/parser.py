@@ -136,7 +136,11 @@ def _(response: ResponsesPayload) -> list[np.ndarray]:
     return sampled_tokens_logprobs_responses_api(response)
 
 
-class LogProbParser(BaseEstimator, TransformerMixin):
+# Base order is significant. `__sklearn_tags__` resolves through `super()`, so
+# `TransformerMixin` must precede `BaseEstimator` for the mixin's override to run. In the
+# reverse order `transformer_tags` stays `None` and scikit-learn does not treat the class
+# as a transformer.
+class LogProbParser(TransformerMixin, BaseEstimator):
     """First pipeline step: completion responses in, a dense logprob array out.
 
     Accepts raw responses rather than arrays, so it opts out of scikit-learn's input
