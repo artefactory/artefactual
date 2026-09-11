@@ -1,0 +1,1030 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>artefactual.preprocessing.response_models &#8212; Artefactual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mermaid-theme.css?v=60300dae" />
+    <link rel="stylesheet" type="text/css" href="../_static/notebook-buttons.css?v=9438e366" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=25264a1c"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/artefactual.preprocessing.response_models';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://artefactory.github.io/artefactual/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2026.9.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <link rel="canonical" href="https://artefactory.github.io/artefactual/_autosummary/artefactual.preprocessing.response_models.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="artefactual.scoring" href="artefactual.scoring.html" />
+    <link rel="prev" title="artefactual.preprocessing.parser" href="artefactual.preprocessing.parser.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2026.9" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Artefactual</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples/index.html">
+    Examples
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="../api.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../api.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="artefactual.html">artefactual</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="artefactual.adapters.html">artefactual.adapters</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="artefactual.adapters.langfuse.html">artefactual.adapters.langfuse</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="artefactual.exceptions.html">artefactual.exceptions</a></li>
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="artefactual.preprocessing.html">artefactual.preprocessing</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="artefactual.preprocessing.batch_output.html">artefactual.preprocessing.batch_output</a></li>
+<li class="toctree-l3"><a class="reference internal" href="artefactual.preprocessing.judgments.html">artefactual.preprocessing.judgments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="artefactual.preprocessing.openai_parser.html">artefactual.preprocessing.openai_parser</a></li>
+<li class="toctree-l3"><a class="reference internal" href="artefactual.preprocessing.parser.html">artefactual.preprocessing.parser</a></li>
+<li class="toctree-l3 current active"><a class="current reference internal" href="#">artefactual.preprocessing.response_models</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="artefactual.scoring.html">artefactual.scoring</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="artefactual.scoring.base_detector.html">artefactual.scoring.base_detector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="artefactual.scoring.entropy_methods.html">artefactual.scoring.entropy_methods</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="artefactual.utils.html">artefactual.utils</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="artefactual.utils.io.html">artefactual.utils.io</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../api.html" class="nav-link">API Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="artefactual.html" class="nav-link">artefactual</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="artefactual.preprocessing.html" class="nav-link">artefactual.preprocessing</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">artefactual.preprocessing.response_models</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-artefactual.preprocessing.response_models">
+<span id="artefactual-preprocessing-response-models"></span><h1>artefactual.preprocessing.response_models<a class="headerlink" href="#module-artefactual.preprocessing.response_models" title="Link to this heading">#</a></h1>
+<p>Typed models for the completion formats the parsers consume, and the readers over them.</p>
+<p>The logprob path and the generated text are modelled; <cite>extra=”ignore”</cite> drops the rest of
+the payload. <cite>from_attributes=True</cite> accepts both a raw mapping and an attribute-style
+object.</p>
+<p><cite>read_message</cite> is the way to the generated text: every caller that wants what the model
+said goes through the validated envelope rather than indexing a raw payload.</p>
+<p class="rubric">Functions</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#artefactual.preprocessing.response_models.read_message" title="artefactual.preprocessing.response_models.read_message"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_message</span></code></a>(completion)</p></td>
+<td><p>What the model said, or <cite>None</cite> if the payload carries no text.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Classes</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#artefactual.preprocessing.response_models.BatchRequestOutput" title="artefactual.preprocessing.response_models.BatchRequestOutput"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BatchRequestOutput</span></code></a>(**data)</p></td>
+<td><p>One line of an OpenAI Batch output file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#artefactual.preprocessing.response_models.BatchResponseData" title="artefactual.preprocessing.response_models.BatchResponseData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BatchResponseData</span></code></a>(**data)</p></td>
+<td><p>The <cite>response</cite> envelope of one Batch output line.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#artefactual.preprocessing.response_models.ChatChoice" title="artefactual.preprocessing.response_models.ChatChoice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ChatChoice</span></code></a>(**data)</p></td>
+<td><p>One sampled sequence of a chat completion.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#artefactual.preprocessing.response_models.ChatChoiceLogprobs" title="artefactual.preprocessing.response_models.ChatChoiceLogprobs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ChatChoiceLogprobs</span></code></a>(**data)</p></td>
+<td><p>The <cite>logprobs</cite> block of a chat choice, holding one entry per generated token.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#artefactual.preprocessing.response_models.ChatCompletion" title="artefactual.preprocessing.response_models.ChatCompletion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ChatCompletion</span></code></a>(**data)</p></td>
+<td><p><cite>client.chat.completions.create(...)</cite> — one <cite>choice</cite> per sampled sequence.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#artefactual.preprocessing.response_models.ChatMessage" title="artefactual.preprocessing.response_models.ChatMessage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ChatMessage</span></code></a>(**data)</p></td>
+<td><p>The assistant message a chat choice carries.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#artefactual.preprocessing.response_models.ResponseContentPart" title="artefactual.preprocessing.response_models.ResponseContentPart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ResponseContentPart</span></code></a>(**data)</p></td>
+<td><p>One content part of an output item, holding its per-token logprobs.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#artefactual.preprocessing.response_models.ResponseOutputItem" title="artefactual.preprocessing.response_models.ResponseOutputItem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ResponseOutputItem</span></code></a>(**data)</p></td>
+<td><p>One sampled sequence of a Responses API payload.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#artefactual.preprocessing.response_models.ResponsesPayload" title="artefactual.preprocessing.response_models.ResponsesPayload"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ResponsesPayload</span></code></a>(**data)</p></td>
+<td><p><cite>client.responses.create(...)</cite> — one <cite>output</cite> item per sampled sequence.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#artefactual.preprocessing.response_models.TokenLogprobs" title="artefactual.preprocessing.response_models.TokenLogprobs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TokenLogprobs</span></code></a>(**data)</p></td>
+<td><p>One generated token, with the top-k alternatives considered at that position.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#artefactual.preprocessing.response_models.TopLogprob" title="artefactual.preprocessing.response_models.TopLogprob"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopLogprob</span></code></a>(**data)</p></td>
+<td><p>One rank of the top-k distribution for a single token.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.BatchRequestOutput">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">artefactual.preprocessing.response_models.</span></span><span class="sig-name descname"><span class="pre">BatchRequestOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/preprocessing/response_models.html#BatchRequestOutput"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.preprocessing.response_models.BatchRequestOutput" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>One line of an OpenAI Batch output file.</p>
+<p>The Batch API returns JSONL – one of these per line – and any OpenAI-compatible
+server writes the same shape. The completion is always nested under <cite>response.body</cite>.</p>
+<p><cite>custom_id</cite> is the only id that identifies the request: <cite>id</cite> is assigned by the
+provider, as is <cite>response.request_id</cite>, and so is the completion’s own <cite>id</cite>. It is the
+key every stage joins on.</p>
+<p>A failed line carries no usable completion, and <cite>completion</cite> reports that by
+returning <cite>None</cite> rather than raising: reading a batch file is where failures are
+counted, not where a run should abort. What a consumer does with one is its own
+decision – <cite>LogProbParser</cite> refuses it, because it emits one row per line and a
+dropped row would shift every later response against its label.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.BatchRequestOutput.completion">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">completion</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><a class="headerlink" href="#artefactual.preprocessing.response_models.BatchRequestOutput.completion" title="Link to this definition">#</a></dt>
+<dd><p>The completion payload this line carries, or <cite>None</cite> if it carries none.</p>
+<p><cite>None</cite> covers every way a line can fail, which <cite>failure</cite> names: a non-HTTP error,
+an HTTP status outside 2xx – where the body is an error object rather than a
+completion – and a missing envelope or body.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.BatchRequestOutput.custom_id">
+<span class="sig-name descname"><span class="pre">custom_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></em><a class="headerlink" href="#artefactual.preprocessing.response_models.BatchRequestOutput.custom_id" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.BatchRequestOutput.error">
+<span class="sig-name descname"><span class="pre">error</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></em><a class="headerlink" href="#artefactual.preprocessing.response_models.BatchRequestOutput.error" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.BatchRequestOutput.failure">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">failure</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><a class="headerlink" href="#artefactual.preprocessing.response_models.BatchRequestOutput.failure" title="Link to this definition">#</a></dt>
+<dd><p>Why this line carries no completion, phrased for an error message.</p>
+<p><cite>None</cite> when it carries one. The <cite>error</cite> repr is truncated because it is provider
+text of no fixed length, and this ends up inside exception messages.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.BatchRequestOutput.id">
+<span class="sig-name descname"><span class="pre">id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> <span class="pre">|</span> <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></em><a class="headerlink" href="#artefactual.preprocessing.response_models.BatchRequestOutput.id" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.BatchRequestOutput.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar[ConfigDict]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'ignore',</span> <span class="pre">'from_attributes':</span> <span class="pre">True}</span></em><a class="headerlink" href="#artefactual.preprocessing.response_models.BatchRequestOutput.model_config" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.BatchRequestOutput.response">
+<span class="sig-name descname"><span class="pre">response</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#artefactual.preprocessing.response_models.BatchResponseData" title="artefactual.preprocessing.response_models.BatchResponseData"><code class="xref py py-class docutils literal notranslate"><span class="pre">BatchResponseData</span></code></a> <span class="pre">|</span> <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></em><a class="headerlink" href="#artefactual.preprocessing.response_models.BatchRequestOutput.response" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.BatchResponseData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">artefactual.preprocessing.response_models.</span></span><span class="sig-name descname"><span class="pre">BatchResponseData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/preprocessing/response_models.html#BatchResponseData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.preprocessing.response_models.BatchResponseData" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>The <cite>response</cite> envelope of one Batch output line.</p>
+<p>The spec fills a failed envelope two ways. Top-level <cite>error</cite> carries non-HTTP failures
+and leaves the envelope empty; a request the server <em>rejects</em> leaves top-level <cite>error</cite>
+null and puts an <em>error object</em> in <cite>body</cite> under a 4xx or 5xx <cite>status_code</cite>. A body is
+therefore not evidence of a completion, which is why
+<cite>status_code</cite> has to be read rather than merely modelled, and why it carries no
+default: an absent status is not evidence of success either.</p>
+<p>The completion is carried as it arrived rather than narrowed to <cite>ChatCompletion</cite>,
+because a batch line can carry a <cite>ResponsesPayload</cite> just as well. Consumers validate the
+payload for their own purpose; this envelope’s job is the envelope.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.BatchResponseData.body">
+<span class="sig-name descname"><span class="pre">body</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></em><a class="headerlink" href="#artefactual.preprocessing.response_models.BatchResponseData.body" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.BatchResponseData.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar[ConfigDict]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'ignore',</span> <span class="pre">'from_attributes':</span> <span class="pre">True}</span></em><a class="headerlink" href="#artefactual.preprocessing.response_models.BatchResponseData.model_config" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.BatchResponseData.request_id">
+<span class="sig-name descname"><span class="pre">request_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> <span class="pre">|</span> <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></em><a class="headerlink" href="#artefactual.preprocessing.response_models.BatchResponseData.request_id" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.BatchResponseData.status_code">
+<span class="sig-name descname"><span class="pre">status_code</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></em><a class="headerlink" href="#artefactual.preprocessing.response_models.BatchResponseData.status_code" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ChatChoice">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">artefactual.preprocessing.response_models.</span></span><span class="sig-name descname"><span class="pre">ChatChoice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/preprocessing/response_models.html#ChatChoice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.preprocessing.response_models.ChatChoice" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>One sampled sequence of a chat completion.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ChatChoice.logprobs">
+<span class="sig-name descname"><span class="pre">logprobs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#artefactual.preprocessing.response_models.ChatChoiceLogprobs" title="artefactual.preprocessing.response_models.ChatChoiceLogprobs"><code class="xref py py-class docutils literal notranslate"><span class="pre">ChatChoiceLogprobs</span></code></a> <span class="pre">|</span> <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></em><a class="headerlink" href="#artefactual.preprocessing.response_models.ChatChoice.logprobs" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ChatChoice.message">
+<span class="sig-name descname"><span class="pre">message</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#artefactual.preprocessing.response_models.ChatMessage" title="artefactual.preprocessing.response_models.ChatMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">ChatMessage</span></code></a> <span class="pre">|</span> <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></em><a class="headerlink" href="#artefactual.preprocessing.response_models.ChatChoice.message" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ChatChoice.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar[ConfigDict]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'ignore',</span> <span class="pre">'from_attributes':</span> <span class="pre">True}</span></em><a class="headerlink" href="#artefactual.preprocessing.response_models.ChatChoice.model_config" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ChatChoiceLogprobs">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">artefactual.preprocessing.response_models.</span></span><span class="sig-name descname"><span class="pre">ChatChoiceLogprobs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/preprocessing/response_models.html#ChatChoiceLogprobs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.preprocessing.response_models.ChatChoiceLogprobs" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>The <cite>logprobs</cite> block of a chat choice, holding one entry per generated token.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ChatChoiceLogprobs.content">
+<span class="sig-name descname"><span class="pre">content</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a><span class="pre">[</span><a class="reference internal" href="#artefactual.preprocessing.response_models.TokenLogprobs" title="artefactual.preprocessing.response_models.TokenLogprobs"><code class="xref py py-class docutils literal notranslate"><span class="pre">TokenLogprobs</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#artefactual.preprocessing.response_models.ChatChoiceLogprobs.content" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ChatChoiceLogprobs.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar[ConfigDict]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'ignore',</span> <span class="pre">'from_attributes':</span> <span class="pre">True}</span></em><a class="headerlink" href="#artefactual.preprocessing.response_models.ChatChoiceLogprobs.model_config" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ChatCompletion">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">artefactual.preprocessing.response_models.</span></span><span class="sig-name descname"><span class="pre">ChatCompletion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/preprocessing/response_models.html#ChatCompletion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.preprocessing.response_models.ChatCompletion" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p><cite>client.chat.completions.create(…)</cite> — one <cite>choice</cite> per sampled sequence.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ChatCompletion.choices">
+<span class="sig-name descname"><span class="pre">choices</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a><span class="pre">[</span><a class="reference internal" href="#artefactual.preprocessing.response_models.ChatChoice" title="artefactual.preprocessing.response_models.ChatChoice"><code class="xref py py-class docutils literal notranslate"><span class="pre">ChatChoice</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#artefactual.preprocessing.response_models.ChatCompletion.choices" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ChatCompletion.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar[ConfigDict]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'ignore',</span> <span class="pre">'from_attributes':</span> <span class="pre">True}</span></em><a class="headerlink" href="#artefactual.preprocessing.response_models.ChatCompletion.model_config" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ChatMessage">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">artefactual.preprocessing.response_models.</span></span><span class="sig-name descname"><span class="pre">ChatMessage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/preprocessing/response_models.html#ChatMessage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.preprocessing.response_models.ChatMessage" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>The assistant message a chat choice carries.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ChatMessage.content">
+<span class="sig-name descname"><span class="pre">content</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> <span class="pre">|</span> <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></em><a class="headerlink" href="#artefactual.preprocessing.response_models.ChatMessage.content" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ChatMessage.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar[ConfigDict]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'ignore',</span> <span class="pre">'from_attributes':</span> <span class="pre">True}</span></em><a class="headerlink" href="#artefactual.preprocessing.response_models.ChatMessage.model_config" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ResponseContentPart">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">artefactual.preprocessing.response_models.</span></span><span class="sig-name descname"><span class="pre">ResponseContentPart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/preprocessing/response_models.html#ResponseContentPart"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.preprocessing.response_models.ResponseContentPart" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>One content part of an output item, holding its per-token logprobs.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ResponseContentPart.logprobs">
+<span class="sig-name descname"><span class="pre">logprobs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a><span class="pre">[</span><a class="reference internal" href="#artefactual.preprocessing.response_models.TokenLogprobs" title="artefactual.preprocessing.response_models.TokenLogprobs"><code class="xref py py-class docutils literal notranslate"><span class="pre">TokenLogprobs</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#artefactual.preprocessing.response_models.ResponseContentPart.logprobs" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ResponseContentPart.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar[ConfigDict]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'ignore',</span> <span class="pre">'from_attributes':</span> <span class="pre">True}</span></em><a class="headerlink" href="#artefactual.preprocessing.response_models.ResponseContentPart.model_config" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ResponseOutputItem">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">artefactual.preprocessing.response_models.</span></span><span class="sig-name descname"><span class="pre">ResponseOutputItem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/preprocessing/response_models.html#ResponseOutputItem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.preprocessing.response_models.ResponseOutputItem" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>One sampled sequence of a Responses API payload.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ResponseOutputItem.content">
+<span class="sig-name descname"><span class="pre">content</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a><span class="pre">[</span><a class="reference internal" href="#artefactual.preprocessing.response_models.ResponseContentPart" title="artefactual.preprocessing.response_models.ResponseContentPart"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResponseContentPart</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#artefactual.preprocessing.response_models.ResponseOutputItem.content" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ResponseOutputItem.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar[ConfigDict]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'ignore',</span> <span class="pre">'from_attributes':</span> <span class="pre">True}</span></em><a class="headerlink" href="#artefactual.preprocessing.response_models.ResponseOutputItem.model_config" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ResponsesPayload">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">artefactual.preprocessing.response_models.</span></span><span class="sig-name descname"><span class="pre">ResponsesPayload</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/preprocessing/response_models.html#ResponsesPayload"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.preprocessing.response_models.ResponsesPayload" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p><cite>client.responses.create(…)</cite> — one <cite>output</cite> item per sampled sequence.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ResponsesPayload.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar[ConfigDict]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'ignore',</span> <span class="pre">'from_attributes':</span> <span class="pre">True}</span></em><a class="headerlink" href="#artefactual.preprocessing.response_models.ResponsesPayload.model_config" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.ResponsesPayload.output">
+<span class="sig-name descname"><span class="pre">output</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a><span class="pre">[</span><a class="reference internal" href="#artefactual.preprocessing.response_models.ResponseOutputItem" title="artefactual.preprocessing.response_models.ResponseOutputItem"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResponseOutputItem</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#artefactual.preprocessing.response_models.ResponsesPayload.output" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.TokenLogprobs">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">artefactual.preprocessing.response_models.</span></span><span class="sig-name descname"><span class="pre">TokenLogprobs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/preprocessing/response_models.html#TokenLogprobs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.preprocessing.response_models.TokenLogprobs" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>One generated token, with the top-k alternatives considered at that position.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.TokenLogprobs.logprob">
+<span class="sig-name descname"><span class="pre">logprob</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a> <span class="pre">|</span> <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></em><a class="headerlink" href="#artefactual.preprocessing.response_models.TokenLogprobs.logprob" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.TokenLogprobs.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar[ConfigDict]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'ignore',</span> <span class="pre">'from_attributes':</span> <span class="pre">True}</span></em><a class="headerlink" href="#artefactual.preprocessing.response_models.TokenLogprobs.model_config" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.TokenLogprobs.top_logprobs">
+<span class="sig-name descname"><span class="pre">top_logprobs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a><span class="pre">[</span><a class="reference internal" href="#artefactual.preprocessing.response_models.TopLogprob" title="artefactual.preprocessing.response_models.TopLogprob"><code class="xref py py-class docutils literal notranslate"><span class="pre">TopLogprob</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#artefactual.preprocessing.response_models.TokenLogprobs.top_logprobs" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.TopLogprob">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">artefactual.preprocessing.response_models.</span></span><span class="sig-name descname"><span class="pre">TopLogprob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/preprocessing/response_models.html#TopLogprob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.preprocessing.response_models.TopLogprob" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>One rank of the top-k distribution for a single token.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.TopLogprob.logprob">
+<span class="sig-name descname"><span class="pre">logprob</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a> <span class="pre">|</span> <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></em><a class="headerlink" href="#artefactual.preprocessing.response_models.TopLogprob.logprob" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.TopLogprob.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar[ConfigDict]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'ignore',</span> <span class="pre">'from_attributes':</span> <span class="pre">True}</span></em><a class="headerlink" href="#artefactual.preprocessing.response_models.TopLogprob.model_config" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="artefactual.preprocessing.response_models.read_message">
+<span class="sig-prename descclassname"><span class="pre">artefactual.preprocessing.response_models.</span></span><span class="sig-name descname"><span class="pre">read_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">completion</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/preprocessing/response_models.html#read_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.preprocessing.response_models.read_message" title="Link to this definition">#</a></dt>
+<dd><p>What the model said, or <cite>None</cite> if the payload carries no text.</p>
+<p>The single reading of <cite>choices[0].message.content</cite>, so no caller has to index a raw
+payload and none has to decide what an unusable one means. <cite>None</cite> covers every way the
+text can be absent – no completion at all, as a failed batch line yields; an error
+object where the completion belongs; a completion with no choices; a choice whose
+message or content is null.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>completion</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></span>) – A chat completion, as a mapping or an attribute-style object. A batch
+line’s <cite>completion</cite> is exactly this.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The assistant’s text, unmodified, or <cite>None</cite>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="artefactual.preprocessing.parser.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">artefactual.preprocessing.parser</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="artefactual.scoring.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">artefactual.scoring</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.BatchRequestOutput"><code class="docutils literal notranslate"><span class="pre">BatchRequestOutput</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.BatchRequestOutput.completion"><code class="docutils literal notranslate"><span class="pre">BatchRequestOutput.completion</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.BatchRequestOutput.custom_id"><code class="docutils literal notranslate"><span class="pre">BatchRequestOutput.custom_id</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.BatchRequestOutput.error"><code class="docutils literal notranslate"><span class="pre">BatchRequestOutput.error</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.BatchRequestOutput.failure"><code class="docutils literal notranslate"><span class="pre">BatchRequestOutput.failure</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.BatchRequestOutput.id"><code class="docutils literal notranslate"><span class="pre">BatchRequestOutput.id</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.BatchRequestOutput.model_config"><code class="docutils literal notranslate"><span class="pre">BatchRequestOutput.model_config</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.BatchRequestOutput.response"><code class="docutils literal notranslate"><span class="pre">BatchRequestOutput.response</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.BatchResponseData"><code class="docutils literal notranslate"><span class="pre">BatchResponseData</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.BatchResponseData.body"><code class="docutils literal notranslate"><span class="pre">BatchResponseData.body</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.BatchResponseData.model_config"><code class="docutils literal notranslate"><span class="pre">BatchResponseData.model_config</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.BatchResponseData.request_id"><code class="docutils literal notranslate"><span class="pre">BatchResponseData.request_id</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.BatchResponseData.status_code"><code class="docutils literal notranslate"><span class="pre">BatchResponseData.status_code</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ChatChoice"><code class="docutils literal notranslate"><span class="pre">ChatChoice</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ChatChoice.logprobs"><code class="docutils literal notranslate"><span class="pre">ChatChoice.logprobs</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ChatChoice.message"><code class="docutils literal notranslate"><span class="pre">ChatChoice.message</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ChatChoice.model_config"><code class="docutils literal notranslate"><span class="pre">ChatChoice.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ChatChoiceLogprobs"><code class="docutils literal notranslate"><span class="pre">ChatChoiceLogprobs</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ChatChoiceLogprobs.content"><code class="docutils literal notranslate"><span class="pre">ChatChoiceLogprobs.content</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ChatChoiceLogprobs.model_config"><code class="docutils literal notranslate"><span class="pre">ChatChoiceLogprobs.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ChatCompletion"><code class="docutils literal notranslate"><span class="pre">ChatCompletion</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ChatCompletion.choices"><code class="docutils literal notranslate"><span class="pre">ChatCompletion.choices</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ChatCompletion.model_config"><code class="docutils literal notranslate"><span class="pre">ChatCompletion.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ChatMessage"><code class="docutils literal notranslate"><span class="pre">ChatMessage</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ChatMessage.content"><code class="docutils literal notranslate"><span class="pre">ChatMessage.content</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ChatMessage.model_config"><code class="docutils literal notranslate"><span class="pre">ChatMessage.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ResponseContentPart"><code class="docutils literal notranslate"><span class="pre">ResponseContentPart</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ResponseContentPart.logprobs"><code class="docutils literal notranslate"><span class="pre">ResponseContentPart.logprobs</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ResponseContentPart.model_config"><code class="docutils literal notranslate"><span class="pre">ResponseContentPart.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ResponseOutputItem"><code class="docutils literal notranslate"><span class="pre">ResponseOutputItem</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ResponseOutputItem.content"><code class="docutils literal notranslate"><span class="pre">ResponseOutputItem.content</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ResponseOutputItem.model_config"><code class="docutils literal notranslate"><span class="pre">ResponseOutputItem.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ResponsesPayload"><code class="docutils literal notranslate"><span class="pre">ResponsesPayload</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ResponsesPayload.model_config"><code class="docutils literal notranslate"><span class="pre">ResponsesPayload.model_config</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.ResponsesPayload.output"><code class="docutils literal notranslate"><span class="pre">ResponsesPayload.output</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.TokenLogprobs"><code class="docutils literal notranslate"><span class="pre">TokenLogprobs</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.TokenLogprobs.logprob"><code class="docutils literal notranslate"><span class="pre">TokenLogprobs.logprob</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.TokenLogprobs.model_config"><code class="docutils literal notranslate"><span class="pre">TokenLogprobs.model_config</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.TokenLogprobs.top_logprobs"><code class="docutils literal notranslate"><span class="pre">TokenLogprobs.top_logprobs</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.TopLogprob"><code class="docutils literal notranslate"><span class="pre">TopLogprob</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.TopLogprob.logprob"><code class="docutils literal notranslate"><span class="pre">TopLogprob.logprob</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.TopLogprob.model_config"><code class="docutils literal notranslate"><span class="pre">TopLogprob.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.preprocessing.response_models.read_message"><code class="docutils literal notranslate"><span class="pre">read_message()</span></code></a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Artefact Research Center.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

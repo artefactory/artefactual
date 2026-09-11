@@ -1,0 +1,1049 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Train a detector on answers you have already judged &#8212; Artefactual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mermaid-theme.css?v=60300dae" />
+    <link rel="stylesheet" type="text/css" href="../_static/notebook-buttons.css?v=9438e366" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=25264a1c"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'examples/train_wepr';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://artefactory.github.io/artefactual/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2026.9.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <link rel="canonical" href="https://artefactory.github.io/artefactual/examples/train_wepr.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Label a set of responses with an encoder judge, then train" href="train_wepr_bertjudge.html" />
+    <link rel="prev" title="Training a detector" href="../guide/training.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2026.9" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Artefactual</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="index.html">
+    Examples
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Train a detector on answers you have already judged</a></li>
+<li class="toctree-l1"><a class="reference internal" href="train_wepr_bertjudge.html">Label a set of responses with an encoder judge, then train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="train_wepr_pipeline.html">Build the training set from an endpoint, then train</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../guide/training.html" class="nav-link">Training a detector</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Train a detector on answers you have already judged</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+  <div class="notebook-buttons">
+    <a class="notebook-colab" href="https://colab.research.google.com/github/artefactory/artefactual/blob/gh-pages/2026.9.1/examples/train_wepr.ipynb" target="_blank" rel="noopener"
+       title="Run train_wepr.ipynb in Google Colab">
+      <img src="https://colab.research.google.com/assets/colab-badge.svg"
+           alt="Open in Colab" style="vertical-align: middle; height: 1.25rem">
+    </a>
+    <a class="notebook-download" href="train_wepr.ipynb" download
+       title="Download train_wepr.ipynb">
+      <i class="fa-solid fa-download"></i> train_wepr.ipynb
+    </a>
+  </div>
+</div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="train-a-detector-on-answers-you-have-already-judged">
+<h1>Train a detector on answers you have already judged<a class="headerlink" href="#train-a-detector-on-answers-you-have-already-judged" title="Link to this heading">#</a></h1>
+<p>You start with the whole training set already in hand: answers the model under test
+generated, and a verdict on each. This notebook turns that pair into a fitted detector.</p>
+<p>A detector is trained for one model — it scores how uncertain <em>that</em> model was while it
+generated — so the responses must come from the model you want to detect hallucinations
+in, carrying their <code class="docutils literal notranslate"><span class="pre">top_logprobs</span></code>. The wider context is in the guide’s <em>Training a
+detector</em>.</p>
+<p>It walks that training set through the package end to end: reading the two batch files,
+running the three pipeline steps by hand, fitting, cross-validating, and saving the result.</p>
+<p>The sample files are synthetic: real questions, with the responses and their
+log-probabilities generated rather than sampled from a model.</p>
+<div class="cell tag_hide-input docutils container">
+<details class="admonition hide above-input">
+<summary aria-label="Toggle hidden content">
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># From a clone: `uv sync --group notebooks`.</span>
+<span class="c1">#</span>
+<span class="c1"># On Colab, uncomment to install the package and fetch the files this notebook reads.</span>
+<span class="c1"># !pip install -q artefactual matplotlib</span>
+<span class="c1"># !wget -q https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/responses_sample.jsonl</span>
+<span class="c1"># !wget -q https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/judgments_sample.jsonl</span>
+</pre></div>
+</div>
+</div>
+</details>
+</div>
+<section id="the-inputs">
+<h2>The inputs<a class="headerlink" href="#the-inputs" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">RESPONSES</span></code> holds what the model under test generated, one OpenAI Batch line per request,
+each carrying <code class="docutils literal notranslate"><span class="pre">top_logprobs</span></code> per token — that distribution is the only thing the detector
+reads. <code class="docutils literal notranslate"><span class="pre">JUDGMENTS</span></code> holds a verdict on each of those responses, keyed by the same
+<code class="docutils literal notranslate"><span class="pre">custom_id</span></code>, from an LLM judge, a human pass, or matching against a gold answer.</p>
+<p><code class="docutils literal notranslate"><span class="pre">read_batch</span></code> reads the lines, <code class="docutils literal notranslate"><span class="pre">read_judgment</span></code> reads the verdict inside one. A failed
+request carries no completion and <code class="docutils literal notranslate"><span class="pre">failure</span></code> says why: two of the hundred lines are timeouts,
+leaving 98 responses. <code class="docutils literal notranslate"><span class="pre">read_judgment</span></code> returns <code class="docutils literal notranslate"><span class="pre">True</span></code> when the judge said the response was
+<strong>correct</strong>, the opposite of the class the detector predicts, so the label is its
+negation.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">artefactual.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">index_by_custom_id</span><span class="p">,</span> <span class="n">read_batch</span><span class="p">,</span> <span class="n">read_judgment</span><span class="p">,</span> <span class="n">read_message</span>
+
+<span class="c1"># Responses generated by the model this detector is being built for, one OpenAI Batch line</span>
+<span class="c1"># each, carrying `top_logprobs` per token. This is the file to swap for your own run.</span>
+<span class="n">RESPONSES</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"responses_sample.jsonl"</span><span class="p">)</span>
+<span class="c1"># A verdict on each of those responses, keyed by the same `custom_id`.</span>
+<span class="n">JUDGMENTS</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"judgments_sample.jsonl"</span><span class="p">)</span>
+<span class="n">K</span> <span class="o">=</span> <span class="mi">15</span>  <span class="c1"># ranks per token; a detector is loaded at the k it was fit at</span>
+<span class="n">SEED</span> <span class="o">=</span> <span class="mi">42</span>
+
+<span class="c1"># `read_batch` validates each line into `BatchRequestOutput` and refuses a repeated</span>
+<span class="c1"># `custom_id`, which would otherwise pair a response with another question's verdict.</span>
+<span class="n">lines</span> <span class="o">=</span> <span class="n">read_batch</span><span class="p">(</span><span class="n">RESPONSES</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">failure</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"dropped </span><span class="si">{</span><span class="n">row</span><span class="o">.</span><span class="n">custom_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">row</span><span class="o">.</span><span class="n">failure</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="n">generated</span> <span class="o">=</span> <span class="n">index_by_custom_id</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+<span class="c1"># `read_judgment` returns True when the judge said the response was CORRECT, the opposite</span>
+<span class="c1"># of the class the detector predicts.</span>
+<span class="n">labelled</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="n">generated</span><span class="p">[</span><span class="n">row</span><span class="o">.</span><span class="n">custom_id</span><span class="p">],</span> <span class="nb">int</span><span class="p">(</span><span class="ow">not</span> <span class="n">verdict</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">read_batch</span><span class="p">(</span><span class="n">JUDGMENTS</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">custom_id</span> <span class="ow">in</span> <span class="n">generated</span> <span class="ow">and</span> <span class="p">(</span><span class="n">verdict</span> <span class="o">:=</span> <span class="n">read_judgment</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">completion</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<span class="p">]</span>
+
+<span class="n">responses</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span> <span class="k">for</span> <span class="n">row</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">labelled</span><span class="p">]</span>
+<span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">label</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labelled</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">generated</span><span class="p">)</span><span class="si">}</span><span class="s2"> responses, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">labelled</span><span class="p">)</span><span class="si">}</span><span class="s2"> judged, </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span><span class="si">}</span><span class="s2"> hallucinations"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>dropped q-017: error {'message': 'simulated upstream timeout'}
+dropped q-062: error {'message': 'simulated upstream timeout'}
+98 responses, 98 judged, 47 hallucinations
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="the-three-steps">
+<h2>The three steps<a class="headerlink" href="#the-three-steps" title="Link to this heading">#</a></h2>
+<p>A detector is a scikit-learn <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code>, and running its steps separately shows what each
+one contributes.</p>
+<p><code class="docutils literal notranslate"><span class="pre">LogProbParser</span></code> turns the batch lines into <code class="docutils literal notranslate"><span class="pre">(responses,</span> <span class="pre">tokens,</span> <span class="pre">ranks)</span></code> — it opens the Batch
+envelope itself, so the lines go in as they were read. The array is NaN-padded, because
+responses differ in length: here the longest is 4 tokens, and every token carries all 15
+ranks.</p>
+<p><code class="docutils literal notranslate"><span class="pre">entropy_contributions</span></code> converts each log-probability to <code class="docutils literal notranslate"><span class="pre">s_kj</span> <span class="pre">=</span> <span class="pre">-p·ln(p)</span></code>, same shape, one
+contribution per rank. <code class="docutils literal notranslate"><span class="pre">EntropyTransformer</span></code> then reduces the rank axis: the <code class="docutils literal notranslate"><span class="pre">wepr</span></code> reduction
+keeps a mean and a max per rank, so <code class="docutils literal notranslate"><span class="pre">k=15</span></code> becomes <strong>30</strong> features per response, one
+coefficient each for the classifier to weight.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">artefactual.preprocessing.parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogProbParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">artefactual.scoring</span><span class="w"> </span><span class="kn">import</span> <span class="n">WEPR</span><span class="p">,</span> <span class="n">BaseDetector</span><span class="p">,</span> <span class="n">EntropyTransformer</span>
+
+<span class="n">logprobs</span> <span class="o">=</span> <span class="n">LogProbParser</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">)</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">responses</span><span class="p">)</span>  <span class="c1"># (responses, tokens, ranks), NaN-padded</span>
+<span class="n">s_kj</span> <span class="o">=</span> <span class="n">EntropyTransformer</span><span class="o">.</span><span class="n">entropy_contributions</span><span class="p">(</span><span class="n">logprobs</span><span class="p">)</span>  <span class="c1"># -p*ln(p) per rank, peaking at p=1/e</span>
+<span class="n">features</span> <span class="o">=</span> <span class="n">EntropyTransformer</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="s2">"wepr"</span><span class="p">)</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">logprobs</span><span class="p">)</span>
+
+<span class="n">logprobs</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">s_kj</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>((98, 4, 15), (98, 4, 15), (98, 30))
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="fit">
+<h2>Fit<a class="headerlink" href="#fit" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">WEPR()</span></code> returns the pipeline unfitted, so <code class="docutils literal notranslate"><span class="pre">fit</span></code> takes the batch lines directly and
+there is no feature extraction to write. The split is stratified and happens first, so what
+is reported describes responses the detector never saw.</p>
+<p><strong>ROC-AUC</strong> scores the ranking: whether hallucinations sort above grounded answers. The
+<strong>classification report</strong> scores the decisions at a 0.5 cut, where recall on the
+<code class="docutils literal notranslate"><span class="pre">hallucination</span></code> row is the fraction caught and precision is how many of the flags were
+right. Only the AUC carries over to a different threshold.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">classification_report</span><span class="p">,</span> <span class="n">roc_auc_score</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">train_test_split</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">myst_nb</span><span class="w"> </span><span class="kn">import</span> <span class="n">glue</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="c1"># Only the documentation build has MyST-NB, and only it renders what `glue` records.</span>
+    <span class="c1"># Running this notebook anywhere else -- Colab, a clone, the test suite -- must not</span>
+    <span class="c1"># need a Sphinx extension installed, so the calls below become no-ops.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">glue</span><span class="p">(</span><span class="o">*</span><span class="n">_args</span><span class="p">,</span> <span class="o">**</span><span class="n">_kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+<span class="n">x_train</span><span class="p">,</span> <span class="n">x_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">responses</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">SEED</span><span class="p">)</span>
+
+<span class="n">detector</span> <span class="o">=</span> <span class="n">WEPR</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+<span class="n">scores</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">x_test</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
+
+<span class="c1"># Glued, so the paragraph below quotes this run rather than a number typed once and left to</span>
+<span class="c1"># drift. An `.md` carries no outputs, so a stale figure in the prose has nothing to contradict it.</span>
+<span class="n">glue</span><span class="p">(</span><span class="s2">"auc"</span><span class="p">,</span> <span class="n">roc_auc_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">scores</span><span class="p">),</span> <span class="n">display</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">glue</span><span class="p">(</span><span class="s2">"held_out"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_test</span><span class="p">),</span> <span class="n">display</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"fitted on </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y_train</span><span class="p">)</span><span class="si">}</span><span class="s2">, holding out </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y_test</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"ROC-AUC: </span><span class="si">{</span><span class="n">roc_auc_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span><span class="w"> </span><span class="n">scores</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">classification_report</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">scores</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">target_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"grounded"</span><span class="p">,</span> <span class="s2">"hallucination"</span><span class="p">],</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>fitted on 73, holding out 25
+ROC-AUC: 0.84
+
+               precision    recall  f1-score   support
+
+     grounded       0.91      0.77      0.83        13
+hallucination       0.79      0.92      0.85        12
+
+     accuracy                           0.84        25
+    macro avg       0.85      0.84      0.84        25
+ weighted avg       0.85      0.84      0.84        25
+</pre></div>
+</div>
+</div>
+</div>
+<p>On the <span class="pasted-text">25</span> held-out responses this fit reaches a ROC-AUC of
+<span class="pasted-text">0.84</span>. The sample is synthetic and small, so read it as the shape of the
+workflow rather than as a result.</p>
+</section>
+<section id="what-the-fit-weighs">
+<h2>What the fit weighs<a class="headerlink" href="#what-the-fit-weighs" title="Link to this heading">#</a></h2>
+<p>A fitted <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> slices. <code class="docutils literal notranslate"><span class="pre">detector[:-1]</span></code> is the parser and the transformer without the
+classifier, so it produces exactly the <code class="docutils literal notranslate"><span class="pre">features</span></code> the three steps above built by hand.</p>
+<p><code class="docutils literal notranslate"><span class="pre">detector[-1]</span></code> is the classifier, and its 30 coefficients are <code class="docutils literal notranslate"><span class="pre">2k</span></code>: a weight per rank for
+the mean of the entropy contributions, and a weight per rank for the max. Plotted against
+the rank, they say which part of the distribution this detector reads — weight lands across
+the whole axis rather than on rank 1. The magnitudes are large because the default
+classifier is unregularised; <em>Choosing the final estimator</em> is about that.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="c1"># The by-hand steps and the pipeline are the same computation, not a resemblance.</span>
+<span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">detector</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">responses</span><span class="p">),</span> <span class="n">features</span><span class="p">,</span> <span class="n">equal_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">mean_weights</span><span class="p">,</span> <span class="n">max_weights</span> <span class="o">=</span> <span class="n">detector</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">coef_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">K</span><span class="p">)</span>
+<span class="n">ranks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">K</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">ranks</span> <span class="o">-</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">mean_weights</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"mean over ranks"</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">ranks</span> <span class="o">+</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">max_weights</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"max over ranks"</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">"rank"</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">"coefficient"</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="c1"># Returns None, so the figure is the cell's only output -- an object repr above it is noise.</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/821a0c75b022775e18b18bf9d7a9b68c9924acf5d586ad7a09379f9391e0d518.png" src="../_images/821a0c75b022775e18b18bf9d7a9b68c9924acf5d586ad7a09379f9391e0d518.png" />
+</div>
+</div>
+</section>
+<section id="it-composes-with-scikit-learn">
+<h2>It composes with scikit-learn<a class="headerlink" href="#it-composes-with-scikit-learn" title="Link to this heading">#</a></h2>
+<p>Every <code class="docutils literal notranslate"><span class="pre">sklearn.model_selection</span></code> tool works on it.</p>
+<p>Five folds over all 98 responses report a spread as well as a mean; the 25-answer holdout
+above lands below every one of the five.</p>
+<p><code class="docutils literal notranslate"><span class="pre">LearningCurveDisplay</span></code> answers the question that decides whether to label more: the
+5-fold AUC at 20, 40, 60, 80 and 98 responses. A curve still climbing at the right edge
+says more labels are worth buying; one that has flattened says the next hundred buy nothing.</p>
+<p>Every step’s parameters are searchable, <code class="docutils literal notranslate"><span class="pre">parser__k</span></code> included. The classifier is refitted at
+each width, so the comparison is legitimate — and the score climbing with <code class="docutils literal notranslate"><span class="pre">k</span></code> says the
+signal here lives in the deeper ranks, not just the top one.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">GridSearchCV</span><span class="p">,</span> <span class="n">StratifiedKFold</span><span class="p">,</span> <span class="n">cross_val_score</span>
+
+<span class="n">folds</span> <span class="o">=</span> <span class="n">StratifiedKFold</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">SEED</span><span class="p">)</span>
+
+<span class="n">auc</span> <span class="o">=</span> <span class="n">cross_val_score</span><span class="p">(</span><span class="n">WEPR</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">),</span> <span class="n">responses</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="n">folds</span><span class="p">,</span> <span class="n">scoring</span><span class="o">=</span><span class="s2">"roc_auc"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"5-fold ROC-AUC: </span><span class="si">{</span><span class="n">auc</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> +/- </span><span class="si">{</span><span class="n">auc</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">   </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">auc</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="n">search</span> <span class="o">=</span> <span class="n">GridSearchCV</span><span class="p">(</span><span class="n">WEPR</span><span class="p">(),</span> <span class="p">{</span><span class="s2">"parser__k"</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">15</span><span class="p">]},</span> <span class="n">cv</span><span class="o">=</span><span class="n">folds</span><span class="p">,</span> <span class="n">scoring</span><span class="o">=</span><span class="s2">"roc_auc"</span><span class="p">)</span>
+<span class="n">search</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">responses</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">mean</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">search</span><span class="o">.</span><span class="n">cv_results_</span><span class="p">[</span><span class="s2">"param_parser__k"</span><span class="p">],</span> <span class="n">search</span><span class="o">.</span><span class="n">cv_results_</span><span class="p">[</span><span class="s2">"mean_test_score"</span><span class="p">],</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  k=</span><span class="si">{</span><span class="n">k</span><span class="si">:</span><span class="s2">&gt;2</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">mean</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>5-fold ROC-AUC: 0.93 +/- 0.03   [0.96 0.91 0.96 0.92 0.88]
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  k= 5: 0.82
+  k=10: 0.85
+  k=15: 0.93
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">LearningCurveDisplay</span>
+
+<span class="n">learning_curve</span> <span class="o">=</span> <span class="n">LearningCurveDisplay</span><span class="o">.</span><span class="n">from_estimator</span><span class="p">(</span>
+    <span class="n">WEPR</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">),</span>
+    <span class="n">responses</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">,</span>
+    <span class="n">cv</span><span class="o">=</span><span class="n">folds</span><span class="p">,</span>
+    <span class="n">scoring</span><span class="o">=</span><span class="s2">"roc_auc"</span><span class="p">,</span>
+    <span class="n">train_sizes</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+    <span class="n">score_name</span><span class="o">=</span><span class="s2">"ROC-AUC"</span><span class="p">,</span>
+    <span class="n">std_display_style</span><span class="o">=</span><span class="s2">"fill_between"</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/26756ba92b29d618fef8c92dd469862c7548eb983086f4702c1f3e51eeb1ed30.png" src="../_images/26756ba92b29d618fef8c92dd469862c7548eb983086f4702c1f3e51eeb1ed30.png" />
+</div>
+</div>
+</section>
+<section id="choosing-the-final-estimator">
+<h2>Choosing the final estimator<a class="headerlink" href="#choosing-the-final-estimator" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">estimator=</span></code> takes any scikit-learn estimator. The default is the unregularised logistic
+regression the shipped detectors were fitted with, and on data this separable it saturates: almost every score
+lands on 0 or 1, which leaves a precision-recall curve with almost no points on it and no
+threshold to choose between.</p>
+<p>Regularising is one keyword, and it spreads the scores back out — same features, same split,
+a curve you can actually pick an operating point from. <code class="docutils literal notranslate"><span class="pre">PrecisionRecallDisplay</span></code> draws both on
+one axes, where the saturation is the shape of the curve rather than a count of thresholds.</p>
+<p>Then pick the threshold with <code class="docutils literal notranslate"><span class="pre">TunedThresholdClassifierCV</span></code> rather than by reading a number
+off the curve: it cross-validates the cut on the training set alone, so the operating point
+is not chosen on the rows it is then reported against. It wraps the detector, so
+<code class="docutils literal notranslate"><span class="pre">predict</span></code> uses the tuned cut while <code class="docutils literal notranslate"><span class="pre">predict_proba</span></code> still returns the detector’s own scores.
+The threshold is a number, not part of the <code class="docutils literal notranslate"><span class="pre">.skops</span></code> weights — it travels with the detector,
+not inside it.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.linear_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogisticRegression</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">PrecisionRecallDisplay</span><span class="p">,</span> <span class="n">precision_recall_curve</span>
+
+<span class="n">curves</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">estimator</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">"C=inf (default)"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="p">(</span><span class="s2">"C=1.0"</span><span class="p">,</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">C</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">1000</span><span class="p">))):</span>
+    <span class="n">fitted</span> <span class="o">=</span> <span class="n">WEPR</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="n">estimator</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+    <span class="n">probabilities</span> <span class="o">=</span> <span class="n">fitted</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">x_test</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">decided</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">probabilities</span> <span class="o">&lt;</span> <span class="mf">0.01</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">probabilities</span> <span class="o">&gt;</span> <span class="mf">0.99</span><span class="p">))</span>
+    <span class="n">thresholds</span> <span class="o">=</span> <span class="n">precision_recall_curve</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">probabilities</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">:</span><span class="s2">&gt;15</span><span class="si">}</span><span class="s2">: AUC </span><span class="si">{</span><span class="n">roc_auc_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span><span class="w"> </span><span class="n">probabilities</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">decided</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2"> of scores at the rails, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">thresholds</span><span class="p">)</span><span class="si">}</span><span class="s2"> distinct thresholds"</span>
+    <span class="p">)</span>
+    <span class="c1"># The first call makes the axes, the second draws onto it: `curves.ax_` is how a</span>
+    <span class="c1"># Display hands its axes to the next one, with no figure to manage by hand.</span>
+    <span class="n">curves</span> <span class="o">=</span> <span class="n">PrecisionRecallDisplay</span><span class="o">.</span><span class="n">from_predictions</span><span class="p">(</span>
+        <span class="n">y_test</span><span class="p">,</span> <span class="n">probabilities</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">curves</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">curves</span><span class="o">.</span><span class="n">ax_</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>C=inf (default): AUC 0.84, 96% of scores at the rails, 16 distinct thresholds
+          C=1.0: AUC 0.95, 0% of scores at the rails, 25 distinct thresholds
+</pre></div>
+</div>
+<img alt="../_images/2dde5c855c706f1a04549e19a32c5b5a6050998042dc84e82b342109ab95b364.png" src="../_images/2dde5c855c706f1a04549e19a32c5b5a6050998042dc84e82b342109ab95b364.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">TunedThresholdClassifierCV</span>
+
+<span class="c1"># Tuned on the training rows only, by cross-validation, and reported on the held-out ones.</span>
+<span class="n">tuned</span> <span class="o">=</span> <span class="n">TunedThresholdClassifierCV</span><span class="p">(</span>
+    <span class="n">WEPR</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="n">LogisticRegression</span><span class="p">(</span><span class="n">C</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">1000</span><span class="p">)),</span>
+    <span class="n">scoring</span><span class="o">=</span><span class="s2">"f1"</span><span class="p">,</span>
+    <span class="n">cv</span><span class="o">=</span><span class="n">folds</span><span class="p">,</span>
+<span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"threshold </span><span class="si">{</span><span class="n">tuned</span><span class="o">.</span><span class="n">best_threshold_</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> rather than 0.5, </span><span class="si">{</span><span class="n">tuned</span><span class="o">.</span><span class="n">best_score_</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> F1 in cross-validation"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">classification_report</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">tuned</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x_test</span><span class="p">),</span> <span class="n">target_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"grounded"</span><span class="p">,</span> <span class="s2">"hallucination"</span><span class="p">],</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>threshold 0.47 rather than 0.5, 0.91 F1 in cross-validation
+               precision    recall  f1-score   support
+
+     grounded       1.00      0.77      0.87        13
+hallucination       0.80      1.00      0.89        12
+
+     accuracy                           0.88        25
+    macro avg       0.90      0.88      0.88        25
+ weighted avg       0.90      0.88      0.88        25
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="per-token-scores">
+<h2>Per-token scores<a class="headerlink" href="#per-token-scores" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">predict_token_proba</span></code> scores every token position instead of pooling the response into one
+number, which locates <em>where</em> a response drifts. Padded positions stay NaN rather than being
+scored as real tokens.</p>
+<p>These sample responses are one or two tokens long, so there is little to see.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">per_token</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">predict_token_proba</span><span class="p">(</span><span class="n">x_test</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span>  <span class="c1"># (responses, tokens, 1)</span>
+
+<span class="k">for</span> <span class="n">row</span><span class="p">,</span> <span class="n">scores_per_token</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">x_test</span><span class="p">[:</span><span class="mi">3</span><span class="p">],</span> <span class="n">per_token</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">tokens</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="s2">"token"</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">row</span><span class="o">.</span><span class="n">completion</span><span class="p">[</span><span class="s2">"choices"</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">"logprobs"</span><span class="p">][</span><span class="s2">"content"</span><span class="p">]]</span>
+    <span class="n">scored</span> <span class="o">=</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">token</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">score</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">token</span><span class="p">,</span> <span class="p">(</span><span class="n">score</span><span class="p">,)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">tokens</span><span class="p">,</span> <span class="n">scores_per_token</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"P=</span><span class="si">{</span><span class="n">detector</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">row</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">scored</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>P=1.00  Saturn=1.00
+P=1.00  Colombia=1.00
+P=1.00  David=1.00 Ricardo=1.00
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="save-it-and-load-it-back">
+<h2>Save it, and load it back<a class="headerlink" href="#save-it-and-load-it-back" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">.skops</span></code> rather than a pickle. <code class="docutils literal notranslate"><span class="pre">from_pretrained</span></code> takes a <code class="docutils literal notranslate"><span class="pre">.skops</span></code> file, a directory holding
+<code class="docutils literal notranslate"><span class="pre">model.skops</span></code>, or <strong>a Hugging Face repository id</strong> — the shipped detectors are loaded that
+way, and yours is too once you push its <code class="docutils literal notranslate"><span class="pre">model.skops</span></code> to a repository of your own.</p>
+<p><code class="docutils literal notranslate"><span class="pre">k</span></code> is part of the weights, not a runtime option: the coefficients were fitted at one rank
+count and mean nothing at another, so loading at a different <code class="docutils literal notranslate"><span class="pre">k</span></code> raises rather than
+mis-shaping the score.</p>
+<p>The rows scored below are held-out ones.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">path</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">save_estimator</span><span class="p">(</span><span class="s2">"wepr-trained.skops"</span><span class="p">)</span>
+<span class="n">reloaded</span> <span class="o">=</span> <span class="n">WEPR</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">, reloaded at k=</span><span class="si">{</span><span class="n">K</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># Held-out answers: the rows the fit never saw.</span>
+<span class="k">for</span> <span class="n">row</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">))[:</span><span class="mi">5</span><span class="p">]:</span>
+    <span class="n">said</span> <span class="o">=</span> <span class="p">(</span><span class="n">read_message</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">completion</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="s1">'hallucination'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'grounded    '</span><span class="si">}</span><span class="s2">] P=</span><span class="si">{</span><span class="n">reloaded</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">row</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">said</span><span class="p">[:</span><span class="mi">40</span><span class="p">]</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># The rank count is part of the weights, so a mismatch is refused rather than mis-shaped.</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">WEPR</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">K</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">from_pretrained(path, 'wepr', k=</span><span class="si">{</span><span class="n">K</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">) -&gt; ValueError: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>wepr-trained.skops, reloaded at k=15
+[hallucination] P=1.000  'Saturn'
+[hallucination] P=1.000  'Colombia'
+[hallucination] P=1.000  'David Ricardo'
+[grounded    ] P=1.000  'Ottawa'
+[grounded    ] P=0.000  'Beethoven'
+
+from_pretrained(path, 'wepr', k=14) -&gt; ValueError: The WEPR detector at 'wepr-trained.skops' takes 30 feature(s), but k=14 needs 28. Its coefficients are fixed at the rank count they were trained at; pass k=15, or use a detector trained at k=14.
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="where-to-go-next">
+<h2>Where to go next<a class="headerlink" href="#where-to-go-next" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">epr</span></code> is the same call with one word changed: it pools every rank into a single feature
+instead of <code class="docutils literal notranslate"><span class="pre">2k</span></code>, which is the one to reach for when there is too little labelled data to
+fit <code class="docutils literal notranslate"><span class="pre">wepr</span></code>’s coefficients. <code class="docutils literal notranslate"><span class="pre">EntropyTransformer(reduction=...)</span></code> also takes a callable
+<code class="docutils literal notranslate"><span class="pre">(s_kj,</span> <span class="pre">axis)</span> <span class="pre">-&gt;</span> <span class="pre">features</span></code>, so the two named reductions are not the only ones.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">scripts/train_detector.py</span></code> reads these same two files and reports bootstrap confidence
+intervals around the AUC, which a holdout this size needs.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">predict_proba</span></code> and <code class="docutils literal notranslate"><span class="pre">predict_token_proba</span></code> are the whole scoring surface; a fitted detector
+is an ordinary estimator from here on.</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../guide/training.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Training a detector</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="train_wepr_bertjudge.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Label a set of responses with an encoder judge, then train</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-inputs">The inputs</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-three-steps">The three steps</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fit">Fit</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-the-fit-weighs">What the fit weighs</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#it-composes-with-scikit-learn">It composes with scikit-learn</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#choosing-the-final-estimator">Choosing the final estimator</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#per-token-scores">Per-token scores</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#save-it-and-load-it-back">Save it, and load it back</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#where-to-go-next">Where to go next</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Artefact Research Center.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

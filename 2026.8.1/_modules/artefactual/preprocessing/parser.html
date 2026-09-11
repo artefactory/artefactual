@@ -1,0 +1,750 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>artefactual.preprocessing.parser &#8212; Artefactual documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/artefactual/preprocessing/parser';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://artefactory.github.io/artefactual/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2026.8.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="canonical" href="https://artefactory.github.io/artefactual/2026.8.1/_modules/artefactual/preprocessing/parser.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Artefactual documentation</p>
+  
+</a></div>
+    
+      <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">artefactual.preprocessing.parser</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for artefactual.preprocessing.parser</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Extraction of top-k logprobs from completion responses into a dense array.</span>
+
+<span class="sd">Responses are validated against the models in `response_models` and dispatched by type,</span>
+<span class="sd">so a new provider format is added by registering an extractor rather than by editing the</span>
+<span class="sd">entry points here.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">singledispatch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">beartype.door</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_bearable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">TransformerMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tags</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">artefactual.preprocessing.openai_parser</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">process_openai_chat_completion</span><span class="p">,</span>
+    <span class="n">process_openai_responses_api</span><span class="p">,</span>
+    <span class="n">sampled_tokens_logprobs_chat_completion_api</span><span class="p">,</span>
+    <span class="n">sampled_tokens_logprobs_responses_api</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">artefactual.preprocessing.response_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatCompletion</span><span class="p">,</span> <span class="n">ResponsesPayload</span>
+
+<span class="n">_RESPONSE_ADAPTER</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">ChatCompletion</span> <span class="o">|</span> <span class="n">ResponsesPayload</span><span class="p">)</span>
+
+
+<span class="nd">@singledispatch</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_top_logprobs</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">"""Extract per-token top logprobs from a validated response. Register one per format."""</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"No top-logprob extractor registered for </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">response</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">."</span>
+    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+
+<span class="nd">@_top_logprobs</span><span class="o">.</span><span class="n">register</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="n">ChatCompletion</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]:</span>
+    <span class="k">return</span> <span class="n">process_openai_chat_completion</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+
+<span class="nd">@_top_logprobs</span><span class="o">.</span><span class="n">register</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="n">ResponsesPayload</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]:</span>
+    <span class="k">return</span> <span class="n">process_openai_responses_api</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+
+<span class="nd">@singledispatch</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_sampled_logprobs</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Extract sampled-token logprobs from a validated response. Register one per format."""</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"No sampled-logprob extractor registered for </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">response</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">."</span>
+    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+
+<span class="nd">@_sampled_logprobs</span><span class="o">.</span><span class="n">register</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="n">ChatCompletion</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="k">return</span> <span class="n">sampled_tokens_logprobs_chat_completion_api</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+
+<span class="nd">@_sampled_logprobs</span><span class="o">.</span><span class="n">register</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="n">ResponsesPayload</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="k">return</span> <span class="n">sampled_tokens_logprobs_responses_api</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="LogProbParser">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.preprocessing.parser.html#artefactual.preprocessing.LogProbParser">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LogProbParser</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">TransformerMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""First pipeline step: completion responses in, a dense logprob array out.</span>
+
+<span class="sd">    Accepts raw responses rather than arrays, so it opts out of scikit-learn's input</span>
+<span class="sd">    validation. Cross-validation over a `BaseDetector` therefore has to start from data</span>
+<span class="sd">    this step has already parsed, since sklearn cannot index a response object by row.</span>
+
+<span class="sd">    This step owns the rank axis. It sizes the output to `k` and refuses responses that</span>
+<span class="sd">    carry fewer ranks, which is possible only here: downstream, every token has been padded</span>
+<span class="sd">    to a common width and a token's original rank count is no longer recoverable.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        k: Rank count to emit. `None` uses the widest rank count present in the batch.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">k</span>
+
+<div class="viewcode-block" id="LogProbParser.fit">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.preprocessing.parser.html#artefactual.preprocessing.LogProbParser.fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"LogProbParser"</span><span class="p">:</span>  <span class="c1"># noqa: ARG002, N803 — X / y unused but required by the sklearn fit signature</span>
+<span class="w">        </span><span class="sd">"""No-op, present so the step composes in a `Pipeline`. Returns self."""</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="LogProbParser.transform">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.preprocessing.parser.html#artefactual.preprocessing.LogProbParser.transform">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>  <span class="c1"># noqa: N803</span>
+<span class="w">        </span><span class="sd">"""Parse responses into a NaN-padded logprob array.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            X: One completion response, or a sequence of them. Each yields one row per</span>
+<span class="sd">                sampled sequence.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            `(n_sequences, max_tokens, k)`, NaN where a sequence is shorter than the</span>
+<span class="sd">            longest in the batch or a token position carried no ranks. Empty input gives</span>
+<span class="sd">            an empty `(0, 0, 0)` array.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If a response is not a recognised completion format.</span>
+<span class="sd">            ValueError: If a logprob is missing, non-finite or positive, if no response</span>
+<span class="sd">                carries any log-probabilities, or if a response carries fewer than `k`</span>
+<span class="sd">                ranks per token.</span>
+<span class="sd">        """</span>
+        <span class="n">parsed</span> <span class="o">=</span> <span class="n">parse_top_logprobs</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">parsed</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+        <span class="c1"># Rejected before the array is built: NaN is the padding marker downstream, so an</span>
+        <span class="c1"># invalid logprob cast into the array would be indistinguishable from padding.</span>
+        <span class="c1"># TODO(perf): O(n·T·k) Python loop — vectorize over the padded array once batches get large.</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sample</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parsed</span><span class="p">):</span>  <span class="c1"># sample is the dictionary for each generation</span>
+            <span class="k">for</span> <span class="n">token_idx</span><span class="p">,</span> <span class="n">logprobs</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>  <span class="c1"># token position, ragged list of logprobs</span>
+                <span class="k">for</span> <span class="n">rank</span><span class="p">,</span> <span class="n">lp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">logprobs</span><span class="p">):</span>  <span class="c1"># column index or k index, logprob value</span>
+                    <span class="k">if</span> <span class="n">lp</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">lp</span><span class="p">)</span> <span class="ow">or</span> <span class="n">lp</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">"Invalid logprob at sample </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">, token </span><span class="si">{</span><span class="n">token_idx</span><span class="si">}</span><span class="s2">, "</span>
+                            <span class="sa">f</span><span class="s2">"rank </span><span class="si">{</span><span class="n">rank</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">lp</span><span class="si">!r}</span><span class="s2">. Expected a finite value &lt;= 0."</span>
+                        <span class="p">)</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+        <span class="n">max_tokens</span> <span class="o">=</span> <span class="nb">max</span><span class="p">((</span><span class="nb">max</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">parsed</span> <span class="k">if</span> <span class="n">d</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">max_tokens</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># The shape was recognised but nothing carried ranks, which is what a provider</span>
+            <span class="c1"># returns when logprobs were not requested or are not supported. Caught here</span>
+            <span class="c1"># because a (n, 0, k) array reaches the entropy step as a zero-size reduction,</span>
+            <span class="c1"># whose numpy error names nothing the caller can act on. Gated on `k` for the</span>
+            <span class="c1"># same reason `_reject_narrow` is: without a declared rank count the parser has</span>
+            <span class="c1"># no expectation to contradict, and an empty parse is just an empty parse.</span>
+            <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"None of the </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">parsed</span><span class="p">)</span><span class="si">}</span><span class="s2"> response(s) carry any log-probabilities. The "</span>
+                <span class="sa">f</span><span class="s2">"payload is a recognised completion format but its top_logprobs are "</span>
+                <span class="sa">f</span><span class="s2">"absent or empty, which is what a provider returns when logprobs were "</span>
+                <span class="sa">f</span><span class="s2">"not requested or are unsupported. Regenerate with logprobs=True and "</span>
+                <span class="sa">f</span><span class="s2">"top_logprobs=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'k'</span><span class="si">}</span><span class="s2">."</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reject_narrow</span><span class="p">(</span><span class="n">parsed</span><span class="p">)</span>
+
+        <span class="c1"># float64: `LogisticRegression` takes the dtype of the features it is fitted on, and</span>
+        <span class="c1"># the pretrained coefficients are read from JSON at full decimal precision. Matching</span>
+        <span class="c1"># them keeps a fitted detector and a pretrained one on one dtype, and keeps the dot</span>
+        <span class="c1"># product from upcasting on every call.</span>
+        <span class="c1">#</span>
+        <span class="c1"># Surplus ranks are dropped rather than kept: a calibration fit at k has no</span>
+        <span class="c1"># coefficient for rank k+1, and EPR's mean is defined over exactly k ranks.</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">max</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">parsed</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">parsed</span><span class="p">),</span> <span class="n">max_tokens</span><span class="p">,</span> <span class="n">width</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sample</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parsed</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">token_idx</span><span class="p">,</span> <span class="n">logprobs</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">ranks</span> <span class="o">=</span> <span class="n">logprobs</span><span class="p">[:</span><span class="n">width</span><span class="p">]</span>
+                <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">token_idx</span><span class="p">,</span> <span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">ranks</span><span class="p">)]</span> <span class="o">=</span> <span class="n">ranks</span>  <span class="c1"># [depth, row, columns]</span>
+
+        <span class="k">return</span> <span class="n">arr</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_reject_narrow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parsed</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Raise if any response carries fewer than `k` ranks per token.</span>
+
+<span class="sd">        Compared per response, not across the batch, because padding is applied per batch:</span>
+<span class="sd">        a wide response would otherwise raise the measured width above a narrow sibling's</span>
+<span class="sd">        own rank count.</span>
+
+<span class="sd">        Token positions holding no ranks are skipped. Those are the empty-`top_logprobs`</span>
+<span class="sd">        case and remain padding, which the entropy step reports as an empty sequence.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sample</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parsed</span><span class="p">):</span>
+            <span class="n">widths</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">logprobs</span><span class="p">)</span> <span class="k">for</span> <span class="n">logprobs</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">if</span> <span class="n">logprobs</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">widths</span> <span class="ow">and</span> <span class="nb">min</span><span class="p">(</span><span class="n">widths</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">:</span>
+                <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"Response </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> carries </span><span class="si">{</span><span class="nb">min</span><span class="p">(</span><span class="n">widths</span><span class="p">)</span><span class="si">}</span><span class="s2"> rank(s) per token but k=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="si">}</span><span class="s2"> "</span>
+                    <span class="sa">f</span><span class="s2">"was requested. The missing ranks are not absent from the "</span>
+                    <span class="sa">f</span><span class="s2">"distribution, only unfetched, so zero-filling them would drop their "</span>
+                    <span class="sa">f</span><span class="s2">"entropy contributions and score the response as more confident than "</span>
+                    <span class="sa">f</span><span class="s2">"it was. Regenerate with top_logprobs=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="si">}</span><span class="s2">, or score at "</span>
+                    <span class="sa">f</span><span class="s2">"k=</span><span class="si">{</span><span class="nb">min</span><span class="p">(</span><span class="n">widths</span><span class="p">)</span><span class="si">}</span><span class="s2"> with a detector trained at that rank count."</span>
+                <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__sklearn_tags__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tags</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Declares the step stateless and exempt from array validation."""</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__sklearn_tags__</span><span class="p">()</span>
+        <span class="n">tags</span><span class="o">.</span><span class="n">no_validation</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">tags</span><span class="o">.</span><span class="n">requires_fit</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># model is stateless</span>
+        <span class="n">tags</span><span class="o">.</span><span class="n">input_tags</span><span class="o">.</span><span class="n">two_d_array</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">tags</span></div>
+
+
+
+<div class="viewcode-block" id="parse_top_logprobs">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.preprocessing.parser.html#artefactual.preprocessing.parse_top_logprobs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_top_logprobs</span><span class="p">(</span><span class="n">outputs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">"""Extract each token's top-k logprobs, one entry per sampled sequence.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        outputs: A completion response, as a mapping or an object, or a sequence of them</span>
+<span class="sd">            parsed and concatenated in order.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        One dict per sequence, mapping token position to that token's ranks. Ranks are</span>
+<span class="sd">        ragged: a position whose `top_logprobs` was empty maps to an empty list, and the</span>
+<span class="sd">        position is still counted so token indices track the generated text.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        TypeError: If the output is not a recognised completion format.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">is_bearable</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="nb">list</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">sequence</span> <span class="k">for</span> <span class="n">response</span> <span class="ow">in</span> <span class="n">outputs</span> <span class="k">for</span> <span class="n">sequence</span> <span class="ow">in</span> <span class="n">parse_top_logprobs</span><span class="p">(</span><span class="n">response</span><span class="p">)]</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">_RESPONSE_ADAPTER</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Unsupported output format: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">outputs</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">. Expected a completion response carrying logprobs."</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+
+    <span class="k">return</span> <span class="n">_top_logprobs</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="parse_sampled_token_logprobs">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.preprocessing.parser.html#artefactual.preprocessing.parse_sampled_token_logprobs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_sampled_token_logprobs</span><span class="p">(</span><span class="n">outputs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Extract the logprob of each *sampled* token, ignoring the alternatives.</span>
+
+<span class="sd">    The counterpart to `parse_top_logprobs`, which reads the top-k distribution. Neither</span>
+<span class="sd">    EPR nor WEPR uses this; it is exposed for callers measuring sequence likelihood.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        outputs: A single completion response, as a mapping or an object.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        One 1-D array per sequence, holding the sampled token logprobs in order.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        TypeError: If the output is not a recognised completion format.</span>
+<span class="sd">    """</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">_RESPONSE_ADAPTER</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Unsupported output format: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">outputs</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">. Expected a completion response carrying logprobs."</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+
+    <span class="k">return</span> <span class="n">_sampled_logprobs</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Artefact Research Center.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,1473 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Build the training set from an endpoint, then train &#8212; Artefactual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mermaid-theme.css?v=60300dae" />
+    <link rel="stylesheet" type="text/css" href="../_static/notebook-buttons.css?v=9438e366" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=25264a1c"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'examples/train_wepr_pipeline';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://artefactory.github.io/artefactual/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2026.9.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <link rel="canonical" href="https://artefactory.github.io/artefactual/examples/train_wepr_pipeline.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How it works" href="../guide/how-it-works.html" />
+    <link rel="prev" title="Label a set of responses with an encoder judge, then train" href="train_wepr_bertjudge.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2026.9" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Artefactual</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="index.html">
+    Examples
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="train_wepr.html">Train a detector on answers you have already judged</a></li>
+<li class="toctree-l1"><a class="reference internal" href="train_wepr_bertjudge.html">Label a set of responses with an encoder judge, then train</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Build the training set from an endpoint, then train</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../guide/training.html" class="nav-link">Training a detector</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Build the training set from an endpoint, then train</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+  <div class="notebook-buttons">
+    <a class="notebook-colab" href="https://colab.research.google.com/github/artefactory/artefactual/blob/gh-pages/2026.9.1/examples/train_wepr_pipeline.ipynb" target="_blank" rel="noopener"
+       title="Run train_wepr_pipeline.ipynb in Google Colab">
+      <img src="https://colab.research.google.com/assets/colab-badge.svg"
+           alt="Open in Colab" style="vertical-align: middle; height: 1.25rem">
+    </a>
+    <a class="notebook-download" href="train_wepr_pipeline.ipynb" download
+       title="Download train_wepr_pipeline.ipynb">
+      <i class="fa-solid fa-download"></i> train_wepr_pipeline.ipynb
+    </a>
+  </div>
+</div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="build-the-training-set-from-an-endpoint-then-train">
+<h1>Build the training set from an endpoint, then train<a class="headerlink" href="#build-the-training-set-from-an-endpoint-then-train" title="Link to this heading">#</a></h1>
+<p>You start with an endpoint and nothing else. This notebook builds the whole training set
+for the model that endpoint serves — it asks your questions, keeps the <code class="docutils literal notranslate"><span class="pre">top_logprobs</span></code>
+behind each response, has a judge grade them — then fits a WEPR detector and saves it.</p>
+<p>A detector is trained for one model, on answers that model produced plus a verdict on
+each. The wider context is in the guide’s <em>Training a detector</em>.</p>
+<p>Four sections. The first costs no requests and is still the expensive one: a gold answer
+per question is written by someone. The two that do spend requests write their results to
+disk, so a refit never pays for them twice.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Section</p></th>
+<th class="head"><p>What it does</p></th>
+<th class="head"><p>Cost</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Bring the questions</p></td>
+<td><p>Your questions, each with a gold answer</p></td>
+<td><p>the work: writing the gold answers</p></td>
+</tr>
+<tr class="row-odd"><td><p>Generate the responses</p></td>
+<td><p>One request each, keeping <code class="docutils literal notranslate"><span class="pre">top_logprobs</span></code></p></td>
+<td><p>N requests</p></td>
+</tr>
+<tr class="row-even"><td><p>Judge the responses</p></td>
+<td><p>One request each, against the gold answer</p></td>
+<td><p>N requests</p></td>
+</tr>
+<tr class="row-odd"><td><p>Fit and evaluate</p></td>
+<td><p>Fit, evaluate, save</p></td>
+<td><p>seconds</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Both written files are the <strong>OpenAI Batch output shape</strong> — one JSON object per line wrapping
+a completion under <code class="docutils literal notranslate"><span class="pre">custom_id</span></code> — which is what the Batch API returns and what
+<code class="docutils literal notranslate"><span class="pre">scripts/train_detector.py</span></code> reads, so nothing downstream needs a conversion.</p>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>What it is</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OPENAI_BASE_URL</span></code></p></td>
+<td><p>Any OpenAI-compatible endpoint returning <code class="docutils literal notranslate"><span class="pre">top_logprobs</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OPENAI_API_KEY</span></code></p></td>
+<td><p>Its key</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OPENAI_MODEL</span></code></p></td>
+<td><p>The model being scored — the detector belongs to it, and the id has to be one your endpoint serves</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The endpoint must return at least <code class="docutils literal notranslate"><span class="pre">K</span></code> ranks per token. <code class="docutils literal notranslate"><span class="pre">top_logprobs</span></code> is commonly capped at
+20, so <code class="docutils literal notranslate"><span class="pre">K</span> <span class="pre">=</span> <span class="pre">15</span></code> fits; an endpoint that caps lower is refused by name when the responses are
+generated, rather than training on narrower data.</p>
+<p>This notebook is not executed when the documentation is built, so the numbers you see are
+the ones your own run produces.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># From a clone: `uv sync --group notebooks`.</span>
+<span class="c1">#</span>
+<span class="c1"># On Colab, uncomment to install the package.</span>
+<span class="c1"># !pip install -q 'artefactual[adapters]' jinja2</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">#</a></h2>
+<p>Every knob in one place. <code class="docutils literal notranslate"><span class="pre">MODEL</span></code> has no default: a model id only means something to the
+endpoint serving it, and a wrong one fails on every generation request rather than here.</p>
+<p><code class="docutils literal notranslate"><span class="pre">K</span></code> is part of the feature definition, not a batch size — WEPR fits one coefficient per
+rank, so the detector is only ever loaded at the value it was fitted at.</p>
+<p>The two prompts are the paper’s. The generation prompt asks for short answers on purpose:
+the detector reads the distribution behind the response, so a model that pads with hedging
+spends its tokens on text carrying nothing to score.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">jinja2</span><span class="w"> </span><span class="kn">import</span> <span class="n">Template</span>
+
+<span class="c1"># No default: a model id only means something to the endpoint serving it, and a wrong one</span>
+<span class="c1"># fails on every generation request rather than here.</span>
+<span class="n">MODEL</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"OPENAI_MODEL"</span><span class="p">]</span>
+
+<span class="c1"># Ranks kept per token. Part of the feature definition, not a batch size: WEPR fits one</span>
+<span class="c1"># coefficient per rank, so a detector is only ever used at the k it was fitted at. Every</span>
+<span class="c1"># published detector uses 15.</span>
+<span class="n">K</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="c1"># The API caps it at 20, and an endpoint asked for more rejects every generation request --</span>
+<span class="c1"># which arrives as "no answers were generated" three cells later, pointing at the wrong</span>
+<span class="c1"># thing.</span>
+<span class="k">assert</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">K</span> <span class="o">&lt;=</span> <span class="mi">20</span><span class="p">,</span> <span class="s2">"top_logprobs must be between 1 and 20"</span>
+
+<span class="n">SEED</span> <span class="o">=</span> <span class="mi">42</span>
+<span class="n">WORKERS</span> <span class="o">=</span> <span class="mi">8</span>
+
+<span class="n">RESPONSES</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"responses.jsonl"</span><span class="p">)</span>
+<span class="n">JUDGMENTS</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"judgments.jsonl"</span><span class="p">)</span>
+<span class="c1"># The generation prompt, the paper's (4.1.2). Short answers on purpose: the detector reads</span>
+<span class="c1"># the token distribution behind the answer, so a model that pads with hedging spends its</span>
+<span class="c1"># tokens on text that carries nothing to score.</span>
+<span class="n">GENERATE</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="s2">"""You are a useful assistant that help finding short and precise answers for a given query or question.</span>
+<span class="s2">            Please keep your output AS SHORT AND CONCISE AS POSSIBLE.</span>
+<span class="s2">            Here is the query :</span>
+<span class="s2">            {{ query }}</span>
+<span class="s2">            """</span><span class="p">)</span>
+
+<span class="c1"># The judging prompt, the paper's, in full. Rendered with jinja, as the original is: the</span>
+<span class="c1"># reply format it demands is itself a JSON object, and jinja passes a bare `{` through</span>
+<span class="c1"># where `str.format` would read it as a field, as it would a question containing one.</span>
+<span class="n">JUDGE</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="s2">"""You are an expert evaluator tasked with determining if two answers convey compatible information. Your task is to make a binary True/False judgment on whether the answers are SEMANTICALLY COMPATIBLE.</span>
+
+<span class="s2">Query:</span>
+<span class="s2">{{ query }}</span>
+
+<span class="s2">Expected Answer:</span>
+<span class="s2">{{ expected_answer }}</span>
+<span class="s2">{</span><span class="si">% i</span><span class="s2">f answer_aliases %}</span>
+<span class="s2">Answer Aliases (Additional Correct Answers):</span>
+<span class="s2">{</span><span class="si">% f</span><span class="s2">or alias in answer_aliases %}</span>
+<span class="s2">- {{ alias }}</span>
+<span class="s2">{</span><span class="si">% e</span><span class="s2">ndfor %}</span>
+<span class="s2">{</span><span class="si">% e</span><span class="s2">ndif %}</span>
+
+<span class="s2">Generated Answer:</span>
+<span class="s2">{{ generated_answer }}</span>
+
+<span class="s2">CRITICAL INSTRUCTIONS:</span>
+<span class="s2">1. FIRST, perform a simple VERBATIM TEXT COMPARISON:</span>
+<span class="s2">   - If the generated answer is IDENTICAL (exact same text) to EITHER the expected answer OR ANY of the answer aliases, your judgment MUST be TRUE</span>
+<span class="s2">   - If not identical to any of them, proceed to semantic comparison</span>
+
+<span class="s2">2. For SEMANTIC COMPARISON, use these MANDATORY RULES:</span>
+<span class="s2">   - Judge "True" if the generated answer matches the SEMANTIC MEANING of EITHER the expected answer OR ANY of the answer aliases</span>
+<span class="s2">   - Judge "True" WHENEVER the general meaning or core concept is the same as either the expected answer or any alias</span>
+<span class="s2">   - Judge "True" if one answer is GENERAL and one is SPECIFIC about the same thing</span>
+<span class="s2">   - Judge "True" if one answer names a CATEGORY (e.g., "missionaries") and the other provides SPECIFIC INSTANCES of that category (e.g., "Augustine was sent by Pope Gregory")</span>
+<span class="s2">   - Judge "True" if one answer gives a BRIEF fact and the other ELABORATES with more details</span>
+<span class="s2">   - Judge "True" if one answer is more detailed but does NOT contradict the other</span>
+<span class="s2">   - Judge "False" ONLY if the answers directly CONTRADICT all of the expected answer and all aliases, or discuss ENTIRELY different topics</span>
+
+<span class="s2">3. EXTREMELY IMPORTANT RULES ABOUT SPECIFICITY:</span>
+<span class="s2">   - When one answer is general and one is specific → TRUE</span>
+<span class="s2">   - When one uses a category term and one gives examples → TRUE</span>
+<span class="s2">   - When one gives "who/what" and the other adds "when/where/how/why" → TRUE</span>
+<span class="s2">   - When one gives a person's role and the other gives their name → TRUE</span>
+<span class="s2">   - When one refers to a group and the other names individuals → TRUE</span>
+
+<span class="s2">4. Always check if the specific answer is an INSTANCE or EXAMPLE of the general answer</span>
+<span class="s2">   - If it is, the judgment MUST be TRUE regardless of how detailed the specific answer is</span>
+
+<span class="s2">5. The query is provided ONLY for context - do NOT use it in your judgment</span>
+
+<span class="s2">6. IMPORTANT: The generated answer should be considered TRUE if it matches EITHER the expected answer OR ANY of the answer aliases in meaning</span>
+
+<span class="s2">FINAL CHECK BEFORE SUBMITTING:</span>
+<span class="s2">- If the generated answer could reasonably be considered matching ANY of the expected answer or aliases → TRUE</span>
+<span class="s2">- If after reading all answers, they feel like they're talking about the same basic concept → TRUE</span>
+<span class="s2">- If you think "the generated answer is not contradicting the expected answer or any of its aliases" → TRUE</span>
+
+<span class="s2">Your response MUST follow this format:</span>
+<span class="s2">{</span>
+<span class="s2">  "judgment": true/false,</span>
+<span class="s2">  "explanation": "One clear sentence explaining why the answers are compatible or contradictory."</span>
+<span class="s2">}"""</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="bring-the-questions">
+<h2>Bring the questions<a class="headerlink" href="#bring-the-questions" title="Link to this heading">#</a></h2>
+<p><strong>This is the cell to replace.</strong> The hundred TriviaQA rows below are here so the notebook
+runs end to end out of the box; the detector you actually want is trained on the questions
+your users ask, because it learns how <em>your</em> model behaves on the traffic it will meet. The
+paper measured that gap: its numbers drop 10-20 points when a TriviaQA-trained detector is
+pointed at WebQuestions.</p>
+<p>Two fields per question, plus an optional third: <code class="docutils literal notranslate"><span class="pre">question</span></code> is asked, <code class="docutils literal notranslate"><span class="pre">short_answer</span></code> is what
+a correct response has to agree with, and <code class="docutils literal notranslate"><span class="pre">answer_aliases</span></code> lists other wordings the judge
+should also accept.</p>
+<p>Two properties decide whether a question set works. Responses must be <strong>short enough for a
+judge to grade</strong>, and the model must get <strong>enough of them wrong</strong> that both classes appear.
+A hundred is the working size; at twenty-five a capable model often gets nothing wrong, and
+the run spends the requests before refusing to fit.</p>
+<p>A hundred rows are written out here so the notebook is self-contained. For a set at the
+paper’s scale, <code class="docutils literal notranslate"><span class="pre">scripts/ecir/build_questions.sh</span></code> draws one from the Hub in these same
+fields – <code class="docutils literal notranslate"><span class="pre">./build_questions.sh</span> <span class="pre">triviaqa</span> <span class="pre">500</span> <span class="pre">&gt;</span> <span class="pre">questions.json</span></code>, or <code class="docutils literal notranslate"><span class="pre">webquestions</span></code> for the
+out-of-domain set – and this cell becomes <code class="docutils literal notranslate"><span class="pre">json.loads(Path(&quot;questions.json&quot;).read_text())</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">question_id</span></code> is not among the fields because the notebook assigns it from position. It is
+what travels — it becomes <code class="docutils literal notranslate"><span class="pre">custom_id</span></code> on the responses and the verdicts, and that is what
+every later join pairs on — so it has to be unique, and deriving it from position makes that
+true by construction rather than by assertion.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">QUESTIONS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which Lloyd Webber musical premiered in the US on 10th December 1993?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Sunset Boulevard"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Sunset Blvd"</span><span class="p">,</span> <span class="s2">"Sunset Blvd."</span><span class="p">,</span> <span class="s2">"Sunset Bulevard"</span><span class="p">,</span> <span class="s2">"West Sunset Boulevard"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who wrote the novel 'Things Fall Apart'?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Chinua Achebe"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Achebe"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the capital of Mongolia?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Ulaanbaatar"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Ulan Bator"</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which element has the atomic number 79?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Gold"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Au"</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"In which year did the Berlin Wall fall?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"1989"</span><span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who painted 'The Garden of Earthly Delights'?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Hieronymus Bosch"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Bosch"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the longest river in Asia?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Yangtze"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Yangtze River"</span><span class="p">,</span> <span class="s2">"Chang Jiang"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who composed 'The Rite of Spring'?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Igor Stravinsky"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Stravinsky"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the smallest country in the world by area?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Vatican City"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"the Vatican"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which planet is known as the Red Planet?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Mars"</span><span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who developed the polio vaccine first licensed in 1955?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Jonas Salk"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Salk"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the currency of Sweden?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Krona"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Swedish krona"</span><span class="p">]},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which sea separates Europe and Africa?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Mediterranean Sea"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"the Mediterranean"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who wrote 'One Hundred Years of Solitude'?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Gabriel Garcia Marquez"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Garcia Marquez"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the hardest naturally occurring substance?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Diamond"</span><span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which country hosted the 1992 Summer Olympics?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Spain"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Barcelona, Spain"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the chemical symbol for potassium?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"K"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who directed the film 'Rashomon'?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Akira Kurosawa"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Kurosawa"</span><span class="p">]},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the largest desert in the world?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Antarctic Desert"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Antarctica"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who was the first woman to win a Nobel Prize?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Marie Curie"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Curie"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which language has the most native speakers?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Mandarin Chinese"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Mandarin"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the tallest mountain in Africa?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Kilimanjaro"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Mount Kilimanjaro"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who wrote 'The Second Sex'?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Simone de Beauvoir"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"de Beauvoir"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"In which city is the Hermitage Museum?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Saint Petersburg"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"St Petersburg"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the boiling point of water at sea level in Celsius?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"100"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"100 degrees"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who invented the World Wide Web?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Tim Berners-Lee"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Berners-Lee"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the largest island in the Mediterranean?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Sicily"</span><span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which artist cut off part of his own ear?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Vincent van Gogh"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"van Gogh"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the study of fungi called?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Mycology"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which country is home to the Great Barrier Reef?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Australia"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who wrote the play 'A Doll's House'?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Henrik Ibsen"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Ibsen"</span><span class="p">]},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the largest organ of the human body?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Skin"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"the skin"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which war ended with the Treaty of Versailles?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"World War I"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"the First World War"</span><span class="p">,</span> <span class="s2">"WWI"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the capital of New Zealand?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Wellington"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who discovered penicillin?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Alexander Fleming"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Fleming"</span><span class="p">]},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which is the deepest ocean trench?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Mariana Trench"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"the Marianas Trench"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who wrote 'Beloved'?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Toni Morrison"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Morrison"</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the national sport of Japan?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Sumo"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"sumo wrestling"</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which gas makes up most of Earth's atmosphere?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Nitrogen"</span><span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who was the first person to reach the South Pole?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Roald Amundsen"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Amundsen"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the largest mammal?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Blue whale"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"the blue whale"</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which city is known as the Eternal City?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Rome"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who wrote 'The Wealth of Nations'?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Adam Smith"</span><span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the freezing point of water in Fahrenheit?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"32"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"32 degrees"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which instrument measures atmospheric pressure?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Barometer"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"a barometer"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who painted the ceiling of the Sistine Chapel?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Michelangelo"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the capital of Canada?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Ottawa"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which metal is liquid at room temperature?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Mercury"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who wrote 'Invisible Man'?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Ralph Ellison"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Ellison"</span><span class="p">]},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the longest bone in the human body?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Femur"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"the femur"</span><span class="p">,</span> <span class="s2">"thigh bone"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which ocean lies between Africa and Australia?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Indian Ocean"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"the Indian Ocean"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who wrote 'Crime and Punishment'?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Fyodor Dostoevsky"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Dostoevsky"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the capital of Peru?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Lima"</span><span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which vitamin is produced when skin is exposed to sunlight?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Vitamin D"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"D"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who was the first president of the United States?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"George Washington"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Washington"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the chemical formula for table salt?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"NaCl"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"sodium chloride"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which composer wrote the 'Moonlight Sonata'?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Beethoven"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Ludwig van Beethoven"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the largest planet in the solar system?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Jupiter"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who wrote 'Mrs Dalloway'?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Virginia Woolf"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Woolf"</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which country invented paper?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"China"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the capital of Morocco?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Rabat"</span><span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who formulated the theory of general relativity?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Albert Einstein"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Einstein"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which bird cannot fly and is native to New Zealand?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Kiwi"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"the kiwi"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the main ingredient in guacamole?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Avocado"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"avocados"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who wrote 'The Old Man and the Sea'?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Ernest Hemingway"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Hemingway"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which planet has the Great Red Spot?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Jupiter"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the capital of Egypt?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Cairo"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who was the ancient Greek god of the sea?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Poseidon"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which country has the most time zones?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"France"</span><span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What does DNA stand for?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Deoxyribonucleic acid"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"deoxyribonucleic"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who wrote 'Pride and Prejudice'?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Jane Austen"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Austen"</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the smallest prime number?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"2"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"two"</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which city hosted the first modern Olympic Games?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Athens"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the capital of Argentina?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Buenos Aires"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who invented the telephone?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Alexander Graham Bell"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Bell"</span><span class="p">]},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which is the longest river in South America?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Amazon"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"the Amazon"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the study of earthquakes called?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Seismology"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who wrote 'Don Quixote'?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Miguel de Cervantes"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Cervantes"</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which metal is the best conductor of electricity?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Silver"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the capital of Vietnam?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Hanoi"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who directed 'Seven Samurai'?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Akira Kurosawa"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Kurosawa"</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which planet is closest to the Sun?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Mercury"</span><span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the largest lake in Africa?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Lake Victoria"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Victoria"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who wrote 'Frankenstein'?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Mary Shelley"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Shelley"</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the currency of Japan?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Yen"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"the yen"</span><span class="p">]},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which mountain range separates Europe and Asia?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Ural Mountains"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"the Urals"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who painted 'Guernica'?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Pablo Picasso"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Picasso"</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the capital of Norway?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Oslo"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which blood type is the universal donor?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"O negative"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"O-"</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who wrote 'Waiting for Godot'?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Samuel Beckett"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Beckett"</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the tallest waterfall in the world?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Angel Falls"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which country is Machu Picchu in?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Peru"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the chemical symbol for iron?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Fe"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who composed 'The Four Seasons'?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Antonio Vivaldi"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Vivaldi"</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the capital of Kenya?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Nairobi"</span><span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which sense is most closely linked to memory?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Smell"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"olfaction"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Who wrote 'The Trial'?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Franz Kafka"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Kafka"</span><span class="p">]},</span>
+    <span class="p">{</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the largest bone in the human foot?"</span><span class="p">,</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Calcaneus"</span><span class="p">,</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"heel bone"</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"Which country produces the most coffee?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Brazil"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="s2">"What is the capital of Portugal?"</span><span class="p">,</span> <span class="s2">"short_answer"</span><span class="p">:</span> <span class="s2">"Lisbon"</span><span class="p">,</span> <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Lisboa"</span><span class="p">]},</span>
+<span class="p">]</span>
+
+<span class="c1"># One id per question, from its position: the join key is this notebook's to mint, and a</span>
+<span class="c1"># duplicate would pair an answer with another question's gold answer -- a wrong label rather</span>
+<span class="c1"># than an error. Positions cannot collide, so there is nothing left to check.</span>
+<span class="n">questions</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">"question_id"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"q</span><span class="si">{</span><span class="n">position</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="s2">"question"</span><span class="p">:</span> <span class="n">entry</span><span class="p">[</span><span class="s2">"question"</span><span class="p">],</span>
+        <span class="s2">"short_answer"</span><span class="p">:</span> <span class="n">entry</span><span class="p">[</span><span class="s2">"short_answer"</span><span class="p">],</span>
+        <span class="s2">"answer_aliases"</span><span class="p">:</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"answer_aliases"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[],</span>
+    <span class="p">}</span>
+    <span class="k">for</span> <span class="n">position</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">QUESTIONS</span><span class="p">)</span>
+<span class="p">]</span>
+
+<span class="n">incomplete</span> <span class="o">=</span> <span class="p">[</span><span class="n">q</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">questions</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">q</span><span class="p">[</span><span class="s2">"question"</span><span class="p">]</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">q</span><span class="p">[</span><span class="s2">"short_answer"</span><span class="p">]]</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="n">incomplete</span><span class="p">,</span> <span class="p">(</span>
+    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">incomplete</span><span class="p">)</span><span class="si">}</span><span class="s2"> question(s) are missing `question` or `short_answer`, e.g. "</span>
+    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">incomplete</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">. Both are needed: one is asked, the other is what the judge grades against."</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">questions</span><span class="p">)</span><span class="si">}</span><span class="s2"> questions"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">questions</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="generate-the-responses-keeping-the-log-probabilities">
+<h2>Generate the responses, keeping the log-probabilities<a class="headerlink" href="#generate-the-responses-keeping-the-log-probabilities" title="Link to this heading">#</a></h2>
+<p>One request per question, <code class="docutils literal notranslate"><span class="pre">WORKERS</span></code> at a time, with <code class="docutils literal notranslate"><span class="pre">logprobs=True</span></code> and <code class="docutils literal notranslate"><span class="pre">top_logprobs=K</span></code>.
+That distribution is the entire input to the detector; the response text is only ever read
+to judge it.</p>
+<p>Each result is written as it arrives rather than after the pool finishes. <code class="docutils literal notranslate"><span class="pre">generate</span></code> returns
+the API’s failures instead of raising them, but the SDK does not wrap every transport
+pathology — a 502 whose HTML body arrives under a JSON content type raises <code class="docutils literal notranslate"><span class="pre">JSONDecodeError</span></code>
+inside the worker — and that would come out of <code class="docutils literal notranslate"><span class="pre">pool.map</span></code> and discard every response already
+paid for.</p>
+<p>The file is the OpenAI Batch output shape, so <code class="docutils literal notranslate"><span class="pre">scripts/train_detector.py</span></code> reads it without
+knowing what produced it – this notebook, a Batch job, or an offline runner.</p>
+<p>The cell after it runs <code class="docutils literal notranslate"><span class="pre">LogProbParser</span></code> over what came back. That is the pipeline’s own first
+step, and it is where an endpoint that accepted <code class="docutils literal notranslate"><span class="pre">logprobs=True</span></code> and ignored it, or that
+capped the ranks below <code class="docutils literal notranslate"><span class="pre">K</span></code>, is refused by name — before the judge spends another N requests
+judging responses that cannot be trained on.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span><span class="p">,</span> <span class="n">OpenAIError</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">artefactual.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">BatchRequestOutput</span><span class="p">,</span> <span class="n">BatchResponseData</span>
+
+<span class="c1"># `max_retries` above the SDK's default of 2: this fires N requests at once, and a burst</span>
+<span class="c1"># of 429s that exhausts the retries becomes a thinner dataset rather than an error.</span>
+<span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span><span class="n">max_retries</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>  <span class="c1"># reads OPENAI_BASE_URL and OPENAI_API_KEY</span>
+
+<span class="c1"># Which endpoint this is actually talking to. Unset, OPENAI_BASE_URL silently means</span>
+<span class="c1"># api.openai.com, and a self-hosted run then fails N times with an authentication error.</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"endpoint: </span><span class="si">{</span><span class="n">client</span><span class="o">.</span><span class="n">base_url</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="n">question</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span>
+            <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">GENERATE</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="n">question</span><span class="p">[</span><span class="s2">"question"</span><span class="p">])}],</span>
+            <span class="n">logprobs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">top_logprobs</span><span class="o">=</span><span class="n">K</span><span class="p">,</span>
+            <span class="n">temperature</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+            <span class="n">top_p</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+            <span class="c1"># The paper also samples with top_k=50. OpenAI's API has no such parameter, so</span>
+            <span class="c1"># only a self-hosted server can be asked for it, through `extra_body`.</span>
+            <span class="n">max_completion_tokens</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="n">OpenAIError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+        <span class="c1"># Every failure this call can produce -- transport, timeout, rate limit, a</span>
+        <span class="c1"># rejected request -- is an OpenAIError, and one of them should not cost the</span>
+        <span class="c1"># run. Anything else is a bug in the code above and should not be caught here.</span>
+        <span class="k">return</span> <span class="n">error</span>
+
+
+<span class="k">with</span> <span class="n">RESPONSES</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"w"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">out</span><span class="p">,</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="n">WORKERS</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+    <span class="c1"># Written as each result arrives, not after the pool finishes. `generate` returns the</span>
+    <span class="c1"># API's failures rather than raising them, but the SDK does not wrap every transport</span>
+    <span class="c1"># pathology -- a 502 whose HTML body arrives under a JSON content type raises</span>
+    <span class="c1"># JSONDecodeError from inside the worker -- and that would come out of `pool.map` and</span>
+    <span class="c1"># discard every answer already paid for. This way the file holds what was generated up</span>
+    <span class="c1"># to the failure, which is the whole argument for writing it out at all.</span>
+    <span class="n">generated</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">question</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">questions</span><span class="p">,</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">generate</span><span class="p">,</span> <span class="n">questions</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">generated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="n">failed</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">)</span>
+        <span class="c1"># The envelope is `BatchRequestOutput`, the model `read_batch` validates with, so</span>
+        <span class="c1"># the writer and the reader share one definition of it. The body stays the API's</span>
+        <span class="c1"># own payload: it carries the token text and the log-probabilities, and narrowing</span>
+        <span class="c1"># it to what the parser reads would throw the rest away.</span>
+        <span class="c1"># `id` is left unset: the Batch API assigns it (a `batch_req_...` value), and a</span>
+        <span class="c1"># line written outside a batch run has no such id to carry. Nothing joins on it --</span>
+        <span class="c1"># `custom_id` is the key -- so an invented one would be provenance that is not true.</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">BatchRequestOutput</span><span class="p">(</span>
+            <span class="n">custom_id</span><span class="o">=</span><span class="n">question</span><span class="p">[</span><span class="s2">"question_id"</span><span class="p">],</span>
+            <span class="n">response</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">failed</span> <span class="k">else</span> <span class="n">BatchResponseData</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">body</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()),</span>
+            <span class="c1"># The class name, not the provider's text: an authentication error quotes the</span>
+            <span class="c1"># key it rejected, and this file is one you hand onward. The full message is</span>
+            <span class="c1"># printed below, where it stays in the session.</span>
+            <span class="n">error</span><span class="o">=</span><span class="p">{</span><span class="s2">"message"</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">result</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">}</span> <span class="k">if</span> <span class="n">failed</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># `json.dumps` rather than `model_dump_json`, for `ensure_ascii`: every reader of</span>
+        <span class="c1"># these files splits them with `splitlines()`, which breaks on U+2028, U+2029 and</span>
+        <span class="c1"># U+0085 -- characters JSON does not require escaping and a model can emit.</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(),</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">ok</span> <span class="o">=</span> <span class="p">[(</span><span class="n">q</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">q</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">questions</span><span class="p">,</span> <span class="n">generated</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">)]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"wrote </span><span class="si">{</span><span class="n">RESPONSES</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ok</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">generated</span><span class="p">)</span><span class="si">}</span><span class="s2"> generated"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">question</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">questions</span><span class="p">,</span> <span class="n">generated</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  failed: </span><span class="si">{</span><span class="n">question</span><span class="p">[</span><span class="s1">'question_id'</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">artefactual.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogProbParser</span>
+
+<span class="c1"># Nothing came back at all -- almost always OPENAI_BASE_URL, the key, or a model name the</span>
+<span class="c1"># endpoint does not serve. Checked before indexing, because the errors above say what</span>
+<span class="c1"># happened and a bare IndexError here would not.</span>
+<span class="k">assert</span> <span class="n">ok</span><span class="p">,</span> <span class="p">(</span>
+    <span class="s2">"no responses were generated. Check OPENAI_BASE_URL, OPENAI_API_KEY and OPENAI_MODEL, "</span>
+    <span class="s2">"and read the per-request errors above: an endpoint that rejects `top_logprobs`, "</span>
+    <span class="s2">"`temperature` or `max_completion_tokens` fails every request the same way."</span>
+<span class="p">)</span>
+
+<span class="c1"># The pipeline's own first step, run here rather than at fit time. It owns the rank axis, so</span>
+<span class="c1"># it is what refuses a response carrying no log-probabilities or fewer than K ranks on any</span>
+<span class="c1"># token -- and it says which, by name. Running it now costs one pass and saves N judge</span>
+<span class="c1"># requests spent on responses that cannot be trained on.</span>
+<span class="n">logprobs</span> <span class="o">=</span> <span class="n">LogProbParser</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">)</span><span class="o">.</span><span class="n">transform</span><span class="p">([</span><span class="n">completion</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">completion</span> <span class="ow">in</span> <span class="n">ok</span><span class="p">])</span>
+
+<span class="n">logprobs</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="judge-the-responses">
+<h2>Judge the responses<a class="headerlink" href="#judge-the-responses" title="Link to this heading">#</a></h2>
+<p>A second request per response, at <code class="docutils literal notranslate"><span class="pre">temperature=0</span></code>, asking the model to compare what it said
+against the gold answer and reply with <code class="docutils literal notranslate"><span class="pre">{&quot;judgment&quot;:</span> <span class="pre">true|false,</span> <span class="pre">&quot;explanation&quot;:</span> <span class="pre">&quot;...&quot;}</span></code>.</p>
+<p>The reply is written to disk whole, so each verdict keeps the sentence explaining it.</p>
+<p><code class="docutils literal notranslate"><span class="pre">read_judgment</span></code> turns that reply into the label. Judges wrap the object in prose or a
+Markdown fence often enough that a bare <code class="docutils literal notranslate"><span class="pre">json.loads</span></code> is unsafe, and a stringified <code class="docutils literal notranslate"><span class="pre">&quot;false&quot;</span></code>
+must not be taken for a verdict — <code class="docutils literal notranslate"><span class="pre">bool(&quot;false&quot;)</span></code> is True, which would mark every wrong
+response correct.</p>
+<p>The class balance is printed with the count. All-correct means the questions were too easy
+for this model, all-wrong usually means it is not answering in the short form the judge
+expects.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">render_judge</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">completion</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">JUDGE</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+        <span class="n">query</span><span class="o">=</span><span class="n">question</span><span class="p">[</span><span class="s2">"question"</span><span class="p">],</span>
+        <span class="n">expected_answer</span><span class="o">=</span><span class="n">question</span><span class="p">[</span><span class="s2">"short_answer"</span><span class="p">],</span>
+        <span class="n">answer_aliases</span><span class="o">=</span><span class="n">question</span><span class="p">[</span><span class="s2">"answer_aliases"</span><span class="p">],</span>
+        <span class="n">generated_answer</span><span class="o">=</span><span class="n">completion</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">render_judge</span><span class="p">(</span><span class="n">ok</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">ok</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])[:</span><span class="mi">600</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">artefactual.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_judgment</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">judge</span><span class="p">(</span><span class="n">pair</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The judge's reply, kept whole: the verdict is derived from it, not instead of it."""</span>
+    <span class="n">question</span><span class="p">,</span> <span class="n">completion</span> <span class="o">=</span> <span class="n">pair</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span>
+            <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">render_judge</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">completion</span><span class="p">)}],</span>
+            <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">max_completion_tokens</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="n">OpenAIError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+        <span class="c1"># Every failure this call can produce -- transport, timeout, rate limit, a</span>
+        <span class="c1"># rejected request -- is an OpenAIError, and one of them should not cost the</span>
+        <span class="c1"># run. Anything else is a bug in the code above and should not be caught here.</span>
+        <span class="k">return</span> <span class="n">error</span>
+
+
+<span class="k">with</span> <span class="n">JUDGMENTS</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"w"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">out</span><span class="p">,</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="n">WORKERS</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+    <span class="c1"># Written as each reply arrives, for the same reason the generation cell is: a failure</span>
+    <span class="c1"># the SDK does</span>
+    <span class="c1"># not wrap comes out of `pool.map`, and the verdicts already paid for should survive it.</span>
+    <span class="c1"># The verdict stays as the judge wrote it; nothing is distilled out.</span>
+    <span class="n">verdicts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">_</span><span class="p">),</span> <span class="n">verdict</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ok</span><span class="p">,</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">judge</span><span class="p">,</span> <span class="n">ok</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">verdicts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">verdict</span><span class="p">)</span>
+        <span class="n">failed</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">verdict</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">)</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">BatchRequestOutput</span><span class="p">(</span>
+            <span class="n">custom_id</span><span class="o">=</span><span class="n">question</span><span class="p">[</span><span class="s2">"question_id"</span><span class="p">],</span>
+            <span class="n">response</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">failed</span> <span class="k">else</span> <span class="n">BatchResponseData</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">body</span><span class="o">=</span><span class="n">verdict</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()),</span>
+            <span class="n">error</span><span class="o">=</span><span class="p">{</span><span class="s2">"message"</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">verdict</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">}</span> <span class="k">if</span> <span class="n">failed</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(),</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># `read_judgment` returns True when the judge said the response was CORRECT, the opposite of</span>
+<span class="c1"># the class the detector predicts, so the label is its negation. It reads the fenced and</span>
+<span class="c1"># prose-wrapped replies a model actually returns, and answers None for a reply -- or a failed</span>
+<span class="c1"># request -- carrying no verdict at all.</span>
+<span class="n">judgments</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">completion</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="ow">not</span> <span class="n">verdict</span><span class="p">))</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">completion</span><span class="p">),</span> <span class="n">reply</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ok</span><span class="p">,</span> <span class="n">verdicts</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reply</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">verdict</span> <span class="o">:=</span> <span class="n">read_judgment</span><span class="p">(</span><span class="n">reply</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<span class="p">]</span>
+
+<span class="k">assert</span> <span class="n">judgments</span><span class="p">,</span> <span class="p">(</span>
+    <span class="s2">"no verdict could be read from any reply. The judge answers in JSON; a model that "</span>
+    <span class="s2">"cannot hold that format needs a different one, or a larger max_completion_tokens."</span>
+<span class="p">)</span>
+
+<span class="n">dropped</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">verdicts</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">judgments</span><span class="p">)</span>
+<span class="n">hallucinated</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">flag</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">flag</span> <span class="ow">in</span> <span class="n">judgments</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"wrote </span><span class="si">{</span><span class="n">JUDGMENTS</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">verdicts</span><span class="p">)</span><span class="si">}</span><span class="s2"> replies"</span> <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">", </span><span class="si">{</span><span class="n">dropped</span><span class="si">}</span><span class="s2"> failed or unreadable"</span> <span class="k">if</span> <span class="n">dropped</span> <span class="k">else</span> <span class="s2">""</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">judgments</span><span class="p">)</span><span class="si">}</span><span class="s2"> labelled, </span><span class="si">{</span><span class="n">hallucinated</span><span class="si">}</span><span class="s2"> hallucinations (</span><span class="si">{</span><span class="n">hallucinated</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">judgments</span><span class="p">)</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+
+<span class="c1"># A reply cut off at `max_completion_tokens` is invalid JSON, so it lands in `dropped` with</span>
+<span class="c1"># nothing saying why. The judge answers in JSON *and* explains itself, so this is the cap</span>
+<span class="c1"># that runs out first.</span>
+<span class="n">truncated</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">verdicts</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">)</span> <span class="ow">and</span> <span class="n">v</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">finish_reason</span> <span class="o">==</span> <span class="s2">"length"</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">truncated</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">truncated</span><span class="si">}</span><span class="s2"> reply(ies) hit max_completion_tokens; raise it and rerun this cell"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">question</span><span class="p">,</span> <span class="n">completion</span><span class="p">,</span> <span class="n">flag</span> <span class="ow">in</span> <span class="n">judgments</span><span class="p">[:</span><span class="mi">2</span><span class="p">]:</span>
+    <span class="n">said</span> <span class="o">=</span> <span class="p">(</span><span class="n">completion</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  [</span><span class="si">{</span><span class="s1">'hallucination'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">flag</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'grounded'</span><span class="si">}</span><span class="s2">] said </span><span class="si">{</span><span class="n">said</span><span class="p">[:</span><span class="mi">40</span><span class="p">]</span><span class="si">!r}</span><span class="s2"> (gold: </span><span class="si">{</span><span class="n">question</span><span class="p">[</span><span class="s1">'short_answer'</span><span class="p">]</span><span class="si">!r}</span><span class="s2">)"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="fit-and-evaluate">
+<h2>Fit and evaluate<a class="headerlink" href="#fit-and-evaluate" title="Link to this heading">#</a></h2>
+<p>This step reads the two files back rather than using what is still in memory, so a refit at
+another <code class="docutils literal notranslate"><span class="pre">k</span></code> costs no requests. <code class="docutils literal notranslate"><span class="pre">read_batch</span></code> is the reader, so a file written by anything
+else parses the same way.</p>
+<p><code class="docutils literal notranslate"><span class="pre">WEPR()</span></code> returns the unfitted pipeline, which takes the batch lines directly: the
+parser opens the envelope itself, so there is no feature extraction to write.</p>
+<p><strong>ROC-AUC</strong> scores the ranking — whether hallucinations sort above grounded responses —
+which is what matters if you triage by score. The <strong>classification report</strong> scores the
+decisions at a 0.5 cut, where recall on the <code class="docutils literal notranslate"><span class="pre">hallucination</span></code> row is the fraction actually
+caught. Only the AUC carries over to another threshold, so pick one from the held-out scores
+rather than assuming 0.5.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">classification_report</span><span class="p">,</span> <span class="n">roc_auc_score</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">train_test_split</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">artefactual.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">index_by_custom_id</span><span class="p">,</span> <span class="n">read_batch</span><span class="p">,</span> <span class="n">read_judgment</span><span class="p">,</span> <span class="n">read_message</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">artefactual.scoring</span><span class="w"> </span><span class="kn">import</span> <span class="n">WEPR</span><span class="p">,</span> <span class="n">BaseDetector</span>
+
+<span class="c1"># Read back from disk rather than from the variables above: this is the path a fresh kernel</span>
+<span class="c1"># takes, and the one anything else reading these files takes too. `read_batch` validates</span>
+<span class="c1"># each line and refuses a repeated `custom_id`, which would pair a response with another</span>
+<span class="c1"># question's verdict.</span>
+<span class="n">generated</span> <span class="o">=</span> <span class="n">index_by_custom_id</span><span class="p">(</span><span class="n">read_batch</span><span class="p">(</span><span class="n">RESPONSES</span><span class="p">))</span>
+<span class="n">labelled</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="n">generated</span><span class="p">[</span><span class="n">row</span><span class="o">.</span><span class="n">custom_id</span><span class="p">],</span> <span class="nb">int</span><span class="p">(</span><span class="ow">not</span> <span class="n">verdict</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">read_batch</span><span class="p">(</span><span class="n">JUDGMENTS</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">custom_id</span> <span class="ow">in</span> <span class="n">generated</span> <span class="ow">and</span> <span class="p">(</span><span class="n">verdict</span> <span class="o">:=</span> <span class="n">read_judgment</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">completion</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<span class="p">]</span>
+
+<span class="n">responses</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span> <span class="k">for</span> <span class="n">row</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">labelled</span><span class="p">]</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">label</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labelled</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"read </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">responses</span><span class="p">)</span><span class="si">}</span><span class="s2"> labelled responses back from </span><span class="si">{</span><span class="n">RESPONSES</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">JUDGMENTS</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="n">x_train</span><span class="p">,</span> <span class="n">x_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">responses</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">SEED</span><span class="p">)</span>
+<span class="n">detector</span> <span class="o">=</span> <span class="n">WEPR</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"fitted on </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y_train</span><span class="p">)</span><span class="si">}</span><span class="s2">, holding out </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y_test</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="n">scores</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">x_test</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">ROC-AUC: </span><span class="si">{</span><span class="n">roc_auc_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span><span class="w"> </span><span class="n">scores</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">classification_report</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">scores</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">target_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"grounded"</span><span class="p">,</span> <span class="s2">"hallucination"</span><span class="p">],</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="audit-the-labels-the-judge-produced">
+<h2>Audit the labels the judge produced<a class="headerlink" href="#audit-the-labels-the-judge-produced" title="Link to this heading">#</a></h2>
+<p>A detector fitted on mislabelled rows inherits them. The judge says whether the answer
+matches the gold one; the label is the negation of that, so a mismatch is <code class="docutils literal notranslate"><span class="pre">hallucination</span></code>,
+the class the detector is fitted to predict. Both columns below are on that axis.</p>
+<p><code class="docutils literal notranslate"><span class="pre">cross_val_predict</span></code> gives every response a score from a fold that did not contain it. The
+rows where the detector is most confident and disagrees with the label are the ones to read
+first, printed with the question, the gold answer and the judge’s own explanation.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">StratifiedKFold</span><span class="p">,</span> <span class="n">cross_val_predict</span>
+
+<span class="c1"># What each verdict was made against, and the sentence the judge gave for it.</span>
+<span class="n">asked</span> <span class="o">=</span> <span class="p">{</span><span class="n">question</span><span class="p">[</span><span class="s2">"question_id"</span><span class="p">]:</span> <span class="n">question</span> <span class="k">for</span> <span class="n">question</span> <span class="ow">in</span> <span class="n">questions</span><span class="p">}</span>
+<span class="n">explanations</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">row</span><span class="o">.</span><span class="n">custom_id</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">read_message</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">completion</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">"</span><span class="si">{}</span><span class="s2">"</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"explanation"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">read_batch</span><span class="p">(</span><span class="n">JUDGMENTS</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">read_message</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">completion</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="n">folds</span> <span class="o">=</span> <span class="n">StratifiedKFold</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">SEED</span><span class="p">)</span>
+<span class="c1"># Out-of-fold: every score comes from a detector that never saw that response.</span>
+<span class="n">out_of_fold</span> <span class="o">=</span> <span class="n">cross_val_predict</span><span class="p">(</span><span class="n">WEPR</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">),</span> <span class="n">responses</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="n">folds</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">"predict_proba"</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
+
+<span class="n">scored</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">out_of_fold</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">responses</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">disagreements</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">scored</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:</span><span class="mi">5</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"the five rows the detector disagrees with the label about most:</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">score</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">disagreements</span><span class="p">:</span>
+    <span class="n">question</span> <span class="o">=</span> <span class="n">asked</span><span class="p">[</span><span class="n">row</span><span class="o">.</span><span class="n">custom_id</span><span class="p">]</span>
+    <span class="c1"># `label` is the judge's verdict already negated, so both columns say hallucination.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  labelled </span><span class="si">{</span><span class="s1">'hallucination'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'grounded'</span><span class="si">}</span><span class="s2">, detector P(hallucination)=</span><span class="si">{</span><span class="n">score</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    Q     </span><span class="si">{</span><span class="n">question</span><span class="p">[</span><span class="s1">'question'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    said  </span><span class="si">{</span><span class="p">(</span><span class="n">read_message</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">completion</span><span class="p">)</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">''</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    gold  </span><span class="si">{</span><span class="n">question</span><span class="p">[</span><span class="s1">'short_answer'</span><span class="p">]</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    why   </span><span class="si">{</span><span class="n">explanations</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">custom_id</span><span class="p">,</span><span class="w"> </span><span class="s1">''</span><span class="p">)</span><span class="si">!r}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="save-it-and-load-it-back">
+<h2>Save it, and load it back<a class="headerlink" href="#save-it-and-load-it-back" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">.skops</span></code> rather than a pickle. <code class="docutils literal notranslate"><span class="pre">from_pretrained</span></code> takes a <code class="docutils literal notranslate"><span class="pre">.skops</span></code> file, a directory holding
+<code class="docutils literal notranslate"><span class="pre">model.skops</span></code>, or <strong>a Hugging Face repository id</strong> — the shipped detectors are loaded that
+way, and yours is too once you push its <code class="docutils literal notranslate"><span class="pre">model.skops</span></code> to a repository of your own.</p>
+<p><code class="docutils literal notranslate"><span class="pre">k</span></code> is part of the weights, not a runtime option: the coefficients were fitted at one rank
+count and mean nothing at another, so loading at a different <code class="docutils literal notranslate"><span class="pre">k</span></code> raises rather than
+mis-shaping the score.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">path</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">save_estimator</span><span class="p">(</span><span class="s2">"wepr-generated.skops"</span><span class="p">)</span>
+<span class="n">reloaded</span> <span class="o">=</span> <span class="n">WEPR</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">)</span>
+
+<span class="c1"># Held-out responses: the rows the fit above never saw.</span>
+<span class="k">for</span> <span class="n">row</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">))[:</span><span class="mi">5</span><span class="p">]:</span>
+    <span class="n">said</span> <span class="o">=</span> <span class="p">(</span><span class="n">read_message</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">completion</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)[:</span><span class="mi">40</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="s1">'hallucination'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'grounded    '</span><span class="si">}</span><span class="s2">] P=</span><span class="si">{</span><span class="n">reloaded</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">row</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">said</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="where-to-go-next">
+<h2>Where to go next<a class="headerlink" href="#where-to-go-next" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Refit without regenerating.</strong> The two files are the expensive part: a different <code class="docutils literal notranslate"><span class="pre">k</span></code>,
+<code class="docutils literal notranslate"><span class="pre">epr</span></code> instead of <code class="docutils literal notranslate"><span class="pre">wepr</span></code>, or relabelled verdicts all reuse them, and none of it costs
+another request.</p></li>
+<li><p><strong>Feed the CLI instead.</strong> This run’s two Batch files go straight into the
+<code class="docutils literal notranslate"><span class="pre">train_detector.py</span></code> script in
+<a class="reference external" href="https://github.com/artefactory/artefactual/blob/main/scripts/train_detector.py">the repository</a>,
+which also reports the bootstrap confidence intervals the fit above does not — worth
+having, because a holdout this size cannot pin a score down on its own.</p></li>
+<li><p><strong>More questions.</strong> The generation is the cost and the fit is seconds, so lengthen
+<code class="docutils literal notranslate"><span class="pre">QUESTIONS</span></code> rather than economising on labels.</p></li>
+<li><p><strong>At thousands of questions</strong>, stop making one request per response. Batch submission
+takes a JSONL of requests and returns the JSONL these files already are, at roughly half
+the price: OpenAI’s <a class="reference external" href="https://platform.openai.com/docs/api-reference/batch">Batch API</a> if
+your provider hosts one, or an offline batch runner against a self-hosted server. Only
+the two generating cells change – what they write, and everything after them, stays as
+it is.</p></li>
+<li><p><strong>Your own questions.</strong> Only the questions cell changes, and it is a list. Training data
+should resemble the traffic being scored: the paper’s numbers drop 10-20 points when a
+TriviaQA-trained detector meets WebQuestions.</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="train_wepr_bertjudge.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Label a set of responses with an encoder judge, then train</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../guide/how-it-works.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">How it works</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites">Prerequisites</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration">Configuration</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#bring-the-questions">Bring the questions</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#generate-the-responses-keeping-the-log-probabilities">Generate the responses, keeping the log-probabilities</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#judge-the-responses">Judge the responses</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fit-and-evaluate">Fit and evaluate</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#audit-the-labels-the-judge-produced">Audit the labels the judge produced</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#save-it-and-load-it-back">Save it, and load it back</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#where-to-go-next">Where to go next</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Artefact Research Center.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

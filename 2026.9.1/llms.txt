@@ -1,0 +1,21 @@
+# Artefactual
+
+> Artefactual assigns a language model’s answer a probability of being a hallucination. It
+> reads the answer that has already been generated, together with the token probabilities
+> returned alongside it, and needs nothing else from the model.
+
+## Docs
+
+- [Artefactual](https://artefactory.github.io/artefactual/_sources/index.md.txt)
+- [Using a detector](https://artefactory.github.io/artefactual/_sources/guide/scoring.md.txt)
+- [How it works](https://artefactory.github.io/artefactual/_sources/guide/how-it-works.md.txt)
+- [Reference](https://artefactory.github.io/artefactual/_sources/guide/reference.md.txt)
+- [Training a detector](https://artefactory.github.io/artefactual/_sources/guide/training.md.txt)
+- [Train a detector on answers you have already judged](https://artefactory.github.io/artefactual/_sources/examples/train_wepr.md.txt)
+- [Label a set of responses with an encoder judge, then train](https://artefactory.github.io/artefactual/_sources/examples/train_wepr_bertjudge.md.txt)
+- [Artefactual Package Demo: Hallucination Detection with EPR](https://artefactory.github.io/artefactual/_sources/examples/epr_usage_demo.md.txt)
+- [Examples](https://artefactory.github.io/artefactual/_sources/examples/index.md.txt)
+- [Artefactual Package Demo: Hallucination Detection with WEPR](https://artefactory.github.io/artefactual/_sources/examples/wepr_usage_demo.md.txt)
+- [Langfuse Adapter Demo](https://artefactory.github.io/artefactual/_sources/examples/langfuse_integration_demo.md.txt)
+- [Build the training set from an endpoint, then train](https://artefactory.github.io/artefactual/_sources/examples/train_wepr_pipeline.md.txt)
+- [API Reference](https://artefactory.github.io/artefactual/_sources/api.md.txt)

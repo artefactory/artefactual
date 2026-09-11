@@ -1,0 +1,13 @@
+artefactual.adapters
+====================
+
+.. automodule:: artefactual.adapters
+
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   langfuse

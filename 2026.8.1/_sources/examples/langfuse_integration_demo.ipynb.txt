@@ -1,0 +1,183 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "eb32f93b",
+   "metadata": {},
+   "source": [
+    "## Langfuse Adapter Demo\n",
+    "\n",
+    "This notebook demonstrates how to use the **HallucinationEvaluator** with the sklearn compatible **EPR** and **WEPR** detectors to score LLM traces in Langfuse.\n",
+    "\n",
+    "### Prerequisites\n",
+    "\n",
+    "* Install the adapter dependencies:\n",
+    "    ```bash\n",
+    "    uv pip install artefactual[adapters]\n",
+    "    ```\n",
+    "\n",
+    "* Create a free LangFuse project at [cloud.langfuse.com](https://cloud.langfuse.com), then go to **Settings → API Keys**.\n",
+    "\n",
+    "* Set the following environment variables:\n",
+    "\n",
+    "    | Variable | Required | Purpose |\n",
+    "    | --- | --- | --- |\n",
+    "    | `OPENAI_API_KEY` | yes | Credential for the endpoint |\n",
+    "    | `OPENAI_BASE_URL` | no | Any OpenAI-compatible endpoint |\n",
+    "    | `OPENAI_MODEL` | no | Model to generate with |\n",
+    "    | `TOP_LOGPROBS` | no | Ranks to request per token (default 15) |\n",
+    "    | `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_HOST` | yes | Langfuse project |\n",
+    "\n",
+    "    The endpoint must return `logprobs` with `top_logprobs`, otherwise there is nothing to score.\n",
+    "\n",
+    "    `TOP_LOGPROBS` is passed to the detectors as `k`. Every shipped WEPR weights file is\n",
+    "    calibrated at 15 ranks, so raising it will make `wepr()` raise — deliberately, since the\n",
+    "    coefficient vector is fixed at its calibration rank count. Either leave it at 15 or\n",
+    "    supply weights calibrated at the value you choose. `epr()` is unaffected: an EPR\n",
+    "    calibration is a single coefficient, and `k` only governs how the rank axis is aligned. The defaults below target the HuggingFace router, where `OPENAI_API_KEY` is a token from your HuggingFace account."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a1b2c3d4",
+   "metadata": {},
+   "source": [
+    "### Run a generation and send it to Langfuse"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "0d72444e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import os\n",
+    "import time\n",
+    "\n",
+    "from langfuse import get_client, observe\n",
+    "from langfuse.openai import OpenAI\n",
+    "from openai.types.chat import ChatCompletion\n",
+    "\n",
+    "from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator\n",
+    "from artefactual.scoring.base_detector import epr, wepr\n",
+    "\n",
+    "# --- Configuration ---------------------------------------------------------\n",
+    "OPENAI_BASE_URL = os.environ.get(\"OPENAI_BASE_URL\", \"https://router.huggingface.co/v1\")\n",
+    "OPENAI_MODEL = os.environ.get(\"OPENAI_MODEL\", \"Qwen/Qwen3-Coder-30B-A3B-Instruct\")\n",
+    "OPENAI_API_KEY = os.environ[\"OPENAI_API_KEY\"]  # no default: it is a credential\n",
+    "TOP_LOGPROBS = int(os.environ.get(\"TOP_LOGPROBS\", \"15\"))\n",
+    "\n",
+    "# Both factories resolve a registry model name; pass a path instead to use your\n",
+    "# own calibration. K must match the rank count requested above.\n",
+    "DETECTOR_MODEL = \"mistralai/Ministral-8B-Instruct-2410\"\n",
+    "# ---------------------------------------------------------------------------\n",
+    "\n",
+    "client = OpenAI(base_url=OPENAI_BASE_URL, api_key=OPENAI_API_KEY)\n",
+    "\n",
+    "\n",
+    "@observe()\n",
+    "def run_generation() -> ChatCompletion:\n",
+    "    return client.chat.completions.create(\n",
+    "        model=OPENAI_MODEL,\n",
+    "        messages=[\n",
+    "            {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n",
+    "            {\"role\": \"user\", \"content\": \"What is the capital of France?\"},\n",
+    "        ],\n",
+    "        logprobs=True,\n",
+    "        top_logprobs=TOP_LOGPROBS,\n",
+    "    )\n",
+    "\n",
+    "\n",
+    "print(\"Generated message:\", run_generation().choices[0].message.content)\n",
+    "\n",
+    "langfuse = get_client()\n",
+    "langfuse.flush()\n",
+    "\n",
+    "print(\"Waiting for Langfuse server to index the logprobs of the trace...\")\n",
+    "time.sleep(3.0)\n",
+    "\n",
+    "traces_to_evaluate = langfuse.api.trace.list(limit=1).data"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "06439f2c",
+   "metadata": {},
+   "source": [
+    "### Score traces with EPR\n",
+    "\n",
+    "A detector always needs calibration weights: pass a path to a weights file, or a registered model name. Calling `epr()` with no argument raises `UncalibratedModelError`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "e184d6c7",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "evaluator = HallucinationEvaluator(\n",
+    "    name=\"EPR\",\n",
+    "    langfuse_client=langfuse,\n",
+    "    detector=epr(DETECTOR_MODEL, k=TOP_LOGPROBS),\n",
+    ")\n",
+    "\n",
+    "for trace in traces_to_evaluate:\n",
+    "    score = evaluator.score_trace(trace.id)\n",
+    "    print(f\"EPR Scored Trace : {trace.id} → {score}\")\n",
+    "\n",
+    "langfuse.flush()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "6c4bdd1a",
+   "metadata": {},
+   "source": [
+    "### Score traces with WEPR"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "c1062f78",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "evaluator = HallucinationEvaluator(\n",
+    "    name=\"WEPR\",\n",
+    "    langfuse_client=langfuse,\n",
+    "    detector=wepr(DETECTOR_MODEL, k=TOP_LOGPROBS),\n",
+    ")\n",
+    "\n",
+    "for trace in traces_to_evaluate:\n",
+    "    score = evaluator.score_trace(trace.id)\n",
+    "    print(f\"WEPR Scored Trace : {trace.id} → {score}\")\n",
+    "\n",
+    "langfuse.flush()"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "artefactual (3.13.5)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.13.5"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

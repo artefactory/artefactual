@@ -1,0 +1,799 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>artefactual.scoring.base_detector &#8212; Artefactual documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/artefactual/scoring/base_detector';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://artefactory.github.io/artefactual/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2026.8.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="canonical" href="https://artefactory.github.io/artefactual/2026.8.1/_modules/artefactual/scoring/base_detector.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Artefactual documentation</p>
+  
+</a></div>
+    
+      <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">artefactual.scoring.base_detector</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for artefactual.scoring.base_detector</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""The detector pipeline and the `epr` / `wepr` factories that build it."""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseEstimator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.linear_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogisticRegression</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">artefactual.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">UncalibratedModelError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">artefactual.preprocessing.parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogProbParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">artefactual.scoring.entropy_methods.entropy_transformer</span><span class="w"> </span><span class="kn">import</span> <span class="n">EntropyTransformer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">artefactual.utils.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">EstimatorPersistenceMixin</span><span class="p">,</span> <span class="n">Reduction</span>
+
+<span class="c1"># Every published detector was fit at 15 ranks.</span>
+<span class="n">DEFAULT_K</span> <span class="o">=</span> <span class="mi">15</span>
+
+<span class="c1"># Features each reduction produces: EPR pools the ranks into one, WEPR keeps a mean and a</span>
+<span class="c1"># max per rank. The loaded estimator is checked against this, since a detector's</span>
+<span class="c1"># coefficient vector is fixed at the rank count it was trained at.</span>
+<span class="n">_FEATURE_COUNT</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"epr"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">_k</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"wepr"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">k</span><span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_load_pretrained</span><span class="p">(</span><span class="n">reduction</span><span class="p">:</span> <span class="n">Reduction</span><span class="p">,</span> <span class="n">identifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BaseEstimator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Load a published detector and check it covers exactly `k` ranks.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the detector was fit at a different rank count than `k`.</span>
+<span class="sd">    """</span>
+    <span class="n">estimator</span> <span class="o">=</span> <span class="n">BaseDetector</span><span class="o">.</span><span class="n">load_estimator</span><span class="p">(</span><span class="n">identifier</span><span class="p">)</span>
+    <span class="n">expected</span> <span class="o">=</span> <span class="n">_FEATURE_COUNT</span><span class="p">[</span><span class="n">reduction</span><span class="p">](</span><span class="n">k</span><span class="p">)</span>
+    <span class="c1"># `n_features_in_` is set by fit, so it is absent from the `BaseEstimator` interface</span>
+    <span class="c1"># even though every estimator reaching here is fitted. Read it through `Any` rather</span>
+    <span class="c1"># than suppressing per type-checker: the suppression is itself reported as unused by</span>
+    <span class="c1"># versions that do not raise, which fails the hook the other way round.</span>
+    <span class="n">fitted</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">estimator</span>
+    <span class="n">actual</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">fitted</span><span class="o">.</span><span class="n">n_features_in_</span>
+    <span class="k">if</span> <span class="n">actual</span> <span class="o">!=</span> <span class="n">expected</span><span class="p">:</span>
+        <span class="n">implied</span> <span class="o">=</span> <span class="n">actual</span> <span class="o">//</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">reduction</span> <span class="o">==</span> <span class="s2">"wepr"</span> <span class="k">else</span> <span class="n">actual</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"The </span><span class="si">{</span><span class="n">reduction</span><span class="si">}</span><span class="s2"> detector at '</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">' takes </span><span class="si">{</span><span class="n">actual</span><span class="si">}</span><span class="s2"> feature(s), but "</span>
+            <span class="sa">f</span><span class="s2">"k=</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> needs </span><span class="si">{</span><span class="n">expected</span><span class="si">}</span><span class="s2">. Its coefficients are fixed at the rank count they "</span>
+            <span class="sa">f</span><span class="s2">"were trained at; pass k=</span><span class="si">{</span><span class="n">implied</span><span class="si">}</span><span class="s2">, or use a detector trained at k=</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">."</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">estimator</span>
+
+
+<div class="viewcode-block" id="BaseDetector">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.BaseDetector">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseDetector</span><span class="p">(</span><span class="n">Pipeline</span><span class="p">,</span> <span class="n">EstimatorPersistenceMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""A `parser -&gt; entropy -&gt; classifier` pipeline returning P(hallucination).</span>
+
+<span class="sd">    A scikit-learn `Pipeline`, so `predict`, `predict_proba`, `fit`, `get_params` and</span>
+<span class="sd">    `clone` behave as expected and the detector composes into `GridSearchCV` and friends.</span>
+<span class="sd">    Build one with `epr()` or `wepr()` rather than constructing it directly.</span>
+
+<span class="sd">    Class 1 is the hallucination class: `predict_proba(...)[:, 1]` is the score of</span>
+<span class="sd">    interest.</span>
+<span class="sd">    """</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">estimator</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BaseEstimator</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The final estimator, which is the only fitted step in the pipeline."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+
+<div class="viewcode-block" id="BaseDetector.predict_token_proba">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.BaseDetector.predict_token_proba">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict_token_proba</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Per-token hallucination probabilities, for locating *where* a response drifts.</span>
+
+<span class="sd">        Runs the transformer steps in token mode (`transform_tokens`, falling back to</span>
+<span class="sd">        `transform`), then scores only the non-padded token rows and scatters the results</span>
+<span class="sd">        back, so padded positions stay NaN rather than being scored as real tokens.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x: The same input `predict_proba` accepts.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            `(n_sequences, max_tokens, 1)`, NaN at padded positions.</span>
+<span class="sd">        """</span>
+        <span class="n">raw_output</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">transformer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">step_transform</span> <span class="o">=</span> <span class="n">transformer</span><span class="o">.</span><span class="n">transform_tokens</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">step_transform</span> <span class="o">=</span> <span class="n">transformer</span><span class="o">.</span><span class="n">transform</span>
+            <span class="n">raw_output</span> <span class="o">=</span> <span class="n">step_transform</span><span class="p">(</span><span class="n">raw_output</span><span class="p">)</span>
+
+        <span class="n">token_features</span> <span class="o">=</span> <span class="n">raw_output</span>
+
+        <span class="n">n_samples</span><span class="p">,</span> <span class="n">max_tokens</span><span class="p">,</span> <span class="n">n_features</span> <span class="o">=</span> <span class="n">token_features</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">flat_features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">token_features</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_samples</span> <span class="o">*</span> <span class="n">max_tokens</span><span class="p">,</span> <span class="n">n_features</span><span class="p">)</span>
+        <span class="n">non_padded</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">flat_features</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">classifier</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">flat_scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_samples</span> <span class="o">*</span> <span class="n">max_tokens</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="n">flat_scores</span><span class="p">[</span><span class="n">non_padded</span><span class="p">]</span> <span class="o">=</span> <span class="n">classifier</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">flat_features</span><span class="p">[</span><span class="n">non_padded</span><span class="p">])[:,</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">flat_scores</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">max_tokens</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseDetector.from_pretrained">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.BaseDetector.from_pretrained">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_pretrained</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">pretrained_model_name_or_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">reduction</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DEFAULT_K</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"BaseDetector"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Build a trained detector, selecting the reduction by name.</span>
+
+<span class="sd">        Equivalent to calling `epr()` or `wepr()` directly; provided for callers that hold</span>
+<span class="sd">        the reduction as data.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pretrained_model_name_or_path: A registry model name, or a path to a file.</span>
+<span class="sd">            reduction: `"epr"` or `"wepr"`.</span>
+<span class="sd">            k: Rank count the responses carry.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A detector ready to `predict_proba`.</span>
+<span class="sd">        """</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"epr"</span><span class="p">:</span> <span class="n">epr</span><span class="p">,</span> <span class="s2">"wepr"</span><span class="p">:</span> <span class="n">wepr</span><span class="p">}[</span><span class="n">reduction</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">factory</span><span class="p">(</span><span class="n">pretrained_model_name_or_path</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseDetector.trainable">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.BaseDetector.trainable">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">trainable</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">reduction</span><span class="p">:</span> <span class="n">Reduction</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DEFAULT_K</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">classifier</span><span class="p">:</span> <span class="n">BaseEstimator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"BaseDetector"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""An unfitted detector, selecting the reduction by name.</span>
+
+<span class="sd">        The counterpart to `from_pretrained` for callers that hold the reduction as data and</span>
+<span class="sd">        intend to `fit`, so selecting a reduction never means re-deriving the mapping from</span>
+<span class="sd">        its name to a factory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            reduction: `"epr"` or `"wepr"`.</span>
+<span class="sd">            k: Rank count the responses carry.</span>
+<span class="sd">            classifier: Final estimator to fit. Defaults to the unregularised logistic</span>
+<span class="sd">                regression the published detectors were fit with.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A detector ready to `fit`.</span>
+<span class="sd">        """</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"epr"</span><span class="p">:</span> <span class="n">epr</span><span class="p">,</span> <span class="s2">"wepr"</span><span class="p">:</span> <span class="n">wepr</span><span class="p">}[</span><span class="n">reduction</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">factory</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">trainable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">classifier</span><span class="o">=</span><span class="n">classifier</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_build</span><span class="p">(</span>
+    <span class="n">reduction</span><span class="p">:</span> <span class="n">Reduction</span><span class="p">,</span>
+    <span class="n">pretrained_model_name_or_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">trainable</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">classifier</span><span class="p">:</span> <span class="n">BaseEstimator</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">pipeline_kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"BaseDetector"</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Assemble a parser -&gt; entropy -&gt; classifier pipeline pinned to `k` ranks.</span>
+
+<span class="sd">    `k` is handled at the ends of the pipeline: the parser sizes the rank axis to it, and</span>
+<span class="sd">    the classifier checks the loaded weights were trained at it. The entropy step in</span>
+<span class="sd">    between carries no rank count, since its input width is already `k`.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">trainable</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pretrained_model_name_or_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">"Pass either pretrained weights or trainable=True, not both."</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="c1"># Unregularised, so the fitted coefficients are comparable to the shipped files.</span>
+        <span class="c1"># C=np.inf rather than penalty=None: the latter is deprecated in scikit-learn 1.8</span>
+        <span class="c1"># and removed in 1.10, and the two produce identical coefficients.</span>
+        <span class="n">final</span> <span class="o">=</span> <span class="n">classifier</span> <span class="k">if</span> <span class="n">classifier</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">C</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">classifier</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">"`classifier` only applies with trainable=True; pretrained weights bring their own."</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pretrained_model_name_or_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UncalibratedModelError</span><span class="p">()</span>
+        <span class="n">final</span> <span class="o">=</span> <span class="n">_load_pretrained</span><span class="p">(</span><span class="n">reduction</span><span class="p">,</span> <span class="n">pretrained_model_name_or_path</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">BaseDetector</span><span class="p">(</span>
+        <span class="n">steps</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">(</span><span class="s2">"parser"</span><span class="p">,</span> <span class="n">LogProbParser</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">"entropy"</span><span class="p">,</span> <span class="n">EntropyTransformer</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="n">reduction</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">"classifier"</span><span class="p">,</span> <span class="n">final</span><span class="p">),</span>
+        <span class="p">],</span>
+        <span class="o">**</span><span class="n">pipeline_kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="epr">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.epr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">epr</span><span class="p">(</span>
+    <span class="n">pretrained_model_name_or_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DEFAULT_K</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">trainable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">classifier</span><span class="p">:</span> <span class="n">BaseEstimator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">transform_input</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">memory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"BaseDetector"</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Build a hallucination detector that pools a response's uncertainty into one number.</span>
+
+<span class="sd">    EPR — Entropy Production Rate. A single feature, pooling every rank of the token</span>
+<span class="sd">    distribution into one number.</span>
+
+<span class="sd">    Both estimators need a detector fit on labelled data, so choosing this one saves no</span>
+<span class="sd">    setup work over `wepr` — only parameters. Prefer `wepr` unless there is too little</span>
+<span class="sd">    labelled data to fit its larger coefficient vector.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; detector = epr("mistralai/Ministral-8B-Instruct-2410")</span>
+<span class="sd">        &gt;&gt;&gt; detector.predict_proba(response)[:, 1]  # doctest: +SKIP</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        pretrained_model_name_or_path: A model name from the registry, or a path to a</span>
+<span class="sd">            detector file. Omit it only together with `trainable=True`.</span>
+<span class="sd">        k: Rank count the responses carry, and the width EPR averages over. Responses</span>
+<span class="sd">            carrying fewer than `k` ranks are rejected when parsed.</span>
+<span class="sd">        trainable: Return an *unfitted* detector to calibrate on your own labelled data.</span>
+<span class="sd">            Call `fit(responses, y)`, where 1 marks a hallucination.</span>
+<span class="sd">        classifier: Final estimator, with `trainable=True` only. Defaults to the</span>
+<span class="sd">            unregularised logistic regression the shipped estimators were fit with.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A `BaseDetector`, trained and ready to predict, or unfitted if `trainable`.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        UncalibratedModelError: If neither weights nor `trainable=True` were given.</span>
+<span class="sd">        ValueError: If both were given, or if `classifier` is passed without `trainable`.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">_build</span><span class="p">(</span>
+        <span class="s2">"epr"</span><span class="p">,</span>
+        <span class="n">pretrained_model_name_or_path</span><span class="p">,</span>
+        <span class="n">k</span><span class="p">,</span>
+        <span class="n">trainable</span><span class="o">=</span><span class="n">trainable</span><span class="p">,</span>
+        <span class="n">classifier</span><span class="o">=</span><span class="n">classifier</span><span class="p">,</span>
+        <span class="n">transform_input</span><span class="o">=</span><span class="n">transform_input</span><span class="p">,</span>
+        <span class="n">memory</span><span class="o">=</span><span class="n">memory</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="wepr">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.wepr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">wepr</span><span class="p">(</span>
+    <span class="n">pretrained_model_name_or_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DEFAULT_K</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">trainable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">classifier</span><span class="p">:</span> <span class="n">BaseEstimator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">transform_input</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">memory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"BaseDetector"</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Build a hallucination detector that reads each rank of the token distribution.</span>
+
+<span class="sd">    WEPR — Weighted EPR. `2k` features, one learned coefficient per rank, letting the</span>
+<span class="sd">    detector weight the informative ranks over the rest.</span>
+
+<span class="sd">    The default choice: it costs the same to calibrate as `epr` and reads strictly more of</span>
+<span class="sd">    the distribution. Fall back to `epr` only when labelled data is too scarce to fit `2k`</span>
+<span class="sd">    coefficients.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; detector = wepr("mistralai/Ministral-8B-Instruct-2410")</span>
+<span class="sd">        &gt;&gt;&gt; detector.predict_proba(response)[:, 1]  # doctest: +SKIP</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        pretrained_model_name_or_path: A model name from the registry, or a path to a</span>
+<span class="sd">            weights file. Omit it only together with `trainable=True`.</span>
+<span class="sd">        k: Rank count the responses carry. The weights must cover exactly this many ranks,</span>
+<span class="sd">            and responses carrying fewer are rejected when parsed.</span>
+<span class="sd">        trainable: Return an *unfitted* detector to calibrate on your own labelled data.</span>
+<span class="sd">            Call `fit(responses, y)`, where 1 marks a hallucination.</span>
+<span class="sd">        classifier: Final estimator, with `trainable=True` only. Defaults to the</span>
+<span class="sd">            unregularised logistic regression the shipped estimators were fit with.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A `BaseDetector`, trained and ready to predict, or unfitted if `trainable`.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        UncalibratedModelError: If neither weights nor `trainable=True` were given.</span>
+<span class="sd">        ValueError: If both were given, if `classifier` is passed without `trainable`, or</span>
+<span class="sd">            if the weights do not cover exactly `k` ranks.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">_build</span><span class="p">(</span>
+        <span class="s2">"wepr"</span><span class="p">,</span>
+        <span class="n">pretrained_model_name_or_path</span><span class="p">,</span>
+        <span class="n">k</span><span class="p">,</span>
+        <span class="n">trainable</span><span class="o">=</span><span class="n">trainable</span><span class="p">,</span>
+        <span class="n">classifier</span><span class="o">=</span><span class="n">classifier</span><span class="p">,</span>
+        <span class="n">transform_input</span><span class="o">=</span><span class="n">transform_input</span><span class="p">,</span>
+        <span class="n">memory</span><span class="o">=</span><span class="n">memory</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Artefact Research Center.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+artefactual.preprocessing.batch\_output
+=======================================
+
+.. automodule:: artefactual.preprocessing.batch_output
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      index_by_custom_id
+      read_batch
+   

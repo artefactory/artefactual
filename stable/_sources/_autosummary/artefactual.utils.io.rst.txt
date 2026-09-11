@@ -1,0 +1,12 @@
+artefactual.utils.io
+====================
+
+.. automodule:: artefactual.utils.io
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      EstimatorPersistenceMixin
+   

@@ -1,0 +1,14 @@
+artefactual.scoring
+===================
+
+.. automodule:: artefactual.scoring
+
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   base_detector
+   entropy_methods

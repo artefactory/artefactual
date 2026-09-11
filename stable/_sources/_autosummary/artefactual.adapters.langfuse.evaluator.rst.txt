@@ -1,0 +1,12 @@
+artefactual.adapters.langfuse.evaluator
+=======================================
+
+.. automodule:: artefactual.adapters.langfuse.evaluator
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      HallucinationEvaluator
+   
