@@ -30,6 +30,50 @@ _RESPONSE_ADAPTER = TypeAdapter(ChatCompletion | ResponsesPayload | BatchRequest
 _PAYLOAD_ADAPTER = TypeAdapter(ChatCompletion | ResponsesPayload)
 
 
+def _validate_response(outputs: Any) -> ChatCompletion | ResponsesPayload | BatchRequestOutput:
+    """Validate a payload against the completion formats, telling the two failures apart.
+
+    A payload that matches no format is not a completion response, which is a `TypeError`
+    about the input's kind. A payload that *is* recognisably one but carries bad data is a
+    validation failure, and pydantic's own report names the offending field; flattening it
+    into "unsupported format" would send the reader looking for an unsupported provider
+    instead.
+
+    A union member counts as recognised only once it reaches *inside* the structure a
+    format describes. A top-level key that is absent, or present carrying the wrong kind
+    of value, says nothing about the payload's intent -- an arbitrary mapping that happens
+    to hold a key named `output` is not a Responses payload with one bad field.
+
+    Args:
+        outputs: A single completion response, as a mapping or an object.
+
+    Returns:
+        The validated response, as whichever member of the union matched.
+
+    Raises:
+        TypeError: If the payload matches no completion format.
+        ValidationError: If it matches one and a field inside it is invalid.
+    """
+    try:
+        return _RESPONSE_ADAPTER.validate_python(outputs, from_attributes=True)
+    except ValidationError as error:
+        if _matched_a_format(error):
+            raise
+        msg = f"Unsupported output format: {type(outputs).__name__}. Expected a completion response carrying logprobs."
+        raise TypeError(msg) from error
+
+
+def _matched_a_format(error: ValidationError) -> bool:
+    """Whether some union member reached inside the payload before failing.
+
+    Errors are located as `(member, field, ...)`. Depth one is the member refusing the
+    input's type outright; depth two is a top-level key absent or holding the wrong kind of
+    value, which any unrelated mapping can produce by coincidence. Only a failure below
+    that names a payload a member walked into and objected to.
+    """
+    return any(len(item["loc"]) > 2 for item in error.errors())
+
+
 def _payload_of(record: BatchRequestOutput) -> ChatCompletion | ResponsesPayload:
     """The payload a batch line carries, refusing a line that carries none.
 
@@ -232,18 +276,16 @@ def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
         position is still counted so token indices track the generated text.
 
     Raises:
-        TypeError: If the output is not a recognised completion format, including a batch
-            line whose body is not one.
+        TypeError: If the output matches no completion format, including a batch line
+            whose body matches none.
+        ValidationError: If it matches one but carries an invalid field, named by the
+            error pydantic raised.
         ValueError: If a batch line carries no completion, because its request failed.
     """
     if is_bearable(outputs, list | tuple):
         return [sequence for response in outputs for sequence in parse_top_logprobs(response)]
 
-    try:
-        response = _RESPONSE_ADAPTER.validate_python(outputs, from_attributes=True)
-    except ValidationError as error:
-        msg = f"Unsupported output format: {type(outputs).__name__}. Expected a completion response carrying logprobs."
-        raise TypeError(msg) from error
+    response = _validate_response(outputs)
 
     # A batch line is an envelope around one of the formats below, not a fourth one,
     # so it is opened here and the extractors stay keyed to what they actually read.
@@ -265,15 +307,13 @@ def parse_sampled_token_logprobs(outputs: Any) -> list[np.ndarray]:
         One 1-D array per sequence, holding the sampled token logprobs in order.
 
     Raises:
-        TypeError: If the output is not a recognised completion format, including a batch
-            line whose body is not one.
+        TypeError: If the output matches no completion format, including a batch line
+            whose body matches none.
+        ValidationError: If it matches one but carries an invalid field, named by the
+            error pydantic raised.
         ValueError: If a batch line carries no completion, because its request failed.
     """
-    try:
-        response = _RESPONSE_ADAPTER.validate_python(outputs, from_attributes=True)
-    except ValidationError as error:
-        msg = f"Unsupported output format: {type(outputs).__name__}. Expected a completion response carrying logprobs."
-        raise TypeError(msg) from error
+    response = _validate_response(outputs)
 
     # A batch line is an envelope around one of the formats below, not a fourth one,
     # so it is opened here and the extractors stay keyed to what they actually read.
