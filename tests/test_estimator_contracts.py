@@ -274,3 +274,26 @@ def test_padded_sequences_still_warn():
         features = EntropyTransformer(reduction="epr").transform(padded)
 
     assert not features.any()
+
+
+# --- sklearn tags ----------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("estimator", [EntropyTransformer(), LogProbParser()])
+def test_the_transformer_tags_resolve(estimator):
+    # `__sklearn_tags__` walks the MRO through `super()`, so `TransformerMixin` has to come
+    # before `BaseEstimator` for its override to run at all. In the other order the chain
+    # reaches `BaseEstimator`'s implementation first, `transformer_tags` is left None, and
+    # scikit-learn stops treating the class as a transformer -- silently, since nothing
+    # raises and `transform` still works when called directly.
+    assert estimator.__sklearn_tags__().transformer_tags is not None
+
+
+def test_the_entropy_transformer_declares_three_dimensional_input():
+    # `transform` reduces the token axis and the reduction reduces the rank axis; below
+    # three dimensions the two coincide. The tag decides which arrays sklearn's own checks
+    # synthesise, and the only producer of this step's input, LogProbParser, emits
+    # (n_sequences, n_tokens, k).
+    tags = EntropyTransformer().__sklearn_tags__()
+    assert tags.input_tags.two_d_array is False
+    assert tags.input_tags.three_d_array is True

@@ -55,7 +55,9 @@ def _wepr(x, axis) -> np.ndarray:
 STRATEGIES = {"epr": _epr, "wepr": _wepr}
 
 
-class EntropyTransformer(BaseEstimator, TransformerMixin, EntropyContributionsMixin):
+# Base order is significant. `__sklearn_tags__` resolves through `super()`, so
+# `TransformerMixin` must precede `BaseEstimator` for `transformer_tags` to be set.
+class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMixin):
     """Reduce per-rank entropy contributions to the features a calibration was fit on.
 
     Input is the `(n_sequences, n_tokens, k)` array `LogProbParser` emits, NaN-padded on
@@ -78,6 +80,12 @@ class EntropyTransformer(BaseEstimator, TransformerMixin, EntropyContributionsMi
         tags = super().__sklearn_tags__()
         tags.requires_fit = False  # stateless: fit learns nothing from data
         tags.input_tags.allow_nan = True  # consumes NaN-padded input on purpose (else check_estimators_nan_inf fails)
+        # Input is three-dimensional: `transform` reduces the token axis and the reduction
+        # reduces the rank axis, and the two coincide below three dimensions. The tags select
+        # which arrays scikit-learn's checks synthesise, and the only producer of this step's
+        # input, `LogProbParser`, emits `(n_sequences, n_tokens, k)`.
+        tags.input_tags.two_d_array = False
+        tags.input_tags.three_d_array = True
         return tags
 
     def fit(self, X, y=None) -> "EntropyTransformer":  # noqa: ARG002, N803 — X / y unused but required by the sklearn fit signature
