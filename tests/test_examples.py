@@ -12,7 +12,7 @@ are defined -- rather than executed.
 """
 
 import json
-from pathlib import Path
+from pathlib import Path, PurePath
 
 import pytest
 
@@ -60,8 +60,9 @@ def _detectors_resolve_locally(monkeypatch, tmp_path):
     that has nothing to do with the Hub. Only the resolution step is replaced: the
     notebook's own code, `read_estimator`, and the whole pipeline still run for real.
 
-    The width follows the reduction the name carries, because that is what the classifier
-    is checked against: EPR pools to a single coefficient, WEPR keeps `2k`.
+    The width follows the reduction the repository name starts with, because that is
+    what the classifier is checked against: EPR pools to a single coefficient, WEPR
+    keeps `2k`.
     """
     import skops.io as sio
     from conftest import fitted_logistic
@@ -75,7 +76,8 @@ def _detectors_resolve_locally(monkeypatch, tmp_path):
         # reload like published ones would never test it.
         if (local := BaseDetector.local_estimator(identifier)) is not None:
             return local
-        n_features = 1 if "-epr-" in str(identifier) else 2 * 15
+        reduction = PurePath(str(identifier)).name.split("-")[0]
+        n_features = 1 if reduction == "epr" else 2 * 15
         path = tmp_path / f"{n_features}.skops"
         if not path.exists():
             sio.dump(fitted_logistic(-0.5, [0.1] * n_features), path)

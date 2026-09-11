@@ -9,7 +9,7 @@ and the response shapes the parser accepts.
 shipped file was trained at.
 
 ```python
-detector = BaseDetector.from_pretrained("chicham/artefactual-wepr-phi4", "wepr", k=15)
+detector = BaseDetector.from_pretrained("artefactory/wepr-phi4", "wepr", k=15)
 ```
 
 **Responses must carry at least `k` ranks.** This is an input requirement rather than
