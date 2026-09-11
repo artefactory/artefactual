@@ -14,7 +14,7 @@ and `wepr` is the more accurate of the two.
 | Features | 2 × `k` | 1 |
 | Reads | Each rank separately | Overall confidence per token |
 | Output | Sigmoid, scaled to `[0, 1]` | Unscaled entropy rate |
-| Ships pre-trained | For every published model | For every published model |
+| Ships pre-trained | For the models in the README's table | For the same models |
 | Training needed | Only for another model | Only for another model |
 | Applicable when | Almost always | Too few labelled examples to fit `2k` coefficients |
 
