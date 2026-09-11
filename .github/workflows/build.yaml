@@ -39,8 +39,13 @@ jobs:
       # Metadata that fails to render leaves a blank project page, and a release cannot be
       # reissued to fix it. Checked here rather than at publish time so a pull request that
       # breaks the description fails before a version number is ever spent on it.
+      # Pinned, and pinned to the major that pypa/gh-action-pypi-publish bundles: an
+      # unpinned `uvx twine` resolves the newest release, which is how a wheel once passed
+      # this check and was then rejected at upload by the action's older twine, for metadata
+      # the two versions disagreed about. A check that runs a different twine than the
+      # publisher does not check what it claims to. Move this when the action's pin moves.
       - name: Check the distributions render
-        run: uvx twine check --strict dist/*
+        run: uvx --from 'twine>=7,<8' twine check --strict dist/*
 
       # The wheel is exercised before it is published anywhere, and from an environment
       # built only from its own declared dependencies -- not the project's. A dependency
