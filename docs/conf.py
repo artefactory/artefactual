@@ -30,7 +30,11 @@ html_baseurl = f"{SITE_URL}/{release}/" if not _is_development_build else SITE_U
 # navigable; repeating it here would also put the full local version
 # (2026.8.1.post1.dev36+j772a71f36.d20260911) in the site's most prominent label on every
 # build that is not a release.
-html_title = f"{project} documentation"
+# Just the project name. This is the navbar's leftmost element and the switcher sits
+# beside it: "Artefactual documentation" is wide enough that the two cannot share a row,
+# and the theme wraps rather than shrinks, which costs a second navbar row on every page.
+# The browser tab still reads "<page> - Artefactual" because the theme appends it.
+html_title = project
 
 # Extensions
 extensions = [
@@ -254,11 +258,17 @@ html_baseurl = "https://artefactory.github.io/artefactual/"
 html_theme = "pydata_sphinx_theme"
 html_theme_options = {
     "github_url": "https://github.com/artefactory/artefactual",
+    # The switcher belongs with the other controls that change how you are reading rather
+    # than what you are reading. Beside the logo it competes with the project name for the
+    # same corner, and the theme wraps the navbar rather than shrink either of them.
+    "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],
+    # Against the title rather than centred in the remaining space: centring leaves the
+    # links floating between two unequal margins, and shifts them as the title changes.
+    "navbar_align": "left",
     # The released versions, and which one you are reading. `version_match` is the release
     # string, matching the `version` key the deploy writes into switcher.json; on a
     # development build it matches nothing, which leaves the dropdown listing the releases
     # with none marked current -- correct, because an unreleased build is not among them.
-    "navbar_start": ["navbar-logo", "version-switcher"],
     "switcher": {
         "json_url": f"{SITE_URL}/switcher.json",
         "version_match": release,
@@ -274,6 +284,22 @@ html_theme_options = {
     "article_header_end": ["notebook-buttons.html"],
     "show_nav_level": 2,
     "navigation_depth": 3,
+    # The page table of contents alone. The default adds a "This Page" block holding one
+    # "Show Source" link, which sits under "On this page" saying nothing about the page and
+    # serves `_sources/<name>.txt` -- the reStructuredText, or for an example the notebook
+    # rendered as a screenful of raw text. A page with no sections is then left with an
+    # empty right-hand column, which the theme collapses so the content uses the width.
+    "secondary_sidebar_items": ["page-toc"],
+    # Reading an archived release should say so on the page rather than only in the
+    # dropdown: the banner appears on every version that is not the preferred one, and
+    # links to the current release.
+    #
+    # Off on a development build, which already carries the announcement below. The theme
+    # decides from `version_match`, which matches nothing on a `.dev` version, so both would
+    # fire and stack two banners saying the same thing -- and the announcement says it
+    # better, naming PyPI rather than offering to switch to a version this build has no
+    # entry for.
+    "show_version_warning_banner": not _is_development_build,
 }
 
 # The site is published from the release pipeline, so what it documents is a released
