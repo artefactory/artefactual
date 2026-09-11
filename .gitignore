@@ -233,3 +233,9 @@ docs/examples/scores.jsonl
 /judgments.jsonl
 /scores.jsonl
 /*.skops
+
+# Generated from the MyST Markdown beside them, by the docs build for the site and by
+# `jupytext --to ipynb` for anyone who would rather edit these in Jupyter. The Markdown is
+# the source; a committed .ipynb would reintroduce the output blobs and execution counts
+# that make an example impossible to review.
+docs/examples/*.ipynb

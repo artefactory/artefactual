@@ -57,7 +57,7 @@ concurrency:
 
 env:
   FORCE_COLOR: "1"
-  # Read by docs/conf.py, which switches nbsphinx to "always" when it is set. Only the
+  # Read by docs/conf.py, which switches MyST-NB to "force" when it is set. Only the
   # release build sets it: executing reaches the Hugging Face Hub, which a pull request
   # should not have to wait on.
   ARTEFACTUAL_EXECUTE_NOTEBOOKS: ${{ inputs.execute && '1' || '' }}
@@ -71,12 +71,18 @@ env:
   # SETUPTOOLS_SCM_PRETEND_VERSION_FOR_ARTEFACTUAL form. Only this project is built from
   # source here, so the broader scope reaches nothing else.
   SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
+  # conf.py reports cell stderr as a Sphinx warning, which -W turns into a failed build --
+  # so a notebook that warns its way through a release fails it instead. Progress bars are
+  # written to stderr and would fail every executing build on their own, saying nothing.
+  HF_HUB_DISABLE_PROGRESS_BARS: "1"
+  TRANSFORMERS_VERBOSITY: error
+  TQDM_DISABLE: "1"
 
 jobs:
   build:
     runs-on: ubuntu-latest
     # A build that executes downloads the checkpoints its notebooks load (some 500 MB) and
-    # runs the encoder judge on CPU -- around five minutes on a cold runner. nbsphinx_timeout
+    # runs the encoder judge on CPU -- around five minutes on a cold runner. nb_execution_timeout
     # in conf.py caps a single cell; this caps the job, well under the 6 h GitHub would
     # otherwise allow it to burn.
     timeout-minutes: 60
@@ -107,7 +113,7 @@ jobs:
       - name: Install dependencies
         run: uv sync ${{ inputs.execute && '--group notebooks' || '--extra docs' }} --reinstall-package artefactual
 
-      # nbsphinx shells out to pandoc to convert the notebooks' markdown cells. Without it
+      # MyST-NB shells out to pandoc for the notebooks' markdown cells. Without it
       # every notebook fails to read and the build stops, which -W turns into an error.
       - name: Install pandoc
         run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends pandoc
@@ -119,10 +125,15 @@ jobs:
         run: uv run quarto render docs/presentations
 
       - name: Build documentation
-        # -W: a page Sphinx declines to build -- a notebook nbsphinx skips, a missing
+        # -W: a page Sphinx declines to build -- a notebook MyST-NB skips, a missing
         # toctree entry, a broken cross-reference -- is reported as a warning and would
         # otherwise deploy a site with the page silently absent.
-        run: uv run sphinx-build -W -b html docs docs/_build/html
+        #
+        # -d: the doctree cache defaults to `.doctrees` *inside* the output directory, and
+        # the whole directory is what gets published -- some 11 MB of pickles per release,
+        # two fifths of the build, kept in the archive of every version online for nothing.
+        # Sphinx reads them back on an incremental build; a release build is always cold.
+        run: uv run sphinx-build -W -d docs/_build/doctrees -b html docs docs/_build/html
 
       - name: Check the decks reached the site
         run: |
@@ -139,19 +150,21 @@ jobs:
 
       - name: Check the example notebooks reached the site
         run: |
-          # nbsphinx skipping a notebook is a warning, not an error: assert instead.
+          # MyST-NB reading a notebook as an ordinary page is silent: the build succeeds,
+          # the page looks close to right and nothing ran. Assert instead.
           shopt -s nullglob
           missing=0
-          for nb in docs/examples/*.ipynb; do
-            page="docs/_build/html/examples/$(basename "${nb%.ipynb}").html"
+          for source in docs/examples/*.md; do
+            name=$(basename "${source%.md}")
+            [ "$name" = index ] && continue
+            page="docs/_build/html/examples/$name.html"
             if [ ! -f "$page" ]; then
-              echo "::error::$nb did not build to $page"
+              echo "::error::$source did not build to $page"
               missing=1
-            elif [ ! -f "${page%.html}.ipynb" ]; then
-              # Every page offers its notebook as a download, and the file that link
-              # points at is the copy nbsphinx writes beside the page. Its absence is
-              # silent under -W, so it is asserted here alongside the page itself.
-              echo "::error::$nb built a page but no downloadable notebook beside it"
+            elif [ ! -f "docs/_build/html/examples/$name.ipynb" ]; then
+              # Every page offers its notebook as a download, and conf.py writes that file
+              # beside the page at the end of the build. Its absence is silent under -W.
+              echo "::error::$source built a page but no downloadable notebook beside it"
               missing=1
             else
               echo "deployed example: $page"

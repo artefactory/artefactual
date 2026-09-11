@@ -44,8 +44,8 @@ adapters = [
     "openai>=2.41.1",
 ]
 docs = [
-    "myst-parser~=4.0.1",
-    "nbsphinx~=0.9.8",
+    "jupytext>=1.19.5",
+    "myst-nb>=1.1",
     "pydata-sphinx-theme~=0.16.1",
     # The reveal.js decks under docs/presentations/ are rendered by Quarto before Sphinx
     # runs, and Sphinx copies the result in through html_extra_path. The PyPI package ships
@@ -152,10 +152,10 @@ dev = [
 # and groups are not part of that metadata. That is also why the merge goes this way round
 # -- the group may depend on the extra, never the reverse.
 notebooks = [
-    # train_wepr_pipeline.ipynb and langfuse_integration_demo.ipynb call an endpoint.
+    # train_wepr_pipeline.md and langfuse_integration_demo.md call an endpoint.
     "artefactual[adapters]",
-    # nbsphinx executes the notebooks in-process, so Sphinx and the judge's runtime have to
-    # be the same environment.
+    # MyST-NB executes the notebooks from the Sphinx process, so Sphinx and the judge's
+    # runtime have to be the same environment.
     "artefactual[docs]",
     "jupyterlab>=4.3.5",
     # train_wepr_pipeline.ipynb renders its two prompts, the paper's, as the templates they
@@ -295,14 +295,13 @@ max-args = 8
 # away from the paragraph that explains it.
 #
 # B018 is the notebook idiom of ending a cell on a bare name so the kernel renders its
-# repr -- `detector` on its own line is how a reader sees the pipeline it just built. Read
+# repr -- `logprobs.shape` on its own line is how a reader sees what a step produced. Read
 # as a module, which is how the linter sees a notebook, that is an expression with no
 # effect; in a notebook it is the output.
 #
-# The glob is `docs/examples/*`, not `*.ipynb`: nbQA lints a notebook by writing it out as a
-# `.py` beside itself and running ruff on that, so an `.ipynb` pattern silently misses the
-# pre-commit hook while still covering `ruff check` run by hand. It matches at any depth, so
-# a `.py` added anywhere under `docs/examples/` is covered too.
+# The glob is `docs/examples/*`, not a suffix: jupytext lints a MyST example by writing its
+# cells out as a `.py` beside itself and running ruff on that, under a generated name. It
+# matches at any depth, so a `.py` added anywhere under `docs/examples/` is covered too.
 "docs/examples/*" = ["B018", "E402"]
 "**/scripts/*" = [
     "INP001",
