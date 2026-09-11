@@ -134,6 +134,48 @@ class EstimatorPersistenceMixin:
         """
         return cls.read_estimator(cls.resolve_estimator(identifier), trusted=trusted)
 
+    @classmethod
+    def _from_estimator(cls, estimator: BaseEstimator, identifier: str | Path, **kwargs: Any) -> Any:
+        """Wrap a loaded estimator in the object that scores with it.
+
+        The extension point of `from_pretrained`: this mixin knows how to fetch and read a
+        file, and nothing about what the estimator is for. An owner implements this to
+        assemble itself around the estimator, and to reject one that does not fit -- the
+        identifier is passed so that rejection can name the file it came from.
+
+        Args:
+            estimator: The fitted estimator read from the file.
+            identifier: What named it, for error messages.
+            **kwargs: Whatever `from_pretrained` was called with beyond the identifier.
+
+        Returns:
+            An instance of the owner, ready to score.
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def from_pretrained(cls, identifier: str | Path, *, trusted: list[str] | None = None, **kwargs: Any) -> Any:
+        """An instance carrying published weights, ready to score.
+
+        The route to a fitted object that never calls `fit`: the weights were fitted
+        elsewhere, and what is rebuilt here is only the machinery around them.
+
+        Args:
+            identifier: A Hugging Face repository id, a `.skops` file, or a directory
+                holding `model.skops`.
+            trusted: Type names to accept beyond skops' defaults. See `read_estimator`.
+            **kwargs: Passed to `_from_estimator`, which decides what the owner needs.
+
+        Returns:
+            An instance of the owner, carrying the loaded estimator.
+
+        Raises:
+            ValueError: If the identifier resolves to nothing, the file holds a type that
+                was not asked for, or the estimator does not fit the owner.
+        """
+        estimator = cls.load_estimator(identifier, trusted=trusted)
+        return cls._from_estimator(estimator, identifier, **kwargs)
+
     def save_estimator(self, path: str | Path) -> Path:
         """Write this object's fitted estimator to a `.skops` file.
 

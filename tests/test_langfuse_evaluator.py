@@ -17,7 +17,7 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator
-from artefactual.scoring import BaseDetector
+from artefactual.scoring import EPR
 from artefactual.scoring.base_detector import DEFAULT_K
 
 # The detector defaults to DEFAULT_K, and the parser refuses anything narrower.
@@ -52,7 +52,7 @@ class StubLangfuse:
 
 
 def build_detector(tmp_path, detector):
-    return BaseDetector.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)), "epr")
+    return EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)))
 
 
 @drawn
@@ -126,7 +126,7 @@ def test_the_score_id_survives_a_change_of_value(tmp_path, payload, first_calibr
     """
     client = StubLangfuse(Trace(payload))
     for index, detector in enumerate((first_calibration, second_calibration)):
-        detector = BaseDetector.from_pretrained(str(write_estimator(tmp_path, f"cal-{index}.skops", detector)), "epr")
+        detector = EPR.from_pretrained(str(write_estimator(tmp_path, f"cal-{index}.skops", detector)))
         HallucinationEvaluator("epr", client, detector).score_trace("trace-1")
 
     first, second = client.scores

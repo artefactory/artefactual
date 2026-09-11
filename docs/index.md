@@ -12,7 +12,7 @@ pip install artefactual
 from artefactual.scoring import BaseDetector
 
 # response is what any OpenAI-compatible client returns with logprobs=True, top_logprobs=15
-detector = BaseDetector.from_pretrained("artefactory/wepr-ministral", "wepr")
+detector = WEPR.from_pretrained("artefactory/wepr-ministral")
 detector.predict_proba(response)[:, 1]   # P(hallucination) per sequence
 ```
 
