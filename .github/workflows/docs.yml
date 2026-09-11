@@ -24,6 +24,10 @@ on:
         description: Run the notebooks and publish the outputs they produce.
         type: boolean
         default: true
+      version:
+        description: Version the built pages name. Empty means read it from the git tag.
+        type: string
+        default: ""
   workflow_call:
     inputs:
       deploy:
@@ -34,6 +38,10 @@ on:
         description: Run the notebooks and publish the outputs they produce.
         type: boolean
         default: false
+      version:
+        description: Version the built pages name. Empty means read it from the git tag.
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -50,6 +58,16 @@ env:
   # release build sets it: executing reaches the Hugging Face Hub, which a pull request
   # should not have to wait on.
   ARTEFACTUAL_EXECUTE_NOTEBOOKS: ${{ inputs.execute && '1' || '' }}
+  # conf.py reads the version from the installed package. On a release the tag does not
+  # exist yet -- the whole point of building here is to gate its creation -- so the caller
+  # passes the version it is about to tag and hatch-vcs reports that instead of deriving
+  # one. Empty everywhere else, which falls through to the git tag and yields the .dev
+  # version that puts the development banner on the page.
+  #
+  # The unsuffixed name is deliberate: hatch-vcs ignores the per-package
+  # SETUPTOOLS_SCM_PRETEND_VERSION_FOR_ARTEFACTUAL form. Only this project is built from
+  # source here, so the broader scope reaches nothing else.
+  SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
 
 jobs:
   build:
@@ -80,8 +98,11 @@ jobs:
       # only the group. A build that does not execute reads the outputs stored in the .ipynb
       # files and needs none of the runtime the group adds -- torch alone is 2 GB -- so it
       # installs the extra by itself.
+      # --reinstall-package: SETUPTOOLS_SCM_PRETEND_VERSION is not part of uv's cache key,
+      # so a cached build of the package would be reused and the pages would name the
+      # version that was cached rather than the one being released.
       - name: Install dependencies
-        run: uv sync ${{ inputs.execute && '--group notebooks' || '--extra docs' }}
+        run: uv sync ${{ inputs.execute && '--group notebooks' || '--extra docs' }} --reinstall-package artefactual
 
       # nbsphinx shells out to pandoc to convert the notebooks' markdown cells. Without it
       # every notebook fails to read and the build stops, which -W turns into an error.
