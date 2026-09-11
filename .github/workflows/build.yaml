@@ -62,10 +62,10 @@ jobs:
           wheel="${wheels[0]}"
           echo "testing $wheel"
           uv run --isolated --no-project --with "$wheel" python - <<'SMOKE'
-          from artefactual.scoring import epr
+          from artefactual.scoring import BaseDetector
 
           # a published detector, resolved and read through the wheel's own dependencies
-          detector = epr("chicham/artefactual-epr-ministral", k=15)
+          detector = BaseDetector.from_pretrained("artefactory/epr-ministral", "epr", k=15)
           response = {
               "choices": [{
                   "index": 0,

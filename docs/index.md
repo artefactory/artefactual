@@ -11,7 +11,7 @@ pip install artefactual
 ```python
 from artefactual.scoring import BaseDetector
 
-detector = BaseDetector.from_pretrained("chicham/artefactual-wepr-ministral", "wepr")
+detector = BaseDetector.from_pretrained("artefactory/wepr-ministral", "wepr")
 detector.predict_proba(response)[:, 1]   # P(hallucination) per sequence
 ```
 

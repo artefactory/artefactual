@@ -72,7 +72,7 @@ from langfuse import get_client
 
 from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator
 
-evaluator = HallucinationEvaluator("wepr", get_client(), BaseDetector.from_pretrained("chicham/artefactual-wepr-phi4", "wepr"))
+evaluator = HallucinationEvaluator("wepr", get_client(), BaseDetector.from_pretrained("artefactory/wepr-phi4", "wepr"))
 evaluator.score_trace(trace_id)
 ```
 
@@ -108,7 +108,7 @@ work:
 ```python
 from sklearn.base import clone
 
-detector = BaseDetector.from_pretrained("chicham/artefactual-wepr-ministral", "wepr")
+detector = BaseDetector.from_pretrained("artefactory/wepr-ministral", "wepr")
 detector.named_steps  # {'parser': ..., 'entropy': ..., 'classifier': ...}
 clone(detector)  # get_params / set_params round-trip
 ```
