@@ -21,12 +21,19 @@ The three middle boxes are the three sections below.
 — as SDK objects or plain dicts, singly or batched — into a dense
 `(n_sequences, n_tokens, k)` array of log-probabilities, `NaN`-padded.
 
+Two words for that last axis, and they are not the same thing. At every token position the
+endpoint returns the `k` most likely **candidates** — the tokens the model considered. A
+candidate's **rank** is its position in that list, counting from the most likely: rank 1 is
+what the model was most sure of, rank 15 the least. So a candidate is a token, a rank is a
+slot, and `k` is how many slots there are. EPR pools all of them into one number; WEPR fits
+one coefficient per rank, which is why it can weight the informative slots over the rest.
+
 ## Measure
 
 The middle step turns the raw distribution into a small feature vector
 summarising how uncertain the model was. The shipped detectors measure this with the
-entropy contribution of each candidate, `s_kj = -p_kj * log(p_kj)` for token *j* and rank
-*k*, reduced two ways:
+entropy contribution of each candidate, `s_kj = -p_kj * log(p_kj)` for the candidate at
+rank *k* of token *j*, reduced two ways:
 
 | Reduction | Feature vector | Reads |
 |---|---|---|
@@ -35,8 +42,8 @@ entropy contribution of each candidate, `s_kj = -p_kj * log(p_kj)` for token *j*
 
 EPR sums the rank axis, so it is the top-`k` entropy estimate averaged over the sequence —
 which is why `k` belongs to the feature's definition, and why a response carrying fewer
-ranks is rejected rather than padded: the missing contributions would simply be absent, and
-the response would look more confident than it was.
+candidates is rejected rather than padded: the missing contributions would simply be absent,
+and the response would look more confident than it was.
 
 WEPR weights each rank separately, which pays off because `-p*log(p)` peaks at `p = 1/e`: a
 mid-ranked candidate carries more signal than either the near-certain top rank or the
