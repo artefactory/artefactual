@@ -47,7 +47,7 @@ a completion under `custom_id` — which is what the Batch API returns and what
 | `OPENAI_API_KEY` | Its key |
 | `OPENAI_MODEL` | The model being scored — the detector belongs to it, and the id has to be one your endpoint serves |
 
-The endpoint must return at least `K` ranks per token. `top_logprobs` is commonly capped at
+The endpoint must return at least `K` candidates per token. `top_logprobs` is commonly capped at
 20, so `K = 15` fits; an endpoint that caps lower is refused by name when the responses are
 generated, rather than training on narrower data.
 
@@ -66,7 +66,9 @@ the ones your own run produces.
 Every knob in one place. `MODEL` has no default: a model id only means something to the
 endpoint serving it, and a wrong one fails on every generation request rather than here.
 
-`K` is part of the feature definition, not a batch size — WEPR fits one coefficient per
+`K` is how many **candidates** per token the endpoint is asked for — the tokens the model
+considered at that position. A candidate's **rank** is its place in that list, most likely
+first. `K` is part of the feature definition, not a batch size: WEPR fits one coefficient per
 rank, so the detector is only ever loaded at the value it was fitted at.
 
 The two prompts are the paper's. The generation prompt asks for short answers on purpose:
@@ -85,8 +87,9 @@ from jinja2 import Template
 # fails on every generation request rather than here.
 MODEL = os.environ["OPENAI_MODEL"]
 
-# Ranks kept per token. Part of the feature definition, not a batch size: WEPR fits one
-# coefficient per rank, so a detector is only ever used at the k it was fitted at. Every
+# Candidates kept per token -- the tokens the model considered, most likely first, one per
+# rank. Part of the feature definition, not a batch size: WEPR fits one coefficient per
+# rank, so a detector is only ever used at the k it was fitted at. Every
 # published detector uses 15.
 K = 15
 # The API caps it at 20, and an endpoint asked for more rejects every generation request --
@@ -507,7 +510,7 @@ knowing what produced it -- this notebook, a Batch job, or an offline runner.
 
 The cell after it runs `LogProbParser` over what came back. That is the pipeline's own first
 step, and it is where an endpoint that accepted `logprobs=True` and ignored it, or that
-capped the ranks below `K`, is refused by name — before the judge spends another N requests
+capped the candidates below `K`, is refused by name — before the judge spends another N requests
 judging responses that cannot be trained on.
 
 ```{code-cell} ipython3
@@ -594,7 +597,7 @@ assert ok, (
 )
 
 # The pipeline's own first step, run here rather than at fit time. It owns the rank axis, so
-# it is what refuses a response carrying no log-probabilities or fewer than K ranks on any
+# it is what refuses a response carrying no log-probabilities or fewer than K candidates on any
 # token -- and it says which, by name. Running it now costs one pass and saves N judge
 # requests spent on responses that cannot be trained on.
 logprobs = LogProbParser(k=K).transform([completion for _, completion in ok])

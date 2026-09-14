@@ -49,8 +49,8 @@ Two conditions apply to whatever produced the response:
 
 1. **`logprobs` and `top_logprobs` are enabled.** Providers that do not expose them cannot
    be scored at all.
-2. **`top_logprobs` is at least `k`**, the rank count the detector's own weights were
-   trained at. The shipped files use `k = 15`.
+2. **`top_logprobs` is at least `k`**, the width the detector's own weights were
+   trained at (candidates per token). The shipped files use `k = 15`.
 
 Neither needs auditing in advance — a response that fails one is refused by name. Why a
 narrow response is refused rather than padded is in
