@@ -38,6 +38,15 @@ log-probabilities generated rather than sampled from a model.
 # !pip install -q artefactual matplotlib
 # !wget -q https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/responses_sample.jsonl
 # !wget -q https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/judgments_sample.jsonl
+
+try:
+    from myst_nb import glue
+except ImportError:
+    # Only the documentation build has MyST-NB, and only it renders what `glue` records.
+    # Running this notebook anywhere else -- Colab, a clone, the test suite -- must not
+    # need a Sphinx extension installed, so the calls below become no-ops.
+    def glue(*_args, **_kwargs):
+        return None
 ```
 
 ## The inputs
@@ -129,16 +138,6 @@ import numpy as np
 from sklearn.metrics import classification_report, roc_auc_score
 from sklearn.model_selection import train_test_split
 
-try:
-    from myst_nb import glue
-except ImportError:
-    # Only the documentation build has MyST-NB, and only it renders what `glue` records.
-    # Running this notebook anywhere else -- Colab, a clone, the test suite -- must not
-    # need a Sphinx extension installed, so the calls below become no-ops.
-    def glue(*_args, **_kwargs):
-        return None
-
-
 y = np.array(labels)
 x_train, x_test, y_train, y_test = train_test_split(responses, y, test_size=0.25, stratify=y, random_state=SEED)
 
@@ -171,6 +170,8 @@ the whole axis rather than on rank 1. The magnitudes are large because the defau
 classifier is unregularised; *Choosing the final estimator* is about that.
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 import matplotlib.pyplot as plt
 
 # The by-hand steps and the pipeline are the same computation, not a resemblance.
@@ -218,6 +219,8 @@ for k, mean in zip(search.cv_results_["param_parser__k"], search.cv_results_["me
 ```
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 from sklearn.model_selection import LearningCurveDisplay
 
 learning_curve = LearningCurveDisplay.from_estimator(
@@ -251,6 +254,8 @@ The threshold is a number, not part of the `.skops` weights — it travels with 
 not inside it.
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import PrecisionRecallDisplay, precision_recall_curve
 
@@ -294,6 +299,8 @@ scored as real tokens.
 These sample responses are one or two tokens long, so there is little to see.
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 per_token = detector.predict_token_proba(x_test[:3])  # (responses, tokens, 1)
 
 for row, scores_per_token in zip(x_test[:3], per_token, strict=True):

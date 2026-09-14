@@ -55,6 +55,8 @@ This notebook is not executed when the documentation is built, so the numbers yo
 the ones your own run produces.
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 # From a clone: `uv sync --group notebooks`.
 #
 # On Colab, uncomment to install the package and fetch the questions this notebook reads.
@@ -69,10 +71,6 @@ endpoint serving it, and a wrong one fails on every generation request rather th
 
 `K` is part of the feature definition, not a batch size — WEPR fits one coefficient per
 rank, so the detector is only ever loaded at the value it was fitted at.
-
-The two prompts are the paper's. The generation prompt asks for short answers on purpose:
-the detector reads the distribution behind the response, so a model that pads with hedging
-spends its tokens on text carrying nothing to score.
 
 ```{code-cell} ipython3
 import json
@@ -101,6 +99,17 @@ WORKERS = 8
 
 RESPONSES = Path("responses.jsonl")
 JUDGMENTS = Path("judgments.jsonl")
+```
+
+Both prompts are the paper's, rendered with jinja as the originals are: the reply format
+the judge demands is itself a JSON object, and jinja passes a bare `{` through where
+`str.format` would read it as a field, as it would a question containing one. The judge
+prompt is long; the cell below is collapsed, and the *Judge the responses* section prints it
+rendered against a real answer, which is the form worth reading.
+
+```{code-cell} ipython3
+:tags: [hide-input]
+
 # The generation prompt, the paper's (4.1.2). Short answers on purpose: the detector reads
 # the token distribution behind the answer, so a model that pads with hedging spends its
 # tokens on text that carries nothing to score.
@@ -110,9 +119,7 @@ GENERATE = Template("""You are a useful assistant that help finding short and pr
             {{ query }}
             """)
 
-# The judging prompt, the paper's, in full. Rendered with jinja, as the original is: the
-# reply format it demands is itself a JSON object, and jinja passes a bare `{` through
-# where `str.format` would read it as a field, as it would a question containing one.
+# The judging prompt, the paper's, in full.
 JUDGE = Template("""You are an expert evaluator tasked with determining if two answers convey compatible information. Your task is to make a binary True/False judgment on whether the answers are SEMANTICALLY COMPATIBLE.
 
 Query:
@@ -378,6 +385,8 @@ for this model, all-wrong usually means it is not answering in the short form th
 expects.
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 def render_judge(question, completion):
     return JUDGE.render(
         query=question["question"],
