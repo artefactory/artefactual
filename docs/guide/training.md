@@ -18,7 +18,7 @@ ends in a saved `.skops` file.
 | You already have | Notebook |
 |---|---|
 | the answers, and a verdict on each | {doc}`../examples/train_wepr` |
-| the answers, but nothing judged yet | {doc}`../examples/train_wepr_bertjudge` |
+| the answers, but nothing judged yet, and no budget to judge them | {doc}`../examples/train_wepr_lightweight_judge` |
 | an endpoint, and nothing else | {doc}`../examples/train_wepr_pipeline` |
 
 Each runs top to bottom as it ships — the first two on committed sample files, the third on
@@ -51,7 +51,7 @@ conversion:
 Each notebook cross-validates the fit and reports a ROC-AUC with a per-class breakdown, so
 the answer is in the run itself rather than taken on trust. *What the fit weighs* in
 {doc}`../examples/train_wepr` plots the fitted coefficient per rank, and *Audit the labels
-the judge produced* in {doc}`../examples/train_wepr_bertjudge` lists, question by question,
+the judge produced* in {doc}`../examples/train_wepr_lightweight_judge` lists, question by question,
 where the judge and the fitted detector disagree — the labels are the part worth doubting
 first.
 
@@ -60,6 +60,6 @@ first.
 :hidden:
 
 /examples/train_wepr
-/examples/train_wepr_bertjudge
+/examples/train_wepr_lightweight_judge
 /examples/train_wepr_pipeline
 ```

@@ -13,23 +13,24 @@ kernelspec:
   name: python3
 ---
 
-# Label a set of responses with an encoder judge, then train
+# Label a set of responses with a lightweight judge that runs on your own machine
 
-You start with answers the model under test generated, and nothing judged yet. This
-notebook produces the missing half — a verdict per answer, from a local encoder judge —
-then fits a WEPR detector on the pair.
+You start with answers the model under test generated, and nothing judged yet. The judge
+that grades them here **runs locally, on CPU, with no API key and no per-response cost** —
+which is the reason to pick this notebook over the other two. It downloads a 210M encoder
+once (~420 MB) and every response after that is one forward pass on the machine you are
+already sitting at, so relabelling a run, or trying another threshold, costs seconds rather
+than another N requests.
 
 A detector is trained for one model, on answers that model produced plus a verdict on
 each. The wider context is in the guide's *Training a detector*.
 
-`artefactory/BERTJudge` grades an answer against a reference. Give it the question, the
-answer to grade and the gold answer; its own output is P(correct), which this notebook
-turns into P(hallucination) once, at the call, so that every number on the page after it
-points the same way as the detector's. It is a 210M encoder, efficient
-enough to run on CPU: it downloads once (~420 MB), and every response after that is one
-forward pass rather than an API request. Its own package, `bert-judge`, wraps the loading
-and the scoring, so grading the whole file is one call; `THRESHOLD` turns each probability
-into the verdict written to the judgments file.
+The checkpoint is `artefactory/BERTJudge`. Give it the question, the answer to grade and the
+gold answer; its own output is P(correct), which this notebook turns into P(hallucination)
+once, at the call, so that every number on the page after it points the same way as the
+detector's. Its own package, `bert-judge`, wraps the loading and the scoring, so grading the
+whole file is one call; `THRESHOLD` turns each probability into the verdict written to the
+judgments file.
 
 The sample files are synthetic — real questions, but the responses and their
 log-probabilities were generated rather than sampled from a model. This notebook ships
@@ -96,7 +97,7 @@ JUDGMENTS = Path("judgments.jsonl")
 # The checkpoint the model card recommends: trained on unconstrained generations, and
 # reading question, candidate and reference.
 JUDGE_MODEL = "artefactory/BERTJudge"
-# P(hallucination) at or above which the response counts as a hallucination.
+# P(hallucination) above which the response counts as a hallucination.
 THRESHOLD = 0.5
 # Sequences per forward pass. Raise it on a GPU.
 JUDGE_BATCH = 8
@@ -134,8 +135,8 @@ verdict. `judgments.jsonl` gets one Batch line per response, carrying
 
 | `judgment` | Set when | Label |
 |---|---|---|
-| `true` | P(hallucination) < `THRESHOLD` | 0, grounded |
-| `false` | P(hallucination) >= `THRESHOLD` | 1, hallucination |
+| `true` | P(hallucination) <= `THRESHOLD` | 0, grounded |
+| `false` | P(hallucination) > `THRESHOLD` | 1, hallucination |
 | `null` | the response carried no text | none; the row is dropped |
 
 `judgment` stays in the judge's own direction — `true` means the answer was correct —
@@ -173,7 +174,8 @@ with JUDGMENTS.open("w", encoding="utf-8") as out:
         # class the detector predicts -- it is what `read_judgment` expects, and what a
         # generative judge writes. `None` for a response with no text, which `read_judgment`
         # reads as no verdict.
-        judgment = bool(score < THRESHOLD) if response else None
+        # `<=`, so a score of exactly THRESHOLD stays "correct", as it did when this compared P(correct).
+        judgment = bool(score <= THRESHOLD) if response else None
         verdict = {
             "judgment": judgment,
             "explanation": (
@@ -201,7 +203,7 @@ with JUDGMENTS.open("w", encoding="utf-8") as out:
         # U+0085 -- characters JSON does not require escaping and a model can emit.
         out.write(json.dumps(line.model_dump(), ensure_ascii=True) + "\n")
 
-# Counted from the file, not from `scores`: what the run produced is what it wrote.
+# Counted from the file, not from `hallucination_scores`: what the run produced is what it wrote.
 verdicts = [read_judgment(row.completion) for row in read_batch(JUDGMENTS)]
 tally = Counter("Undefined" if verdict is None else str(verdict) for verdict in verdicts)
 print(f"wrote {JUDGMENTS}, {len(verdicts)} verdicts")
@@ -299,7 +301,7 @@ count and mean nothing at another, so loading at a different `k` raises rather t
 mis-shaping the score.
 
 ```{code-cell} ipython3
-path = detector.save_estimator("wepr-bertjudge.skops")
+path = detector.save_estimator("wepr-lightweight-judge.skops")
 reloaded = WEPR.from_pretrained(path, k=K)
 
 # Held-out responses: the rows the fit above never saw.
