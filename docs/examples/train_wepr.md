@@ -29,6 +29,21 @@ running the three pipeline steps by hand, fitting, cross-validating, and saving 
 The sample files are synthetic: real questions, with the responses and their
 log-probabilities generated rather than sampled from a model.
 
+| Section | What it does | Cost |
+|---|---|---|
+| The inputs | Read the two batch files, pair them by `custom_id` | none, both files ship beside this notebook |
+| The three steps | Parse, entropy, classify, run by hand | seconds |
+| Fit | Fit on a stratified split, report ROC-AUC on the holdout | seconds |
+| What the fit weighs | The fitted coefficient per rank | seconds |
+| How well does this fit generalise? | Five folds over every response | seconds |
+| Which `k` should this be fitted at? | A grid over `parser__k` | seconds |
+| Is it worth labelling more answers? | The learning curve | seconds |
+| Choosing the final estimator | Regularise, then tune the threshold | seconds |
+| Per-token scores | Score each token of a held-out answer | seconds |
+| Save it, and load it back | `.skops` out, `from_pretrained` in | seconds |
+
+No network, no API key and no GPU: every cell runs on the committed fixtures.
+
 ```{code-cell} ipython3
 :tags: [hide-input]
 
