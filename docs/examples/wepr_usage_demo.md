@@ -41,12 +41,19 @@ We will use:
 ```
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 import json
 import warnings
 from pathlib import Path
 
 from IPython.display import HTML, display
 from sklearn.exceptions import InconsistentVersionWarning
+
+# The published weights were written by an older scikit-learn than the one installed here,
+# which warns on unpickling. It is a note to whoever republishes the detector, not to the
+# reader loading it, and the estimator it produces is the same either way.
+warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 
 from artefactual.scoring import WEPR
 ```
@@ -88,11 +95,6 @@ always requires a repository id or a path. The raw OpenAI Responses API dicts go
 to the pipeline; parsing is its first step.
 
 ```{code-cell} ipython3
-# The published weights were written by an older scikit-learn than the one installed here,
-# which warns on unpickling. It is a note to whoever republishes the detector, not to the
-# reader loading it, and the estimator it produces is the same either way.
-warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
-
 detector = WEPR.from_pretrained(DETECTOR, k=K)
 ```
 

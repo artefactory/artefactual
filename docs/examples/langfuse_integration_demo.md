@@ -47,6 +47,8 @@ This notebook demonstrates how to use the **HallucinationEvaluator** with the sk
     calibration is a single coefficient, and `k` only governs how the rank axis is aligned. The defaults below target the HuggingFace router, where `OPENAI_API_KEY` is a token from your HuggingFace account.
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 # From a clone: `uv sync --group notebooks`.
 #
 # On Colab, uncomment to install the package.
