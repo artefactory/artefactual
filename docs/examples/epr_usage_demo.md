@@ -27,7 +27,7 @@ We explore two examples:
     *"Who is Charles Moslonka?"* → a fabricated biography (expected high uncertainty, high entropy expected)
 
 We will use:
-* **JSON fixture (open_ai_responses_top15.json):** two mock OpenAI Responses API outputs, carrying 15 top logprobs per token -- the rank count the shipped calibrations were fit at.
+* **JSON fixture (open_ai_responses_top15.json):** two mock OpenAI Responses API outputs, carrying the 15 most likely candidates per token -- the width the shipped calibrations were fit at.
 * **Published detector:** named by its own Hugging Face repository (`artefactory/epr-ministral`), fetched on first use and cached. A path to a local `.skops` file is accepted the same way.
 * **EPR:** scorer from the artefactual package via the scikit-learn pipeline API.
 * **Visualizations:** each token highlighted by its own score, so the uncertain stretches of an answer are visible rather than inferred.
@@ -57,9 +57,9 @@ from artefactual.scoring import EPR
 DETECTOR = "artefactory/epr-ministral"
 DATA_PATH = "open_ai_responses_top15.json"
 
-# The rank count the detector was calibrated at, which the fixture also carries. Passing a
+# Candidates per token the detector was calibrated at, which the fixture also carries. Passing a
 # different value raises rather than producing a mis-shaped score, and a response narrower
-# than K is refused rather than padded: the missing ranks are unfetched, not absent, so
+# than K is refused rather than padded: the missing candidates are unfetched, not absent, so
 # filling them would understate the entropy.
 K = 15
 

@@ -37,7 +37,7 @@ def _epr(x, axis) -> np.ndarray:
     result is an entropy, on the same scale as `H(q)` itself, in nats as the ECIR2026
     release computes it.
 
-    A token whose ranks are entirely NaN is padding rather than data, and is excluded from
+    A token whose candidates are entirely NaN is padding rather than data, and is excluded from
     the token mean rather than contributing the 0 that `nansum` would give it.
     """
     padded = np.all(np.isnan(x), axis=-1, keepdims=True)  # fully-NaN (padded) tokens
@@ -58,13 +58,13 @@ STRATEGIES = {"epr": _epr, "wepr": _wepr}
 # Base order is significant. `__sklearn_tags__` resolves through `super()`, so
 # `TransformerMixin` must precede `BaseEstimator` for `transformer_tags` to be set.
 class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMixin):
-    """Reduce per-rank entropy contributions to the features a calibration was fit on.
+    """Reduce per-candidate entropy contributions to the features a calibration was fit on.
 
     Input is the `(n_sequences, n_tokens, k)` array `LogProbParser` emits, NaN-padded on
     both the token and rank axes. Output is one feature row per sequence: 1 column for
     `epr`, `2k` for `wepr`.
 
-    Stateless, and takes no rank count -- the width of the input is already the calibrated
+    Stateless, and takes no width of its own -- the input is already the calibrated
     `k`, since the parser sizes the rank axis.
 
     Args:

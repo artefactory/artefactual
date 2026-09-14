@@ -21,7 +21,10 @@ _REDIRECT = 300
 
 
 class TopLogprob(BaseModel):
-    """One rank of the top-k distribution for a single token."""
+    """One candidate of the top-k distribution for a single token.
+
+    Its rank is its position in that distribution, counting from the most likely.
+    """
 
     model_config = _ACCEPTS_DICT_OR_OBJECT
 
