@@ -59,15 +59,28 @@ cells are the record of a session you run yourself.
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-# From a clone: `uv sync --group notebooks`.
-#
-# On Colab, uncomment to install the package.
-# !pip install -q 'artefactual[adapters]'
+import subprocess  # noqa: S404
+import sys
+
+# Colab starts from a runtime with neither the package nor the files that sit beside
+# this notebook in the repository. Everywhere else -- a clone synced with
+# `uv sync --group notebooks`, the docs build, the test suite -- both are already there,
+# so this cell does nothing and there is nothing for a reader to uncomment.
+ON_COLAB = "google.colab" in sys.modules
+
+PACKAGES = [
+    "artefactual[adapters]",
+]
+
+if ON_COLAB:
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", *PACKAGES], check=True)  # noqa: S603
 ```
 
 ## Run a generation and send it to Langfuse
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 import os
 import time
 
@@ -77,26 +90,39 @@ from openai.types.chat import ChatCompletion
 
 from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator
 from artefactual.scoring import EPR, WEPR, BaseDetector
+```
 
-# --- Configuration ---------------------------------------------------------
+Every knob in one place. `OPENAI_API_KEY` has no default because it is a credential.
+
+The detector ids name the detectors trained **for** `OPENAI_MODEL`, not the model itself:
+`EPR.from_pretrained` and `WEPR.from_pretrained` resolve a repository holding `model.skops`,
+and a generator's repository has none. The two reductions are published separately, so there
+are two ids. Swap both when you swap the model being scored — a detector reads one model's
+confidence and no other's. `TOP_LOGPROBS` must match the rank count each was calibrated at.
+
+```{code-cell} ipython3
 OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://router.huggingface.co/v1")
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "Qwen/Qwen3-Coder-30B-A3B-Instruct")
-OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]  # no default: it is a credential
+OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 TOP_LOGPROBS = int(os.environ.get("TOP_LOGPROBS", "15"))
 
-# Both factories resolve a registry model name; pass a path instead to use your
-# own calibration. K must match the rank count requested above.
-# The detectors trained for OPENAI_MODEL, not OPENAI_MODEL itself: `EPR()` and `WEPR()`
-# resolve a repository holding `model.skops`, and a generator's repository has none. The
-# two reductions are published separately, so there are two ids. Swap both when you swap
-# the model being scored -- a detector reads one model's confidence and no other's.
 EPR_DETECTOR = "artefactory/epr-ministral"
 WEPR_DETECTOR = "artefactory/wepr-ministral"
-# ---------------------------------------------------------------------------
+```
 
+```{code-cell} ipython3
+:tags: [hide-input]
+
+# `langfuse.openai.OpenAI` is the stock client with Langfuse's instrumentation wrapped
+# around it, so every call it makes becomes a trace without another line of code.
 client = OpenAI(base_url=OPENAI_BASE_URL, api_key=OPENAI_API_KEY)
+```
 
+`@observe()` is what puts the generation on a trace. `logprobs=True` and
+`top_logprobs=TOP_LOGPROBS` are what make that trace scorable: without them Langfuse records
+the text and the detector has nothing to read.
 
+```{code-cell} ipython3
 @observe()
 def run_generation() -> ChatCompletion:
     return client.chat.completions.create(
@@ -111,7 +137,13 @@ def run_generation() -> ChatCompletion:
 
 
 print("Generated message:", run_generation().choices[0].message.content)
+```
 
+```{code-cell} ipython3
+:tags: [hide-input]
+
+# Traces are sent in the background, so the fetch below has to wait for the server to have
+# indexed this one -- otherwise the evaluators score an empty list.
 langfuse = get_client()
 langfuse.flush()
 

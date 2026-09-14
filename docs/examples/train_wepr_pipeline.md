@@ -57,11 +57,29 @@ the ones your own run produces.
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-# From a clone: `uv sync --group notebooks`.
-#
-# On Colab, uncomment to install the package and fetch the questions this notebook reads.
-# !pip install -q 'artefactual[adapters]' jinja2
-# !wget -q https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/questions_sample.json
+import subprocess  # noqa: S404
+import sys
+import urllib.request
+
+# Colab starts from a runtime with neither the package nor the files that sit beside
+# this notebook in the repository. Everywhere else -- a clone synced with
+# `uv sync --group notebooks`, the docs build, the test suite -- both are already there,
+# so this cell does nothing and there is nothing for a reader to uncomment.
+ON_COLAB = "google.colab" in sys.modules
+
+PACKAGES = [
+    "artefactual[adapters]",
+    "jinja2",
+]
+
+FETCH = [
+    "https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/questions_sample.json",
+]
+
+if ON_COLAB:
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", *PACKAGES], check=True)  # noqa: S603
+    for url in FETCH:
+        urllib.request.urlretrieve(url, url.rsplit("/", 1)[-1])  # noqa: S310
 ```
 
 ## Configuration

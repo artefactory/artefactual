@@ -230,26 +230,33 @@ def test_the_notebook_is_a_notebook_to_myst_nb(name):
 
 @pytest.mark.parametrize("name", ALL_NOTEBOOKS)
 def test_the_notebook_opens_with_an_install_cell(name):
-    """The first code cell installs the package.
+    """The first code cell installs the package, and runs itself only on Colab.
 
     Every example page carries an Open in Colab link, built from the page name -- so a
-        notebook added later gets the badge with no further edit. Colab starts from a runtime
-        without the package, so a notebook that skips this cell gets a badge leading to an
-        ImportError on its first import.
+    notebook added later gets the badge with no further edit. Colab starts from a runtime
+    without the package, so a notebook that skips this cell gets a badge leading to an
+    ImportError on its first import.
 
-        The line is commented out, which is how the same cell serves both readers: uncommented
-        it would reinstall the package on every local run, and `!pip` is not Python, so the
-        cells could not be compiled or executed by the tests below.
+    The install is guarded on `"google.colab" in sys.modules` rather than left commented
+    out for the reader to uncomment: a reader who misses that instruction gets the
+    ImportError the cell exists to prevent, and an unguarded install would reinstall the
+    package on every local run. The guard also keeps the cell plain Python, which `!pip`
+    is not -- the tests below compile and execute these cells.
     """
     code = [cell for cell in load(name)["cells"] if cell["cell_type"] == "code"]
     assert code, f"{name} has no code cells, so its Colab badge leads to nothing to run"
 
     first = code[0]["source"]
 
-    assert "pip install" in first and "artefactual" in first, (
+    assert "artefactual" in first and "pip" in first and "install" in first, (
         f"{name} opens on a cell that does not install the package; its Colab badge would "
         f"lead to a runtime without it. First cell:\n{first}"
     )
+    assert 'ON_COLAB = "google.colab" in sys.modules' in first, (
+        f"{name} does not guard its install on Colab detection, so it would reinstall the "
+        f"package on every local run. First cell:\n{first}"
+    )
+    assert "if ON_COLAB:" in first, f"{name} defines ON_COLAB but never guards on it"
 
 
 def test_every_fetched_file_is_committed_beside_the_notebook():
@@ -267,9 +274,9 @@ def test_every_fetched_file_is_committed_beside_the_notebook():
     for name in ALL_NOTEBOOKS:
         for line in code_of(load(name)).splitlines():
             if prefix in line:
-                fetched.add(line.split(prefix, 1)[1].split()[0])
+                fetched.add(line.split(prefix, 1)[1].strip().strip('",'))
 
-    assert fetched, "no notebook fetches its inputs; the Colab setup cells lost their wget lines"
+    assert fetched, "no notebook fetches its inputs; the Colab setup cells lost their FETCH lists"
 
     repository = EXAMPLES.parents[1]
     missing = [path for path in sorted(fetched) if not (repository / path).is_file()]

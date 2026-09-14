@@ -47,20 +47,40 @@ No API key and no GPU. The one cost is the download, paid once and cached.
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-# From a clone: `uv sync --group notebooks` brings the judge's runtime, which is not in
-# the default environment. The release build runs this notebook, so the judge's own repo
-# code executes there too -- `trust_remote_code` below, on an org-owned checkpoint.
+import subprocess  # noqa: S404
+import sys
+import urllib.request
+
+# Colab starts from a runtime with neither the package nor the files that sit beside
+# this notebook in the repository. Everywhere else -- a clone synced with
+# `uv sync --group notebooks`, the docs build, the test suite -- both are already there,
+# so this cell does nothing and there is nothing for a reader to uncomment. The release
+# build runs this notebook, so the judge's own repo code executes there too --
+# `trust_remote_code` below, on an org-owned checkpoint.
 #
 # `bert-judge` is the judge's own package and declares no dependencies, so torch,
 # transformers and datasets are named alongside it. The transformers range is the
 # checkpoint's: outside it the load fails, on `torch_dtype=` below 4.57 and
 # `KeyError: 'default'` at 5.x.
-#
-# On Colab, uncomment, which also fetches the two files this notebook reads.
-# !pip install -q artefactual torch 'transformers>=4.57,<5' datasets
-# !pip install -q 'bert-judge @ git+https://github.com/artefactory/BERT-as-a-Judge.git'
-# !wget -q https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/responses_sample.jsonl
-# !wget -q https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/questions_sample.json
+ON_COLAB = "google.colab" in sys.modules
+
+PACKAGES = [
+    "artefactual",
+    "torch",
+    "transformers>=4.57,<5",
+    "datasets",
+    "bert-judge @ git+https://github.com/artefactory/BERT-as-a-Judge.git",
+]
+
+FETCH = [
+    "https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/responses_sample.jsonl",
+    "https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/questions_sample.json",
+]
+
+if ON_COLAB:
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", *PACKAGES], check=True)  # noqa: S603
+    for url in FETCH:
+        urllib.request.urlretrieve(url, url.rsplit("/", 1)[-1])  # noqa: S310
 ```
 
 ## The inputs
