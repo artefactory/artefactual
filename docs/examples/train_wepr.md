@@ -189,34 +189,47 @@ axes.legend()
 axes.grid(axis="y", linewidth=0.3)
 ```
 
-## It composes with scikit-learn
+## How well does this fit generalise?
 
-Every `sklearn.model_selection` tool works on it.
-
-Five folds over all 98 responses report a spread as well as a mean; the 25-answer holdout
-above lands below every one of the five.
-
-`LearningCurveDisplay` answers the question that decides whether to label more: the
-5-fold AUC at 20, 40, 60, 80 and 98 responses. A curve still climbing at the right edge
-says more labels are worth buying; one that has flattened says the next hundred buy nothing.
-
-Every step's parameters are searchable, `parser__k` included. The classifier is refitted at
-each width, so the comparison is legitimate — and the score climbing with `k` says the
-signal here lives in the deeper ranks, not just the top one.
+Every `sklearn.model_selection` tool works on the detector, so the holdout above is not the
+only reading available. Five folds over all 98 responses report a spread as well as a mean,
+and the 25-answer holdout lands below every one of the five — which is what a single split
+this small is worth.
 
 ```{code-cell} ipython3
-from sklearn.model_selection import GridSearchCV, StratifiedKFold, cross_val_score
+from sklearn.model_selection import StratifiedKFold, cross_val_score
 
 folds = StratifiedKFold(5, shuffle=True, random_state=SEED)
 
 auc = cross_val_score(WEPR(k=K), responses, y, cv=folds, scoring="roc_auc")
 print(f"5-fold ROC-AUC: {auc.mean():.2f} +/- {auc.std():.2f}   {np.round(auc, 2)}")
+```
+
+## Which `k` should this be fitted at?
+
+Every step's parameters are searchable, `parser__k` included, and the classifier is refitted
+at each width, so the comparison is legitimate. The score climbing with `k` says the signal
+here lives in the deeper ranks, not just the top one.
+
+This search chooses the `k` to **fit** at. It is not a knob to turn afterwards: WEPR fits one
+coefficient per rank, so a detector's coefficients are the width it was trained at, and
+`from_pretrained` refuses any other. Search once, fit at the winner, and load at that same
+value forever after. Every published detector was fitted at 15.
+
+```{code-cell} ipython3
+from sklearn.model_selection import GridSearchCV
 
 search = GridSearchCV(WEPR(), {"parser__k": [5, 10, 15]}, cv=folds, scoring="roc_auc")
 search.fit(responses, y)
 for k, mean in zip(search.cv_results_["param_parser__k"], search.cv_results_["mean_test_score"], strict=True):
     print(f"  k={k:>2}: {mean:.2f}")
 ```
+
+## Is it worth labelling more answers?
+
+`LearningCurveDisplay` answers the question that decides that: the 5-fold AUC at 20, 40, 60,
+80 and 98 responses. A curve still climbing at the right edge says more labels are worth
+buying; one that has flattened says the next hundred buy nothing.
 
 ```{code-cell} ipython3
 :tags: [hide-input]
