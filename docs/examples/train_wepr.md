@@ -63,7 +63,7 @@ from artefactual.preprocessing import index_by_custom_id, read_batch, read_judgm
 RESPONSES = Path("responses_sample.jsonl")
 # A verdict on each of those responses, keyed by the same `custom_id`.
 JUDGMENTS = Path("judgments_sample.jsonl")
-K = 15  # ranks per token; a detector is loaded at the k it was fit at
+K = 15  # candidates per token; a detector is loaded at the k it was fit at
 SEED = 42
 
 # `read_batch` validates each line into `BatchRequestOutput` and refuses a repeated
@@ -92,14 +92,18 @@ print(f"{len(generated)} responses, {len(labelled)} judged, {sum(labels)} halluc
 A detector is a scikit-learn `Pipeline`, and running its steps separately shows what each
 one contributes.
 
+The endpoint returns, at every token position, the `k` most likely **candidates** — the
+tokens the model considered. A candidate's **rank** is its place in that list, most likely
+first. So a candidate is a token and a rank is a slot, and `k` is how many slots there are.
+
 `LogProbParser` turns the batch lines into `(responses, tokens, ranks)` — it opens the Batch
 envelope itself, so the lines go in as they were read. The array is NaN-padded, because
 responses differ in length: here the longest is 4 tokens, and every token carries all 15
 ranks.
 
 `entropy_contributions` converts each log-probability to `s_kj = -p·ln(p)`, same shape, one
-contribution per rank. `EntropyTransformer` then reduces the rank axis: the `wepr` reduction
-keeps a mean and a max per rank, so `k=15` becomes **30** features per response, one
+contribution per candidate. `EntropyTransformer` then reduces the rank axis: the `wepr`
+reduction keeps a mean and a max per rank, so `k=15` becomes **30** features per response, one
 coefficient each for the classifier to weight.
 
 ```{code-cell} ipython3
@@ -107,7 +111,7 @@ from artefactual.preprocessing.parser import LogProbParser
 from artefactual.scoring import WEPR, BaseDetector, EntropyTransformer
 
 logprobs = LogProbParser(k=K).transform(responses)  # (responses, tokens, ranks), NaN-padded
-s_kj = EntropyTransformer.entropy_contributions(logprobs)  # -p*ln(p) per rank, peaking at p=1/e
+s_kj = EntropyTransformer.entropy_contributions(logprobs)  # -p*ln(p) per candidate, peaking at p=1/e
 features = EntropyTransformer(reduction="wepr").transform(logprobs)
 
 logprobs.shape, s_kj.shape, features.shape
@@ -324,7 +328,7 @@ for row, label in list(zip(x_test, y_test, strict=True))[:5]:
     said = (read_message(row.completion) or "").strip()
     print(f"[{'hallucination' if label else 'grounded    '}] P={reloaded.predict_proba(row)[0, 1]:.3f}  {said[:40]!r}")
 
-# The rank count is part of the weights, so a mismatch is refused rather than mis-shaped.
+# The width is part of the weights, so a mismatch is refused rather than mis-shaped.
 try:
     WEPR.from_pretrained(path, k=K - 1)
 except ValueError as error:
@@ -333,7 +337,7 @@ except ValueError as error:
 
 ## Where to go next
 
-- `epr` is the same call with one word changed: it pools every rank into a single feature
+- `epr` is the same call with one word changed: it pools every candidate into a single feature
   instead of `2k`, which is the one to reach for when there is too little labelled data to
   fit `wepr`'s coefficients. `EntropyTransformer(reduction=...)` also takes a callable
   `(s_kj, axis) -> features`, so the two named reductions are not the only ones.

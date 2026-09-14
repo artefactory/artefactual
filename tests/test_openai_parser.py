@@ -15,7 +15,7 @@ import numpy as np
 import pytest
 
 from artefactual.preprocessing.openai_parser import (
-    _ranks,
+    _candidate_logprobs,
     _sampled_only,
     process_openai_chat_completion,
     process_openai_responses_api,
@@ -104,11 +104,11 @@ def test_a_content_part_without_logprobs_yields_an_empty_sequence():
 
 def test_a_null_rank_logprob_is_dropped_rather_than_coerced():
     # None would become nan through float(); the parser must skip it instead
-    assert _ranks(entry({"top_logprobs": [{"logprob": -0.5}, {"logprob": None}]})) == [-0.5]
+    assert _candidate_logprobs(entry({"top_logprobs": [{"logprob": -0.5}, {"logprob": None}]})) == [-0.5]
 
 
 def test_a_token_with_no_ranks_extracts_nothing():
-    assert _ranks(entry({"top_logprobs": []})) == []
+    assert _candidate_logprobs(entry({"top_logprobs": []})) == []
 
 
 def test_one_choice_per_sampled_sequence():
@@ -134,7 +134,7 @@ def test_ranks_take_precedence_over_the_sampled_logprob():
 
 
 def test_token_entry_ranks_come_back_descending():
-    assert _ranks(entry(token(-3.0, -0.5, -1.0))) == [-0.5, -1.0, -3.0]
+    assert _candidate_logprobs(entry(token(-3.0, -0.5, -1.0))) == [-0.5, -1.0, -3.0]
 
 
 # --- sampled-token logprobs ------------------------------------------------------------

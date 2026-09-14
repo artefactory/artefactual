@@ -33,7 +33,7 @@ requirements and the published results. This site covers using a detector in dep
 - {doc}`guide/scoring` — choosing a detector, thresholds, batches, Langfuse traces
 - {doc}`guide/training` — fitting one for a model with no published weights, in three notebooks
 - {doc}`guide/how-it-works` — the three pipeline stages and the two entropy reductions
-- {doc}`guide/reference` — the rank count, weight-file layout, accepted response shapes
+- {doc}`guide/reference` — candidates and ranks, weight-file layout, accepted response shapes
 - {doc}`examples/index` — runnable notebooks: EPR and WEPR scoring, and Langfuse traces
 - {doc}`api` — generated signatures
 

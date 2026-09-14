@@ -1,32 +1,34 @@
 # Reference
 
-Detail behind the rank count a detector is pinned to, the format of a weights file,
+Detail behind the width a detector is pinned to, the format of a weights file,
 and the response shapes the parser accepts.
 
 ## The `k` parameter
 
-`k` is the top-k rank count used for scoring. It defaults to **15**, the rank count every
-shipped file was trained at.
+`k` is how many **candidates** per token are read — the tokens the model considered at that
+position. A candidate's **rank** is its place in that list, most likely first, so `k` is
+also the number of ranks. It defaults to **15**, the width every shipped file was trained
+at.
 
 ```python
 detector = WEPR.from_pretrained("artefactory/wepr-phi4", k=15)
 ```
 
-**Responses must carry at least `k` ranks.** This is an input requirement rather than
+**Responses must carry at least `k` candidates per token.** This is an input requirement rather than
 something the pipeline reconciles: generation must set `top_logprobs` to `k` or higher. The
 two directions are not symmetric:
 
-- **Wider than `k`** — surplus ranks are dropped. The detector never saw them, and a
+- **Wider than `k`** — surplus candidates are dropped. The detector never saw them, and a
   mean over `k` ranks is defined without them, so scoring is unaffected.
-- **Narrower than `k`** — refused. Those ranks are not absent from the distribution, only
+- **Narrower than `k`** — refused. Those candidates are not absent from the distribution, only
   unfetched, so filling them with zeros drops their contributions from the sum:
 
   ```
-  ValueError: Response 0 carries 5 rank(s) per token but k=15 was requested. The missing
-  ranks are not absent from the distribution, only unfetched, so zero-filling them would
-  drop their entropy contributions and score the response as more confident than it was.
-  Regenerate with top_logprobs=15, or score at k=5 with a detector trained at that rank
-  count.
+  ValueError: Response 0 carries 5 candidate(s) per token but k=15 was requested. The
+  missing candidates are not absent from the distribution, only unfetched, so zero-filling
+  them would drop their entropy contributions and score the response as more confident than
+  it was. Regenerate with top_logprobs=15, or score at k=5 with a detector trained at that
+  width.
   ```
 
   The resulting score is wrong rather than merely rescaled — a narrow response can score
@@ -39,11 +41,11 @@ entry per rank:
 
 ```
 ValueError: Weights cover 15 rank(s) but k=20 was requested. WEPR coefficients are
-fixed at the rank count they were trained at; pass k=15, or supply weights
+fixed at the width they were trained at; pass k=15, or supply weights
 trained at k=20.
 ```
 
-EPR detectors record no rank count, so for an `epr` detector the `k` passed governs the
+EPR detectors record no width of their own, so for an `epr` detector the `k` passed governs the
 input width.
 
 ## Detector files

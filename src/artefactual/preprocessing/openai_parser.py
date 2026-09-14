@@ -17,13 +17,15 @@ from artefactual.preprocessing.response_models import (
 )
 
 
-def _ranks(token: TokenLogprobs) -> list[float]:
+def _candidate_logprobs(token: TokenLogprobs) -> list[float]:
     """The token's top-k logprobs, highest first; empty if the position carried none.
 
     Sorted here rather than left to the transformer because `LogProbParser` truncates to
-    `k` ranks, and truncating an unordered list would keep the wrong ones.
+    the `k` most likely candidates, and truncating an unordered list would keep the wrong ones.
     """
-    return sorted((rank.logprob for rank in token.top_logprobs if rank.logprob is not None), reverse=True)
+    return sorted(
+        (candidate.logprob for candidate in token.top_logprobs if candidate.logprob is not None), reverse=True
+    )
 
 
 def process_openai_chat_completion(response: ChatCompletion) -> list[dict[int, list[float]]]:
@@ -33,7 +35,8 @@ def process_openai_chat_completion(response: ChatCompletion) -> list[dict[int, l
         response: A validated `ChatCompletion`.
 
     Returns:
-        One dict per sampled sequence, mapping token position to that token's ranks.
+        One dict per sampled sequence, mapping token position to that token's candidate
+        log-probabilities, most likely first.
         Positions whose `top_logprobs` was empty are omitted.
     """
     sequences = []
@@ -41,9 +44,9 @@ def process_openai_chat_completion(response: ChatCompletion) -> list[dict[int, l
         sequence: dict[int, list[float]] = {}
         content = choice.logprobs.content if choice.logprobs is not None else []
         for token_index, token in enumerate(content):
-            ranks = _ranks(token)
-            if ranks:
-                sequence[token_index] = ranks
+            candidates = _candidate_logprobs(token)
+            if candidates:
+                sequence[token_index] = candidates
         sequences.append(sequence)
     return sequences
 
@@ -57,7 +60,8 @@ def process_openai_responses_api(response: ResponsesPayload) -> list[dict[int, l
         response: A validated `ResponsesPayload`.
 
     Returns:
-        One dict per sampled sequence, mapping token position to that token's ranks.
+        One dict per sampled sequence, mapping token position to that token's candidate
+        log-probabilities, most likely first.
         Positions whose `top_logprobs` was empty are omitted.
     """
     batch = []
@@ -71,16 +75,16 @@ def process_openai_responses_api(response: ResponsesPayload) -> list[dict[int, l
             for token in part.logprobs:
                 # Unlike the chat format, a Responses token may carry only the sampled
                 # logprob. Falling back to it keeps the position from being dropped.
-                ranks = _ranks(token) if token.top_logprobs else _sampled_only(token)
-                if ranks:
-                    sequence[token_index] = ranks
+                candidates = _candidate_logprobs(token) if token.top_logprobs else _sampled_only(token)
+                if candidates:
+                    sequence[token_index] = candidates
                 token_index += 1
         batch.append(sequence)
     return batch
 
 
 def _sampled_only(token: TokenLogprobs) -> list[float]:
-    """The sampled token's own logprob as a one-element rank list, or empty if absent."""
+    """The sampled token's own logprob as a one-candidate list, or empty if absent."""
     return [token.logprob] if token.logprob is not None else []
 
 

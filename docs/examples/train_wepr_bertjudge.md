@@ -98,7 +98,7 @@ JUDGE_MODEL = "artefactory/BERTJudge"
 THRESHOLD = 0.5
 # Sequences per forward pass. Raise it on a GPU.
 JUDGE_BATCH = 8
-K = 15  # ranks per token; a detector is loaded at the k it was fit at
+K = 15  # candidates per token; a detector is loaded at the k it was fit at
 SEED = 42
 
 lines = read_batch(RESPONSES)
