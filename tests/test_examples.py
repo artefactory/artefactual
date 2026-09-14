@@ -250,3 +250,27 @@ def test_the_notebook_opens_with_an_install_cell(name):
         f"{name} opens on a cell that does not install the package; its Colab badge would "
         f"lead to a runtime without it. First cell:\n{first}"
     )
+
+
+def test_every_fetched_file_is_committed_beside_the_notebook():
+    """A `!wget` line in a setup cell names a file that exists at that path in the repo.
+
+    The notebooks fetch their own inputs from `raw.githubusercontent.com` so a Colab
+    runtime has them. Nothing else checks those URLs: the pipeline notebook is never
+    executed, and the ones that are execute from this directory where the files are
+    already present. A path renamed on one side and not the other would surface only as a
+    404 in a reader's Colab session.
+    """
+    prefix = "https://raw.githubusercontent.com/artefactory/artefactual/main/"
+
+    fetched = set()
+    for name in ALL_NOTEBOOKS:
+        for line in code_of(load(name)).splitlines():
+            if prefix in line:
+                fetched.add(line.split(prefix, 1)[1].split()[0])
+
+    assert fetched, "no notebook fetches its inputs; the Colab setup cells lost their wget lines"
+
+    repository = EXAMPLES.parents[1]
+    missing = [path for path in sorted(fetched) if not (repository / path).is_file()]
+    assert not missing, f"fetched from a path that is not in the repository: {missing}"
