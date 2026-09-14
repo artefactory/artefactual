@@ -29,15 +29,57 @@ running the three pipeline steps by hand, fitting, cross-validating, and saving 
 The sample files are synthetic: real questions, with the responses and their
 log-probabilities generated rather than sampled from a model.
 
+| Section | What it does | Cost |
+|---|---|---|
+| The inputs | Read the two batch files, pair them by `custom_id` | none, both files ship beside this notebook |
+| The three steps | Parse, entropy, classify, run by hand | seconds |
+| Fit | Fit on a stratified split, report ROC-AUC on the holdout | seconds |
+| What the fit weighs | The fitted coefficient per rank | seconds |
+| How well does this fit generalise? | Five folds over every response | seconds |
+| Which `k` should this be fitted at? | A grid over `parser__k` | seconds |
+| Is it worth labelling more answers? | The learning curve | seconds |
+| Choosing the final estimator | Regularise, then tune the threshold | seconds |
+| Per-token scores | Score each token of a held-out answer | seconds |
+| Save it, and load it back | `.skops` out, `from_pretrained` in | seconds |
+
+No network, no API key and no GPU: every cell runs on the committed fixtures.
+
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-# From a clone: `uv sync --group notebooks`.
-#
-# On Colab, uncomment to install the package and fetch the files this notebook reads.
-# !pip install -q artefactual matplotlib
-# !wget -q https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/responses_sample.jsonl
-# !wget -q https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/judgments_sample.jsonl
+import subprocess  # noqa: S404
+import sys
+import urllib.request
+
+# Colab starts from a runtime with neither the package nor the files that sit beside
+# this notebook in the repository. Everywhere else -- a clone synced with
+# `uv sync --group notebooks`, the docs build, the test suite -- both are already there,
+# so this cell does nothing and there is nothing for a reader to uncomment.
+ON_COLAB = "google.colab" in sys.modules
+
+PACKAGES = [
+    "artefactual",
+    "matplotlib",
+]
+
+FETCH = [
+    "https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/responses_sample.jsonl",
+    "https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/judgments_sample.jsonl",
+]
+
+if ON_COLAB:
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", *PACKAGES], check=True)  # noqa: S603
+    for url in FETCH:
+        urllib.request.urlretrieve(url, url.rsplit("/", 1)[-1])  # noqa: S310
+
+try:
+    from myst_nb import glue
+except ImportError:
+    # Only the documentation build has MyST-NB, and only it renders what `glue` records.
+    # Running this notebook anywhere else -- Colab, a clone, the test suite -- must not
+    # need a Sphinx extension installed, so the calls below become no-ops.
+    def glue(*_args, **_kwargs):
+        return None
 ```
 
 ## The inputs
@@ -129,16 +171,6 @@ import numpy as np
 from sklearn.metrics import classification_report, roc_auc_score
 from sklearn.model_selection import train_test_split
 
-try:
-    from myst_nb import glue
-except ImportError:
-    # Only the documentation build has MyST-NB, and only it renders what `glue` records.
-    # Running this notebook anywhere else -- Colab, a clone, the test suite -- must not
-    # need a Sphinx extension installed, so the calls below become no-ops.
-    def glue(*_args, **_kwargs):
-        return None
-
-
 y = np.array(labels)
 x_train, x_test, y_train, y_test = train_test_split(responses, y, test_size=0.25, stratify=y, random_state=SEED)
 
@@ -171,6 +203,8 @@ the whole axis rather than on rank 1. The magnitudes are large because the defau
 classifier is unregularised; *Choosing the final estimator* is about that.
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 import matplotlib.pyplot as plt
 
 # The by-hand steps and the pipeline are the same computation, not a resemblance.
@@ -188,28 +222,35 @@ axes.legend()
 axes.grid(axis="y", linewidth=0.3)
 ```
 
-## It composes with scikit-learn
+## How well does this fit generalise?
 
-Every `sklearn.model_selection` tool works on it.
-
-Five folds over all 98 responses report a spread as well as a mean; the 25-answer holdout
-above lands below every one of the five.
-
-`LearningCurveDisplay` answers the question that decides whether to label more: the
-5-fold AUC at 20, 40, 60, 80 and 98 responses. A curve still climbing at the right edge
-says more labels are worth buying; one that has flattened says the next hundred buy nothing.
-
-Every step's parameters are searchable, `parser__k` included. The classifier is refitted at
-each width, so the comparison is legitimate — and the score climbing with `k` says the
-signal here lives in the deeper ranks, not just the top one.
+Every `sklearn.model_selection` tool works on the detector, so the holdout above is not the
+only reading available. Five folds over all 98 responses report a spread as well as a mean,
+and the 25-answer holdout lands below every one of the five — which is what a single split
+this small is worth.
 
 ```{code-cell} ipython3
-from sklearn.model_selection import GridSearchCV, StratifiedKFold, cross_val_score
+from sklearn.model_selection import StratifiedKFold, cross_val_score
 
 folds = StratifiedKFold(5, shuffle=True, random_state=SEED)
 
 auc = cross_val_score(WEPR(k=K), responses, y, cv=folds, scoring="roc_auc")
 print(f"5-fold ROC-AUC: {auc.mean():.2f} +/- {auc.std():.2f}   {np.round(auc, 2)}")
+```
+
+## Which `k` should this be fitted at?
+
+Every step's parameters are searchable, `parser__k` included, and the classifier is refitted
+at each width, so the comparison is legitimate. The score climbing with `k` says the signal
+here lives in the deeper ranks, not just the top one.
+
+This search chooses the `k` to **fit** at. It is not a knob to turn afterwards: WEPR fits one
+coefficient per rank, so a detector's coefficients are the width it was trained at, and
+`from_pretrained` refuses any other. Search once, fit at the winner, and load at that same
+value forever after. Every published detector was fitted at 15.
+
+```{code-cell} ipython3
+from sklearn.model_selection import GridSearchCV
 
 search = GridSearchCV(WEPR(), {"parser__k": [5, 10, 15]}, cv=folds, scoring="roc_auc")
 search.fit(responses, y)
@@ -217,7 +258,15 @@ for k, mean in zip(search.cv_results_["param_parser__k"], search.cv_results_["me
     print(f"  k={k:>2}: {mean:.2f}")
 ```
 
+## Is it worth labelling more answers?
+
+`LearningCurveDisplay` answers the question that decides that: the 5-fold AUC at 20, 40, 60,
+80 and 98 responses. A curve still climbing at the right edge says more labels are worth
+buying; one that has flattened says the next hundred buy nothing.
+
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 from sklearn.model_selection import LearningCurveDisplay
 
 learning_curve = LearningCurveDisplay.from_estimator(
@@ -251,6 +300,8 @@ The threshold is a number, not part of the `.skops` weights — it travels with 
 not inside it.
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import PrecisionRecallDisplay, precision_recall_curve
 
@@ -294,6 +345,8 @@ scored as real tokens.
 These sample responses are one or two tokens long, so there is little to see.
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 per_token = detector.predict_token_proba(x_test[:3])  # (responses, tokens, 1)
 
 for row, scores_per_token in zip(x_test[:3], per_token, strict=True):

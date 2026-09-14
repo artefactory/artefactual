@@ -32,21 +32,57 @@ We will use:
 * **EPR:** scorer from the artefactual package via the scikit-learn pipeline API.
 * **Visualizations:** each token highlighted by its own score, so the uncertain stretches of an answer are visible rather than inferred.
 
+| Section | What it does | Cost |
+|---|---|---|
+| Load Example Responses | Read the committed fixture | none |
+| Build the EPR Pipeline | Fetch the published detector's weights | one download, ~KBs, cached after the first run |
+| Sequence-Level Scoring | P(hallucination) per response | seconds |
+| Token-Level Scoring | P(hallucination) per token, highlighted | seconds |
+
+No API key and no GPU. Nothing is generated here — the responses are a fixture, and the only
+network call fetches the detector.
+
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-# On Colab, uncomment to install the package and fetch the files this notebook reads.
-# !pip install -q artefactual
-# !wget -q https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/open_ai_responses_top15.json
+import subprocess  # noqa: S404
+import sys
+import urllib.request
+
+# Colab starts from a runtime with neither the package nor the files that sit beside
+# this notebook in the repository. Everywhere else -- a clone synced with
+# `uv sync --group notebooks`, the docs build, the test suite -- both are already there,
+# so this cell does nothing and there is nothing for a reader to uncomment.
+ON_COLAB = "google.colab" in sys.modules
+
+PACKAGES = [
+    "artefactual",
+]
+
+FETCH = [
+    "https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/open_ai_responses_top15.json",
+]
+
+if ON_COLAB:
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", *PACKAGES], check=True)  # noqa: S603
+    for url in FETCH:
+        urllib.request.urlretrieve(url, url.rsplit("/", 1)[-1])  # noqa: S310
 ```
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 import json
 import warnings
 from pathlib import Path
 
 from IPython.display import HTML, display
 from sklearn.exceptions import InconsistentVersionWarning
+
+# The published weights were written by an older scikit-learn than the one installed here,
+# which warns on unpickling. It is a note to whoever republishes the detector, not to the
+# reader loading it, and the estimator it produces is the same either way.
+warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 
 from artefactual.scoring import EPR
 ```
@@ -88,11 +124,6 @@ always requires a repository id or a path. The raw OpenAI Responses API dicts go
 to the pipeline; parsing is its first step.
 
 ```{code-cell} ipython3
-# The published weights were written by an older scikit-learn than the one installed here,
-# which warns on unpickling. It is a note to whoever republishes the detector, not to the
-# reader loading it, and the estimator it produces is the same either way.
-warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
-
 detector = EPR.from_pretrained(DETECTOR, k=K)
 ```
 

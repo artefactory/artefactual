@@ -55,10 +55,31 @@ This notebook is not executed when the documentation is built, so the numbers yo
 the ones your own run produces.
 
 ```{code-cell} ipython3
-# From a clone: `uv sync --group notebooks`.
-#
-# On Colab, uncomment to install the package.
-# !pip install -q 'artefactual[adapters]' jinja2
+:tags: [hide-input]
+
+import subprocess  # noqa: S404
+import sys
+import urllib.request
+
+# Colab starts from a runtime with neither the package nor the files that sit beside
+# this notebook in the repository. Everywhere else -- a clone synced with
+# `uv sync --group notebooks`, the docs build, the test suite -- both are already there,
+# so this cell does nothing and there is nothing for a reader to uncomment.
+ON_COLAB = "google.colab" in sys.modules
+
+PACKAGES = [
+    "artefactual[adapters]",
+    "jinja2",
+]
+
+FETCH = [
+    "https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/questions_sample.json",
+]
+
+if ON_COLAB:
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", *PACKAGES], check=True)  # noqa: S603
+    for url in FETCH:
+        urllib.request.urlretrieve(url, url.rsplit("/", 1)[-1])  # noqa: S310
 ```
 
 ## Configuration
@@ -69,13 +90,10 @@ endpoint serving it, and a wrong one fails on every generation request rather th
 `K` is part of the feature definition, not a batch size — WEPR fits one coefficient per
 rank, so the detector is only ever loaded at the value it was fitted at.
 
-The two prompts are the paper's. The generation prompt asks for short answers on purpose:
-the detector reads the distribution behind the response, so a model that pads with hedging
-spends its tokens on text carrying nothing to score.
-
 ```{code-cell} ipython3
 import json
 import os
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -99,6 +117,17 @@ WORKERS = 8
 
 RESPONSES = Path("responses.jsonl")
 JUDGMENTS = Path("judgments.jsonl")
+```
+
+Both prompts are the paper's, rendered with jinja as the originals are: the reply format
+the judge demands is itself a JSON object, and jinja passes a bare `{` through where
+`str.format` would read it as a field, as it would a question containing one. The judge
+prompt is long; the cell below is collapsed, and the *Judge the responses* section prints it
+rendered against a real answer, which is the form worth reading.
+
+```{code-cell} ipython3
+:tags: [hide-input]
+
 # The generation prompt, the paper's (4.1.2). Short answers on purpose: the detector reads
 # the token distribution behind the answer, so a model that pads with hedging spends its
 # tokens on text that carries nothing to score.
@@ -108,9 +137,7 @@ GENERATE = Template("""You are a useful assistant that help finding short and pr
             {{ query }}
             """)
 
-# The judging prompt, the paper's, in full. Rendered with jinja, as the original is: the
-# reply format it demands is itself a JSON object, and jinja passes a bare `{` through
-# where `str.format` would read it as a field, as it would a question containing one.
+# The judging prompt, the paper's, in full.
 JUDGE = Template("""You are an expert evaluator tasked with determining if two answers convey compatible information. Your task is to make a binary True/False judgment on whether the answers are SEMANTICALLY COMPATIBLE.
 
 Query:
@@ -168,317 +195,128 @@ Your response MUST follow this format:
 }""")
 ```
 
+## The two request helpers
+
+Both request sections do the same two things: one chat completion per item, and a file of
+replies written as they arrive. `ask` and `run` below are that shape, factored out so the
+cells that use them show the request being made and nothing else.
+
+`run` writes each reply the moment it lands rather than after the pool finishes. `ask`
+returns the API's failures instead of raising them, but the SDK does not wrap every
+transport pathology — a 502 whose HTML body arrives under a JSON content type raises
+`JSONDecodeError` inside the worker — and that would come out of `pool.map` and discard
+every reply already paid for. Writing as they arrive means the file holds what was produced
+up to the failure.
+
+Both files it writes are the **OpenAI Batch output shape**, so `scripts/train_detector.py`
+reads them without knowing what produced them — this notebook, a Batch job, or an offline
+runner.
+
+```{code-cell} ipython3
+:tags: [hide-input]
+
+from openai import OpenAI, OpenAIError
+
+from artefactual.preprocessing import BatchRequestOutput, BatchResponseData
+
+# `max_retries` above the SDK's default of 2: this fires N requests at once, and a burst
+# of 429s that exhausts the retries becomes a thinner dataset rather than an error.
+client = OpenAI(max_retries=6)  # reads OPENAI_BASE_URL and OPENAI_API_KEY
+
+# Which endpoint this is actually talking to. Unset, OPENAI_BASE_URL silently means
+# api.openai.com, and a self-hosted run then fails N times with an authentication error.
+print(f"endpoint: {client.base_url}")
+
+
+def ask(prompt, **options):
+    """The model's reply to `prompt`, or the `OpenAIError` that replaced it."""
+    try:
+        return client.chat.completions.create(model=MODEL, messages=[{"role": "user", "content": prompt}], **options)
+    except OpenAIError as error:
+        # Every failure this call can produce -- transport, timeout, rate limit, a rejected
+        # request -- is an OpenAIError, and one of them should not cost the run. Anything
+        # else is a bug in the caller and should not be caught here.
+        return error
+
+
+def run(task, items, path):
+    """Apply `task` to each `(custom_id, payload)`, writing replies to `path` as they arrive.
+
+    Returns one reply per item, in order, each either a completion or the `OpenAIError`
+    that replaced it.
+    """
+    replies = []
+    with path.open("w", encoding="utf-8") as out, ThreadPoolExecutor(max_workers=WORKERS) as pool:
+        for (custom_id, _), reply in zip(items, pool.map(lambda item: task(item[1]), items), strict=True):
+            replies.append(reply)
+            failed = isinstance(reply, Exception)
+            # The envelope is `BatchRequestOutput`, the model `read_batch` validates with, so
+            # the writer and the reader share one definition of it. The body stays the API's
+            # own payload: it carries the token text and the log-probabilities, and narrowing
+            # it to what the parser reads would throw the rest away.
+            # `id` is left unset: the Batch API assigns it (a `batch_req_...` value), and a
+            # line written outside a batch run has no such id to carry. Nothing joins on it --
+            # `custom_id` is the key -- so an invented one would be provenance that is not true.
+            line = BatchRequestOutput(
+                custom_id=custom_id,
+                response=None if failed else BatchResponseData(status_code=200, body=reply.model_dump()),
+                # The class name, not the provider's text: an authentication error quotes the
+                # key it rejected, and this file is one you hand onward. The full message is
+                # printed by the caller, where it stays in the session.
+                error={"message": type(reply).__name__} if failed else None,
+            )
+            # `json.dumps` rather than `model_dump_json`, for `ensure_ascii`: every reader of
+            # these files splits them with `splitlines()`, which breaks on U+2028, U+2029 and
+            # U+0085 -- characters JSON does not require escaping and a model can emit.
+            out.write(json.dumps(line.model_dump(), ensure_ascii=True) + "\n")
+    return replies
+```
+
 ## Bring the questions
 
-**This is the cell to replace.** The hundred TriviaQA rows below are here so the notebook
-runs end to end out of the box; the detector you actually want is trained on the questions
-your users ask, because it learns how *your* model behaves on the traffic it will meet. The
-paper measured that gap: its numbers drop 10-20 points when a TriviaQA-trained detector is
-pointed at WebQuestions.
+**This is the cell to replace.** `questions_sample.json` sits beside this notebook: a
+hundred TriviaQA rows, there so the notebook runs end to end out of the box. The detector
+you actually want is trained on the questions your users ask, because it learns how *your*
+model behaves on the traffic it will meet. The paper measured that gap: its numbers drop
+10-20 points when a TriviaQA-trained detector is pointed at WebQuestions.
 
-Two fields per question, plus an optional third: `question` is asked, `short_answer` is what
-a correct response has to agree with, and `answer_aliases` lists other wordings the judge
-should also accept.
+Two fields per question, plus two optional ones: `question` is asked, `short_answer` is what
+a correct response has to agree with, `answer_aliases` lists other wordings the judge should
+also accept, and `question_id` names the row if the file already carries one.
 
 Two properties decide whether a question set works. Responses must be **short enough for a
 judge to grade**, and the model must get **enough of them wrong** that both classes appear.
 A hundred is the working size; at twenty-five a capable model often gets nothing wrong, and
 the run spends the requests before refusing to fit.
 
-A hundred rows are written out here so the notebook is self-contained. For a set at the
-paper's scale, `scripts/ecir/build_questions.sh` draws one from the Hub in these same
-fields -- `./build_questions.sh triviaqa 500 > questions.json`, or `webquestions` for the
-out-of-domain set -- and this cell becomes `json.loads(Path("questions.json").read_text())`.
+For a set at the paper's scale, `scripts/ecir/build_questions.sh` draws one from the Hub in
+these same fields -- `./build_questions.sh triviaqa 500 > questions.json`, or `webquestions`
+for the out-of-domain set -- and `QUESTIONS_FILE` below becomes `Path("questions.json")`.
 
-`question_id` is not among the fields because the notebook assigns it from position. It is
-what travels — it becomes `custom_id` on the responses and the verdicts, and that is what
-every later join pairs on — so it has to be unique, and deriving it from position makes that
-true by construction rather than by assertion.
+`question_id` is what travels: it becomes `custom_id` on the responses and the verdicts, and
+that is what every later join pairs on. A duplicate would pair an answer with another
+question's gold answer -- a wrong label rather than an error -- so a file that names its own
+rows is checked for collisions, and a file that does not gets ids from position, which
+cannot collide.
 
 ```{code-cell} ipython3
-QUESTIONS = [
-    {
-        "question": "Which Lloyd Webber musical premiered in the US on 10th December 1993?",
-        "short_answer": "Sunset Boulevard",
-        "answer_aliases": ["Sunset Blvd", "Sunset Blvd.", "Sunset Bulevard", "West Sunset Boulevard"],
-    },
-    {
-        "question": "Who wrote the novel 'Things Fall Apart'?",
-        "short_answer": "Chinua Achebe",
-        "answer_aliases": ["Achebe"],
-    },
-    {"question": "What is the capital of Mongolia?", "short_answer": "Ulaanbaatar", "answer_aliases": ["Ulan Bator"]},
-    {"question": "Which element has the atomic number 79?", "short_answer": "Gold", "answer_aliases": ["Au"]},
-    {"question": "In which year did the Berlin Wall fall?", "short_answer": "1989"},
-    {
-        "question": "Who painted 'The Garden of Earthly Delights'?",
-        "short_answer": "Hieronymus Bosch",
-        "answer_aliases": ["Bosch"],
-    },
-    {
-        "question": "What is the longest river in Asia?",
-        "short_answer": "Yangtze",
-        "answer_aliases": ["Yangtze River", "Chang Jiang"],
-    },
-    {
-        "question": "Who composed 'The Rite of Spring'?",
-        "short_answer": "Igor Stravinsky",
-        "answer_aliases": ["Stravinsky"],
-    },
-    {
-        "question": "What is the smallest country in the world by area?",
-        "short_answer": "Vatican City",
-        "answer_aliases": ["the Vatican"],
-    },
-    {"question": "Which planet is known as the Red Planet?", "short_answer": "Mars"},
-    {
-        "question": "Who developed the polio vaccine first licensed in 1955?",
-        "short_answer": "Jonas Salk",
-        "answer_aliases": ["Salk"],
-    },
-    {"question": "What is the currency of Sweden?", "short_answer": "Krona", "answer_aliases": ["Swedish krona"]},
-    {
-        "question": "Which sea separates Europe and Africa?",
-        "short_answer": "Mediterranean Sea",
-        "answer_aliases": ["the Mediterranean"],
-    },
-    {
-        "question": "Who wrote 'One Hundred Years of Solitude'?",
-        "short_answer": "Gabriel Garcia Marquez",
-        "answer_aliases": ["Garcia Marquez"],
-    },
-    {"question": "What is the hardest naturally occurring substance?", "short_answer": "Diamond"},
-    {
-        "question": "Which country hosted the 1992 Summer Olympics?",
-        "short_answer": "Spain",
-        "answer_aliases": ["Barcelona, Spain"],
-    },
-    {"question": "What is the chemical symbol for potassium?", "short_answer": "K"},
-    {"question": "Who directed the film 'Rashomon'?", "short_answer": "Akira Kurosawa", "answer_aliases": ["Kurosawa"]},
-    {
-        "question": "What is the largest desert in the world?",
-        "short_answer": "Antarctic Desert",
-        "answer_aliases": ["Antarctica"],
-    },
-    {
-        "question": "Who was the first woman to win a Nobel Prize?",
-        "short_answer": "Marie Curie",
-        "answer_aliases": ["Curie"],
-    },
-    {
-        "question": "Which language has the most native speakers?",
-        "short_answer": "Mandarin Chinese",
-        "answer_aliases": ["Mandarin"],
-    },
-    {
-        "question": "What is the tallest mountain in Africa?",
-        "short_answer": "Kilimanjaro",
-        "answer_aliases": ["Mount Kilimanjaro"],
-    },
-    {
-        "question": "Who wrote 'The Second Sex'?",
-        "short_answer": "Simone de Beauvoir",
-        "answer_aliases": ["de Beauvoir"],
-    },
-    {
-        "question": "In which city is the Hermitage Museum?",
-        "short_answer": "Saint Petersburg",
-        "answer_aliases": ["St Petersburg"],
-    },
-    {
-        "question": "What is the boiling point of water at sea level in Celsius?",
-        "short_answer": "100",
-        "answer_aliases": ["100 degrees"],
-    },
-    {
-        "question": "Who invented the World Wide Web?",
-        "short_answer": "Tim Berners-Lee",
-        "answer_aliases": ["Berners-Lee"],
-    },
-    {"question": "What is the largest island in the Mediterranean?", "short_answer": "Sicily"},
-    {
-        "question": "Which artist cut off part of his own ear?",
-        "short_answer": "Vincent van Gogh",
-        "answer_aliases": ["van Gogh"],
-    },
-    {"question": "What is the study of fungi called?", "short_answer": "Mycology"},
-    {"question": "Which country is home to the Great Barrier Reef?", "short_answer": "Australia"},
-    {"question": "Who wrote the play 'A Doll's House'?", "short_answer": "Henrik Ibsen", "answer_aliases": ["Ibsen"]},
-    {
-        "question": "What is the largest organ of the human body?",
-        "short_answer": "Skin",
-        "answer_aliases": ["the skin"],
-    },
-    {
-        "question": "Which war ended with the Treaty of Versailles?",
-        "short_answer": "World War I",
-        "answer_aliases": ["the First World War", "WWI"],
-    },
-    {"question": "What is the capital of New Zealand?", "short_answer": "Wellington"},
-    {"question": "Who discovered penicillin?", "short_answer": "Alexander Fleming", "answer_aliases": ["Fleming"]},
-    {
-        "question": "Which is the deepest ocean trench?",
-        "short_answer": "Mariana Trench",
-        "answer_aliases": ["the Marianas Trench"],
-    },
-    {"question": "Who wrote 'Beloved'?", "short_answer": "Toni Morrison", "answer_aliases": ["Morrison"]},
-    {"question": "What is the national sport of Japan?", "short_answer": "Sumo", "answer_aliases": ["sumo wrestling"]},
-    {"question": "Which gas makes up most of Earth's atmosphere?", "short_answer": "Nitrogen"},
-    {
-        "question": "Who was the first person to reach the South Pole?",
-        "short_answer": "Roald Amundsen",
-        "answer_aliases": ["Amundsen"],
-    },
-    {"question": "What is the largest mammal?", "short_answer": "Blue whale", "answer_aliases": ["the blue whale"]},
-    {"question": "Which city is known as the Eternal City?", "short_answer": "Rome"},
-    {"question": "Who wrote 'The Wealth of Nations'?", "short_answer": "Adam Smith"},
-    {
-        "question": "What is the freezing point of water in Fahrenheit?",
-        "short_answer": "32",
-        "answer_aliases": ["32 degrees"],
-    },
-    {
-        "question": "Which instrument measures atmospheric pressure?",
-        "short_answer": "Barometer",
-        "answer_aliases": ["a barometer"],
-    },
-    {"question": "Who painted the ceiling of the Sistine Chapel?", "short_answer": "Michelangelo"},
-    {"question": "What is the capital of Canada?", "short_answer": "Ottawa"},
-    {"question": "Which metal is liquid at room temperature?", "short_answer": "Mercury"},
-    {"question": "Who wrote 'Invisible Man'?", "short_answer": "Ralph Ellison", "answer_aliases": ["Ellison"]},
-    {
-        "question": "What is the longest bone in the human body?",
-        "short_answer": "Femur",
-        "answer_aliases": ["the femur", "thigh bone"],
-    },
-    {
-        "question": "Which ocean lies between Africa and Australia?",
-        "short_answer": "Indian Ocean",
-        "answer_aliases": ["the Indian Ocean"],
-    },
-    {
-        "question": "Who wrote 'Crime and Punishment'?",
-        "short_answer": "Fyodor Dostoevsky",
-        "answer_aliases": ["Dostoevsky"],
-    },
-    {"question": "What is the capital of Peru?", "short_answer": "Lima"},
-    {
-        "question": "Which vitamin is produced when skin is exposed to sunlight?",
-        "short_answer": "Vitamin D",
-        "answer_aliases": ["D"],
-    },
-    {
-        "question": "Who was the first president of the United States?",
-        "short_answer": "George Washington",
-        "answer_aliases": ["Washington"],
-    },
-    {
-        "question": "What is the chemical formula for table salt?",
-        "short_answer": "NaCl",
-        "answer_aliases": ["sodium chloride"],
-    },
-    {
-        "question": "Which composer wrote the 'Moonlight Sonata'?",
-        "short_answer": "Beethoven",
-        "answer_aliases": ["Ludwig van Beethoven"],
-    },
-    {"question": "What is the largest planet in the solar system?", "short_answer": "Jupiter"},
-    {"question": "Who wrote 'Mrs Dalloway'?", "short_answer": "Virginia Woolf", "answer_aliases": ["Woolf"]},
-    {"question": "Which country invented paper?", "short_answer": "China"},
-    {"question": "What is the capital of Morocco?", "short_answer": "Rabat"},
-    {
-        "question": "Who formulated the theory of general relativity?",
-        "short_answer": "Albert Einstein",
-        "answer_aliases": ["Einstein"],
-    },
-    {
-        "question": "Which bird cannot fly and is native to New Zealand?",
-        "short_answer": "Kiwi",
-        "answer_aliases": ["the kiwi"],
-    },
-    {
-        "question": "What is the main ingredient in guacamole?",
-        "short_answer": "Avocado",
-        "answer_aliases": ["avocados"],
-    },
-    {
-        "question": "Who wrote 'The Old Man and the Sea'?",
-        "short_answer": "Ernest Hemingway",
-        "answer_aliases": ["Hemingway"],
-    },
-    {"question": "Which planet has the Great Red Spot?", "short_answer": "Jupiter"},
-    {"question": "What is the capital of Egypt?", "short_answer": "Cairo"},
-    {"question": "Who was the ancient Greek god of the sea?", "short_answer": "Poseidon"},
-    {"question": "Which country has the most time zones?", "short_answer": "France"},
-    {
-        "question": "What does DNA stand for?",
-        "short_answer": "Deoxyribonucleic acid",
-        "answer_aliases": ["deoxyribonucleic"],
-    },
-    {"question": "Who wrote 'Pride and Prejudice'?", "short_answer": "Jane Austen", "answer_aliases": ["Austen"]},
-    {"question": "What is the smallest prime number?", "short_answer": "2", "answer_aliases": ["two"]},
-    {"question": "Which city hosted the first modern Olympic Games?", "short_answer": "Athens"},
-    {"question": "What is the capital of Argentina?", "short_answer": "Buenos Aires"},
-    {"question": "Who invented the telephone?", "short_answer": "Alexander Graham Bell", "answer_aliases": ["Bell"]},
-    {
-        "question": "Which is the longest river in South America?",
-        "short_answer": "Amazon",
-        "answer_aliases": ["the Amazon"],
-    },
-    {"question": "What is the study of earthquakes called?", "short_answer": "Seismology"},
-    {"question": "Who wrote 'Don Quixote'?", "short_answer": "Miguel de Cervantes", "answer_aliases": ["Cervantes"]},
-    {"question": "Which metal is the best conductor of electricity?", "short_answer": "Silver"},
-    {"question": "What is the capital of Vietnam?", "short_answer": "Hanoi"},
-    {"question": "Who directed 'Seven Samurai'?", "short_answer": "Akira Kurosawa", "answer_aliases": ["Kurosawa"]},
-    {"question": "Which planet is closest to the Sun?", "short_answer": "Mercury"},
-    {
-        "question": "What is the largest lake in Africa?",
-        "short_answer": "Lake Victoria",
-        "answer_aliases": ["Victoria"],
-    },
-    {"question": "Who wrote 'Frankenstein'?", "short_answer": "Mary Shelley", "answer_aliases": ["Shelley"]},
-    {"question": "What is the currency of Japan?", "short_answer": "Yen", "answer_aliases": ["the yen"]},
-    {
-        "question": "Which mountain range separates Europe and Asia?",
-        "short_answer": "Ural Mountains",
-        "answer_aliases": ["the Urals"],
-    },
-    {"question": "Who painted 'Guernica'?", "short_answer": "Pablo Picasso", "answer_aliases": ["Picasso"]},
-    {"question": "What is the capital of Norway?", "short_answer": "Oslo"},
-    {"question": "Which blood type is the universal donor?", "short_answer": "O negative", "answer_aliases": ["O-"]},
-    {"question": "Who wrote 'Waiting for Godot'?", "short_answer": "Samuel Beckett", "answer_aliases": ["Beckett"]},
-    {"question": "What is the tallest waterfall in the world?", "short_answer": "Angel Falls"},
-    {"question": "Which country is Machu Picchu in?", "short_answer": "Peru"},
-    {"question": "What is the chemical symbol for iron?", "short_answer": "Fe"},
-    {"question": "Who composed 'The Four Seasons'?", "short_answer": "Antonio Vivaldi", "answer_aliases": ["Vivaldi"]},
-    {"question": "What is the capital of Kenya?", "short_answer": "Nairobi"},
-    {
-        "question": "Which sense is most closely linked to memory?",
-        "short_answer": "Smell",
-        "answer_aliases": ["olfaction"],
-    },
-    {"question": "Who wrote 'The Trial'?", "short_answer": "Franz Kafka", "answer_aliases": ["Kafka"]},
-    {
-        "question": "What is the largest bone in the human foot?",
-        "short_answer": "Calcaneus",
-        "answer_aliases": ["heel bone"],
-    },
-    {"question": "Which country produces the most coffee?", "short_answer": "Brazil"},
-    {"question": "What is the capital of Portugal?", "short_answer": "Lisbon", "answer_aliases": ["Lisboa"]},
-]
+QUESTIONS_FILE = Path("questions_sample.json")
 
-# One id per question, from its position: the join key is this notebook's to mint, and a
-# duplicate would pair an answer with another question's gold answer -- a wrong label rather
-# than an error. Positions cannot collide, so there is nothing left to check.
 questions = [
     {
-        "question_id": f"q{position:03d}",
+        "question_id": entry.get("question_id") or f"q{position:03d}",
         "question": entry["question"],
         "short_answer": entry["short_answer"],
         "answer_aliases": entry.get("answer_aliases") or [],
     }
-    for position, entry in enumerate(QUESTIONS)
+    for position, entry in enumerate(json.loads(QUESTIONS_FILE.read_text(encoding="utf-8")))
 ]
+
+repeated = [qid for qid, seen in Counter(q["question_id"] for q in questions).items() if seen > 1]
+assert not repeated, (
+    f"{len(repeated)} question_id(s) appear more than once, e.g. {repeated[0]!r}. Every "
+    f"later join pairs on this id, so a duplicate would grade one answer against another question."
+)
 
 incomplete = [q for q in questions if not q["question"] or not q["short_answer"]]
 assert not incomplete, (
@@ -496,14 +334,8 @@ One request per question, `WORKERS` at a time, with `logprobs=True` and `top_log
 That distribution is the entire input to the detector; the response text is only ever read
 to judge it.
 
-Each result is written as it arrives rather than after the pool finishes. `generate` returns
-the API's failures instead of raising them, but the SDK does not wrap every transport
-pathology — a 502 whose HTML body arrives under a JSON content type raises `JSONDecodeError`
-inside the worker — and that would come out of `pool.map` and discard every response already
-paid for.
-
-The file is the OpenAI Batch output shape, so `scripts/train_detector.py` reads it without
-knowing what produced it -- this notebook, a Batch job, or an offline runner.
+`run` writes `responses.jsonl` as the replies arrive; `generate` only says what to ask for.
+The sampling parameters are the paper's.
 
 The cell after it runs `LogProbParser` over what came back. That is the pipeline's own first
 step, and it is where an endpoint that accepted `logprobs=True` and ignored it, or that
@@ -511,72 +343,24 @@ capped the ranks below `K`, is refused by name — before the judge spends anoth
 judging responses that cannot be trained on.
 
 ```{code-cell} ipython3
-from openai import OpenAI, OpenAIError
-
-from artefactual.preprocessing import BatchRequestOutput, BatchResponseData
-
-# `max_retries` above the SDK's default of 2: this fires N requests at once, and a burst
-# of 429s that exhausts the retries becomes a thinner dataset rather than an error.
-client = OpenAI(max_retries=6)  # reads OPENAI_BASE_URL and OPENAI_API_KEY
-
-# Which endpoint this is actually talking to. Unset, OPENAI_BASE_URL silently means
-# api.openai.com, and a self-hosted run then fails N times with an authentication error.
-print(f"endpoint: {client.base_url}")
-
-
 def generate(question):
-    try:
-        return client.chat.completions.create(
-            model=MODEL,
-            messages=[{"role": "user", "content": GENERATE.render(query=question["question"])}],
-            logprobs=True,
-            top_logprobs=K,
-            temperature=1.0,
-            top_p=1.0,
-            # The paper also samples with top_k=50. OpenAI's API has no such parameter, so
-            # only a self-hosted server can be asked for it, through `extra_body`.
-            max_completion_tokens=200,
-        )
-    except OpenAIError as error:
-        # Every failure this call can produce -- transport, timeout, rate limit, a
-        # rejected request -- is an OpenAIError, and one of them should not cost the
-        # run. Anything else is a bug in the code above and should not be caught here.
-        return error
+    return ask(
+        GENERATE.render(query=question["question"]),
+        logprobs=True,
+        top_logprobs=K,
+        temperature=1.0,
+        top_p=1.0,
+        # The paper also samples with top_k=50. OpenAI's API has no such parameter, so
+        # only a self-hosted server can be asked for it, through `extra_body`.
+        max_completion_tokens=200,
+    )
 
 
-with RESPONSES.open("w", encoding="utf-8") as out, ThreadPoolExecutor(max_workers=WORKERS) as pool:
-    # Written as each result arrives, not after the pool finishes. `generate` returns the
-    # API's failures rather than raising them, but the SDK does not wrap every transport
-    # pathology -- a 502 whose HTML body arrives under a JSON content type raises
-    # JSONDecodeError from inside the worker -- and that would come out of `pool.map` and
-    # discard every answer already paid for. This way the file holds what was generated up
-    # to the failure, which is the whole argument for writing it out at all.
-    generated = []
-    for question, result in zip(questions, pool.map(generate, questions), strict=True):
-        generated.append(result)
-        failed = isinstance(result, Exception)
-        # The envelope is `BatchRequestOutput`, the model `read_batch` validates with, so
-        # the writer and the reader share one definition of it. The body stays the API's
-        # own payload: it carries the token text and the log-probabilities, and narrowing
-        # it to what the parser reads would throw the rest away.
-        # `id` is left unset: the Batch API assigns it (a `batch_req_...` value), and a
-        # line written outside a batch run has no such id to carry. Nothing joins on it --
-        # `custom_id` is the key -- so an invented one would be provenance that is not true.
-        line = BatchRequestOutput(
-            custom_id=question["question_id"],
-            response=None if failed else BatchResponseData(status_code=200, body=result.model_dump()),
-            # The class name, not the provider's text: an authentication error quotes the
-            # key it rejected, and this file is one you hand onward. The full message is
-            # printed below, where it stays in the session.
-            error={"message": type(result).__name__} if failed else None,
-        )
-        # `json.dumps` rather than `model_dump_json`, for `ensure_ascii`: every reader of
-        # these files splits them with `splitlines()`, which breaks on U+2028, U+2029 and
-        # U+0085 -- characters JSON does not require escaping and a model can emit.
-        out.write(json.dumps(line.model_dump(), ensure_ascii=True) + "\n")
-ok = [(q, r) for q, r in zip(questions, generated) if not isinstance(r, Exception)]
+generated = run(generate, [(question["question_id"], question) for question in questions], RESPONSES)
+
+ok = [(q, r) for q, r in zip(questions, generated, strict=True) if not isinstance(r, Exception)]
 print(f"wrote {RESPONSES}, {len(ok)}/{len(generated)} generated")
-for question, result in zip(questions, generated):
+for question, result in zip(questions, generated, strict=True):
     if isinstance(result, Exception):
         print(f"  failed: {question['question_id']}: {result}")
 ```
@@ -619,6 +403,8 @@ for this model, all-wrong usually means it is not answering in the short form th
 expects.
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 def render_judge(question, completion):
     return JUDGE.render(
         query=question["question"],
@@ -638,35 +424,10 @@ from artefactual.preprocessing import read_judgment
 def judge(pair):
     """The judge's reply, kept whole: the verdict is derived from it, not instead of it."""
     question, completion = pair
-    try:
-        return client.chat.completions.create(
-            model=MODEL,
-            messages=[{"role": "user", "content": render_judge(question, completion)}],
-            temperature=0,
-            max_completion_tokens=200,
-        )
-    except OpenAIError as error:
-        # Every failure this call can produce -- transport, timeout, rate limit, a
-        # rejected request -- is an OpenAIError, and one of them should not cost the
-        # run. Anything else is a bug in the code above and should not be caught here.
-        return error
+    return ask(render_judge(question, completion), temperature=0, max_completion_tokens=200)
 
 
-with JUDGMENTS.open("w", encoding="utf-8") as out, ThreadPoolExecutor(max_workers=WORKERS) as pool:
-    # Written as each reply arrives, for the same reason the generation cell is: a failure
-    # the SDK does
-    # not wrap comes out of `pool.map`, and the verdicts already paid for should survive it.
-    # The verdict stays as the judge wrote it; nothing is distilled out.
-    verdicts = []
-    for (question, _), verdict in zip(ok, pool.map(judge, ok), strict=True):
-        verdicts.append(verdict)
-        failed = isinstance(verdict, Exception)
-        line = BatchRequestOutput(
-            custom_id=question["question_id"],
-            response=None if failed else BatchResponseData(status_code=200, body=verdict.model_dump()),
-            error={"message": type(verdict).__name__} if failed else None,
-        )
-        out.write(json.dumps(line.model_dump(), ensure_ascii=True) + "\n")
+verdicts = run(judge, [(question["question_id"], (question, completion)) for question, completion in ok], JUDGMENTS)
 
 # `read_judgment` returns True when the judge said the response was CORRECT, the opposite of
 # the class the detector predicts, so the label is its negation. It reads the fenced and
@@ -815,8 +576,8 @@ for row, label in list(zip(x_test, y_test, strict=True))[:5]:
   [the repository](https://github.com/artefactory/artefactual/blob/main/scripts/train_detector.py),
   which also reports the bootstrap confidence intervals the fit above does not — worth
   having, because a holdout this size cannot pin a score down on its own.
-- **More questions.** The generation is the cost and the fit is seconds, so lengthen
-  `QUESTIONS` rather than economising on labels.
+- **More questions.** The generation is the cost and the fit is seconds, so point
+  `QUESTIONS_FILE` at a longer set rather than economising on labels.
 - **At thousands of questions**, stop making one request per response. Batch submission
   takes a JSONL of requests and returns the JSONL these files already are, at roughly half
   the price: OpenAI's [Batch API](https://platform.openai.com/docs/api-reference/batch) if
