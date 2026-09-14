@@ -170,6 +170,83 @@ Your response MUST follow this format:
 }""")
 ```
 
+## The two request helpers
+
+Both request sections do the same two things: one chat completion per item, and a file of
+replies written as they arrive. `ask` and `run` below are that shape, factored out so the
+cells that use them show the request being made and nothing else.
+
+`run` writes each reply the moment it lands rather than after the pool finishes. `ask`
+returns the API's failures instead of raising them, but the SDK does not wrap every
+transport pathology — a 502 whose HTML body arrives under a JSON content type raises
+`JSONDecodeError` inside the worker — and that would come out of `pool.map` and discard
+every reply already paid for. Writing as they arrive means the file holds what was produced
+up to the failure.
+
+Both files it writes are the **OpenAI Batch output shape**, so `scripts/train_detector.py`
+reads them without knowing what produced them — this notebook, a Batch job, or an offline
+runner.
+
+```{code-cell} ipython3
+:tags: [hide-input]
+
+from openai import OpenAI, OpenAIError
+
+from artefactual.preprocessing import BatchRequestOutput, BatchResponseData
+
+# `max_retries` above the SDK's default of 2: this fires N requests at once, and a burst
+# of 429s that exhausts the retries becomes a thinner dataset rather than an error.
+client = OpenAI(max_retries=6)  # reads OPENAI_BASE_URL and OPENAI_API_KEY
+
+# Which endpoint this is actually talking to. Unset, OPENAI_BASE_URL silently means
+# api.openai.com, and a self-hosted run then fails N times with an authentication error.
+print(f"endpoint: {client.base_url}")
+
+
+def ask(prompt, **options):
+    """The model's reply to `prompt`, or the `OpenAIError` that replaced it."""
+    try:
+        return client.chat.completions.create(model=MODEL, messages=[{"role": "user", "content": prompt}], **options)
+    except OpenAIError as error:
+        # Every failure this call can produce -- transport, timeout, rate limit, a rejected
+        # request -- is an OpenAIError, and one of them should not cost the run. Anything
+        # else is a bug in the caller and should not be caught here.
+        return error
+
+
+def run(task, items, path):
+    """Apply `task` to each `(custom_id, payload)`, writing replies to `path` as they arrive.
+
+    Returns one reply per item, in order, each either a completion or the `OpenAIError`
+    that replaced it.
+    """
+    replies = []
+    with path.open("w", encoding="utf-8") as out, ThreadPoolExecutor(max_workers=WORKERS) as pool:
+        for (custom_id, _), reply in zip(items, pool.map(lambda item: task(item[1]), items), strict=True):
+            replies.append(reply)
+            failed = isinstance(reply, Exception)
+            # The envelope is `BatchRequestOutput`, the model `read_batch` validates with, so
+            # the writer and the reader share one definition of it. The body stays the API's
+            # own payload: it carries the token text and the log-probabilities, and narrowing
+            # it to what the parser reads would throw the rest away.
+            # `id` is left unset: the Batch API assigns it (a `batch_req_...` value), and a
+            # line written outside a batch run has no such id to carry. Nothing joins on it --
+            # `custom_id` is the key -- so an invented one would be provenance that is not true.
+            line = BatchRequestOutput(
+                custom_id=custom_id,
+                response=None if failed else BatchResponseData(status_code=200, body=reply.model_dump()),
+                # The class name, not the provider's text: an authentication error quotes the
+                # key it rejected, and this file is one you hand onward. The full message is
+                # printed by the caller, where it stays in the session.
+                error={"message": type(reply).__name__} if failed else None,
+            )
+            # `json.dumps` rather than `model_dump_json`, for `ensure_ascii`: every reader of
+            # these files splits them with `splitlines()`, which breaks on U+2028, U+2029 and
+            # U+0085 -- characters JSON does not require escaping and a model can emit.
+            out.write(json.dumps(line.model_dump(), ensure_ascii=True) + "\n")
+    return replies
+```
+
 ## Bring the questions
 
 **This is the cell to replace.** `questions_sample.json` sits beside this notebook: a
@@ -232,14 +309,8 @@ One request per question, `WORKERS` at a time, with `logprobs=True` and `top_log
 That distribution is the entire input to the detector; the response text is only ever read
 to judge it.
 
-Each result is written as it arrives rather than after the pool finishes. `generate` returns
-the API's failures instead of raising them, but the SDK does not wrap every transport
-pathology — a 502 whose HTML body arrives under a JSON content type raises `JSONDecodeError`
-inside the worker — and that would come out of `pool.map` and discard every response already
-paid for.
-
-The file is the OpenAI Batch output shape, so `scripts/train_detector.py` reads it without
-knowing what produced it -- this notebook, a Batch job, or an offline runner.
+`run` writes `responses.jsonl` as the replies arrive; `generate` only says what to ask for.
+The sampling parameters are the paper's.
 
 The cell after it runs `LogProbParser` over what came back. That is the pipeline's own first
 step, and it is where an endpoint that accepted `logprobs=True` and ignored it, or that
@@ -247,72 +318,24 @@ capped the ranks below `K`, is refused by name — before the judge spends anoth
 judging responses that cannot be trained on.
 
 ```{code-cell} ipython3
-from openai import OpenAI, OpenAIError
-
-from artefactual.preprocessing import BatchRequestOutput, BatchResponseData
-
-# `max_retries` above the SDK's default of 2: this fires N requests at once, and a burst
-# of 429s that exhausts the retries becomes a thinner dataset rather than an error.
-client = OpenAI(max_retries=6)  # reads OPENAI_BASE_URL and OPENAI_API_KEY
-
-# Which endpoint this is actually talking to. Unset, OPENAI_BASE_URL silently means
-# api.openai.com, and a self-hosted run then fails N times with an authentication error.
-print(f"endpoint: {client.base_url}")
-
-
 def generate(question):
-    try:
-        return client.chat.completions.create(
-            model=MODEL,
-            messages=[{"role": "user", "content": GENERATE.render(query=question["question"])}],
-            logprobs=True,
-            top_logprobs=K,
-            temperature=1.0,
-            top_p=1.0,
-            # The paper also samples with top_k=50. OpenAI's API has no such parameter, so
-            # only a self-hosted server can be asked for it, through `extra_body`.
-            max_completion_tokens=200,
-        )
-    except OpenAIError as error:
-        # Every failure this call can produce -- transport, timeout, rate limit, a
-        # rejected request -- is an OpenAIError, and one of them should not cost the
-        # run. Anything else is a bug in the code above and should not be caught here.
-        return error
+    return ask(
+        GENERATE.render(query=question["question"]),
+        logprobs=True,
+        top_logprobs=K,
+        temperature=1.0,
+        top_p=1.0,
+        # The paper also samples with top_k=50. OpenAI's API has no such parameter, so
+        # only a self-hosted server can be asked for it, through `extra_body`.
+        max_completion_tokens=200,
+    )
 
 
-with RESPONSES.open("w", encoding="utf-8") as out, ThreadPoolExecutor(max_workers=WORKERS) as pool:
-    # Written as each result arrives, not after the pool finishes. `generate` returns the
-    # API's failures rather than raising them, but the SDK does not wrap every transport
-    # pathology -- a 502 whose HTML body arrives under a JSON content type raises
-    # JSONDecodeError from inside the worker -- and that would come out of `pool.map` and
-    # discard every answer already paid for. This way the file holds what was generated up
-    # to the failure, which is the whole argument for writing it out at all.
-    generated = []
-    for question, result in zip(questions, pool.map(generate, questions), strict=True):
-        generated.append(result)
-        failed = isinstance(result, Exception)
-        # The envelope is `BatchRequestOutput`, the model `read_batch` validates with, so
-        # the writer and the reader share one definition of it. The body stays the API's
-        # own payload: it carries the token text and the log-probabilities, and narrowing
-        # it to what the parser reads would throw the rest away.
-        # `id` is left unset: the Batch API assigns it (a `batch_req_...` value), and a
-        # line written outside a batch run has no such id to carry. Nothing joins on it --
-        # `custom_id` is the key -- so an invented one would be provenance that is not true.
-        line = BatchRequestOutput(
-            custom_id=question["question_id"],
-            response=None if failed else BatchResponseData(status_code=200, body=result.model_dump()),
-            # The class name, not the provider's text: an authentication error quotes the
-            # key it rejected, and this file is one you hand onward. The full message is
-            # printed below, where it stays in the session.
-            error={"message": type(result).__name__} if failed else None,
-        )
-        # `json.dumps` rather than `model_dump_json`, for `ensure_ascii`: every reader of
-        # these files splits them with `splitlines()`, which breaks on U+2028, U+2029 and
-        # U+0085 -- characters JSON does not require escaping and a model can emit.
-        out.write(json.dumps(line.model_dump(), ensure_ascii=True) + "\n")
-ok = [(q, r) for q, r in zip(questions, generated) if not isinstance(r, Exception)]
+generated = run(generate, [(question["question_id"], question) for question in questions], RESPONSES)
+
+ok = [(q, r) for q, r in zip(questions, generated, strict=True) if not isinstance(r, Exception)]
 print(f"wrote {RESPONSES}, {len(ok)}/{len(generated)} generated")
-for question, result in zip(questions, generated):
+for question, result in zip(questions, generated, strict=True):
     if isinstance(result, Exception):
         print(f"  failed: {question['question_id']}: {result}")
 ```
@@ -374,35 +397,10 @@ from artefactual.preprocessing import read_judgment
 def judge(pair):
     """The judge's reply, kept whole: the verdict is derived from it, not instead of it."""
     question, completion = pair
-    try:
-        return client.chat.completions.create(
-            model=MODEL,
-            messages=[{"role": "user", "content": render_judge(question, completion)}],
-            temperature=0,
-            max_completion_tokens=200,
-        )
-    except OpenAIError as error:
-        # Every failure this call can produce -- transport, timeout, rate limit, a
-        # rejected request -- is an OpenAIError, and one of them should not cost the
-        # run. Anything else is a bug in the code above and should not be caught here.
-        return error
+    return ask(render_judge(question, completion), temperature=0, max_completion_tokens=200)
 
 
-with JUDGMENTS.open("w", encoding="utf-8") as out, ThreadPoolExecutor(max_workers=WORKERS) as pool:
-    # Written as each reply arrives, for the same reason the generation cell is: a failure
-    # the SDK does
-    # not wrap comes out of `pool.map`, and the verdicts already paid for should survive it.
-    # The verdict stays as the judge wrote it; nothing is distilled out.
-    verdicts = []
-    for (question, _), verdict in zip(ok, pool.map(judge, ok), strict=True):
-        verdicts.append(verdict)
-        failed = isinstance(verdict, Exception)
-        line = BatchRequestOutput(
-            custom_id=question["question_id"],
-            response=None if failed else BatchResponseData(status_code=200, body=verdict.model_dump()),
-            error={"message": type(verdict).__name__} if failed else None,
-        )
-        out.write(json.dumps(line.model_dump(), ensure_ascii=True) + "\n")
+verdicts = run(judge, [(question["question_id"], (question, completion)) for question, completion in ok], JUDGMENTS)
 
 # `read_judgment` returns True when the judge said the response was CORRECT, the opposite of
 # the class the detector predicts, so the label is its negation. It reads the fenced and
