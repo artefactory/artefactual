@@ -1,4 +1,4 @@
-"""Per-rank entropy contributions, the quantity both EPR and WEPR reduce."""
+"""Per-candidate entropy contributions, the quantity both EPR and WEPR reduce."""
 
 import numpy as np
 from beartype import beartype
@@ -14,13 +14,13 @@ class EntropyContributionsMixin:
     @staticmethod
     @beartype
     def entropy_contributions(logprobs: np.ndarray) -> np.ndarray:
-        """Entropy contribution `s_kj = -p_kj * ln(p_kj)` for each rank of each token.
+        """Entropy contribution `s_kj = -p_kj * ln(p_kj)` for each candidate of each token.
 
         The contribution peaks at `p = 1/e`, so it is not monotonic in rank: a mid-ranked
         candidate contributes more than either a near-certain top rank or a negligible
         tail one.
 
-        Ranks are sorted descending before the conversion, so callers need not supply them
+        Candidates are sorted by likelihood before the conversion, so callers need not supply them
         in order. NaN sorts to the end and propagates, keeping padded positions padded.
 
         In nats, matching the ECIR2026 release the paper's results were produced with.
