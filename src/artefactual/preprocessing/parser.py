@@ -147,12 +147,14 @@ class LogProbParser(TransformerMixin, BaseEstimator):
     validation. Cross-validation over a `BaseDetector` therefore has to start from data
     this step has already parsed, since sklearn cannot index a response object by row.
 
-    This step owns the rank axis. It sizes the output to `k` and refuses responses that
-    carry fewer ranks, which is possible only here: downstream, every token has been padded
-    to a common width and a token's original rank count is no longer recoverable.
+    This step owns the rank axis -- a token's candidates ordered by likelihood, one column
+    per rank. It sizes the output to `k` and refuses responses carrying fewer candidates,
+    which is possible only here: downstream, every token has been padded to a common width
+    and a token's original candidate count is no longer recoverable.
 
     Args:
-        k: Rank count to emit. `None` uses the widest rank count present in the batch.
+        k: Number of candidates to emit per token, and so the width of the rank axis.
+            `None` uses the widest present in the batch.
     """
 
     def __init__(self, k: int | None = None) -> None:
@@ -171,14 +173,14 @@ class LogProbParser(TransformerMixin, BaseEstimator):
 
         Returns:
             `(n_sequences, max_tokens, k)`, NaN where a sequence is shorter than the
-            longest in the batch or a token position carried no ranks. Empty input gives
+            longest in the batch or a token position carried no candidates. Empty input gives
             an empty `(0, 0, 0)` array.
 
         Raises:
             TypeError: If a response is not a recognised completion format, including a
                 batch line whose body is not one.
             ValueError: If a logprob is missing, non-finite or positive, if no response
-                carries any log-probabilities, if a response carries fewer than `k` ranks
+                carries any log-probabilities, if a response carries fewer than `k` candidates
                 per token, or if a batch line carries no completion at all.
         """
         parsed = parse_top_logprobs(X)
@@ -190,7 +192,7 @@ class LogProbParser(TransformerMixin, BaseEstimator):
         # TODO(perf): O(n·T·k) Python loop — vectorize over the padded array once batches get large.
         for i, sample in enumerate(parsed):  # sample is the dictionary for each generation
             for token_idx, logprobs in sample.items():  # token position, ragged list of logprobs
-                for rank, lp in enumerate(logprobs):  # column index or k index, logprob value
+                for rank, lp in enumerate(logprobs):  # rank (column index), that candidate's logprob
                     if lp is None or not np.isfinite(lp) or lp > 0:
                         error_msg = (
                             f"Invalid logprob at sample {i}, token {token_idx}, "
@@ -199,11 +201,11 @@ class LogProbParser(TransformerMixin, BaseEstimator):
                         raise ValueError(error_msg)
         max_tokens = max((max(d.keys()) + 1 for d in parsed if d), default=0)
         if max_tokens == 0 and self.k is not None:
-            # The shape was recognised but nothing carried ranks, which is what a provider
+            # The shape was recognised but nothing carried candidates, which is what a provider
             # returns when logprobs were not requested or are not supported. Caught here
             # because a (n, 0, k) array reaches the entropy step as a zero-size reduction,
             # whose numpy error names nothing the caller can act on. Gated on `k` for the
-            # same reason `_reject_narrow` is: without a declared rank count the parser has
+            # same reason `_reject_narrow` is: without a declared candidate count the parser has
             # no expectation to contradict, and an empty parse is just an empty parse.
             error_msg = (
                 f"None of the {len(parsed)} response(s) carry any log-probabilities. The "
@@ -220,26 +222,26 @@ class LogProbParser(TransformerMixin, BaseEstimator):
         # them keeps a fitted detector and a pretrained one on one dtype, and keeps the dot
         # product from upcasting on every call.
         #
-        # Surplus ranks are dropped rather than kept: a calibration fit at k has no
+        # Surplus candidates are dropped rather than kept: a calibration fit at k has no
         # coefficient for rank k+1, and EPR's mean is defined over exactly k ranks.
         width = self.k if self.k is not None else max((len(v) for d in parsed for v in d.values()), default=0)
 
         arr = np.full((len(parsed), max_tokens, width), np.nan, dtype=np.float64)
         for i, sample in enumerate(parsed):
             for token_idx, logprobs in sample.items():
-                ranks = logprobs[:width]
-                arr[i, token_idx, : len(ranks)] = ranks  # [depth, row, columns]
+                candidates = logprobs[:width]
+                arr[i, token_idx, : len(candidates)] = candidates  # [depth, row, columns]
 
         return arr
 
     def _reject_narrow(self, parsed: list[dict[int, list[float]]]) -> None:
-        """Raise if any response carries fewer than `k` ranks per token.
+        """Raise if any response carries fewer than `k` candidates per token.
 
         Compared per response, not across the batch, because padding is applied per batch:
         a wide response would otherwise raise the measured width above a narrow sibling's
-        own rank count.
+        own candidate count.
 
-        Token positions holding no ranks are skipped. Those are the empty-`top_logprobs`
+        Token positions holding no candidates are skipped. Those are the empty-`top_logprobs`
         case and remain padding, which the entropy step reports as an empty sequence.
         """
         if self.k is None:
@@ -249,12 +251,12 @@ class LogProbParser(TransformerMixin, BaseEstimator):
             widths = [len(logprobs) for logprobs in sample.values() if logprobs]
             if widths and min(widths) < self.k:
                 error_msg = (
-                    f"Response {i} carries {min(widths)} rank(s) per token but k={self.k} "
-                    f"was requested. The missing ranks are not absent from the "
+                    f"Response {i} carries {min(widths)} candidate(s) per token but k={self.k} "
+                    f"was requested. The missing candidates are not absent from the "
                     f"distribution, only unfetched, so zero-filling them would drop their "
                     f"entropy contributions and score the response as more confident than "
                     f"it was. Regenerate with top_logprobs={self.k}, or score at "
-                    f"k={min(widths)} with a detector trained at that rank count."
+                    f"k={min(widths)} with a detector trained at that width."
                 )
                 raise ValueError(error_msg)
 
@@ -275,9 +277,10 @@ def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
             parsed and concatenated in order.
 
     Returns:
-        One dict per sequence, mapping token position to that token's ranks. Ranks are
-        ragged: a position whose `top_logprobs` was empty maps to an empty list, and the
-        position is still counted so token indices track the generated text.
+        One dict per sequence, mapping token position to that token's candidate
+        log-probabilities, most likely first. Ragged: a position whose `top_logprobs` was
+        empty maps to an empty list, and the position is still counted so token indices
+        track the generated text.
 
     Raises:
         TypeError: If the output matches no completion format, including a batch line

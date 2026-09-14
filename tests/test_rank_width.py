@@ -56,7 +56,9 @@ def truncate(payload, k):
 def test_epr_refuses_a_response_narrower_than_k(tmp_path, payload, detector):
     detector = EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)))
 
-    with pytest.raises(ValueError, match=rf"carries {payload_width(payload)} rank\(s\) per token but k={CALIBRATED_K}"):
+    with pytest.raises(
+        ValueError, match=rf"carries {payload_width(payload)} candidate\(s\) per token but k={CALIBRATED_K}"
+    ):
         detector.predict_proba(payload)
 
 
@@ -65,7 +67,9 @@ def test_epr_refuses_a_response_narrower_than_k(tmp_path, payload, detector):
 def test_wepr_refuses_a_response_narrower_than_k(tmp_path, payload, weights):
     detector = WEPR.from_pretrained(str(write_estimator(tmp_path, "w.skops", weights)))
 
-    with pytest.raises(ValueError, match=rf"carries {payload_width(payload)} rank\(s\) per token but k={CALIBRATED_K}"):
+    with pytest.raises(
+        ValueError, match=rf"carries {payload_width(payload)} candidate\(s\) per token but k={CALIBRATED_K}"
+    ):
         detector.predict_proba(payload)
 
 
@@ -120,7 +124,7 @@ def test_a_narrow_member_is_caught_wherever_it_sits(tmp_path, narrow, wide, dete
     batch = [wide, narrow] if position else [narrow, wide]
     index = 1 if position else 0
 
-    with pytest.raises(ValueError, match=rf"Response {index} carries {payload_width(narrow)} rank\(s\)"):
+    with pytest.raises(ValueError, match=rf"Response {index} carries {payload_width(narrow)} candidate\(s\)"):
         detector.predict_proba(batch)
 
 

@@ -12,7 +12,7 @@ from artefactual.preprocessing.parser import LogProbParser
 from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
 from artefactual.utils.io import EstimatorPersistenceMixin, Reduction
 
-# Every published detector was fit at 15 ranks.
+# Every published detector was fit at 15 candidates per token.
 DEFAULT_K = 15
 
 
@@ -42,15 +42,16 @@ class BaseDetector(Pipeline, EstimatorPersistenceMixin):
         memory=None,
         verbose=False,
     ) -> None:
-        """Assemble a parser -> entropy -> classifier pipeline pinned to `k` ranks.
+        """Assemble a parser -> entropy -> classifier pipeline pinned to `k` candidates.
 
         `k` is handled at the ends of the pipeline: the parser sizes the rank axis to it,
         and any loaded weights were checked against it beforehand. The entropy step in
-        between carries no rank count, since its input width is already `k`.
+        between carries no width of its own, since its input is already `k` wide.
 
         Args:
-            k: Rank count the responses carry. Responses carrying fewer are rejected when
-                parsed, rather than padded, since the missing ranks were never fetched.
+            k: Candidates per token the responses carry. Responses carrying fewer are
+                rejected when parsed, rather than padded, since the missing candidates were
+                never fetched.
             estimator: Final estimator. Unfitted by default -- the unregularised logistic
                 regression the published detectors were fit with, so coefficients fitted
                 here are comparable to the shipped ones. `C=np.inf` rather than
@@ -79,7 +80,7 @@ class BaseDetector(Pipeline, EstimatorPersistenceMixin):
 
     @property
     def k(self) -> int:
-        """Rank count the parser reads, and the width the reduction covers.
+        """Candidates per token the parser reads, and the width the reduction covers.
 
         Read from the parser step rather than stored alongside it, so that `set_params(k=)`
         -- which is how `GridSearchCV` sweeps it -- reaches the step that acts on it
@@ -93,10 +94,10 @@ class BaseDetector(Pipeline, EstimatorPersistenceMixin):
 
     @classmethod
     def _feature_count(cls, k: int) -> int:
-        """Features this reduction produces at `k` ranks.
+        """Features this reduction produces at `k` candidates per token.
 
         What a loaded estimator's coefficient vector is checked against: a detector's
-        coefficients are fixed at the rank count they were trained at.
+        coefficients are fixed at the width they were trained at.
         """
         raise NotImplementedError
 
@@ -113,7 +114,7 @@ class BaseDetector(Pipeline, EstimatorPersistenceMixin):
             A detector ready to `predict_proba`.
 
         Raises:
-            ValueError: If the estimator does not cover exactly `k` ranks.
+            ValueError: If the estimator does not cover exactly `k` candidates.
         """
         k = kwargs.get("k", DEFAULT_K)
         expected = cls._feature_count(k)
@@ -126,7 +127,7 @@ class BaseDetector(Pipeline, EstimatorPersistenceMixin):
         if actual != expected:
             msg = (
                 f"The {cls.__name__} detector at '{identifier}' takes {actual} feature(s), "
-                f"but k={k} needs {expected}. Its coefficients are fixed at the rank count "
+                f"but k={k} needs {expected}. Its coefficients are fixed at the width "
                 f"they were trained at; pass k={cls._implied_k(actual)}, or use a detector "
                 f"trained at k={k}."
             )
@@ -135,7 +136,7 @@ class BaseDetector(Pipeline, EstimatorPersistenceMixin):
 
     @classmethod
     def _implied_k(cls, n_features: int) -> int:
-        """The rank count `n_features` coefficients were trained at."""
+        """The candidates-per-token width `n_features` coefficients were trained at."""
         raise NotImplementedError
 
     @property
@@ -177,7 +178,7 @@ class BaseDetector(Pipeline, EstimatorPersistenceMixin):
 
         Args:
             reduction: `"epr"` or `"wepr"`.
-            k: Rank count the responses carry.
+            k: Candidates per token the responses carry.
             estimator: Final estimator to fit. Defaults to the unregularised logistic
                 regression the published detectors were fit with.
 
@@ -236,7 +237,7 @@ class BaseDetector(Pipeline, EstimatorPersistenceMixin):
 class EPR(BaseDetector):
     """A detector that pools a response's uncertainty into one number.
 
-    EPR -- Entropy Production Rate. A single feature, pooling every rank of the token
+    EPR -- Entropy Production Rate. A single feature, pooling every candidate of the token
     distribution into one number, so the calibration fits one coefficient.
 
     Both detectors need weights fit on labelled data, so choosing this one saves no setup
@@ -252,7 +253,7 @@ class EPR(BaseDetector):
     reduction: ClassVar[Reduction | None] = "epr"
 
     @classmethod
-    def _feature_count(cls, k: int) -> int:  # noqa: ARG003 — EPR pools every rank into one feature, whatever k is
+    def _feature_count(cls, k: int) -> int:  # noqa: ARG003 — EPR pools every candidate into one feature, whatever k is
         return 1
 
     @classmethod
@@ -261,10 +262,12 @@ class EPR(BaseDetector):
 
 
 class WEPR(BaseDetector):
-    """A detector that reads each rank of the token distribution.
+    """A detector that reads each rank of the token distribution separately.
 
     WEPR -- Weighted EPR. `2k` features, a mean and a max per rank, letting the
-    calibration weight the informative ranks over the rest. It reads strictly more of the
+    calibration weight the informative ranks over the rest -- the second-most-likely
+    candidate carries different information from the tenth, and a coefficient per rank is
+    what lets the fit say so. It reads strictly more of the
     distribution than `EPR` at the same calibration cost, which makes it the default
     choice.
 
