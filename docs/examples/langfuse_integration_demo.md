@@ -19,6 +19,16 @@ mystnb:
 
 This notebook demonstrates how to use the **HallucinationEvaluator** with the sklearn compatible **EPR** and **WEPR** detectors to score LLM traces in Langfuse.
 
+| Section | What it does | Cost |
+|---|---|---|
+| Prerequisites | Keys, endpoint and detector names | the work: a Langfuse project and a `logprobs`-capable endpoint |
+| Run a generation and send it to Langfuse | One generation, traced | 1 request |
+| Score traces with EPR | Attach an EPR score to the trace | the detector's weights, once |
+| Score traces with WEPR | The same with WEPR | the detector's weights, once |
+
+The build never runs this notebook: it needs a live endpoint and a Langfuse project, so its
+cells are the record of a session you run yourself.
+
 ## Prerequisites
 
 * Install the adapter dependencies:

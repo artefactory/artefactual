@@ -32,6 +32,16 @@ We will use:
 * **EPR:** scorer from the artefactual package via the scikit-learn pipeline API.
 * **Visualizations:** each token highlighted by its own score, so the uncertain stretches of an answer are visible rather than inferred.
 
+| Section | What it does | Cost |
+|---|---|---|
+| Load Example Responses | Read the committed fixture | none |
+| Build the EPR Pipeline | Fetch the published detector's weights | one download, ~KBs, cached after the first run |
+| Sequence-Level Scoring | P(hallucination) per response | seconds |
+| Token-Level Scoring | P(hallucination) per token, highlighted | seconds |
+
+No API key and no GPU. Nothing is generated here — the responses are a fixture, and the only
+network call fetches the detector.
+
 ```{code-cell} ipython3
 :tags: [hide-input]
 

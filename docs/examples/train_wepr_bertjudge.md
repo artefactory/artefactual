@@ -34,6 +34,16 @@ log-probabilities were generated rather than sampled from a model. This notebook
 without stored outputs because it downloads the judge's weights, so the numbers you see are
 the ones your own run produces.
 
+| Section | What it does | Cost |
+|---|---|---|
+| The inputs | Read the responses and the questions they answer | none, both files ship beside this notebook |
+| Judge the responses | One forward pass per response, locally | the judge's weights, ~420 MB once; then CPU seconds |
+| Fit | Fit on a stratified split, report ROC-AUC on the holdout | seconds |
+| Audit the labels the judge produced | What each verdict was made against | seconds |
+| Save it, and load it back | `.skops` out, `from_pretrained` in | seconds |
+
+No API key and no GPU. The one cost is the download, paid once and cached.
+
 ```{code-cell} ipython3
 :tags: [hide-input]
 
