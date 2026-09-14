@@ -47,8 +47,15 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx_autodoc_typehints",
     "sphinx_llms_txt",
+    "sphinx_reredirects",
     "sphinxcontrib.mermaid",
 ]
+
+# The encoder-judge example was published at its old document name, so that URL is live.
+# A renamed document leaves a 404 behind unless something is served at the old path, and a
+# meta-refresh page is what static hosting can serve. The target is relative to the old
+# document's own directory.
+redirects = {"examples/train_wepr_bertjudge": "train_wepr_lightweight_judge.html"}
 
 # Optional extras autodoc must not need installed to document the modules that guard
 # their imports behind TYPE_CHECKING.

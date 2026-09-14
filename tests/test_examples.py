@@ -20,7 +20,7 @@ import yaml
 EXAMPLES = Path(__file__).resolve().parents[1] / "docs" / "examples"
 
 OFFLINE_NOTEBOOKS = ["epr_usage_demo", "wepr_usage_demo", "train_wepr"]
-NETWORKED_NOTEBOOKS = ["langfuse_integration_demo", "train_wepr_pipeline", "train_wepr_bertjudge"]
+NETWORKED_NOTEBOOKS = ["langfuse_integration_demo", "train_wepr_pipeline", "train_wepr_lightweight_judge"]
 ALL_NOTEBOOKS = OFFLINE_NOTEBOOKS + NETWORKED_NOTEBOOKS
 
 
@@ -191,7 +191,7 @@ def test_the_encoder_judge_is_read_the_way_it_was_trained():
     hallucination, so the label is the negation. Dropping it trains the detector to
     recognise correct answers and reports the result as hallucination detection.
     """
-    code = code_of(load("train_wepr_bertjudge"))
+    code = code_of(load("train_wepr_lightweight_judge"))
 
     assert 'JUDGE_MODEL = "artefactory/BERTJudge"' in code, (
         "the Free-QCR checkpoint is the one trained on unconstrained generations"
