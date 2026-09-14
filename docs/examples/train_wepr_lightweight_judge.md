@@ -13,23 +13,24 @@ kernelspec:
   name: python3
 ---
 
-# Label a set of responses with an encoder judge, then train
+# Label a set of responses with a lightweight judge that runs on your own machine
 
-You start with answers the model under test generated, and nothing judged yet. This
-notebook produces the missing half — a verdict per answer, from a local encoder judge —
-then fits a WEPR detector on the pair.
+You start with answers the model under test generated, and nothing judged yet. The judge
+that grades them here **runs locally, on CPU, with no API key and no per-response cost** —
+which is the reason to pick this notebook over the other two. It downloads a 210M encoder
+once (~420 MB) and every response after that is one forward pass on the machine you are
+already sitting at, so relabelling a run, or trying another threshold, costs seconds rather
+than another N requests.
 
 A detector is trained for one model, on answers that model produced plus a verdict on
 each. The wider context is in the guide's *Training a detector*.
 
-`artefactory/BERTJudge` grades an answer against a reference. Give it the question, the
-answer to grade and the gold answer; its own output is P(correct), which this notebook
-turns into P(hallucination) once, at the call, so that every number on the page after it
-points the same way as the detector's. It is a 210M encoder, efficient
-enough to run on CPU: it downloads once (~420 MB), and every response after that is one
-forward pass rather than an API request. Its own package, `bert-judge`, wraps the loading
-and the scoring, so grading the whole file is one call; `THRESHOLD` turns each probability
-into the verdict written to the judgments file.
+The checkpoint is `artefactory/BERTJudge`. Give it the question, the answer to grade and the
+gold answer; its own output is P(correct), which this notebook turns into P(hallucination)
+once, at the call, so that every number on the page after it points the same way as the
+detector's. Its own package, `bert-judge`, wraps the loading and the scoring, so grading the
+whole file is one call; `THRESHOLD` turns each probability into the verdict written to the
+judgments file.
 
 The sample files are synthetic — real questions, but the responses and their
 log-probabilities were generated rather than sampled from a model. This notebook ships
@@ -299,7 +300,7 @@ count and mean nothing at another, so loading at a different `k` raises rather t
 mis-shaping the score.
 
 ```{code-cell} ipython3
-path = detector.save_estimator("wepr-bertjudge.skops")
+path = detector.save_estimator("wepr-lightweight-judge.skops")
 reloaded = WEPR.from_pretrained(path, k=K)
 
 # Held-out responses: the rows the fit above never saw.

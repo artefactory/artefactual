@@ -56,6 +56,10 @@ docs = [
     "sphinx~=8.1.3",
     "sphinx-autodoc-typehints~=3.0.1",
     "sphinx-llms-txt>=0.7.1",
+    # A published page whose document is renamed keeps its URL: the extension writes a
+    # meta-refresh page at the old path, which is all GitHub Pages can serve -- there is no
+    # server-side redirect to configure.
+    "sphinx-reredirects~=1.0",
     # The guide draws its pipeline, its file contract and its label polarity as diagrams.
     "sphinxcontrib-mermaid~=1.0.0",
 ]
@@ -165,7 +169,7 @@ notebooks = [
     "ipywidgets>=8.1.0",
     # train_wepr.ipynb draws a learning curve and a precision-recall comparison.
     "matplotlib>=3.9.0",
-    # train_wepr_bertjudge.ipynb. `bert-judge` declares no dependencies of its own, so the
+    # train_wepr_lightweight_judge.ipynb. `bert-judge` declares no dependencies of its own, so the
     # judge's runtime is named here. The transformers range is the checkpoint's: outside
     # it the load fails, on `torch_dtype=` below 4.57 and `KeyError: 'default'` at 5.x.
     "bert-judge @ git+https://github.com/artefactory/BERT-as-a-Judge.git",
