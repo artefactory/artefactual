@@ -59,10 +59,21 @@ cells are the record of a session you run yourself.
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-# From a clone: `uv sync --group notebooks`.
-#
-# On Colab, uncomment to install the package.
-# !pip install -q 'artefactual[adapters]'
+import subprocess  # noqa: S404
+import sys
+
+# Colab starts from a runtime with neither the package nor the files that sit beside
+# this notebook in the repository. Everywhere else -- a clone synced with
+# `uv sync --group notebooks`, the docs build, the test suite -- both are already there,
+# so this cell does nothing and there is nothing for a reader to uncomment.
+ON_COLAB = "google.colab" in sys.modules
+
+PACKAGES = [
+    "artefactual[adapters]",
+]
+
+if ON_COLAB:
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", *PACKAGES], check=True)  # noqa: S603
 ```
 
 ## Run a generation and send it to Langfuse
