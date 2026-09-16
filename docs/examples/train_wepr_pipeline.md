@@ -313,7 +313,8 @@ def run(task, items, path):
 ## Bring the questions
 
 **This is the cell to replace.** `questions_sample.json` sits beside this notebook: a
-hundred TriviaQA rows, there so the notebook runs end to end out of the box. The detector
+hundred rows, half TriviaQA and half SimpleQA, there so the notebook runs end to end out of the
+box. The detector
 you actually want is trained on the questions your users ask, because it learns how *your*
 model behaves on the traffic it will meet. The paper measured that gap: its numbers drop
 10-20 points when a TriviaQA-trained detector is pointed at WebQuestions.
@@ -328,8 +329,9 @@ A hundred is the working size; at twenty-five a capable model often gets nothing
 the run spends the requests before refusing to fit.
 
 For a set at the paper's scale, `scripts/ecir/build_questions.sh` draws one from the Hub in
-these same fields -- `./build_questions.sh triviaqa 500 > questions.json`, or `webquestions`
-for the out-of-domain set -- and `QUESTIONS_FILE` below becomes `Path("questions.json")`.
+these same fields -- `./build_questions.sh mixed 100 > questions.json` rebuilds the pack that
+ships here (`mixed` takes an even count and splits it between the two sets), `triviaqa 500` or
+`simpleqa 500` draw a single set, and `webquestions` gives the out-of-domain set -- and `QUESTIONS_FILE` below becomes `Path("questions.json")`.
 
 `question_id` is what travels: it becomes `custom_id` on the responses and the verdicts, and
 that is what every later join pairs on. A duplicate would pair an answer with another

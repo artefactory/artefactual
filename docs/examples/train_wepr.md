@@ -230,8 +230,8 @@ axes.grid(axis="y", linewidth=0.3)
 
 Every `sklearn.model_selection` tool works on the detector, so the holdout above is not the
 only reading available. Five folds over all 98 responses report a spread as well as a mean,
-and the 25-answer holdout lands below every one of the five — which is what a single split
-this small is worth.
+so the holdout score above can be read against it: a single 25-answer split can sit well
+inside that spread or outside it, which is what one split this small is worth.
 
 ```{code-cell} ipython3
 from sklearn.model_selection import StratifiedKFold, cross_val_score
@@ -245,8 +245,9 @@ print(f"5-fold ROC-AUC: {auc.mean():.2f} +/- {auc.std():.2f}   {np.round(auc, 2)
 ## Which `k` should this be fitted at?
 
 Every step's parameters are searchable, `parser__k` included, and the classifier is refitted
-at each width, so the comparison is legitimate. The score climbing with `k` says the signal
-here lives in the deeper ranks, not just the top one.
+at each width, so the comparison is legitimate. Read the scores across `k` before choosing: a
+score that keeps rising with `k` says the signal lives in the deeper ranks, not just the top
+one, while one that flattens early says the extra ranks add little.
 
 This search chooses the `k` to **fit** at. It is not a knob to turn afterwards: WEPR fits one
 coefficient per rank, so a detector's coefficients are the width it was trained at, and
