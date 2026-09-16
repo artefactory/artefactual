@@ -39,6 +39,10 @@ jobs:
         run: echo "SKIP=no-commit-to-branch" >> "$GITHUB_ENV"
 
       - name: Run pre-commit using uvx
-        run: uvx --with pre-commit-uv pre-commit run --all-files
+        # Both versions pinned: `uvx pre-commit` unpinned resolves the newest release on
+        # every run, so a new pre-commit or pre-commit-uv changes what this gate does with
+        # no commit in this repository. The hooks themselves are already pinned by `rev:`
+        # in .pre-commit-config.yaml; this is the same guarantee for the runner.
+        run: uvx --with pre-commit-uv==4.3.0 pre-commit@4.6.2 run --all-files
         env:
           SKIP: ${{ env.SKIP }}
