@@ -9,6 +9,7 @@ file, which repository -- have been made, each of which is tested below on its o
 
 import numpy as np
 import pytest
+import skops.io as sio
 from conftest import estimators, fitted_logistic, write_estimator
 from hypothesis import given, settings
 from hypothesis import strategies as st
@@ -51,13 +52,38 @@ def test_a_detector_survives_a_round_trip(tmp_path_factory, detector):
     assert restored.coef_.dtype == np.float64
 
 
-def test_a_sklearn_detector_needs_nothing_trusted(tmp_path):
-    # every scikit-learn estimator is trusted by skops itself, which is why the published
-    # estimators -- a plain LogisticRegression -- load with no trusted list at all
+def test_a_published_detector_needs_nothing_trusted(tmp_path):
+    """A plain `LogisticRegression` loads bare -- the shape every published detector has.
+
+    This is the property `from_pretrained` depends on, and the narrowest one that says so.
+    It used to be asserted through a `RandomForestClassifier`, on the premise that skops
+    trusts every scikit-learn type; skops 0.15 retired that premise by dropping
+    `sklearn.tree._tree.Tree` from its defaults, and the test failed for a reason that had
+    nothing to do with this package.
+    """
+    path = write_estimator(tmp_path, "model.skops", fitted_logistic(-2.91, [58.17]))
+
+    assert BaseDetector.read_estimator(path).classes_.tolist() == [0, 1]
+
+
+def test_the_refusal_follows_skops_own_default_list(tmp_path):
+    """Whatever skops declines to trust is exactly what `read_estimator` demands be named.
+
+    Asserted against `get_untrusted_types` rather than against a fixed type name, because
+    that list is skops' to change and has changed: a `RandomForestClassifier` needed
+    nothing before 0.15 and names `sklearn.tree._tree.Tree` after it. The contract here --
+    refuse what skops does not trust, accept it once the caller asks for it by name -- is
+    what has to hold across either.
+    """
     forest = RandomForestClassifier(n_estimators=2).fit(np.zeros((4, 2)), [0, 1, 0, 1])
     path = write_estimator(tmp_path, "model.skops", forest)
 
-    assert BaseDetector.read_estimator(path).n_estimators == 2
+    untrusted = sio.get_untrusted_types(file=path)
+    if untrusted:
+        with pytest.raises(ValueError, match="does not load by default"):
+            BaseDetector.read_estimator(path)
+
+    assert BaseDetector.read_estimator(path, trusted=untrusted).n_estimators == 2
 
 
 def test_a_detector_holding_an_unasked_for_type_is_refused(tmp_path):
