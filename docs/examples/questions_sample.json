@@ -1,740 +1,1372 @@
 [
   {
-    "question": "Which Lloyd Webber musical premiered in the US on 10th December 1993?",
-    "question_id": "tc_33",
-    "short_answer": "Sunset Boulevard",
+    "question": "Elizabeth Taylor made a fortune from what business aside from acting?",
+    "question_id": "bb_1493",
+    "short_answer": "Perfume",
     "answer_aliases": [
-      "Sunset Blvd",
-      "Sunset Blvd.",
-      "Sunset Bulevard",
-      "West Sunset Boulevard"
+      "Eau de Parfum",
+      "Eau de parfume",
+      "Eau de Toilet",
+      "Extrait de Parfum",
+      "Men's fragrance",
+      "Mens Fragrance",
+      "Parfum",
+      "Parfume",
+      "Perfume bottle",
+      "Perfume bottles",
+      "Perfume Industry",
+      "Perfumed",
+      "Perfumedly",
+      "Perfumeries",
+      "Perfumery",
+      "Perfumes",
+      "Perfuming",
+      "Perfumingly"
     ]
   },
   {
-    "question": "Who wrote the novel 'Things Fall Apart'?",
-    "question_id": "q-001",
-    "short_answer": "Chinua Achebe",
+    "question": "In June 2013 US Texas State Senator Wendy Davis filibustered for 10 hours to obstruct Texas state laws concerning?",
+    "question_id": "bb_3952",
+    "short_answer": "Abortion",
     "answer_aliases": [
-      "Achebe"
+      "Aborted Fetus",
+      "Aborted fetuses",
+      "Aborting",
+      "Abortion and health",
+      "Abortion Complications",
+      "Abortion in animals",
+      "Abortion, induced",
+      "Abortion, Physical Effects of",
+      "Abortion.",
+      "Abortionist",
+      "Abortionists",
+      "Abortions",
+      "Abortus",
+      "Abortus provocatus",
+      "Complications of Abortion",
+      "Elective abortion",
+      "Elective termination of a pregnancy",
+      "Induced abortion",
+      "Induced abortions",
+      "Induced miscarriage",
+      "Medical termination of pregnancy",
+      "Physical Effects of Abortion",
+      "Pine needle abortion",
+      "Pregnancy abortion",
+      "Pregnancy termination",
+      "Surgical abortion",
+      "Surgical Termination of Pregnancy",
+      "Termination of a pregnancy",
+      "Termination of pregnancy",
+      "Third-trimester abortion",
+      "Total abortion rate"
     ]
   },
   {
-    "question": "What is the capital of Mongolia?",
-    "question_id": "q-002",
-    "short_answer": "Ulaanbaatar",
+    "question": "Zloty and Grosz are money in which country?",
+    "question_id": "bb_8041",
+    "short_answer": "Poland",
     "answer_aliases": [
-      "Ulan Bator"
+      "Architecture of Poland",
+      "Bastarnia",
+      "Country- Poland",
+      "Etymology of Poland",
+      "Fourth Poland",
+      "ISO 3166-1:PL",
+      "Lenkija",
+      "Ploand",
+      "Po land",
+      "Poland.",
+      "Pole land",
+      "Poleand",
+      "Poleland",
+      "Polija",
+      "Polish state",
+      "Polland",
+      "Polnd",
+      "Pologne",
+      "Pols Land",
+      "Polska",
+      "Polskor",
+      "Republic of Poland",
+      "Rzeczpospolita Polska"
     ]
   },
   {
-    "question": "Which element has the atomic number 79?",
-    "question_id": "q-003",
-    "short_answer": "Gold",
+    "question": "The fortified wine drink Sherry is named after what town?",
+    "question_id": "bb_912",
+    "short_answer": "Jerez",
     "answer_aliases": [
-      "Au"
+      "Emirate of jerez",
+      "History of Jerez de la Frontera",
+      "Jerez de la Frontera",
+      "Jerez de la Frontera (Cádiz)",
+      "Jerez de la Frontera, Cadiz",
+      "Jerez de la Frontera, Cádiz",
+      "Jerez de la Frontera, Spain",
+      "Jerez, Spain",
+      "Jeréz de la Frontera",
+      "Jérez de la Frontera",
+      "Jérez de la Frontera, Spain",
+      "Xeres",
+      "Xeres (Jerez) de la Frontera",
+      "Xeres de la Frontera"
     ]
   },
   {
-    "question": "In which year did the Berlin Wall fall?",
-    "question_id": "q-004",
-    "short_answer": "1989",
+    "question": "What colour hair did Charles Dickens' character David Copperfield have?",
+    "question_id": "dpql_206",
+    "short_answer": "RED",
+    "answer_aliases": [
+      "R.E.D.",
+      "Red (album)",
+      "Red (comic)",
+      "Red (comics)",
+      "Red (disambiguation)",
+      "Red (film)",
+      "Red (song)"
+    ]
+  },
+  {
+    "question": "The nickname for Dumfries became the name of which Scottish football club?",
+    "question_id": "dpql_4760",
+    "short_answer": "Queen of the South",
+    "answer_aliases": [
+      "QOSFC",
+      "Qots",
+      "QOTSFC",
+      "Queen of the South F C",
+      "Queen of the South F. C.",
+      "Queen of the South F.C.",
+      "Queen of the South FC",
+      "The Doonhamers",
+      "The Mighty Queen of the South"
+    ]
+  },
+  {
+    "question": "What city will host the 2016 Olympics?",
+    "question_id": "jp_2252",
+    "short_answer": "Rio de Janeiro",
+    "answer_aliases": [
+      "BRRIO",
+      "January River",
+      "R Janeiro",
+      "R. Janeiro",
+      "Rio de Jainero",
+      "Rio de Janeiro (Brazil)",
+      "Rio de Janeiro (city)",
+      "Rio de Janeiro city",
+      "Rio de Janeiro, Brazil",
+      "Rio de Janeiro, Rio de Janeiro",
+      "Rio de Janeiro, RJ",
+      "Rio de Janerio",
+      "Rio de Janero",
+      "Rio de Janiero",
+      "Rio de Janiero, Brazil",
+      "Rio di Janeiro",
+      "Rio Janeiro",
+      "Rio, Brazil",
+      "Rio-de-Janeiro",
+      "River of January",
+      "Río de Janeiro",
+      "Río de Janeiro, Brazil",
+      "Río de Jeneiro",
+      "Sao Sebastiao do Rio de Janeiro",
+      "São Sebastião do Rio de Janeiro",
+      "The Marvelous City",
+      "UN/LOCODE:BRRIO"
+    ]
+  },
+  {
+    "question": "What did Tikki Tikki Tembo fall into?",
+    "question_id": "jp_657",
+    "short_answer": "a Well",
+    "answer_aliases": [
+      "The Well",
+      "The Well (album)",
+      "The Well (disambiguation)",
+      "The Well (film)",
+      "Well, The"
+    ]
+  },
+  {
+    "question": "Alan Greenspan was the head of which US government department from 1987 to 2006?",
+    "question_id": "odql_10047",
+    "short_answer": "FEDERAL RESERVE BOARD",
+    "answer_aliases": [
+      "Board of Governors of the Federal Reserve",
+      "Board of Governors of the Federal Reserve System",
+      "Federal Reserve Board of Governors",
+      "Federal Reserve governor",
+      "FRB",
+      "U.S. Federal Reserve governor"
+    ]
+  },
+  {
+    "question": "Which French romantic artist who painted Massacre at Chios and Women of Algiers was born on this day in 1798?",
+    "question_id": "odql_12335",
+    "short_answer": "(Eugene) Delacroix",
+    "answer_aliases": [
+      "Delacroix, Ferdinand Victor Eugene",
+      "Delacroix, Ferdinand Victor Eugène",
+      "Delacroix, Ferdinand-Victor-Eugene",
+      "Delacroix, Ferdinand-Victor-Eugène",
+      "Eugene de la Croix",
+      "Eugene Delacroix",
+      "Eugene Ferdinand Victor Delacroix",
+      "Eugène Delacroix",
+      "Eugène Ferdinand Victor Delacroix",
+      "Ferdinand Delacroix",
+      "Ferdinand Victor Eugen Delacroix",
+      "Ferdinand Victor Eugene Delacroix",
+      "Ferdinand Victor Eugène Delacroix",
+      "Ferdinand-Eugène-Victor Delacroix",
+      "Ferdinand-Victor Eugene Delacroix",
+      "Ferdinand-Victor-Eugene Delacroix",
+      "Ferdinand-Victor-Eugène Delacroix"
+    ]
+  },
+  {
+    "question": "Who composed the Liverpool Oratorio in collaboration with Carl Davis?",
+    "question_id": "odql_14990",
+    "short_answer": "Paul McCartney",
+    "answer_aliases": [
+      "Apollo C. Vermouth",
+      "Ballets to the music of Paul McCartney",
+      "Beatle Paul",
+      "Bernard Webb",
+      "Denis O'Bell",
+      "Gladys Jenkins",
+      "James Paul McCartney",
+      "McCartney, Paul",
+      "Paul MacCartney",
+      "Paul mc cartney",
+      "Paul Mcartney",
+      "Paul McCartney's solo career",
+      "Paul McCartney: Relationships and marriages",
+      "Paul mccartny",
+      "Paul Ramon",
+      "Paul Ramone",
+      "Sir James Paul McCartney",
+      "Sir James Paul McCartney MBE",
+      "Sir paul mccartney",
+      "Wings lead singer"
+    ]
+  },
+  {
+    "question": "Nouakchott is the capital of which Islamic African republic?",
+    "question_id": "odql_3663",
+    "short_answer": "MAURETANIA",
+    "answer_aliases": [
+      "Ancient mauretania",
+      "Classical mauretania",
+      "Classical morocco",
+      "Domain of Moor",
+      "King of Mauretania",
+      "Kingdom of Mauretania",
+      "List of Kings of Mauretania",
+      "Mauretania Prima",
+      "Mauretania Secunda",
+      "Mauretania Sitifensis",
+      "Mauretanian Kingdom",
+      "Roman Mauretania",
+      "Roman-Moor Kingdoms",
+      "Roman-Moorish kingdoms",
+      "Sitifensis"
+    ]
+  },
+  {
+    "question": "Who is the father-in-law of Manchester City footballer Sergio Kűn Aguerro?",
+    "question_id": "odql_8301",
+    "short_answer": "DIEGO MARADONA",
+    "answer_aliases": [
+      "D10S",
+      "Diego Armando Maradona",
+      "Diego Maradonna",
+      "Diego Marradona",
+      "Diego Marradonna",
+      "El Diego",
+      "Maradona",
+      "Maradona, Diego",
+      "Maradonna"
+    ]
+  },
+  {
+    "question": "How is 'The Journal Of The House Of Commons' better known?",
+    "question_id": "odql_9681",
+    "short_answer": "'HANSARD'",
+    "answer_aliases": [
+      "Hansard",
+      "Hansard (Lords)",
+      "Hansard's Debates",
+      "Lords Hansard",
+      "Parliamentary Debates",
+      "Parliamentary Hansard",
+      "Parliamentary proceeding"
+    ]
+  },
+  {
+    "question": "A creance is the name of the long fine cord used in which sport?",
+    "question_id": "qb_1414",
+    "short_answer": "Falconry",
+    "answer_aliases": [
+      "Austringer",
+      "Day-old cockerel",
+      "Falconeering",
+      "Hawking (falconry)",
+      "Imping",
+      "Telwah"
+    ]
+  },
+  {
+    "question": "What was the name of the Prime Minister of Egypt who was assassinated in 1910?",
+    "question_id": "qb_1448",
+    "short_answer": "Boutros Ghali",
+    "answer_aliases": [
+      "Boutros Ghali Pasha",
+      "Boutros, Pasha Ghali"
+    ]
+  },
+  {
+    "question": "Selenology is the scientific study of which celestial body?",
+    "question_id": "qb_2020",
+    "short_answer": "The moon",
+    "answer_aliases": [
+      "Dorsa Argand",
+      "Earth and moon",
+      "Earth I",
+      "Earth's moon",
+      "Earth's natural satellites",
+      "Luna (moon)",
+      "Luna (natural satellite)",
+      "Luna (satellite)",
+      "Lunar mass",
+      "Lunar radius",
+      "Lunarian",
+      "Mass of Moon",
+      "Mass of the Moon",
+      "Moon",
+      "Moon (Earth)",
+      "Moon (moon)",
+      "Moon distance from earth",
+      "Moon like",
+      "Moon likeness",
+      "Moon mass",
+      "Moon-like",
+      "Moon-likeness",
+      "Moonless",
+      "Moonlike",
+      "Moonlikeness",
+      "Natural Earth satellite",
+      "Pictures on the moon",
+      "Satellite of Earth",
+      "Sol 3a",
+      "Sol IIIa",
+      "Solar and lunar eclipses",
+      "Terra I",
+      "☽",
+      "☾",
+      "🌙",
+      "🌛",
+      "🌜"
+    ]
+  },
+  {
+    "question": "Wolf Mankowitz wrote the 1953 novel ‘A Kid For Two….’what’?",
+    "question_id": "qb_2689",
+    "short_answer": "Farthings",
+    "answer_aliases": [
+      "Farthing",
+      "Farthing (coin)",
+      "Farthing (disambiguation)",
+      "Farthing coin"
+    ]
+  },
+  {
+    "question": "‘The Queen was in the parlour eating bread and honey’ in which nursery rhyme?",
+    "question_id": "qb_4949",
+    "short_answer": "Sing a Song of Sixpence",
     "answer_aliases": []
   },
   {
-    "question": "Who painted 'The Garden of Earthly Delights'?",
-    "question_id": "q-005",
-    "short_answer": "Hieronymus Bosch",
+    "question": "Which British monarch was the first Head of the Commonwealth?",
+    "question_id": "qb_6004",
+    "short_answer": "King George VI",
     "answer_aliases": [
-      "Bosch"
+      "Albert Frederick Arthur George",
+      "Albert of Cornwall",
+      "Albert of Cornwall and York",
+      "Albert of Wales",
+      "Albert of York",
+      "Albert, Duke of York",
+      "George the Sixth",
+      "George vi",
+      "George VI of Britain",
+      "George VI of Canada",
+      "George VI of England",
+      "George VI of Great Britain",
+      "George VI of Great Britain and Ireland",
+      "George VI of India",
+      "George VI of Ireland",
+      "George VI of Scotland",
+      "George VI of the UK",
+      "George VI of the United Kingdom",
+      "George VI, Emperor",
+      "George VI, King of England",
+      "GVIR",
+      "HM King George VI",
+      "King george the 6th",
+      "King George V1",
+      "King George VI of the United Kingdom",
+      "Prince Albert of Cornwall",
+      "Prince Albert of Cornwall and York",
+      "Prince Albert of Wales",
+      "Prince Albert of York",
+      "Prince Albert, Duke of York"
     ]
   },
   {
-    "question": "What is the longest river in Asia?",
-    "question_id": "q-006",
-    "short_answer": "Yangtze",
+    "question": "Giugno is Italian for which month of the year?",
+    "question_id": "qb_6288",
+    "short_answer": "June",
     "answer_aliases": [
-      "Yangtze River",
-      "Chang Jiang"
+      "Jun.",
+      "June 31",
+      "June 31st",
+      "Junes",
+      "Juno (German)",
+      "㋅"
     ]
   },
   {
-    "question": "Who composed 'The Rite of Spring'?",
-    "question_id": "q-007",
-    "short_answer": "Igor Stravinsky",
+    "question": "Mount Entoto is the highest peak overlooking which African capital city?",
+    "question_id": "qb_7436",
+    "short_answer": "Addis Ababa",
     "answer_aliases": [
-      "Stravinsky"
+      "Addis Ababa Museum",
+      "Addis Ababa, ET",
+      "Addis Ababa, Ethiopia",
+      "Addis Abba",
+      "Addis Abba, Ethiopia",
+      "Addis Abeba",
+      "Addis Adaba",
+      "Addis-Abeba",
+      "Adis Ababa",
+      "Adis Abeba",
+      "Adis abeda",
+      "Capital of Ethiopia",
+      "Districts of Addis Ababa",
+      "Ethiopian Ethnological Museum",
+      "Ethiopian Natural History Museum",
+      "Finfinne",
+      "New flower",
+      "Tewodros Square",
+      "The Grand Anwar Mosque (Addis Ababa)",
+      "Āddīs Ābebā",
+      "Ādīs Ābeba",
+      "አዲስ አበባ"
     ]
   },
   {
-    "question": "What is the smallest country in the world by area?",
-    "question_id": "q-008",
-    "short_answer": "Vatican City",
+    "question": "What was made and repaired by a Wainwright?",
+    "question_id": "qf_1928",
+    "short_answer": "Wagons",
     "answer_aliases": [
-      "the Vatican"
+      "Circus wagon",
+      "Delivery wagon",
+      "Farm wagon",
+      "Front axle assembly",
+      "Horse-drawn wagon",
+      "Waggon",
+      "Wagon",
+      "Wagon (vehicle)"
     ]
   },
   {
-    "question": "Which planet is known as the Red Planet?",
-    "question_id": "q-009",
-    "short_answer": "Mars",
+    "question": "What character was played by Bill Fraser in 'The Army Game'?",
+    "question_id": "qf_277",
+    "short_answer": "Snudge",
     "answer_aliases": []
   },
   {
-    "question": "Who developed the polio vaccine first licensed in 1955?",
-    "question_id": "q-010",
-    "short_answer": "Jonas Salk",
-    "answer_aliases": [
-      "Salk"
-    ]
-  },
-  {
-    "question": "What is the currency of Sweden?",
-    "question_id": "q-011",
-    "short_answer": "Krona",
-    "answer_aliases": [
-      "Swedish krona"
-    ]
-  },
-  {
-    "question": "Which sea separates Europe and Africa?",
-    "question_id": "q-012",
-    "short_answer": "Mediterranean Sea",
-    "answer_aliases": [
-      "the Mediterranean"
-    ]
-  },
-  {
-    "question": "Who wrote 'One Hundred Years of Solitude'?",
-    "question_id": "q-013",
-    "short_answer": "Gabriel Garcia Marquez",
-    "answer_aliases": [
-      "Garcia Marquez"
-    ]
-  },
-  {
-    "question": "What is the hardest naturally occurring substance?",
-    "question_id": "q-014",
-    "short_answer": "Diamond",
+    "question": "Published on Feb 21, 1848, which two authors were responsible for the Communist Manifesto?",
+    "question_id": "qg_607",
+    "short_answer": "Karl Marx and Friedrich Engels",
     "answer_aliases": []
   },
   {
-    "question": "Which country hosted the 1992 Summer Olympics?",
-    "question_id": "q-015",
-    "short_answer": "Spain",
+    "question": "The War of the Triple Alliance (1864 - 1870) was fought between the allied countries of Argentina, Brazil, and Uruguay and which other country?",
+    "question_id": "qw_1225",
+    "short_answer": "Paraguay",
     "answer_aliases": [
-      "Barcelona, Spain"
+      "Administrative divisions of Paraguay",
+      "Culture of Paraguay",
+      "Etymology of Paraguay",
+      "ISO 3166-1:PY",
+      "Name of Paraguay",
+      "Paragauy",
+      "Paraguai",
+      "Paraguayan",
+      "Paraguayan literature",
+      "Paraguayans",
+      "Paruaguayan",
+      "Republic of Paraguay",
+      "Republic Paraguay",
+      "República del Paraguay",
+      "Teta Paraguai",
+      "Tetã Paraguái"
     ]
   },
   {
-    "question": "What is the chemical symbol for potassium?",
-    "question_id": "q-016",
-    "short_answer": "K",
+    "question": "Under which British monarch was Warren Hastings appointed first Governor of the Presidency of Fort William (Bengal) and the head of the Supreme Council of Bengal, effectively the first Governor-General of India?",
+    "question_id": "qw_16501",
+    "short_answer": "George III",
+    "answer_aliases": [
+      "Farmer George",
+      "George III %22the Mad%22 of the United Kingdom",
+      "George III Guelph",
+      "George III of Britain",
+      "George III of Corsica",
+      "George III of England",
+      "George III of Great Britain",
+      "George III of Great Britain and Ireland",
+      "George III of Hanover",
+      "George III of Scotland",
+      "George III of the UK",
+      "George iii of the united kingdom",
+      "George III, King of Great Britain",
+      "George III, King of Great Britain and Ireland",
+      "George the Third",
+      "George William Frederick",
+      "King George 3",
+      "King George 3 of the United Kingdom",
+      "King George III",
+      "King George III of Great Britain",
+      "King George III of the United Kingdom",
+      "King george the 3rd",
+      "List of titles and honours of King George III",
+      "Mad King George"
+    ]
+  },
+  {
+    "question": "When Mr Benn was looking for an adventure, what type of shop did he visit?",
+    "question_id": "qz_4047",
+    "short_answer": "A fancy dress shop",
     "answer_aliases": []
   },
   {
-    "question": "Who directed the film 'Rashomon'?",
-    "question_id": "q-017",
-    "short_answer": "Akira Kurosawa",
+    "question": "Buenos Aires is located on the estuary of which river?",
+    "question_id": "sfq_10251",
+    "short_answer": "RIVER PLATE",
     "answer_aliases": [
-      "Kurosawa"
+      "River Plate (disambiguation)",
+      "The River Plate",
+      "The River Plate (disambiguation)"
     ]
   },
   {
-    "question": "What is the largest desert in the world?",
-    "question_id": "q-018",
-    "short_answer": "Antarctic Desert",
+    "question": "\"Which Gilbert and Sullivan operetta is sub titled 'The Witches Curse\"\"?\"",
+    "question_id": "sfq_11822",
+    "short_answer": "RUDDIGORE",
     "answer_aliases": [
-      "Antarctica"
+      "Ruddigore, The Witch's Curse",
+      "Ruddygore",
+      "Rudigore"
     ]
   },
   {
-    "question": "Who was the first woman to win a Nobel Prize?",
-    "question_id": "q-019",
-    "short_answer": "Marie Curie",
+    "question": "Who was the UK Poet Laureate or the longest period?",
+    "question_id": "sfq_16378",
+    "short_answer": "Alfred Lord Tennyson",
     "answer_aliases": [
-      "Curie"
+      "A Tennyson",
+      "A. tennyson",
+      "Alfred Lord Tennison",
+      "Alfred Tennyson",
+      "Alfred Tennyson Tennyson",
+      "Alfred Tennyson, 1st Baron Tennyson",
+      "Alfred Tennyson, Lord Tennyson",
+      "Alfred, Lord Tennyson",
+      "Baron Alfred Tennyson",
+      "Lord Alfred Tennyson",
+      "Lord Tennyson",
+      "Lord Tennyson Alfred",
+      "Tennyson",
+      "Tennyson (poet)",
+      "Tennyson, Alfred, 1st Lord",
+      "Tennysonian"
     ]
   },
   {
-    "question": "Which language has the most native speakers?",
-    "question_id": "q-020",
-    "short_answer": "Mandarin Chinese",
+    "question": "Which English cricketer had figures for bowling 10 for 53 against Australia 1956?",
+    "question_id": "sfq_17752",
+    "short_answer": "JIM LAKER",
     "answer_aliases": [
-      "Mandarin"
+      "James Laker"
     ]
   },
   {
-    "question": "What is the tallest mountain in Africa?",
-    "question_id": "q-021",
-    "short_answer": "Kilimanjaro",
+    "question": "What general name is given to a rotating star which emits a regular beat of radiation?",
+    "question_id": "sfq_178",
+    "short_answer": "PULSAR",
     "answer_aliases": [
-      "Mount Kilimanjaro"
+      "Beltex Optics",
+      "Yukon Optics"
     ]
   },
   {
-    "question": "Who wrote 'The Second Sex'?",
-    "question_id": "q-022",
-    "short_answer": "Simone de Beauvoir",
+    "question": "What is the name of the charity for single parents founded in the 1970s which currently has J K Rowling as its President?",
+    "question_id": "sfq_19603",
+    "short_answer": "GINGERBREAD",
     "answer_aliases": [
-      "de Beauvoir"
+      "Ginger bread",
+      "Ginger breads",
+      "Ginger cake",
+      "Gingerbread cookie",
+      "Gingerbreads",
+      "Gingercake",
+      "Pierniki"
     ]
   },
   {
-    "question": "In which city is the Hermitage Museum?",
-    "question_id": "q-023",
-    "short_answer": "Saint Petersburg",
+    "question": "Who was the conservative candidate beaten by Ken Livingstone in the first two elections for Mayor of London?",
+    "question_id": "sfq_20557",
+    "short_answer": "Steven Norris",
     "answer_aliases": [
-      "St Petersburg"
+      "Stephen Norris",
+      "Steve Norris",
+      "Steven John Norris"
     ]
   },
   {
-    "question": "What is the boiling point of water at sea level in Celsius?",
-    "question_id": "q-024",
+    "question": "What was the Russian City of Nizhny Novgorod called between 1932 and 1990?",
+    "question_id": "sfq_21320",
+    "short_answer": "GORKY",
+    "answer_aliases": [
+      "Gorkiy",
+      "Gorky (disambiguation)"
+    ]
+  },
+  {
+    "question": "Which company produced the Hastings and Herald aircraft?",
+    "question_id": "sfq_21619",
+    "short_answer": "Handley-Page",
+    "answer_aliases": [
+      "Handley Page",
+      "Handley Page (Reading)",
+      "Handley Page Aircraft Company",
+      "Handley Page Limited",
+      "Handley Page Ltd",
+      "Handley Page O/100 and O/400",
+      "Handley Page Slat",
+      "Handley Page, Limited",
+      "Handley-Page Aircraft Company",
+      "O/100 and O/400, Handley Page"
+    ]
+  },
+  {
+    "question": "The revolutionary group the Sandinistas were active in which country?",
+    "question_id": "sfq_22481",
+    "short_answer": "Nicaragua",
+    "answer_aliases": [
+      "Administrative divisions of Nicaragua",
+      "Bibliography of nicaragua",
+      "Etymology of Nicaragua",
+      "Health in Nicaragua",
+      "ISO 3166-1:NI",
+      "Nicaragua, Central America",
+      "Nicaraguan",
+      "Nicarugua",
+      "Nicuragua",
+      "Republic of Nicaragua",
+      "Republica De Nicaragua",
+      "República de Nicaragua",
+      "Sport in Nicaragua",
+      "Subdivisions of Nicaragua",
+      "The Republic of Nicaragua"
+    ]
+  },
+  {
+    "question": "Which US folk singer had the words “This machine kills fascists” written on his guitar?",
+    "question_id": "sfq_23344",
+    "short_answer": "Woody Guthrie",
+    "answer_aliases": [
+      "Guthrie, Woody",
+      "Philadelphia Lawyer (song)",
+      "Reno blues",
+      "Woodie Guthrie",
+      "Woodie Guthry",
+      "Woodrow Wilson %22Woody%22 Guthrie",
+      "Woodrow Wilson Guthrie",
+      "Woody Guthry"
+    ]
+  },
+  {
+    "question": "For which scientific discovery did Crick and Watson receive the 1962 Nobel Prize for Medicine?",
+    "question_id": "sfq_3290",
+    "short_answer": "DNA structure",
+    "answer_aliases": [
+      "DNA bubble",
+      "DNA topology",
+      "Mechanical properties of DNA",
+      "Nucleic acid structure",
+      "RNA Structure"
+    ]
+  },
+  {
+    "question": "Who is the patron saint of dancers?",
+    "question_id": "sfq_6199",
+    "short_answer": "St Vitus",
+    "answer_aliases": [
+      "Crescentia, Modestus, and Vitus",
+      "Crescentia, Modestus, and Vitus, Saints",
+      "Modestus, Vitus, and Crescentia",
+      "Modestus, Vitus, and Crescentia, Saints",
+      "Monastery of St. Vito",
+      "S Vito",
+      "S. Vito",
+      "Saint Crescentia",
+      "Saint Guy",
+      "Saint Vito",
+      "Saint Vitus",
+      "Saint Vitus Day",
+      "St. Vito",
+      "St. Vitus",
+      "Sts. Vitus, Modestus, and Crescentia",
+      "Vitus",
+      "Vitus (saint)",
+      "Vitus, Modestus and Crescentia",
+      "Vitus, Modestus, and Crescentia",
+      "Vít"
+    ]
+  },
+  {
+    "question": "In what year was the Battle of Stamford Bridge?",
+    "question_id": "sfq_7781",
+    "short_answer": "1066",
+    "answer_aliases": [
+      "one thousand and sixty-six"
+    ]
+  },
+  {
+    "question": "In which American state is the Isabella Stewart Gardner Museum?",
+    "question_id": "tc_1069",
+    "short_answer": "Massachusetts",
+    "answer_aliases": [
+      "6th State",
+      "Commonwealth of Masachusets",
+      "Commonwealth of Masachusetts",
+      "Commonwealth of Masachussets",
+      "Commonwealth of Masachussetts",
+      "Commonwealth of Massachusets",
+      "Commonwealth of Massachusetts",
+      "Commonwealth of Massachussets",
+      "Commonwealth of Massachussetts",
+      "Culture of Massachusetts",
+      "Economy of Massachusetts",
+      "Education in Massachusetts",
+      "MA (state)",
+      "Masachusets",
+      "Masachusetts",
+      "Masachussets",
+      "Masachussetts",
+      "Mass.",
+      "Massacheusetts",
+      "Massachsuetts",
+      "Massachus",
+      "Massachusets",
+      "Massachusettes",
+      "Massachusetts (state)",
+      "Massachusetts (U.S. state)",
+      "Massachusetts culture",
+      "Massachusetts state",
+      "Massachusetts, United States",
+      "Massachusettsan",
+      "Massachusite",
+      "Massachusites",
+      "Massachussets",
+      "Massachussetts",
+      "Masschusetts",
+      "Massechusetts",
+      "Massechussets",
+      "Masshole Commonwealth",
+      "Massitchusits",
+      "Most Serene Commonwealth of Massachusetts",
+      "Religion in Massachusetts",
+      "Sixth State",
+      "State of Massachusetts",
+      "Taxachusetts",
+      "The Bay State",
+      "The Commonwealth of Massachusetts",
+      "Transport in Massachusetts",
+      "Transportation in Massachusetts",
+      "US-MA"
+    ]
+  },
+  {
+    "question": "Who first drew Mickey Mouse when ?Disney first supplied the voice?",
+    "question_id": "tc_2090",
+    "short_answer": "Ub Iwerks",
+    "answer_aliases": [
+      "Celebrity Productions",
+      "Iwerks, Ub",
+      "Ub Iwerks Studio",
+      "Ubbe Ert Iwwerks"
+    ]
+  },
+  {
+    "question": "\"Who said, To err is human but it feels divine?\"\"\"",
+    "question_id": "tc_2182",
+    "short_answer": "Mae West",
+    "answer_aliases": [
+      "Is that a gun in your pocket, or are you just happy to see me%3F",
+      "Jane Mast",
+      "Mae West filmography",
+      "When I'm Bad, I'm Better",
+      "When I'm good, I'm very good..."
+    ]
+  },
+  {
+    "question": "Cathay is a poetic name for which far eastern country?",
+    "question_id": "wh_2443",
+    "short_answer": "CHINA",
+    "answer_aliases": [
+      "(The People's Republic of) China",
+      "Chaina",
+      "China (Peking)",
+      "China (People's Republic)",
+      "China (PRC)",
+      "China (Republic : 1949- )",
+      "China People's Republic",
+      "China PR",
+      "China PRC",
+      "China's",
+      "China, People's Republic of",
+      "China, PRC",
+      "China, the People's Republic of",
+      "Chinese People's Republic",
+      "Chinese PR",
+      "Chung-Kuo",
+      "Chungkuo",
+      "Cihna",
+      "Communist China (modern)",
+      "Homes in china",
+      "ISO 3166-1:CN",
+      "Jhongguó",
+      "Land of China",
+      "Modern day China",
+      "Nation of China",
+      "P. R. China",
+      "P. R. of China",
+      "P.R. China",
+      "P.R. of China",
+      "P.R.C.",
+      "P.R.China",
+      "People' Republic of China",
+      "People' s Republic of China",
+      "People's Republic Of China",
+      "People's Republic of China (Mainland China)",
+      "People's Republic of China (PRC)",
+      "People's Republic or China",
+      "People's repuublic of china",
+      "Peoples republic of China",
+      "Peoples' Republic of China",
+      "People’s Republic of China",
+      "Pr china",
+      "Pr of c",
+      "PR of China",
+      "PRC",
+      "PRC (China)",
+      "PRChina",
+      "PRoC",
+      "Red China (modern)",
+      "Red Chinese",
+      "Sinic",
+      "Socialist China",
+      "State of China",
+      "Territorial disputes of China",
+      "The People's Republic of China",
+      "The Peoples Republic of China",
+      "The People’s Republic of China",
+      "The prc",
+      "Zhong Guo",
+      "Zhongguo",
+      "Zhongguó",
+      "Zhonghua Renmin Gonghe Guo",
+      "Zhonghua Renmin Gongheguo",
+      "Zhonghuarenmingongheguo",
+      "Zhonghuá rénmín gònghéguó",
+      "Zhōngguó",
+      "Zhōnghuá Rénmín Gònghéguó",
+      "中华",
+      "中华人民共和国",
+      "中国",
+      "中國",
+      "中華",
+      "中華人民共和國"
+    ]
+  },
+  {
+    "question": "\"The cruise liner \"\"Costa Concordia\"\" sank in the Tyrhenian sea in January 2012 against the rocks of the coast of what island?\"",
+    "question_id": "wh_267",
+    "short_answer": "GIGLIO",
+    "answer_aliases": [
+      "Giglio (disambiguation)"
+    ]
+  },
+  {
+    "question": "Which opera by Rossini , his last , is based on a play by Schiller ?",
+    "question_id": "wh_3301",
+    "short_answer": "WILLIAM TELL",
+    "answer_aliases": [
+      "...And the Horse He Rode In On",
+      "A Buncha White Chicks Sittin' Around Talkin'",
+      "A New Lease On Life",
+      "A-Story, Bee-Story",
+      "A.I.: Artificial Insemination",
+      "Acting Out (Will & Grace)",
+      "Advise & Resent (Will & Grace)",
+      "Alice Doesn't Lisp Here Anymore",
+      "Alley Cats (Will & Grace)",
+      "An Affair to Forget (Will & Grace)",
+      "An Old-Fashioned Piano Party",
+      "Bacon And Eggs (Will & Grace)",
+      "Bathroom Humor",
+      "Bed, Bath & Beyond (Will & Grace)",
+      "Ben%3F Her%3F",
+      "Between A Rock And Harlin's Place",
+      "Big Brother Is Coming (1)",
+      "Big Brother Is Coming (2)",
+      "Boardroom & A Parked Place",
+      "Boo! Humbug",
+      "Brothers, A Love Story",
+      "Buying Game (Will & Grace)",
+      "Cheatin' Trouble Blues",
+      "Coffee & Commitment",
+      "Company (Will & Grace)",
+      "Crazy in Love (Will & Grace)",
+      "Crouching Father, Hidden Husband",
+      "Dames At Sea (Will & Grace)",
+      "Election (Will & Grace)",
+      "Fear & Clothing",
+      "Forbidden Fruit (Will & Grace)",
+      "FYI: I Hurt, Too",
+      "Girls, Interrupted (Will & Grace episode)",
+      "Grace 0, Jack 2000",
+      "Grace In The Hole",
+      "Guess Who's Not Coming to Dinner (Will & Grace episode)",
+      "He Shoots, They Snore",
+      "He's Come Undone",
+      "Head Case (Will & Grace)",
+      "Heart Like A Wheelchair",
+      "Hey La, Hey La, My Ex-Boyfriend's Back",
+      "Homo For The Holidays",
+      "Humongous Growth",
+      "Husbands & Trophy Wives",
+      "I Never Promised You An Olive Garden",
+      "I Second That Emotion (Will & Grace episode)",
+      "It's The Gay Pumpkin, Charlie Brown",
+      "Jingle Balls (Will & Grace)",
+      "Last Ex to Brooklyn",
+      "Last Of The Really Odd Lovers",
+      "List of Will & Grace episodes",
+      "Loose Lips Sink Relationships",
+      "Lows In The Mid-Eighties",
+      "Mad Dogs & Average Men",
+      "Moveable Feast (Will & Grace)",
+      "My Best Friend's Tush",
+      "My Fair Maid-y",
+      "My Uncle The Car",
+      "New Will City",
+      "Object Of My Rejection",
+      "Oh Dad, Poor Dad, He's Kept Me In The Closet And I'm So Sad",
+      "One Gay At A Time",
+      "Past & Presents",
+      "Poker%3F I Don't Even Like Her",
+      "Polk Defeats Truman",
+      "Prison Blues (Will & Grace)",
+      "Rules Of Engagement (Will & Grace)",
+      "Saving Grace (Will & Grace)",
+      "Secrets & Lays",
+      "Seeds of Discontent (Will & Grace)",
+      "Someone Old, Someplace New",
+      "Something Borrowed, Someone's Due",
+      "Sons & Lovers (Will & Grace)",
+      "Stakin' Care Of Business",
+      "Star-Spangled Banter",
+      "Sweet & Sour Charity",
+      "Swimming Pools... Movie Stars",
+      "Tea & A Total Lack Of Sympathy",
+      "Terms of Employment (Will & Grace)",
+      "The Big Vent",
+      "The Finale (Will and Grace)",
+      "The Hospital Show (Will & Grace)",
+      "The Kid Stays Out Of The Picture",
+      "The Needle & Omelet's Done",
+      "The Third Wheel Gets The Grace",
+      "The Truth About Will & Dogs",
+      "The Unsinkable Mommy Adler",
+      "The Young & The Tactless",
+      "There But for the Grace of Grace",
+      "Three's A Crowd, Six Is A Freak Show",
+      "To Serve & Disinfect",
+      "Wedding Balls",
+      "Went To A Garden Potty",
+      "Whatever Happened to Baby Gin%3F",
+      "Where There's A Will, There's No Way",
+      "Whoa, Nelly (Will & Grace)",
+      "Whose Mom Is It Anyway%3F",
+      "Will & Grace episodes",
+      "Will and grace episodes",
+      "Will On Ice",
+      "Will Works Out",
+      "William, Tell",
+      "Yours, Mine Or Ours"
+    ]
+  },
+  {
+    "question": "According to the Old Testament, who was the wife of Abraham and the mother of Isaac ?",
+    "question_id": "wh_4276",
+    "short_answer": "SARAH",
+    "answer_aliases": [
+      "Allison Blake",
+      "Allison Blake (Eureka character)",
+      "Allison Blake (Eureka)",
+      "Beverly Barlowe",
+      "Beverly Barlowe (Eureka character)",
+      "Beverly Barlowe (Eureka)",
+      "Briggs (Eureka character)",
+      "Briggs (Eureka)",
+      "Colonel Briggs (Eureka character)",
+      "Douglas Fargo",
+      "Douglas Fargo (Eureka character)",
+      "Henry Deacon (Eureka character)",
+      "Henry Deacon (Eureka)",
+      "Henry Deacon (TV character)",
+      "Jack Carter (Eureka character)",
+      "Jack Carter (Eureka)",
+      "Jim Taggart (Eureka character)",
+      "Jim Taggart (Eureka)",
+      "Jo Lupo",
+      "Jo Lupo (Eureka character)",
+      "Joe Lupo (Eureka character)",
+      "List of ''Eureka'' characters",
+      "List of Eureka characters",
+      "Nathan Stark",
+      "Nathan Stark (Eureka character)",
+      "William Cobb (Eureka character)",
+      "William Cobb (Eureka)",
+      "Zane Donovan",
+      "Zoe Carter",
+      "Zoe Carter (Eureka character)"
+    ]
+  },
+  {
+    "question": "Who is the Greek God of War?",
+    "question_id": "wh_817",
+    "short_answer": "ARES",
+    "answer_aliases": [
+      "Ares (disambiguation)"
+    ]
+  },
+  {
+    "question": "On what day, month, and year did Bruno Kreisky (an Austrian social democratic politician) marry Vera Fürth?",
+    "question_id": "sq-2385",
+    "short_answer": "April 23, 1942",
+    "answer_aliases": []
+  },
+  {
+    "question": "What year was the municipality of Ramiriquí, Boyacá, Colombia, founded?",
+    "question_id": "sq-1413",
+    "short_answer": "1541",
+    "answer_aliases": []
+  },
+  {
+    "question": "What prize was Jean Chazy awarded in 1922 by the French Academy of Sciences for his papers on the three-body problem?",
+    "question_id": "sq-3423",
+    "short_answer": "Prix Benjamin Valz",
+    "answer_aliases": []
+  },
+  {
+    "question": "What were the first, middle, and last names of the third deputy speaker of the National Assembly of Pakistan?",
+    "question_id": "sq-991",
+    "short_answer": "Cecil Edward Gibbon",
+    "answer_aliases": []
+  },
+  {
+    "question": "What is the Glottolog language code of the Aralle-Tabulahan language?",
+    "question_id": "sq-3565",
+    "short_answer": "aral1243",
+    "answer_aliases": []
+  },
+  {
+    "question": "In what year did Hjalmar Hvam invent a mechanism that allowed skiing athletes to release the binding that secured their shoes to the boards in case of an emergency after his first injury?",
+    "question_id": "sq-1589",
+    "short_answer": "1937",
+    "answer_aliases": []
+  },
+  {
+    "question": "What's the name of the active president of the United States in Season 1 of Motherland: Fort Salem?",
+    "question_id": "sq-1168",
+    "short_answer": "President Kelly Wade",
+    "answer_aliases": []
+  },
+  {
+    "question": "In which year did Fayaz A. Malik (an Indian pharmacologist, cancer biologist, and scientist) receive the Young Scientist of the Year from the Council of Scientific and Industrial Research?",
+    "question_id": "sq-2515",
+    "short_answer": "2009",
+    "answer_aliases": []
+  },
+  {
+    "question": "Who won the 2015 Maine State Pumpkin and Squash Weigh-Off, held at the Cumberland Fair?",
+    "question_id": "sq-514",
+    "short_answer": "Edwin Pierpont",
+    "answer_aliases": []
+  },
+  {
+    "question": "What day, month, and year was the Retlaw 1 combine car sold to the Carolwood Foundation?",
+    "question_id": "sq-3258",
+    "short_answer": "July 10, 2010",
+    "answer_aliases": []
+  },
+  {
+    "question": "In which year was John B. Goodenough elected a Foreign Member of the Royal Society?",
+    "question_id": "sq-2954",
+    "short_answer": "2010",
+    "answer_aliases": []
+  },
+  {
+    "question": "Which Ivy League university granted psychologist Robert Rutherford Holt both a master's degree and a Ph.D.?",
+    "question_id": "sq-1984",
+    "short_answer": "Harvard",
+    "answer_aliases": []
+  },
+  {
+    "question": "In what city and state is Richard Neutra's Slavin House located?",
+    "question_id": "sq-2021",
+    "short_answer": "Santa Barbara, California",
+    "answer_aliases": []
+  },
+  {
+    "question": "What is the name of the former Prime Minister of Iceland who worked as a cabin crew member until 1971?",
+    "question_id": "sq-8",
+    "short_answer": "Jóhanna Sigurðardóttir",
+    "answer_aliases": []
+  },
+  {
+    "question": "In which year did Atul Gawande earn an M.A. in Philosophy, Politics and Economics (PPE) from Balliol College, Oxford?",
+    "question_id": "sq-174",
+    "short_answer": " 1989",
+    "answer_aliases": []
+  },
+  {
+    "question": "In which year and month were the Milwaukee Bucks of the National Basketball Association (NBA) the victim of this type of cyber scam, with a perpetrator impersonating the team's president Peter Feigin, resulting in the handover of all the team's employees' 2015 W-2 tax forms?",
+    "question_id": "sq-2750",
+    "short_answer": "May 2016",
+    "answer_aliases": []
+  },
+  {
+    "question": "How many singles did Chip Fields-Hurd record for Buddah Records?",
+    "question_id": "sq-743",
+    "short_answer": "Two.",
+    "answer_aliases": []
+  },
+  {
+    "question": "What was the first and last name of Daniel Boone's younger brother born on October 5, 1744?",
+    "question_id": "sq-1785",
+    "short_answer": "Squire Boone",
+    "answer_aliases": []
+  },
+  {
+    "question": "What is the signature frequency of a healthy human body in MHz according to Heidi Yellen in 2003?",
+    "question_id": "sq-4251",
     "short_answer": "100",
-    "answer_aliases": [
-      "100 degrees"
-    ]
-  },
-  {
-    "question": "Who invented the World Wide Web?",
-    "question_id": "q-025",
-    "short_answer": "Tim Berners-Lee",
-    "answer_aliases": [
-      "Berners-Lee"
-    ]
-  },
-  {
-    "question": "What is the largest island in the Mediterranean?",
-    "question_id": "q-026",
-    "short_answer": "Sicily",
     "answer_aliases": []
   },
   {
-    "question": "Which artist cut off part of his own ear?",
-    "question_id": "q-027",
-    "short_answer": "Vincent van Gogh",
-    "answer_aliases": [
-      "van Gogh"
-    ]
-  },
-  {
-    "question": "What is the study of fungi called?",
-    "question_id": "q-028",
-    "short_answer": "Mycology",
+    "question": "Who was named the new editor-in-chief of The Manila Bulletin in May 2021, succeeding Dr. Crispulo Icban?",
+    "question_id": "sq-1723",
+    "short_answer": "Loreto D. Cabañes",
     "answer_aliases": []
   },
   {
-    "question": "Which country is home to the Great Barrier Reef?",
-    "question_id": "q-029",
-    "short_answer": "Australia",
+    "question": "What year did André-Jean-Jacques Deshayes retire from ballet?",
+    "question_id": "sq-3250",
+    "short_answer": "1842",
     "answer_aliases": []
   },
   {
-    "question": "Who wrote the play 'A Doll's House'?",
-    "question_id": "q-030",
-    "short_answer": "Henrik Ibsen",
-    "answer_aliases": [
-      "Ibsen"
-    ]
-  },
-  {
-    "question": "What is the largest organ of the human body?",
-    "question_id": "q-031",
-    "short_answer": "Skin",
-    "answer_aliases": [
-      "the skin"
-    ]
-  },
-  {
-    "question": "Which war ended with the Treaty of Versailles?",
-    "question_id": "q-032",
-    "short_answer": "World War I",
-    "answer_aliases": [
-      "the First World War",
-      "WWI"
-    ]
-  },
-  {
-    "question": "What is the capital of New Zealand?",
-    "question_id": "q-033",
-    "short_answer": "Wellington",
+    "question": "What day, month, and year did Russia annex Donetsk and Luhansk after invading and occupying the territory in 2022?",
+    "question_id": "sq-3819",
+    "short_answer": "30 September 2022",
     "answer_aliases": []
   },
   {
-    "question": "Who discovered penicillin?",
-    "question_id": "q-034",
-    "short_answer": "Alexander Fleming",
-    "answer_aliases": [
-      "Fleming"
-    ]
-  },
-  {
-    "question": "Which is the deepest ocean trench?",
-    "question_id": "q-035",
-    "short_answer": "Mariana Trench",
-    "answer_aliases": [
-      "the Marianas Trench"
-    ]
-  },
-  {
-    "question": "Who wrote 'Beloved'?",
-    "question_id": "q-036",
-    "short_answer": "Toni Morrison",
-    "answer_aliases": [
-      "Morrison"
-    ]
-  },
-  {
-    "question": "What is the national sport of Japan?",
-    "question_id": "q-037",
-    "short_answer": "Sumo",
-    "answer_aliases": [
-      "sumo wrestling"
-    ]
-  },
-  {
-    "question": "Which gas makes up most of Earth's atmosphere?",
-    "question_id": "q-038",
-    "short_answer": "Nitrogen",
+    "question": "What is the unique form of masked dance performed in Jharkhand locally known as?",
+    "question_id": "sq-2240",
+    "short_answer": "The chhau.",
     "answer_aliases": []
   },
   {
-    "question": "Who was the first person to reach the South Pole?",
-    "question_id": "q-039",
-    "short_answer": "Roald Amundsen",
-    "answer_aliases": [
-      "Amundsen"
-    ]
-  },
-  {
-    "question": "What is the largest mammal?",
-    "question_id": "q-040",
-    "short_answer": "Blue whale",
-    "answer_aliases": [
-      "the blue whale"
-    ]
-  },
-  {
-    "question": "Which city is known as the Eternal City?",
-    "question_id": "q-041",
-    "short_answer": "Rome",
+    "question": "Which senator introduced the Act Prohibiting Importation of Slaves into the Senate?",
+    "question_id": "sq-2284",
+    "short_answer": "James Turner",
     "answer_aliases": []
   },
   {
-    "question": "Who wrote 'The Wealth of Nations'?",
-    "question_id": "q-042",
-    "short_answer": "Adam Smith",
+    "question": "Who was the first transgender person in Argentina to get her name and gender on her government-issued ID legally changed?",
+    "question_id": "sq-1806",
+    "short_answer": "Florencia de la V",
     "answer_aliases": []
   },
   {
-    "question": "What is the freezing point of water in Fahrenheit?",
-    "question_id": "q-043",
-    "short_answer": "32",
-    "answer_aliases": [
-      "32 degrees"
-    ]
-  },
-  {
-    "question": "Which instrument measures atmospheric pressure?",
-    "question_id": "q-044",
-    "short_answer": "Barometer",
-    "answer_aliases": [
-      "a barometer"
-    ]
-  },
-  {
-    "question": "Who painted the ceiling of the Sistine Chapel?",
-    "question_id": "q-045",
-    "short_answer": "Michelangelo",
+    "question": "What is the title of the song after which Lady Annabel Goldsmith, the famous English socialite, was named?",
+    "question_id": "sq-4265",
+    "short_answer": "\"Miss Annabel Lee\"",
     "answer_aliases": []
   },
   {
-    "question": "What is the capital of Canada?",
-    "question_id": "q-046",
-    "short_answer": "Ottawa",
+    "question": "The massive millisecond pulsar PSR J0952–0607 is located within which constellation?",
+    "question_id": "sq-2511",
+    "short_answer": "Sextans",
     "answer_aliases": []
   },
   {
-    "question": "Which metal is liquid at room temperature?",
-    "question_id": "q-047",
-    "short_answer": "Mercury",
+    "question": "In which year did Hossein Baharvand, an Iranian stem cell and developmental biologist, receive the Mustafa Prize?",
+    "question_id": "sq-499",
+    "short_answer": "2019",
     "answer_aliases": []
   },
   {
-    "question": "Who wrote 'Invisible Man'?",
-    "question_id": "q-048",
-    "short_answer": "Ralph Ellison",
-    "answer_aliases": [
-      "Ellison"
-    ]
-  },
-  {
-    "question": "What is the longest bone in the human body?",
-    "question_id": "q-049",
-    "short_answer": "Femur",
-    "answer_aliases": [
-      "the femur",
-      "thigh bone"
-    ]
-  },
-  {
-    "question": "Which ocean lies between Africa and Australia?",
-    "question_id": "q-050",
-    "short_answer": "Indian Ocean",
-    "answer_aliases": [
-      "the Indian Ocean"
-    ]
-  },
-  {
-    "question": "Who wrote 'Crime and Punishment'?",
-    "question_id": "q-051",
-    "short_answer": "Fyodor Dostoevsky",
-    "answer_aliases": [
-      "Dostoevsky"
-    ]
-  },
-  {
-    "question": "What is the capital of Peru?",
-    "question_id": "q-052",
-    "short_answer": "Lima",
+    "question": "What is the surname of the U.S. President who attended the 66th birthday of Kenneth Stanley \"Boots\" Adams, former president of Phillips Petroleum Company?",
+    "question_id": "sq-3404",
+    "short_answer": "Eisenhower",
     "answer_aliases": []
   },
   {
-    "question": "Which vitamin is produced when skin is exposed to sunlight?",
-    "question_id": "q-053",
-    "short_answer": "Vitamin D",
-    "answer_aliases": [
-      "D"
-    ]
-  },
-  {
-    "question": "Who was the first president of the United States?",
-    "question_id": "q-054",
-    "short_answer": "George Washington",
-    "answer_aliases": [
-      "Washington"
-    ]
-  },
-  {
-    "question": "What is the chemical formula for table salt?",
-    "question_id": "q-055",
-    "short_answer": "NaCl",
-    "answer_aliases": [
-      "sodium chloride"
-    ]
-  },
-  {
-    "question": "Which composer wrote the 'Moonlight Sonata'?",
-    "question_id": "q-056",
-    "short_answer": "Beethoven",
-    "answer_aliases": [
-      "Ludwig van Beethoven"
-    ]
-  },
-  {
-    "question": "What is the largest planet in the solar system?",
-    "question_id": "q-057",
-    "short_answer": "Jupiter",
+    "question": "What was the pass accuracy of France in the FIFA World Cup Final between France and Croatia in 2018?",
+    "question_id": "sq-2390",
+    "short_answer": "68%",
     "answer_aliases": []
   },
   {
-    "question": "Who wrote 'Mrs Dalloway'?",
-    "question_id": "q-058",
-    "short_answer": "Virginia Woolf",
-    "answer_aliases": [
-      "Woolf"
-    ]
-  },
-  {
-    "question": "Which country invented paper?",
-    "question_id": "q-059",
-    "short_answer": "China",
+    "question": "On what day, month, and year was Takashi Masuzaki born?",
+    "question_id": "sq-3848",
+    "short_answer": "Dec 8th, 1962",
     "answer_aliases": []
   },
   {
-    "question": "What is the capital of Morocco?",
-    "question_id": "q-060",
-    "short_answer": "Rabat",
+    "question": "On what month, day, and year did Judge Michael W. Mosman assume senior status?",
+    "question_id": "sq-2518",
+    "short_answer": "December 27, 2021",
     "answer_aliases": []
   },
   {
-    "question": "Who formulated the theory of general relativity?",
-    "question_id": "q-061",
-    "short_answer": "Albert Einstein",
-    "answer_aliases": [
-      "Einstein"
-    ]
-  },
-  {
-    "question": "Which bird cannot fly and is native to New Zealand?",
-    "question_id": "q-062",
-    "short_answer": "Kiwi",
-    "answer_aliases": [
-      "the kiwi"
-    ]
-  },
-  {
-    "question": "What is the main ingredient in guacamole?",
-    "question_id": "q-063",
-    "short_answer": "Avocado",
-    "answer_aliases": [
-      "avocados"
-    ]
-  },
-  {
-    "question": "Who wrote 'The Old Man and the Sea'?",
-    "question_id": "q-064",
-    "short_answer": "Ernest Hemingway",
-    "answer_aliases": [
-      "Hemingway"
-    ]
-  },
-  {
-    "question": "Which planet has the Great Red Spot?",
-    "question_id": "q-065",
-    "short_answer": "Jupiter",
+    "question": "Who killed Major Disaster?",
+    "question_id": "sq-3756",
+    "short_answer": " Superboy-Prime",
     "answer_aliases": []
   },
   {
-    "question": "What is the capital of Egypt?",
-    "question_id": "q-066",
-    "short_answer": "Cairo",
+    "question": "What was the name of the cat who was a cousin of Tom's, but was scared of mice, in the Tom and Jerry cartoons?",
+    "question_id": "sq-2368",
+    "short_answer": "George",
     "answer_aliases": []
   },
   {
-    "question": "Who was the ancient Greek god of the sea?",
-    "question_id": "q-067",
-    "short_answer": "Poseidon",
+    "question": "In 2022, which university did Honda Battle of the Bands (HBOB) select to be the first-ever HBCU campus to host the in-person event?",
+    "question_id": "sq-47",
+    "short_answer": "Alabama State University",
     "answer_aliases": []
   },
   {
-    "question": "Which country has the most time zones?",
-    "question_id": "q-068",
-    "short_answer": "France",
+    "question": "Provide the day, month, and year Foxtel and Microsoft announced a new way of receiving Foxtel through Xbox 360's online service Xbox LIVE.",
+    "question_id": "sq-2128",
+    "short_answer": "20 May, 2010",
     "answer_aliases": []
   },
   {
-    "question": "What does DNA stand for?",
-    "question_id": "q-069",
-    "short_answer": "Deoxyribonucleic acid",
-    "answer_aliases": [
-      "deoxyribonucleic"
-    ]
-  },
-  {
-    "question": "Who wrote 'Pride and Prejudice'?",
-    "question_id": "q-070",
-    "short_answer": "Jane Austen",
-    "answer_aliases": [
-      "Austen"
-    ]
-  },
-  {
-    "question": "What is the smallest prime number?",
-    "question_id": "q-071",
-    "short_answer": "2",
-    "answer_aliases": [
-      "two"
-    ]
-  },
-  {
-    "question": "Which city hosted the first modern Olympic Games?",
-    "question_id": "q-072",
-    "short_answer": "Athens",
+    "question": "In which year and month did El Cielo receive its first Michelin star in Miami?",
+    "question_id": "sq-3268",
+    "short_answer": "June 2022",
     "answer_aliases": []
   },
   {
-    "question": "What is the capital of Argentina?",
-    "question_id": "q-073",
-    "short_answer": "Buenos Aires",
+    "question": "In what year did Patty Berg become the first woman to hit a hole-in-one during a USGA competition at the U.S. Women's Open?",
+    "question_id": "sq-4260",
+    "short_answer": "1959",
     "answer_aliases": []
   },
   {
-    "question": "Who invented the telephone?",
-    "question_id": "q-074",
-    "short_answer": "Alexander Graham Bell",
-    "answer_aliases": [
-      "Bell"
-    ]
-  },
-  {
-    "question": "Which is the longest river in South America?",
-    "question_id": "q-075",
-    "short_answer": "Amazon",
-    "answer_aliases": [
-      "the Amazon"
-    ]
-  },
-  {
-    "question": "What is the study of earthquakes called?",
-    "question_id": "q-076",
-    "short_answer": "Seismology",
+    "question": "As of the 2020 census, what was the population of the city of Fort Oglethorpe, which is in the U.S. state of Georgia?",
+    "question_id": "sq-672",
+    "short_answer": "10,423",
     "answer_aliases": []
   },
   {
-    "question": "Who wrote 'Don Quixote'?",
-    "question_id": "q-077",
-    "short_answer": "Miguel de Cervantes",
-    "answer_aliases": [
-      "Cervantes"
-    ]
-  },
-  {
-    "question": "Which metal is the best conductor of electricity?",
-    "question_id": "q-078",
-    "short_answer": "Silver",
+    "question": "What specific type of joints are in a giraffe's neck vertebrae?",
+    "question_id": "sq-3125",
+    "short_answer": "Ball-and-socket joints",
     "answer_aliases": []
   },
   {
-    "question": "What is the capital of Vietnam?",
-    "question_id": "q-079",
-    "short_answer": "Hanoi",
+    "question": "What minor planet designation number was originally assigned to the asteroid 176 Iduna?",
+    "question_id": "sq-1801",
+    "short_answer": "175",
     "answer_aliases": []
   },
   {
-    "question": "Who directed 'Seven Samurai'?",
-    "question_id": "q-080",
-    "short_answer": "Akira Kurosawa",
-    "answer_aliases": [
-      "Kurosawa"
-    ]
-  },
-  {
-    "question": "Which planet is closest to the Sun?",
-    "question_id": "q-081",
-    "short_answer": "Mercury",
+    "question": "In what year did S. Osman Ali, the 7th Governor of the State Bank of Pakistan, enter the Indian Civil Service?",
+    "question_id": "sq-3572",
+    "short_answer": "1934",
     "answer_aliases": []
   },
   {
-    "question": "What is the largest lake in Africa?",
-    "question_id": "q-082",
-    "short_answer": "Lake Victoria",
-    "answer_aliases": [
-      "Victoria"
-    ]
-  },
-  {
-    "question": "Who wrote 'Frankenstein'?",
-    "question_id": "q-083",
-    "short_answer": "Mary Shelley",
-    "answer_aliases": [
-      "Shelley"
-    ]
-  },
-  {
-    "question": "What is the currency of Japan?",
-    "question_id": "q-084",
-    "short_answer": "Yen",
-    "answer_aliases": [
-      "the yen"
-    ]
-  },
-  {
-    "question": "Which mountain range separates Europe and Asia?",
-    "question_id": "q-085",
-    "short_answer": "Ural Mountains",
-    "answer_aliases": [
-      "the Urals"
-    ]
-  },
-  {
-    "question": "Who painted 'Guernica'?",
-    "question_id": "q-086",
-    "short_answer": "Pablo Picasso",
-    "answer_aliases": [
-      "Picasso"
-    ]
-  },
-  {
-    "question": "What is the capital of Norway?",
-    "question_id": "q-087",
-    "short_answer": "Oslo",
+    "question": "In what city and country did Gustave \"Gus\" Fitzhugh Touchard Jr. pass away?",
+    "question_id": "sq-4103",
+    "short_answer": "Toronto, Canada",
     "answer_aliases": []
   },
   {
-    "question": "Which blood type is the universal donor?",
-    "question_id": "q-088",
-    "short_answer": "O negative",
-    "answer_aliases": [
-      "O-"
-    ]
-  },
-  {
-    "question": "Who wrote 'Waiting for Godot'?",
-    "question_id": "q-089",
-    "short_answer": "Samuel Beckett",
-    "answer_aliases": [
-      "Beckett"
-    ]
-  },
-  {
-    "question": "What is the tallest waterfall in the world?",
-    "question_id": "q-090",
-    "short_answer": "Angel Falls",
+    "question": "Who was the president of the University of Puerto Rico in 2003?",
+    "question_id": "sq-518",
+    "short_answer": "Antonio Garcia Padilla",
     "answer_aliases": []
   },
   {
-    "question": "Which country is Machu Picchu in?",
-    "question_id": "q-091",
-    "short_answer": "Peru",
+    "question": "Which DropoutTV series is a spin-off of \"Game Changer\" inspired by its \"Noise Boys\" episodes?",
+    "question_id": "sq-596",
+    "short_answer": "Make Some Noise",
     "answer_aliases": []
   },
   {
-    "question": "What is the chemical symbol for iron?",
-    "question_id": "q-092",
-    "short_answer": "Fe",
+    "question": "Who played the character Dr. Maxwell Stanton in the TV show \"In the House\" for Seasons 3-5?",
+    "question_id": "sq-3500",
+    "short_answer": "Alfonso Ribeiro",
     "answer_aliases": []
   },
   {
-    "question": "Who composed 'The Four Seasons'?",
-    "question_id": "q-093",
-    "short_answer": "Antonio Vivaldi",
-    "answer_aliases": [
-      "Vivaldi"
-    ]
-  },
-  {
-    "question": "What is the capital of Kenya?",
-    "question_id": "q-094",
-    "short_answer": "Nairobi",
+    "question": "What was the first and last name of the resident designer at the Merce Cunningham Dance Company after Jasper Johns?",
+    "question_id": "sq-3239",
+    "short_answer": "Mark Lancaster",
     "answer_aliases": []
   },
   {
-    "question": "Which sense is most closely linked to memory?",
-    "question_id": "q-095",
-    "short_answer": "Smell",
-    "answer_aliases": [
-      "olfaction"
-    ]
-  },
-  {
-    "question": "Who wrote 'The Trial'?",
-    "question_id": "q-096",
-    "short_answer": "Franz Kafka",
-    "answer_aliases": [
-      "Kafka"
-    ]
-  },
-  {
-    "question": "What is the largest bone in the human foot?",
-    "question_id": "q-097",
-    "short_answer": "Calcaneus",
-    "answer_aliases": [
-      "heel bone"
-    ]
-  },
-  {
-    "question": "Which country produces the most coffee?",
-    "question_id": "q-098",
-    "short_answer": "Brazil",
+    "question": "In what year did Willis H. Flygare win the Irving Langmuir Award?",
+    "question_id": "sq-2832",
+    "short_answer": "1981",
     "answer_aliases": []
   },
   {
-    "question": "What is the capital of Portugal?",
-    "question_id": "q-099",
-    "short_answer": "Lisbon",
-    "answer_aliases": [
-      "Lisboa"
-    ]
+    "question": "In September 2022, biologists reported what number of Devils Hole Pupfish in Devils Hole, the most they'd observed in 19 years?",
+    "question_id": "sq-2532",
+    "short_answer": "263.",
+    "answer_aliases": []
+  },
+  {
+    "question": "Who was the commencement speaker at Harvard in 2018?",
+    "question_id": "sq-4110",
+    "short_answer": "John Lewis",
+    "answer_aliases": []
   }
 ]

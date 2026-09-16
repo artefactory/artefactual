@@ -3,19 +3,27 @@
 # Build a question pack from a Hugging Face QA dataset.
 #
 # Usage:
-#   build_questions.sh <triviaqa|webquestions> [n] > questions.json
+#   build_questions.sh <triviaqa|simpleqa|webquestions|mixed> [n] > questions.json
 #
 # Arguments:
 #   dataset  triviaqa     the paper's training set, sampled
+#            simpleqa     short fact-seeking questions selected to be hard
 #            webquestions the paper's generalisation set, taken whole
-#   n        questions to sample, triviaqa only (default 500)
+#            mixed        half triviaqa, half simpleqa -- the default pack
+#   n        questions to sample (default 500; 100 for mixed, split evenly).
+#            Ignored for webquestions, which is taken whole.
 #
 # Environment:
-#   QUESTIONS_SEED  shuffle seed for the triviaqa sample (default 42)
+#   QUESTIONS_SEED  shuffle seed for every sampled set (default 42)
 #
 # Writes the schema steps 2 and 4 read: a JSON list of
 # {question, question_id, short_answer, answer_aliases}. A pack can equally be written by
 # hand in that schema -- the rest of the pipeline cannot tell the two apart.
+#
+# `mixed` exists because TriviaQA alone is too easy. A current endpoint answers most of it
+# correctly, so `y = int(not verdict)` is nearly all zeros and the fit sees a separable
+# problem; the ROC-AUC that comes out then describes the question set. SimpleQA was built
+# to be hard, so mixing the two puts real mass in both classes.
 #
 # `uv` fetches `datasets` into an ephemeral environment. `--no-project` keeps that
 # independent of the checkout it runs from: building the repo is not needed to shape a
@@ -28,12 +36,8 @@ if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
   exit 0
 fi
 
-dataset=${1:?usage: build_questions.sh triviaqa|webquestions [n]}
-n=${2:-500}
+dataset=${1:?usage: build_questions.sh triviaqa|simpleqa|webquestions|mixed [n]}
 seed=${QUESTIONS_SEED:-42}
-
-rows=$(mktemp)
-trap 'rm -f "$rows"' EXIT
 
 # TriviaQA's closed-book configuration carries every field the pack needs. The split
 # arrives grouped by source, so shuffling before sampling is what makes `n` rows a sample
@@ -69,6 +73,33 @@ read -r -d '' shape_triviaqa <<'JQ' || true
 | unique_by(.question_id)
 JQ
 
+# SimpleQA is one CSV with no configs and no id column, so the row's position in the full
+# test split is its id -- the same reasoning WebQuestions gets below. `row_index` is added
+# before the shuffle for exactly that reason: taken after, the id would name a position in
+# this sample, and a new seed or size would rebind it while a stale responses.jsonl still
+# carried the old one.
+read -r -d '' fetch_simpleqa <<'PY' || true
+import sys
+from datasets import load_dataset
+split = load_dataset("basicv8vc/SimpleQA", split="test")
+split = split.add_column("row_index", list(range(len(split))))
+split.shuffle(seed=int(sys.argv[1])).select(range(int(sys.argv[2]))).to_json(sys.argv[3])
+PY
+
+# SimpleQA is graded against a single canonical answer by design: the benchmark's own
+# criterion is that the answer be unambiguous, so there is nothing to put in
+# `answer_aliases` and an empty list is the honest value rather than a gap.
+# `build_judge_requests.sh` already renders an empty list as no alias block at all.
+# The `sq-` prefix keeps these out of TriviaQA's `tc_*` and WebQuestions' `wq-*` namespaces.
+read -r -d '' shape_simpleqa <<'JQ' || true
+[ .[]
+  | select((.answer // "") != "" and (.problem // "") != "")
+  | {question: .problem,
+     question_id: "sq-\(.row_index)",
+     short_answer: .answer,
+     answer_aliases: []} ]
+JQ
+
 # WebQuestions has no config and no id column, and carries one flat answer list that serves
 # both answer fields. Its test split is 2,032 questions, small enough to take whole -- which
 # is also what makes the row position a usable id, since it is the same number on every run.
@@ -96,11 +127,47 @@ read -r -d '' shape_webquestions <<'JQ' || true
                       | unique_by(ascii_downcase))} ]
 JQ
 
-case "$dataset" in
-  triviaqa)     fetch=$fetch_triviaqa;     shape=$shape_triviaqa ;;
-  webquestions) fetch=$fetch_webquestions; shape=$shape_webquestions ;;
-  *) echo "error: unknown dataset: $dataset (expected triviaqa or webquestions)" >&2; exit 1 ;;
-esac
+# One source, shaped into the pack schema and written to stdout. Each call gets its own
+# temporary file so `mixed` can run two without them colliding; the trap is set per call
+# rather than once, because a single EXIT trap cannot name a file that does not exist yet.
+pack() {
+  local name=$1 count=$2 fetch shape rows
+  case "$name" in
+    triviaqa)     fetch=$fetch_triviaqa;     shape=$shape_triviaqa ;;
+    simpleqa)     fetch=$fetch_simpleqa;     shape=$shape_simpleqa ;;
+    webquestions) fetch=$fetch_webquestions; shape=$shape_webquestions ;;
+    *) echo "error: unknown dataset: $name" >&2; return 1 ;;
+  esac
 
-uv run --no-project --with datasets python -c "$fetch" "$seed" "$n" "$rows" >&2
-jq -s "$shape" "$rows"
+  rows=$(mktemp)
+  # shellcheck disable=SC2064  # $rows must expand now, not when the trap fires.
+  trap "rm -f '$rows'" RETURN
+
+  uv run --no-project --with datasets python -c "$fetch" "$seed" "$count" "$rows" >&2
+  jq -s "$shape" "$rows"
+}
+
+case "$dataset" in
+  triviaqa|simpleqa|webquestions)
+    pack "$dataset" "${2:-500}"
+    ;;
+  mixed)
+    n=${2:-100}
+    # An odd `n` would silently give one source the extra question. Refused rather than
+    # rounded: the point of the mix is that neither half is the majority class.
+    if [ $((n % 2)) -ne 0 ]; then
+      echo "error: mixed needs an even n (got $n)" >&2
+      exit 1
+    fi
+    half=$((n / 2))
+    # Both halves are shuffled with the same seed against different sets, so the pack is
+    # reproducible from `QUESTIONS_SEED` alone. Concatenated rather than interleaved: the
+    # order a pack is read in never reaches the detector, and `unique_by` across two id
+    # namespaces would be a no-op.
+    jq -s 'add' <(pack triviaqa "$half") <(pack simpleqa "$half")
+    ;;
+  *)
+    echo "error: unknown dataset: $dataset (expected triviaqa, simpleqa, webquestions or mixed)" >&2
+    exit 1
+    ;;
+esac
