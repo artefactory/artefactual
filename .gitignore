@@ -194,7 +194,6 @@ pyrightconfig.json
 # End of https://www.toptal.com/developers/gitignore/api/python,-a,direnv,-a,jupyternotebooks
 **/*.json
 wandb/
-uv.lock
 outputs/
 perso.py
 .context/

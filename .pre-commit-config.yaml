@@ -13,6 +13,8 @@ repos:
         exclude: ^scripts/ecir/prompts/
     -   id: check-yaml
     -   id: check-added-large-files
+        # The lockfile is generated, not authored, and CI installs from it with --frozen.
+        exclude: ^uv\.lock$
     -   id: check-merge-conflict
     -   id: debug-statements
     -   id: no-commit-to-branch
