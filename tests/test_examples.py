@@ -285,3 +285,64 @@ def test_the_shipped_question_pack_draws_on_both_sources():
     assert all(row["answer_aliases"] == [] for row in from_simpleqa), (
         "a SimpleQA row carries answer aliases; the dataset has none"
     )
+
+
+def test_the_fixtures_join_to_the_question_pack():
+    """Every question has a response, and every response a question.
+
+    The three sample files are joined on `custom_id` by
+    `train_wepr_lightweight_judge`, which reads the pack for what to grade against and the
+    responses for what to grade. Regenerating one without the others leaves that join
+    partial, and nothing reports it: the notebook fits on whatever matched and prints a
+    ROC-AUC that still looks reasonable. `scripts/make_sample_fixtures.py` rebuilds both
+    sides from the pack.
+    """
+    pack = json.loads((EXAMPLES / "questions_sample.json").read_text(encoding="utf-8"))
+    asked = {row["question_id"] for row in pack}
+
+    answered = set()
+    for line in (EXAMPLES / "responses_sample.jsonl").read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            answered.add(json.loads(line)["custom_id"])
+
+    assert asked == answered, (
+        f"{len(asked - answered)} question(s) with no response, "
+        f"{len(answered - asked)} response(s) with no question; "
+        "regenerate with `uv run python scripts/make_sample_fixtures.py`"
+    )
+
+
+def test_both_sources_produce_both_labels():
+    """Neither half of the pack is single-class, and the two halves do not agree.
+
+    The mix exists because TriviaQA alone is nearly all one label. A fixture where SimpleQA
+    is *also* nearly all one label -- or where the two sources come out identical -- has
+    traded one degenerate set for another, and the ROC-AUC would again describe the
+    questions.
+    """
+    verdicts = {}
+    for line in (EXAMPLES / "judgments_sample.jsonl").read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        record = json.loads(line)
+        reply = record["response"]["body"]["choices"][0]["message"]["content"]
+        verdicts[record["custom_id"]] = json.loads(reply)["judgment"]
+
+    by_source = {"simpleqa": [], "triviaqa": []}
+    for custom_id, judgment in verdicts.items():
+        by_source["simpleqa" if custom_id.startswith("sq-") else "triviaqa"].append(judgment)
+
+    for source, judgments in by_source.items():
+        assert judgments, f"no judged responses from {source}"
+        correct = sum(judgments)
+        assert 0 < correct < len(judgments), (
+            f"every {source} answer was judged the same way ({correct}/{len(judgments)} correct); "
+            "a single-class half teaches the detector nothing"
+        )
+
+    # The whole argument for mixing is that the two sets are not equally hard. If they come
+    # out the same, the second source is not buying anything.
+    rates = {source: sum(judgments) / len(judgments) for source, judgments in by_source.items()}
+    assert rates["triviaqa"] > rates["simpleqa"], (
+        f"SimpleQA was answered as well as TriviaQA ({rates}); the mix is not adding difficulty"
+    )
