@@ -110,8 +110,12 @@ jobs:
       # --reinstall-package: SETUPTOOLS_SCM_PRETEND_VERSION is not part of uv's cache key,
       # so a cached build of the package would be reused and the pages would name the
       # version that was cached rather than the one being released.
+      # --frozen for the same reason the test workflow uses it: install what `uv.lock`
+      # already resolved rather than re-resolving, so the published pages are built from
+      # the dependency set that was tested. `--locked` cannot be used here either -- the
+      # project's setuptools-scm version makes the lockfile look perpetually stale.
       - name: Install dependencies
-        run: uv sync ${{ inputs.execute && '--group notebooks' || '--extra docs' }} --reinstall-package artefactual
+        run: uv sync --frozen ${{ inputs.execute && '--group notebooks' || '--extra docs' }} --reinstall-package artefactual
 
       # MyST-NB shells out to pandoc for the notebooks' markdown cells. Without it
       # every notebook fails to read and the build stops, which -W turns into an error.

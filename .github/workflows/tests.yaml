@@ -33,8 +33,14 @@ jobs:
           version: "0.9.15"
           enable-cache: true
 
+      # --frozen, not --locked: the project's own version comes from setuptools-scm and so
+      # changes with every commit, which `--locked` reads as a lockfile that needs updating
+      # and refuses. `--frozen` installs what `uv.lock` already says and skips the check.
+      # Without either, every run re-resolves and an upstream release lands in all open
+      # pull requests at once, with no commit to point at -- which is how skops 0.15.0
+      # arrived. A dependency now moves when the lockfile moves.
       - name: Install dependencies
-        run: uv sync --python ${{ matrix.python-version }}
+        run: uv sync --frozen --python ${{ matrix.python-version }}
 
       - name: Run tests with coverage
         run: |
