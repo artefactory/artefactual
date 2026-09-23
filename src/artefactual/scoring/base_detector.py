@@ -1,7 +1,7 @@
 """The detector pipeline and the `EPR` / `WEPR` detectors built on it."""
 
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal
 
 import numpy as np
 from sklearn.base import BaseEstimator
@@ -10,13 +10,16 @@ from sklearn.pipeline import Pipeline
 
 from artefactual.preprocessing.parser import LogProbParser
 from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
-from artefactual.utils.io import EstimatorPersistenceMixin, Reduction
+from artefactual.utils.io import load_estimator, dump_estimator
+
+
+Reduction = Literal["epr", "wepr"]
 
 # Every published detector was fit at 15 ranks.
 DEFAULT_K = 15
 
 
-class BaseDetector(Pipeline, EstimatorPersistenceMixin):
+class BaseDetector(Pipeline):
     """A `parser -> entropy -> classifier` pipeline returning P(hallucination).
 
     A scikit-learn `Pipeline`, so `predict`, `predict_proba`, `fit`, `get_params` and
@@ -99,39 +102,6 @@ class BaseDetector(Pipeline, EstimatorPersistenceMixin):
         coefficients are fixed at the rank count they were trained at.
         """
         raise NotImplementedError
-
-    @classmethod
-    def _from_estimator(cls, estimator: BaseEstimator, identifier: str | Path, **kwargs: Any) -> "BaseDetector":
-        """A detector carrying `estimator` as its classifier, if the widths agree.
-
-        Args:
-            estimator: The fitted estimator read from the published file.
-            identifier: What named it, for the error below.
-            **kwargs: `k`, and anything else `__init__` takes.
-
-        Returns:
-            A detector ready to `predict_proba`.
-
-        Raises:
-            ValueError: If the estimator does not cover exactly `k` ranks.
-        """
-        k = kwargs.get("k", DEFAULT_K)
-        expected = cls._feature_count(k)
-        # `n_features_in_` is set by fit, so it is absent from the `BaseEstimator` interface
-        # even though every estimator reaching here is fitted. Read it through `Any` rather
-        # than suppressing per type-checker: the suppression is itself reported as unused by
-        # versions that do not raise, which fails the hook the other way round.
-        fitted: Any = estimator
-        actual: int = fitted.n_features_in_
-        if actual != expected:
-            msg = (
-                f"The {cls.__name__} detector at '{identifier}' takes {actual} feature(s), "
-                f"but k={k} needs {expected}. Its coefficients are fixed at the rank count "
-                f"they were trained at; pass k={cls._implied_k(actual)}, or use a detector "
-                f"trained at k={k}."
-            )
-            raise ValueError(msg)
-        return cls(estimator=estimator, **kwargs)
 
     @classmethod
     def _implied_k(cls, n_features: int) -> int:
@@ -231,6 +201,66 @@ class BaseDetector(Pipeline, EstimatorPersistenceMixin):
         flat_scores[non_padded] = classifier.predict_proba(flat_features[non_padded])[:, 1]
 
         return flat_scores.reshape(n_samples, max_tokens, 1)
+
+    @classmethod
+    def from_pretrained(cls, identifier: str | Path, *, trusted: list[str] | None = None, **kwargs: Any) -> Any:
+        """An instance carrying published weights, ready to score, if the widths agree.
+
+        The route to a fitted object that never calls `fit`: the weights were fitted
+        elsewhere, and what is rebuilt here is only the machinery around them.
+
+        Args:
+            identifier: A Hugging Face repository id, a `.skops` file, or a directory
+                holding `model.skops`.
+            trusted: Type names to accept beyond skops' defaults. See `read_estimator`.
+            **kwargs: Passed to `_from_estimator`, which decides what the owner needs.
+
+        Returns:
+            An instance of the owner, carrying the loaded estimator,ready to `predict_proba`.
+
+        Raises:
+            ValueError: If the identifier resolves to nothing, the file holds a type that
+                was not asked for, or the estimator does not fit the owner.
+            ValueError: If the estimator does not cover exactly `k` ranks.
+        """
+        estimator = load_estimator(identifier, trusted=trusted)
+        k = kwargs.get("k", DEFAULT_K)
+        expected = cls._feature_count(k)
+        # `n_features_in_` is set by fit, so it is absent from the `BaseEstimator` interface
+        # even though every estimator reaching here is fitted. Read it through `Any` rather
+        # than suppressing per type-checker: the suppression is itself reported as unused by
+        # versions that do not raise, which fails the hook the other way round.
+        fitted: Any = estimator
+        actual: int = fitted.n_features_in_
+        if actual != expected:
+            msg = (
+                f"The {cls.__name__} detector at '{identifier}' takes {actual} feature(s), "
+                f"but k={k} needs {expected}. Its coefficients are fixed at the rank count "
+                f"they were trained at; pass k={cls._implied_k(actual)}, or use a detector "
+                f"trained at k={k}."
+            )
+            raise ValueError(msg)
+        return cls(estimator=estimator, **kwargs)
+
+    def save_estimator(self, path: str | Path) -> Path:
+        """Write this object's fitted estimator to a `.skops` file.
+
+        Persists the estimator alone rather than the whole object, so the file stays
+        readable by a differently-versioned install: it names only scikit-learn types.
+
+        Args:
+            path: Destination file, or a directory in which to write `model.skops`. Missing
+                parent directories are created.
+
+        Returns:
+            The path written.
+
+        Raises:
+            NotFittedError: If the estimator has not been fitted. An unfitted estimator
+                writes a file that looks valid and fails only when something later tries to
+                score with it, far from the call that forgot to fit.
+        """
+        return dump_estimator(self.estimator, path)
 
 
 class EPR(BaseDetector):

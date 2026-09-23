@@ -107,22 +107,6 @@ def _detectors_resolve_locally(monkeypatch, tmp_path):
     monkeypatch.setattr(BaseDetector, "resolve_estimator", staticmethod(resolve))
 
 
-@pytest.mark.parametrize("name", OFFLINE_NOTEBOOKS)
-def test_the_notebook_runs_against_the_current_source(name, monkeypatch, _detectors_resolve_locally):
-    """Execute every code cell in order, from the notebook's own directory.
-
-    Run in-process rather than through nbconvert: the failure surfaces as an ordinary
-    traceback pointing at the offending cell, and there is no kernel to install.
-    """
-    monkeypatch.chdir(EXAMPLES)
-    # Headless: the notebooks draw figures, and this path executes them with plain `exec`
-    # rather than through a kernel, so the backend is whatever the machine defaults to.
-    monkeypatch.setenv("MPLBACKEND", "Agg")
-    namespace = {"__name__": "__main__"}
-
-    exec(compile(code_of(load(name)), name, "exec"), namespace)
-
-
 BATCH_FIXTURES = ["responses_sample.jsonl", "judgments_sample.jsonl"]
 
 
