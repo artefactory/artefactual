@@ -36,7 +36,7 @@ def resolve_estimator(identifier: str | Path) -> Path:
 
     Raises:
         ValueError: If *identifier* names no local file and no repository that could be
-    	fetched.
+        fetched.
     """
 
     # A directory is accepted and read as the `model.skops` inside it, which is the
@@ -57,9 +57,9 @@ def resolve_estimator(identifier: str | Path) -> Path:
         return Path(hf_hub_download(repo_id, MODEL_FILENAME))
     except Exception as error:
         msg = (
-	    f"Could not load an estimator from '{identifier}'. Expected a path to a "
-	    f".skops file, a directory holding {MODEL_FILENAME}, or a Hugging Face "
-	    f"repository id holding one. Fetching it failed with: {error}"
+        f"Could not load an estimator from '{identifier}'. Expected a path to a "
+        f".skops file, a directory holding {MODEL_FILENAME}, or a Hugging Face "
+        f"repository id holding one. Fetching it failed with: {error}"
         )
         raise ValueError(msg) from error
 
@@ -91,7 +91,7 @@ def load_estimator(identifier: str | Path, trusted: list[str] | None = None) -> 
     return sio.load(path, trusted=trusted)
 
 
-def dump_estimator(estimator: BaseEstimator, path: str | Path):
+def dump_estimator(estimator: BaseEstimator, path: str | Path) -> str | Path:
     check_is_fitted(estimator)
     path = Path(path)
     if path.is_dir():
