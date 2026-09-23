@@ -162,16 +162,12 @@ def test_saving_creates_the_parent_directory(tmp_path):
 
 
 class Owner(BaseDetector):
-    """A minimal owner of an estimator, of the kind the mixin is written for.
+    """A minimal detector, of the kind the BaseDetector is written for.
 
-    Deliberately not a detector: the mixin resolves, reads and hands over a file, and the
+    Deliberately not a detector: just to resolve, read and hand over a file, and the
     tests below pin that it does so without knowing what the estimator is for.
     """
     reduction = "a"
-
-    @classmethod
-    def _from_estimator(cls, estimator, _identifier, **kwargs):
-        return cls(estimator, **kwargs)
 
     @classmethod
     def _feature_count(cls, k: int) -> int:
@@ -183,7 +179,7 @@ class Owner(BaseDetector):
         return k
 
     @classmethod
-    def _implied_k(cls, n_features: int) -> int:
+    def _implied_k(cls, *args, **kwargs) -> int:
         """The rank count `n_features` coefficients were trained at."""
         return 2
 
