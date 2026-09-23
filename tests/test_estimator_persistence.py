@@ -181,7 +181,7 @@ class Owner(BaseDetector):
     @classmethod
     def _implied_k(cls, n_features: int) -> int:
         """The rank count `n_features` coefficients were trained at."""
-        return 2 if n_features else 2
+        return n_features if n_features == 2 else 2
 
 
 def test_an_owner_is_built_from_the_file_it_names(tmp_path):
