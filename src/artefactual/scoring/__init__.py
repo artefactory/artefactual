@@ -22,4 +22,5 @@ __all__ = [
     "BaseDetector",
     "EntropyContributionsMixin",
     "EntropyTransformer",
+    "load_estimator",
 ]

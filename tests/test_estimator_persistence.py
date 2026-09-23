@@ -13,13 +13,10 @@ from conftest import estimators, fitted_logistic, write_estimator
 from hypothesis import given, settings
 from hypothesis import strategies as st
 from sklearn.base import BaseEstimator, ClassifierMixin
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.exceptions import NotFittedError
 
 from artefactual.scoring import EPR, WEPR, BaseDetector, load_estimator
 from artefactual.utils.io import resolve_estimator
-from artefactual.preprocessing.parser import LogProbParser
-from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
 
 
 class AlwaysSure(ClassifierMixin, BaseEstimator):
@@ -167,12 +164,13 @@ class Owner(BaseDetector):
     Deliberately not a detector: just to resolve, read and hand over a file, and the
     tests below pin that it does so without knowing what the estimator is for.
     """
+
     reduction = "a"
 
     @classmethod
     def _feature_count(cls, k: int) -> int:
         """Features this reduction produces at `k` ranks.
-    
+
         What a loaded estimator's coefficient vector is checked against: a detector's
         coefficients are fixed at the rank count they were trained at.
         """

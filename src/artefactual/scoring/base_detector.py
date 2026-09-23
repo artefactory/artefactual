@@ -10,8 +10,7 @@ from sklearn.pipeline import Pipeline
 
 from artefactual.preprocessing.parser import LogProbParser
 from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
-from artefactual.utils.io import load_estimator, dump_estimator
-
+from artefactual.utils.io import dump_estimator, load_estimator
 
 Reduction = Literal["epr", "wepr"]
 

@@ -16,7 +16,6 @@ import skops.io as sio
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_is_fitted
 
-
 MODEL_FILENAME = "model.skops"
 
 
@@ -28,7 +27,7 @@ def resolve_estimator(identifier: str | Path) -> Path:
 
     Args:
         identifier: A Hugging Face repository id, a `.skops` file, or a directory
-	holding `model.skops`.
+        holding `model.skops`.
 
     Returns:
         Path to a local `.skops` file. For a repository the path is in the Hugging Face
@@ -57,9 +56,9 @@ def resolve_estimator(identifier: str | Path) -> Path:
         return Path(hf_hub_download(repo_id, MODEL_FILENAME))
     except Exception as error:
         msg = (
-        f"Could not load an estimator from '{identifier}'. Expected a path to a "
-        f".skops file, a directory holding {MODEL_FILENAME}, or a Hugging Face "
-        f"repository id holding one. Fetching it failed with: {error}"
+            f"Could not load an estimator from '{identifier}'. Expected a path to a "
+            f".skops file, a directory holding {MODEL_FILENAME}, or a Hugging Face "
+            f"repository id holding one. Fetching it failed with: {error}"
         )
         raise ValueError(msg) from error
 
