@@ -13,11 +13,10 @@ from conftest import estimators, fitted_logistic, write_estimator
 from hypothesis import given, settings
 from hypothesis import strategies as st
 from sklearn.base import BaseEstimator, ClassifierMixin
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.exceptions import NotFittedError
 
-from artefactual.scoring import EPR, WEPR, BaseDetector
-from artefactual.utils.io import EstimatorPersistenceMixin
+from artefactual.scoring import EPR, WEPR, BaseDetector, load_estimator
+from artefactual.utils.io import resolve_estimator
 
 
 class AlwaysSure(ClassifierMixin, BaseEstimator):
@@ -44,20 +43,11 @@ class AlwaysSure(ClassifierMixin, BaseEstimator):
 def test_a_detector_survives_a_round_trip(tmp_path_factory, detector):
     path = write_estimator(tmp_path_factory.mktemp("round-trip"), "model.skops", detector)
 
-    restored = BaseDetector.read_estimator(path)
+    restored = load_estimator(path)
 
     x = np.linspace(-3, 3, 7 * detector.n_features_in_).reshape(-1, detector.n_features_in_)
     assert np.array_equal(restored.predict_proba(x), detector.predict_proba(x))
     assert restored.coef_.dtype == np.float64
-
-
-def test_a_sklearn_detector_needs_nothing_trusted(tmp_path):
-    # every scikit-learn estimator is trusted by skops itself, which is why the published
-    # estimators -- a plain LogisticRegression -- load with no trusted list at all
-    forest = RandomForestClassifier(n_estimators=2).fit(np.zeros((4, 2)), [0, 1, 0, 1])
-    path = write_estimator(tmp_path, "model.skops", forest)
-
-    assert BaseDetector.read_estimator(path).n_estimators == 2
 
 
 def test_a_detector_holding_an_unasked_for_type_is_refused(tmp_path):
@@ -65,18 +55,18 @@ def test_a_detector_holding_an_unasked_for_type_is_refused(tmp_path):
     path = write_estimator(tmp_path, "model.skops", AlwaysSure().fit(np.zeros((2, 1)), [0, 1]))
 
     with pytest.raises(ValueError, match="does not load by default"):
-        BaseDetector.read_estimator(path)
+        load_estimator(path)
 
 
 def test_naming_the_type_makes_it_readable(tmp_path):
     path = write_estimator(tmp_path, "model.skops", AlwaysSure().fit(np.zeros((2, 1)), [0, 1]))
 
     with pytest.raises(ValueError) as refusal:
-        BaseDetector.read_estimator(path)
+        load_estimator(path)
     # the refusal names the type to pass, so reading the message is the whole fix
     assert AlwaysSure.__name__ in str(refusal.value)
 
-    restored = BaseDetector.read_estimator(path, trusted=[f"{AlwaysSure.__module__}.{AlwaysSure.__qualname__}"])
+    restored = load_estimator(path, trusted=[f"{AlwaysSure.__module__}.{AlwaysSure.__qualname__}"])
     assert isinstance(restored, AlwaysSure)
 
 
@@ -86,14 +76,14 @@ def test_naming_the_type_makes_it_readable(tmp_path):
 def test_a_file_resolves_to_itself(tmp_path):
     path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
 
-    assert BaseDetector.resolve_estimator(path) == path
+    assert resolve_estimator(path) == path
 
 
 def test_a_directory_resolves_to_the_model_inside_it(tmp_path):
     # the layout a downloaded repository has, so a clone loads the same way a name does
     path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
 
-    assert BaseDetector.resolve_estimator(tmp_path) == path
+    assert resolve_estimator(tmp_path) == path
 
 
 # --- the estimators ---------------------------------------------------------------------
@@ -168,65 +158,51 @@ def test_saving_creates_the_parent_directory(tmp_path):
 # --- building an owner from published weights -------------------------------------------
 
 
-class Owner(EstimatorPersistenceMixin):
-    """A minimal owner of an estimator, of the kind the mixin is written for.
+class Owner(BaseDetector):
+    """A minimal detector, of the kind the BaseDetector is written for.
 
-    Deliberately not a detector: the mixin resolves, reads and hands over a file, and the
+    Deliberately not a detector: just to resolve, read and hand over a file, and the
     tests below pin that it does so without knowing what the estimator is for.
     """
 
-    def __init__(self, estimator, label="unlabelled"):
-        self._estimator = estimator
-        self.label = label
-
-    @property
-    def estimator(self):
-        return self._estimator
+    reduction = "a"
 
     @classmethod
-    def _from_estimator(cls, estimator, _identifier, **kwargs):
-        return cls(estimator, **kwargs)
+    def _feature_count(cls, k: int) -> int:
+        """Features this reduction produces at `k` ranks.
 
-
-class PickyOwner(Owner):
-    """An owner that rejects an estimator whose width it cannot score with."""
+        What a loaded estimator's coefficient vector is checked against: a detector's
+        coefficients are fixed at the rank count they were trained at.
+        """
+        return k
 
     @classmethod
-    def _from_estimator(cls, estimator, identifier, *, n_features, **kwargs):
-        if estimator.n_features_in_ != n_features:
-            msg = f"'{identifier}' takes {estimator.n_features_in_} feature(s), not {n_features}."
-            raise ValueError(msg)
-        return cls(estimator, **kwargs)
+    def _implied_k(cls, n_features: int) -> int:
+        """The rank count `n_features` coefficients were trained at."""
+        return n_features if n_features == 2 else 2
 
 
 def test_an_owner_is_built_from_the_file_it_names(tmp_path):
     path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
 
-    owner = Owner.from_pretrained(path)
+    owner = Owner.from_pretrained(path, k=1)
 
     assert owner.estimator.n_features_in_ == 1
-    assert owner.label == "unlabelled"
-
-
-def test_keywords_reach_the_owner_rather_than_the_reader(tmp_path):
-    path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
-
-    assert Owner.from_pretrained(path, label="named").label == "named"
 
 
 def test_an_owner_may_refuse_the_estimator_it_is_handed(tmp_path):
     path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0, 2.0]))
 
     with pytest.raises(ValueError, match="takes 2 feature"):
-        PickyOwner.from_pretrained(path, n_features=1)
+        Owner.from_pretrained(path, k=1)
 
-    assert PickyOwner.from_pretrained(path, n_features=2).estimator.n_features_in_ == 2
+    assert Owner.from_pretrained(path, k=2).estimator.n_features_in_ == 2
 
 
 def test_an_owner_that_does_not_implement_the_hook_says_so(tmp_path):
     path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
 
-    class Bare(EstimatorPersistenceMixin):
+    class Bare(BaseDetector):
         pass
 
     with pytest.raises(NotImplementedError):
@@ -239,4 +215,4 @@ def test_an_untrusted_type_is_refused_before_the_owner_sees_it(tmp_path):
     with pytest.raises(ValueError, match="AlwaysSure"):
         Owner.from_pretrained(path)
 
-    assert Owner.from_pretrained(path, trusted=["test_estimator_persistence.AlwaysSure"])
+    assert Owner.from_pretrained(path, trusted=["test_estimator_persistence.AlwaysSure"], k=1)

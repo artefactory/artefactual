@@ -10,7 +10,7 @@ published ones.
     detector = WEPR(k=15).fit(responses, y)
 """
 
-from artefactual.scoring.base_detector import EPR, WEPR, BaseDetector
+from artefactual.scoring.base_detector import EPR, WEPR, BaseDetector, load_estimator
 from artefactual.scoring.entropy_methods.entropy_contributions import (
     EntropyContributionsMixin,
 )
@@ -22,4 +22,5 @@ __all__ = [
     "BaseDetector",
     "EntropyContributionsMixin",
     "EntropyTransformer",
+    "load_estimator",
 ]
