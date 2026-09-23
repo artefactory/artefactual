@@ -180,13 +180,11 @@ class Owner(BaseDetector):
         What a loaded estimator's coefficient vector is checked against: a detector's
         coefficients are fixed at the rank count they were trained at.
         """
-        print('A', k)
         return k
 
     @classmethod
     def _implied_k(cls, n_features: int) -> int:
         """The rank count `n_features` coefficients were trained at."""
-        print('B', n_features)
         return 2
 
 
