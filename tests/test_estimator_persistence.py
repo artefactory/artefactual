@@ -179,8 +179,9 @@ class Owner(BaseDetector):
         return k
 
     @classmethod
-    def _implied_k(cls, *args, **kwargs) -> int:
+    def _implied_k(cls, n_features: int) -> int:
         """The rank count `n_features` coefficients were trained at."""
+        n_features = 0
         return 2
 
 
@@ -196,7 +197,7 @@ def test_an_owner_may_refuse_the_estimator_it_is_handed(tmp_path):
     path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0, 2.0]))
 
     with pytest.raises(ValueError, match="takes 2 feature"):
-        Owner.from_pretrained(path, n_features=1)
+        Owner.from_pretrained(path, k=1)
 
     assert Owner.from_pretrained(path, k=2).estimator.n_features_in_ == 2
 
