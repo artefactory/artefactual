@@ -90,7 +90,7 @@ def load_estimator(identifier: str | Path, trusted: list[str] | None = None) -> 
     return sio.load(path, trusted=trusted)
 
 
-def dump_estimator(estimator: BaseEstimator, path: str | Path) -> str | Path:
+def dump_estimator(estimator: BaseEstimator, path: str | Path) -> Path:
     check_is_fitted(estimator)
     path = Path(path)
     if path.is_dir():
