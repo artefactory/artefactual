@@ -5,6 +5,7 @@ so a new provider format is added by registering an extractor rather than by edi
 entry points here.
 """
 
+from collections.abc import Collection, Mapping
 from functools import singledispatch
 from typing import Any
 
@@ -59,7 +60,11 @@ def _validate_response(outputs: Any) -> ChatCompletion | ResponsesPayload | Batc
     except ValidationError as error:
         if _matched_a_format(error):
             raise
-        msg = f"Unsupported output format: {type(outputs).__name__}. Expected a completion response carrying logprobs."
+        msg = (
+            f"Unsupported output format: {type(outputs).__name__}. Expected a completion response carrying "
+            "logprobs. A numeric array of logprobs is scored by EPRClassifier or WEPRClassifier, not by "
+            "this parser or the detectors."
+        )
         raise TypeError(msg) from error
 
 
@@ -144,8 +149,9 @@ class LogProbParser(TransformerMixin, BaseEstimator):
     """First pipeline step: completion responses in, a dense logprob array out.
 
     Accepts raw responses rather than arrays, so it opts out of scikit-learn's input
-    validation. Cross-validation over a `BaseDetector` therefore has to start from data
-    this step has already parsed, since sklearn cannot index a response object by row.
+    validation, and refuses a numeric array with a `TypeError`. Cross-validation over a
+    `BaseDetector` therefore has to start from data this step has already parsed, since
+    sklearn cannot index a response object by row.
 
     This step owns the rank axis -- a token's candidates ordered by likelihood, one column
     per rank. It sizes the output to `k` and refuses responses carrying fewer candidates,
@@ -273,8 +279,8 @@ def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
     """Extract each token's top-k logprobs, one entry per sampled sequence.
 
     Args:
-        outputs: A completion response, as a mapping or an object, or a sequence of them
-            parsed and concatenated in order.
+        outputs: A completion response, as a mapping or an object, or a collection of them
+            (list, tuple, 1-D object array, Series) parsed and concatenated in order.
 
     Returns:
         One dict per sequence, mapping token position to that token's candidate
@@ -289,10 +295,15 @@ def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
             error pydantic raised.
         ValueError: If a batch line carries no completion, because its request failed.
     """
-    if is_bearable(outputs, list | tuple):
-        return [sequence for response in outputs for sequence in parse_top_logprobs(response)]
-
-    response = _validate_response(outputs)
+    try:
+        response = _validate_response(outputs)
+    except TypeError:
+        # A collection of responses is read by iterating it, whatever holds it: a list, a
+        # tuple, a 1-D object array, a Series. A single response is tried first because a
+        # mapping and a pydantic model iterate too, and neither is a batch.
+        if not is_bearable(outputs, Collection) or is_bearable(outputs, str | bytes | Mapping):
+            raise
+        return [sequence for item in outputs for sequence in parse_top_logprobs(item)]
 
     # A batch line is an envelope around one of the formats below, not a fourth one,
     # so it is opened here and the extractors stay keyed to what they actually read.
