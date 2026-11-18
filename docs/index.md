@@ -43,6 +43,7 @@ requirements and the published results. This site covers using a detector in dep
 :maxdepth: 2
 :hidden:
 
+install
 guide/scoring
 guide/training
 guide/how-it-works
