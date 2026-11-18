@@ -95,8 +95,8 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         tags.input_tags.three_d_array = True
         return tags
 
-    def validate(self, x, *, reset: bool = False) -> np.ndarray:
-        """`x` as a float `(n, tokens, width)` array, cut to the first `k` ranks.
+    def validate(self, X, *, reset: bool = False) -> np.ndarray:  # noqa: N803
+        """`X` as a float `(n, tokens, width)` array, cut to the first `k` ranks.
 
         A 3-D input is the parser's cube: NaN is the padding marker and passes, `inf` is no
         logprob and would reduce to a meaningless feature, so it is refused. Anything else
@@ -107,7 +107,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
 
         Parameters
         ----------
-        x : array-like
+        X : array-like
             A 3-D cube or a 2-D table of per-rank logprobs.
         reset : bool, default=False
             Record the width and column names of a 2-D table, as `fit` does, instead of
@@ -124,9 +124,9 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
             If a cube holds infinity, or a table is not numeric 2-D or disagrees with the
             fitted width or column names.
         """
-        if np.asarray(x).ndim == 3:  # not np.ndim: an array-like that only defines `__array__` is refused by it
+        if np.asarray(X).ndim == 3:  # not np.ndim: an array-like that only defines `__array__` is refused by it
             cube = check_array(
-                x,
+                X,
                 ensure_2d=False,
                 allow_nd=True,
                 ensure_all_finite="allow-nan",
@@ -135,7 +135,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
                 ensure_min_features=0,
             )
         else:
-            cube = validate_data(self, x, reset=reset, dtype=np.float64)[:, None, :]
+            cube = validate_data(self, X, reset=reset, dtype=np.float64)[:, None, :]
         return cube if self.k is None else cube[..., : self.k]
 
     def fit(self, X, y=None) -> "EntropyTransformer":  # noqa: ARG002, N803 — y unused but required by the sklearn fit signature
@@ -170,7 +170,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         msg = f"Invalid reduction: {self.reduction!r}. Expected 'epr', 'wepr', or a callable."
         raise ValueError(msg)
 
-    def transform(self, x: np.ndarray) -> np.ndarray:
+    def transform(self, X: np.ndarray) -> np.ndarray:  # noqa: N803
         """Reduce each sequence to one feature row.
 
         A sequence with no tokens has no entropy to measure. Its features are set to zero,
@@ -178,7 +178,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         and a warning is raised rather than letting the degenerate input pass unremarked.
 
         Args:
-            x: `(n_sequences, n_tokens, k)` or `(n_sequences, k)` logprobs, NaN-padded. A
+            X: `(n_sequences, n_tokens, k)` or `(n_sequences, k)` logprobs, NaN-padded. A
                 nested list is accepted, and a 2-D table is one token per row. Ranks
                 beyond `k` are dropped.
 
@@ -191,7 +191,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         Warns:
             EmptySequenceWarning: If any sequence carries no tokens.
         """
-        s_kj = self.entropy_contributions(self.validate(x))
+        s_kj = self.entropy_contributions(self.validate(X))
         features = self.reduction_fn(s_kj, axis=1)
         empty = np.isnan(features).all(axis=1)  # token-less sequences → all-NaN row
         if empty.any():
@@ -203,14 +203,14 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         features[empty] = 0.0  # zero features → classifier returns baseline
         return features
 
-    def transform_tokens(self, x: np.ndarray) -> np.ndarray:
+    def transform_tokens(self, X: np.ndarray) -> np.ndarray:  # noqa: N803
         """Reduce each token separately, keeping the token axis.
 
         Applies the same reduction over a one-token window per position, so token features
         are computed exactly as sequence features are.
 
         Args:
-            x: `(n_sequences, n_tokens, k)` or `(n_sequences, k)` logprobs, NaN-padded. A
+            X: `(n_sequences, n_tokens, k)` or `(n_sequences, k)` logprobs, NaN-padded. A
                 2-D table is one token per row. Ranks beyond `k` are dropped.
 
         Returns:
@@ -219,6 +219,6 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         Raises:
             ValueError: If `x` holds infinity, or is a table that is not numeric 2-D.
         """
-        s_kj = self.entropy_contributions(self.validate(x))
+        s_kj = self.entropy_contributions(self.validate(X))
         windows = np.expand_dims(s_kj, axis=2)  # (n, T, 1, k) — one 1-token window per token
         return self.reduction_fn(windows, axis=2)

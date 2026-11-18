@@ -336,7 +336,7 @@ class BaseEntropyClassifier(Pipeline, EstimatorPersistenceMixin):
             return Pipeline(self.steps[ind], memory=self.memory, verbose=self.verbose)
         return super().__getitem__(ind)
 
-    def predict_token_proba(self, x) -> np.ndarray:
+    def predict_token_proba(self, X) -> np.ndarray:  # noqa: N803
         """Per-token hallucination probabilities, for locating *where* a response drifts.
 
         Runs the transformer steps in token mode (`transform_tokens`, falling back to
@@ -345,7 +345,7 @@ class BaseEntropyClassifier(Pipeline, EstimatorPersistenceMixin):
 
         Parameters
         ----------
-        x : array-like
+        X : array-like
             The same input `predict_proba` accepts.
 
         Returns
@@ -359,7 +359,7 @@ class BaseEntropyClassifier(Pipeline, EstimatorPersistenceMixin):
             If a step reduces the token axis away, so token mode yields fewer than three
             dimensions.
         """
-        raw_output = x
+        raw_output = X
         for _, transformer in self.steps[:-1]:
             try:
                 step_transform = transformer.transform_tokens
