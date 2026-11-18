@@ -17,10 +17,11 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "absl-py>=2.1.0",
     "beartype>=0.19.0",
     "pydantic>=2.12.5",
     "numpy>=1.24.0",
@@ -103,6 +104,7 @@ packages = ["src/artefactual"]
 
 [dependency-groups]
 dev = [
+    "absl-py>=2.1.0",
     "datasets>=3.2.0",
     "einops>=0.8.0",
     "faiss-cpu>=1.9.0.post1",
