@@ -1,7 +1,8 @@
 # Examples
 
 Three runnable examples, each scoring with a detector rather than building one. Training
-one for your own model is in {doc}`../guide/training`.
+one for your own model is in {doc}`../guide/training`; installation is in {doc}`../install`
+and the scikit-learn behaviour the notebooks rely on is in {doc}`../guide/sklearn`.
 
 | Notebook | Shows | Needs |
 |---|---|---|
