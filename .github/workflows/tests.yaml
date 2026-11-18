@@ -20,6 +20,11 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
+        # The floor `pyproject.toml` declares, and the version `uv.lock` pins.
+        scikit-learn: ["1.8.0", "1.9.1"]
+    env:
+      # Otherwise every `uv run` puts the locked scikit-learn back over the matrix one.
+      UV_NO_SYNC: "1"
     steps:
       - name: Checkout code
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
@@ -42,36 +47,41 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --python ${{ matrix.python-version }}
 
+      - name: Install scikit-learn ${{ matrix.scikit-learn }}
+        run: |
+          uv pip install "scikit-learn==${{ matrix.scikit-learn }}"
+          uv run python -c "import sklearn; assert sklearn.__version__ == '${{ matrix.scikit-learn }}', sklearn.__version__"
+
       - name: Run tests with coverage
         run: |
           uv run pytest -vv \
             --tb=long \
-            --junitxml=test-results-${{ matrix.python-version }}.xml \
+            --junitxml=test-results-${{ matrix.python-version }}-sklearn-${{ matrix.scikit-learn }}.xml \
             --cov=src/artefactual \
-            --cov-report=xml:coverage-${{ matrix.python-version }}.xml \
+            --cov-report=xml:coverage-${{ matrix.python-version }}-sklearn-${{ matrix.scikit-learn }}.xml \
             --cov-report=term-missing
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: test-results-${{ matrix.python-version }}
+          name: test-results-${{ matrix.python-version }}-sklearn-${{ matrix.scikit-learn }}
           path: |
-            test-results-${{ matrix.python-version }}.xml
-            coverage-${{ matrix.python-version }}.xml
+            test-results-${{ matrix.python-version }}-sklearn-${{ matrix.scikit-learn }}.xml
+            coverage-${{ matrix.python-version }}-sklearn-${{ matrix.scikit-learn }}.xml
 
       - name: Test Reporter
         if: always()
         uses: dorny/test-reporter@bdab7eb6dfb6be17ac3d72352f67e559a72c8db1 # v2
         with:
-          name: Test Results (Python ${{ matrix.python-version }})
-          path: test-results-${{ matrix.python-version }}.xml
+          name: Test Results (Python ${{ matrix.python-version }}, scikit-learn ${{ matrix.scikit-learn }})
+          path: test-results-${{ matrix.python-version }}-sklearn-${{ matrix.scikit-learn }}.xml
           reporter: java-junit
 
       - name: Coverage summary
         if: always()
         run: |
-          echo "## Coverage Report (Python ${{ matrix.python-version }})" >> $GITHUB_STEP_SUMMARY
+          echo "## Coverage Report (Python ${{ matrix.python-version }}, scikit-learn ${{ matrix.scikit-learn }})" >> $GITHUB_STEP_SUMMARY
           uv run coverage report --format=markdown >> $GITHUB_STEP_SUMMARY || true
 
       # scikit-learn reads the array API only when this is set, and then `check_estimator`
@@ -79,4 +89,4 @@ jobs:
       - name: Run the estimator checks with the array API enabled
         env:
           SCIPY_ARRAY_API: "1"
-        run: uv run --frozen pytest tests/test_common.py
+        run: uv run pytest tests/test_common.py
