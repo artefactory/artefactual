@@ -18,6 +18,7 @@ from sklearn.base import clone
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 from artefactual.scoring import EPR, WEPR, EPRClassifier, WEPRClassifier
 
@@ -278,6 +279,15 @@ def test_grid_search_over_the_estimator_including_the_default(cls):
     search = GridSearchCV(cls(), grid, cv=2).fit(x, y)
     assert len(search.cv_results_["params"]) == 2
     assert not np.isnan(search.cv_results_["mean_test_score"]).any()
+
+
+@pytest.mark.parametrize("cls", [EPRClassifier, WEPRClassifier])
+@pytest.mark.parametrize("step", ["passthrough", StandardScaler()], ids=["passthrough", "no-k"])
+def test_fit_rejects_a_first_step_without_k(cls, step):
+    x, y = table()
+    classifier = cls(k=15).set_params(entropy=step)
+    with pytest.raises(ValueError, match=r"'entropy' step .* has no `k`"):
+        classifier.fit(x, y)
 
 
 # --- feature names and set_output -------------------------------------------------------

@@ -158,8 +158,21 @@ class BaseEntropyClassifier(Pipeline, EstimatorPersistenceMixin):
         nothing consults. `set_params(entropy__k=)` changes one step only, and then that
         step alone reads fewer ranks than the others hand it, so sweep `k`, not the step
         parameter.
+
+        Raises
+        ------
+        ValueError
+            If the first step was replaced by one that has no `k`, such as `"passthrough"`.
         """
-        return self.steps[0][1].k
+        name, step = self.steps[0]
+        try:
+            return step.k
+        except AttributeError:
+            msg = (
+                f"The '{name}' step of {type(self).__name__} is {step!r}, which has no `k`: "
+                "the first step must read a fixed number of candidates."
+            )
+            raise ValueError(msg) from None
 
     @k.setter
     def k(self, value: int) -> None:
