@@ -121,6 +121,9 @@ dev = [
     # than scanning it. Arrives with myst-parser in the `docs` extra too, but CI runs the
     # tests on a bare `uv sync`, so it is named here rather than left to a transitive.
     "markdown-it-py>=3.0.0",
+    # tests/test_detector_sklearn_contract.py feeds a Series to the detectors; named here
+    # because CI runs the tests on a bare `uv sync` and should not rely on a transitive.
+    "pandas>=2.2.0",
     "plum-dispatch>=2.5.7",
     "scikeras>=0.13.0",
     "toolz>=1.0.0",

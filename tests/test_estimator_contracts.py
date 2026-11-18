@@ -197,16 +197,24 @@ def test_padded_tokens_do_not_drag_the_epr_mean_down():
 
 # --- the k parameter -------------------------------------------------------------------
 #
-# `k` belongs to the parser alone. The transformer reduces over whatever width it is
-# handed, because by then the parser has already guaranteed that width is the calibrated
-# one -- see test_rank_width.py for the contract itself.
+# The parser sizes the rank axis. The transformer's `k` is optional: unset, it reduces over
+# whatever width it is handed, because by then the parser has already guaranteed that width
+# is the calibrated one -- see test_rank_width.py for the contract itself.
 
 
 @given(logprobs=cubes)
-def test_the_transformer_carries_no_rank_count(logprobs):
-    assert "k" not in EntropyTransformer().get_params()
+def test_the_transformer_reads_any_width_when_k_is_unset(logprobs):
+    assert EntropyTransformer().get_params()["k"] is None
     features = EntropyTransformer(reduction="wepr").transform(logprobs)
     assert features.shape == (len(logprobs), 2 * logprobs.shape[2])
+
+
+@given(logprobs=cubes)
+def test_the_transformer_keeps_the_first_ranks_of_a_cube_wider_than_its_k(logprobs):
+    k = logprobs.shape[2] - 1
+    narrower = EntropyTransformer(reduction="wepr", k=k)
+    np.testing.assert_array_equal(narrower.transform(logprobs), narrower.transform(logprobs[..., :k]))
+    np.testing.assert_array_equal(narrower.transform_tokens(logprobs), narrower.transform_tokens(logprobs[..., :k]))
 
 
 @pytest.mark.parametrize("k", [1, 3, 8])
