@@ -46,7 +46,14 @@ class EstimatorPersistenceMixin:
         return None
 
     @classmethod
-    def resolve_estimator(cls, identifier: str | Path) -> Path:
+    def resolve_estimator(
+        cls,
+        identifier: str | Path,
+        *,
+        revision: str | None = None,
+        token: str | bool | None = None,
+        cache_dir: str | Path | None = None,
+    ) -> Path:
         """Resolve *identifier* to a local `.skops` file, downloading it if it names a repo.
 
         The only step here that reaches the network is the download itself; which file to
@@ -55,6 +62,13 @@ class EstimatorPersistenceMixin:
         Args:
             identifier: A Hugging Face repository id, a `.skops` file, or a directory
                 holding `model.skops`.
+            revision: Branch, tag or commit of the repository to download. `None` takes the
+                default branch, which a published repository may move; pin a commit for a
+                reproducible download. Ignored for a local path.
+            token: Hugging Face access token, or `True` to use the locally saved one. `None`
+                uses the library's default credentials. Ignored for a local path.
+            cache_dir: Where to cache the download. `None` uses the Hugging Face cache.
+                Ignored for a local path.
 
         Returns:
             Path to a local `.skops` file. For a repository the path is in the Hugging Face
@@ -74,7 +88,9 @@ class EstimatorPersistenceMixin:
 
         repo_id = str(identifier)
         try:
-            return Path(hf_hub_download(repo_id, cls.MODEL_FILENAME))
+            return Path(
+                hf_hub_download(repo_id, cls.MODEL_FILENAME, revision=revision, token=token, cache_dir=cache_dir)
+            )
         except Exception as error:
             msg = (
                 f"Could not load an estimator from '{identifier}'. Expected a path to a "
@@ -118,12 +134,23 @@ class EstimatorPersistenceMixin:
         return sio.load(path, trusted=trusted)
 
     @classmethod
-    def load_estimator(cls, identifier: str | Path, trusted: list[str] | None = None) -> BaseEstimator:
+    def load_estimator(
+        cls,
+        identifier: str | Path,
+        trusted: list[str] | None = None,
+        *,
+        revision: str | None = None,
+        token: str | bool | None = None,
+        cache_dir: str | Path | None = None,
+    ) -> BaseEstimator:
         """Resolve *identifier* and read the estimator it names.
 
         Args:
             identifier: A repository id or path. See `resolve_estimator`.
             trusted: Type names to accept beyond skops' defaults.
+            revision: Repository revision to download. See `resolve_estimator`.
+            token: Hugging Face access token. See `resolve_estimator`.
+            cache_dir: Download cache directory. See `resolve_estimator`.
 
         Returns:
             The fitted estimator.
@@ -132,7 +159,14 @@ class EstimatorPersistenceMixin:
             ValueError: If the identifier resolves to nothing, or the file holds a type
                 that was not asked for.
         """
-        return cls.read_estimator(cls.resolve_estimator(identifier), trusted=trusted)
+        # Only what the caller set is forwarded, so a resolver that predates these options
+        # is called exactly as before.
+        hub: dict[str, Any] = {
+            name: value
+            for name, value in {"revision": revision, "token": token, "cache_dir": cache_dir}.items()
+            if value is not None
+        }
+        return cls.read_estimator(cls.resolve_estimator(identifier, **hub), trusted=trusted)
 
     @classmethod
     def _from_estimator(cls, estimator: BaseEstimator, identifier: str | Path, **kwargs: Any) -> Any:
@@ -154,7 +188,16 @@ class EstimatorPersistenceMixin:
         raise NotImplementedError
 
     @classmethod
-    def from_pretrained(cls, identifier: str | Path, *, trusted: list[str] | None = None, **kwargs: Any) -> Any:
+    def from_pretrained(
+        cls,
+        identifier: str | Path,
+        *,
+        trusted: list[str] | None = None,
+        revision: str | None = None,
+        token: str | bool | None = None,
+        cache_dir: str | Path | None = None,
+        **kwargs: Any,
+    ) -> Any:
         """An instance carrying published weights, ready to score.
 
         The route to a fitted object that never calls `fit`: the weights were fitted
@@ -167,6 +210,15 @@ class EstimatorPersistenceMixin:
             `model.skops`.
         trusted : list of str, default=None
             Type names to accept beyond skops' defaults. See `read_estimator`.
+        revision : str, default=None
+            Branch, tag or commit of the Hugging Face repository to download; `None` takes
+            the default branch. Pin a commit for a reproducible load. Ignored for a local
+            path.
+        token : str or bool, default=None
+            Hugging Face access token, for a private repository. Ignored for a local path.
+        cache_dir : str or Path, default=None
+            Download cache directory; `None` uses the Hugging Face cache. Ignored for a
+            local path.
         **kwargs
             Passed to `_from_estimator`, which decides what the owner needs.
 
@@ -185,8 +237,11 @@ class EstimatorPersistenceMixin:
         --------
         >>> detector = WEPR.from_pretrained("artefactory/wepr-phi4")  # doctest: +SKIP
         >>> detector = WEPR.from_pretrained("/path/to/model.skops", k=15)  # doctest: +SKIP
+        >>> detector = WEPR.from_pretrained(
+        ...     "artefactory/wepr-phi4", revision="main"
+        ... )  # doctest: +SKIP
         """
-        estimator = cls.load_estimator(identifier, trusted=trusted)
+        estimator = cls.load_estimator(identifier, trusted=trusted, revision=revision, token=token, cache_dir=cache_dir)
         return cls._from_estimator(estimator, identifier, **kwargs)
 
     def save_estimator(self, path: str | Path) -> Path:

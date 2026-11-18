@@ -122,6 +122,48 @@ def test_a_directory_resolves_to_the_model_inside_it(tmp_path):
     assert BaseDetector.resolve_estimator(tmp_path) == path
 
 
+# --- the Hub options, offline ----------------------------------------------------------
+
+
+@pytest.fixture
+def offline_hub(monkeypatch):
+    """Switch the Hub client to cache-only, so no test reaches the network."""
+    from huggingface_hub import constants
+
+    monkeypatch.setattr(constants, "HF_HUB_OFFLINE", True)
+
+
+def cached_repo(cache_dir, repo_id, revision, commit):
+    """A Hub cache holding `model.skops` for `revision`, laid out as the client writes it."""
+    root = cache_dir / ("models--" + repo_id.replace("/", "--"))
+    snapshot = root / "snapshots" / commit
+    snapshot.mkdir(parents=True)
+    (root / "refs").mkdir()
+    (root / "refs" / revision).write_text(commit)
+    write_estimator(snapshot, "model.skops", fitted_logistic(0.0, [1.0]))
+    return snapshot / "model.skops"
+
+
+@pytest.mark.usefixtures("offline_hub")
+def test_cache_dir_and_revision_reach_the_download(tmp_path):
+    commit = "a" * 40
+    expected = cached_repo(tmp_path, "org/detector", "release", commit)
+
+    by_branch = BaseDetector.resolve_estimator("org/detector", revision="release", cache_dir=tmp_path, token="unused")
+    by_commit = BaseDetector.resolve_estimator("org/detector", revision=commit, cache_dir=tmp_path)
+
+    assert by_branch == by_commit == expected
+
+
+@pytest.mark.usefixtures("offline_hub")
+def test_from_pretrained_forwards_the_hub_options(tmp_path):
+    cached_repo(tmp_path, "org/detector", "release", "b" * 40)
+
+    restored = EPR.from_pretrained("org/detector", revision="release", cache_dir=tmp_path)
+
+    assert restored.estimator.coef_.shape == (1, 1)
+
+
 # --- the estimators ---------------------------------------------------------------------
 
 
