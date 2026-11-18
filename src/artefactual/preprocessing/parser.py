@@ -292,7 +292,7 @@ class LogProbParser(TransformerMixin, BaseEstimator, auto_wrap_output_keys=None)
         self._reject_narrow(parsed)
 
         # float64: `LogisticRegression` takes the dtype of the features it is fitted on, and
-        # the pretrained coefficients are read from JSON at full decimal precision. Matching
+        # the pretrained coefficients are stored at full float64 precision. Matching
         # them keeps a fitted detector and a pretrained one on one dtype, and keeps the dot
         # product from upcasting on every call.
         #
