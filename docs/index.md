@@ -51,4 +51,5 @@ guide/reference
 examples/index
 api
 presentations/index
+changelog
 ```
