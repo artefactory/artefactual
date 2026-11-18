@@ -2,6 +2,9 @@
 
 **Estimating how likely a language model answer is to be a hallucination.**
 
+[![Tests](https://github.com/artefactory/artefactual/actions/workflows/tests.yaml/badge.svg)](https://github.com/artefactory/artefactual/actions/workflows/tests.yaml)
+[![Docs](https://github.com/artefactory/artefactual/actions/workflows/docs.yml/badge.svg)](https://github.com/artefactory/artefactual/actions/workflows/docs.yml)
+[![PyPI](https://img.shields.io/pypi/v/artefactual.svg)](https://pypi.org/project/artefactual/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org)
 [![Paper](https://img.shields.io/badge/arXiv-2509.04492-b31b1b.svg)](https://arxiv.org/abs/2509.04492)
