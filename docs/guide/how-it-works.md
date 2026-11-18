@@ -1,6 +1,7 @@
 # How it works
 
-Each detector is a three-step scikit-learn pipeline:
+Each detector is a three-step scikit-learn pipeline, and a scikit-learn classifier that
+passes the library's own estimator checks ({doc}`sklearn`):
 
 ```{mermaid}
 flowchart LR
@@ -19,7 +20,10 @@ The three middle boxes are the three sections below.
 
 `LogProbParser` normalises OpenAI Chat Completions and Responses API payloads
 — as SDK objects or plain dicts, singly or batched — into a dense
-`(n_sequences, n_tokens, k)` array of log-probabilities, `NaN`-padded.
+`(n_sequences, n_tokens, k)` array of log-probabilities, `NaN`-padded. A numeric 2-D array is
+refused, since scoring logprobs you already hold is what `EPRClassifier` and
+`WEPRClassifier` are for: they skip the parser and read each row as a one-token sequence,
+reshaped to `(n, 1, width)`.
 
 Two words for that last axis, and they are not the same thing. At every token position the
 caller asks the endpoint for the `k` most likely **candidates** with `top_logprobs=k` — the
@@ -38,8 +42,8 @@ rank *k* of token *j*, reduced two ways:
 
 | Reduction | Feature vector | Reads |
 |---|---|---|
-| `epr` | `mean_j( sum_k s_kj )` — 1 feature | The sequence's average top-`k` entropy |
-| `wepr` | `mean_j(s_kj)` ‖ `max_j(s_kj)` — 2k features | Per-rank mean and peak, weighted separately |
+| `epr` (the `EPR` detector) | `mean_j( sum_k s_kj )` — 1 feature | The sequence's average top-`k` entropy |
+| `wepr` (the `WEPR` detector) | `mean_j(s_kj)` ‖ `max_j(s_kj)` — 2k features | Per-rank mean and peak, weighted separately |
 
 EPR sums the rank axis, so it is the top-`k` entropy estimate averaged over the sequence —
 which is why `k` belongs to the feature's definition, and why a response carrying fewer
@@ -56,7 +60,9 @@ A `LogisticRegression` maps the features to a probability. It is fitted on 0/1 l
 one per generated sequence, where 1 marks a hallucination; the published detectors
 are that same estimator with its coefficients already fitted, loaded by
 `EPR.from_pretrained` or `WEPR.from_pretrained`. Because it is a real sklearn classifier, `predict`,
-`predict_proba` and `decision_function` all work as expected.
+`predict_proba` and `decision_function` all work as expected, and so do `classes_` and the
+feature names: `detector[:-1].get_feature_names_out()` names the measured features, and
+`set_output(transform="pandas")` returns them as a DataFrame ({doc}`sklearn`).
 
 The measurement step is a plain transformer, so any callable can replace the reduction:
 
@@ -65,7 +71,10 @@ import numpy as np
 
 from artefactual.scoring import EntropyTransformer
 
-EntropyTransformer(reduction=lambda s, axis: np.nanmax(s, axis=axis))
+transformer = EntropyTransformer(reduction=lambda s, axis: np.nanmax(s, axis=axis))
 ```
+
+A custom reduction has no feature names, so `get_feature_names_out` and
+`set_output(transform="pandas")` raise `ValueError` for it.
 
 Fitting one of these for a model with no published weights is {doc}`training`.
