@@ -5,6 +5,8 @@ or not. It takes answers that model generated and a verdict on each. The pipelin
 {doc}`how-it-works` describes, unchanged — only the classifier's coefficients are new.
 
 ```python
+from artefactual import WEPR
+
 # responses: what the model answered, generated with top_logprobs >= k
 # y:         one 0/1 label per answer, 1 marking a hallucination
 detector = WEPR(k=15).fit(responses, y)
@@ -31,7 +33,7 @@ question list in one cell.
 A hundred judged answers is enough to see whether the detector separates the two classes,
 which is the scale the notebooks run at. The paper's own runs use TriviaQA at around 500
 questions per model — the procedure is in
-[`scripts/ecir`](https://github.com/artefactory/artefactual/tree/main/scripts/ecir). `epr`
+[`scripts/ecir`](https://github.com/artefactory/artefactual/tree/main/scripts/ecir). `EPR`
 fits one coefficient rather than `2k`, so it is the one to reach for when labels are scarcer
 than that.
 
@@ -51,7 +53,7 @@ conversion:
 | The judge said | `read_judgment` | `y = int(not verdict)` | Means |
 |---|---|---|---|
 | the answer was correct | `True` | `0` | grounded |
-| the answer was wrong | `False` | `1` | hallucination — the class `predict_proba[:, 1]` scores |
+| the answer was wrong | `False` | `1` | hallucination — the class `predict_proba(...)[:, 1]` scores, when the labels are `0`/`1` |
 | something unreadable | `None` | — | drop the row and count it |
 
 ## Whether the fit worked
@@ -62,6 +64,10 @@ the answer is in the run itself rather than taken on trust. *What the fit weighs
 the judge produced* in {doc}`../examples/train_wepr_lightweight_judge` lists, question by question,
 where the judge and the fitted detector disagree — the labels are the part worth doubting
 first.
+
+To choose `k` or the classifier's regularisation, give the unfitted detector to
+`GridSearchCV` with the responses and the labels; {doc}`sklearn` has the recipe, including
+`sample_weight`.
 
 ```{toctree}
 :maxdepth: 1
