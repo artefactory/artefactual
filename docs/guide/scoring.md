@@ -5,21 +5,26 @@ The examples below assume a `response` generated with `logprobs=True` and
 
 ## Choosing a detector
 
-`wepr` is the default. Both detectors are trained the same way and on the same labelled
-data, so `epr` saves no preparation work — only parameters. The training cost is identical
-and `wepr` is the more accurate of the two.
+`WEPR` is the more accurate of the two and the one the README uses. Both detectors are
+trained the same way and on the same labelled data, so `EPR` saves no preparation work —
+only parameters. There is no default detector: you import the class you want.
 
-| | `wepr` — default | `epr` |
+```python
+from artefactual import EPR, WEPR
+```
+
+| | `WEPR` | `EPR` |
 |---|---|---|
 | Features | 2 × `k` | 1 |
 | Reads | Each rank separately | Overall confidence per token |
-| Output | Sigmoid, scaled to `[0, 1]` | Unscaled entropy rate |
+| Output | `predict_proba`, a probability | `predict_proba`, a probability |
+| Feature the classifier sees | A mean and a max per rank | The raw entropy rate, pooled over every candidate |
 | Ships pre-trained | For the models in the README's table | For the same models |
 | Training needed | Only for another model | Only for another model |
 | Applicable when | Almost always | Too few labelled examples to fit `2k` coefficients |
 
 Both accept the same arguments and return the same type, so switching between them is a
-one-word change.
+one-word change. Neither takes a string option: the choice is the class.
 
 ## Turning a score into a decision
 
@@ -28,11 +33,12 @@ ROC-AUC and PR-AUC, both of which are threshold-free, so no operating point is p
 the right cut depends on the base rate of hallucination in the traffic and on the relative
 cost of a false flag. Choose it on a labelled sample of your own responses.
 
-`wepr` is the more usable of the two here: its output is a sigmoid, so it is already scaled
-to `[0, 1]` and can be shown to a user as a confidence. `epr` returns an unscaled entropy
-rate, which orders responses but carries no absolute meaning.
+Both detectors end in a logistic regression, so both `predict_proba` outputs lie in
+`[0, 1]` and rank responses. How far an output can be read as an absolute probability
+depends on how representative the training sample was, not on the detector.
 
-Column order follows `detector.classes_`: with `0`/`1` labels, column 1 is the hallucination class. With other labels, pick the column with `list(detector.classes_).index(label)`.
+Column order follows `detector.classes_`: with `0`/`1` labels, column 1 is the hallucination
+class. With other labels, look the column up; {doc}`sklearn` shows how.
 
 ## Scoring every token
 
@@ -72,6 +78,7 @@ score. Re-runs overwrite rather than duplicate, so the operation is safe to sche
 ```python
 from langfuse import get_client
 
+from artefactual import WEPR
 from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator
 
 evaluator = HallucinationEvaluator("wepr", get_client(), WEPR.from_pretrained("artefactory/wepr-phi4"))
@@ -93,7 +100,8 @@ detector = WEPR(k=15).fit(responses, y)
 coefficients = detector.named_steps["classifier"].coef_
 ```
 
-One label per generated sequence, in the same order `predict_proba` returns rows.
+One label per generated sequence, in the same order `predict_proba` returns rows. The
+labels must be binary; `classes_` is set from them at `fit`.
 
 A detector is unfitted until `fit`, as every scikit-learn estimator is. Published weights
 are never a constructor default — a detector's coefficients are model-specific, so there is
@@ -116,9 +124,10 @@ detector.named_steps  # {'parser': ..., 'entropy': ..., 'classifier': ...}
 clone(detector)  # get_params / set_params round-trip
 ```
 
-Both transformers are stateless — `fit` learns nothing — so `transform` may be called
-without fitting. `LogProbParser` sets `no_validation=True` in order to accept response
-objects rather than arrays, so cross-validation must start from already-parsed data.
+A detector takes raw responses in `fit` and in the scikit-learn tools built on it, so
+`cross_val_score(WEPR(), responses, y)` and `GridSearchCV` work without parsing first.
+{doc}`sklearn` has the model-selection recipes, the feature names and the persistence
+rules.
 
 ## When a response is refused
 
