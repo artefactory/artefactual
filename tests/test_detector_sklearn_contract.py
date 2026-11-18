@@ -291,9 +291,161 @@ def fitted(cls):
     return cls(k=K).fit(*fit_data(cls, width=K))
 
 
+def front_input(cls):
+    """What the steps before the classifier take: the responses for a detector, a table otherwise."""
+    return RESPONSES if cls in DETECTORS else table(width=K)[0]
+
+
+def entropy_input(cls):
+    """What the entropy step takes: a cube the parser built, or the table itself."""
+    return fitted(cls)[:1].transform(RESPONSES) if cls in DETECTORS else table(width=K)[0]
+
+
+def entropy_slice(estimator):
+    """The entropy step alone, as a one-step `Pipeline`."""
+    return estimator[-2:-1]
+
+
+@pytest.mark.parametrize("cls", [EPR, EPRClassifier], ids=["EPR", "EPRClassifier"])
+def test_epr_names_its_one_feature(cls):
+    assert list(cls(k=K)[:-1].get_feature_names_out()) == ["epr"]
+
+
+@pytest.mark.parametrize("cls", [WEPR, WEPRClassifier], ids=["WEPR", "WEPRClassifier"])
+def test_wepr_names_mean_then_max_per_rank(cls):
+    names = list(cls(k=K)[:-1].get_feature_names_out())
+    assert names == [f"wepr_{b}_rank{i}" for b in ("mean", "max") for i in range(K)]
+
+
+def test_the_entropy_step_names_its_features_from_k_alone():
+    assert len(entropy_slice(WEPR(k=K)).get_feature_names_out()) == 2 * K
+
+
+def test_input_features_must_match_k():
+    step = WEPRClassifier(k=K).named_steps["entropy"]
+    assert len(step.get_feature_names_out([f"r{i}" for i in range(K)])) == 2 * K
+    with pytest.raises(ValueError, match="input_features"):
+        step.get_feature_names_out(["a", "b"])
+
+
+def test_wepr_with_no_k_cannot_name_features_unless_shown_the_rank_names():
+    step = WEPRClassifier(k=K).named_steps["entropy"].set_params(k=None)
+    with pytest.raises(ValueError, match="k"):
+        step.get_feature_names_out()
+    assert step.get_feature_names_out(["a", "b"]).tolist() == ["wepr_mean_a", "wepr_mean_b", "wepr_max_a", "wepr_max_b"]
+
+
+@pytest.mark.parametrize("cls", [WEPR, WEPRClassifier], ids=["WEPR", "WEPRClassifier"])
+def test_wepr_names_follow_the_column_order_of_the_features(cls):
+    """The mean branch comes first: per rank, a mean never exceeds the max it is named beside."""
+    pd = pytest.importorskip("pandas")
+    estimator = fitted(cls)
+    features = estimator[:-1].set_output(transform="pandas").transform(front_input(cls))
+    assert is_bearable(features, pd.DataFrame)
+    means = features.filter(like="wepr_mean_").to_numpy()
+    maxes = features.filter(like="wepr_max_").to_numpy()
+    assert list(features.columns) == list(estimator[:-1].get_feature_names_out())
+    np.testing.assert_array_equal(features.to_numpy(), np.hstack([means, maxes]))
+    assert np.all(means <= maxes + 1e-12)
+    assert features.shape[1] == 2 * K
+
+
+@pytest.mark.parametrize("backend", ["pandas", "polars"])
+@pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
+def test_the_front_of_an_estimator_returns_a_named_frame(cls, backend):
+    pytest.importorskip(backend)
+    names = list(cls(k=K)[:-1].get_feature_names_out())
+    for estimator in (cls(k=K), fitted(cls)):
+        out = estimator[:-1].set_output(transform=backend).transform(front_input(cls))
+        assert type(out).__module__.startswith(backend)
+        assert list(out.columns) == names
+
+
+@pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
+def test_the_entropy_slice_alone_returns_a_frame(cls):
+    pytest.importorskip("pandas")
+    estimator = fitted(cls)
+    out = entropy_slice(estimator).set_output(transform="pandas").transform(entropy_input(cls))
+    assert list(out.columns) == list(estimator[:-1].get_feature_names_out())
+
+
+@pytest.mark.parametrize("cls", [WEPR, WEPRClassifier], ids=["WEPR", "WEPRClassifier"])
+def test_transform_tokens_stays_three_dimensional_under_set_output(cls):
+    pytest.importorskip("pandas")
+    entropy = fitted(cls).named_steps["entropy"].set_output(transform="pandas")
+    assert entropy.transform_tokens(entropy_input(cls)).ndim == 3
+
+
+def test_the_parser_is_not_wrapped_into_a_frame():
+    pytest.importorskip("pandas")
+    cube = fitted(WEPR)[:1].set_output(transform="pandas").transform(RESPONSES)
+    assert cube.ndim == 3
+
+
+@pytest.mark.parametrize("cls", [EPR, EPRClassifier], ids=["EPR", "EPRClassifier"])
+def test_a_custom_reduction_has_no_feature_names(cls):
+    estimator = fitted(cls)
+    estimator.named_steps["entropy"].reduction = lambda s, axis: np.nanmean(s, axis=axis)
+    with pytest.raises(ValueError, match="custom reduction"):
+        estimator[:-1].get_feature_names_out()
+
+
+@pytest.mark.parametrize("cls", [EPR, EPRClassifier], ids=["EPR", "EPRClassifier"])
+def test_set_output_rejects_unknown_formats_when_the_output_is_built(cls):
+    front = fitted(cls)[:-1].set_output(transform="numpy")
+    with pytest.raises(ValueError, match="numpy"):
+        front.transform(front_input(cls))
+
+
+def test_a_classifier_fitted_on_a_frame_names_its_features_after_the_columns():
+    columns = ["a", "b", "c"]
+    x, y = table(width=3)
+    classifier = WEPRClassifier(k=3).fit(pd.DataFrame(x, columns=columns), y)
+    assert list(classifier[:-1].get_feature_names_out()) == [
+        f"wepr_{branch}_{name}" for branch in ("mean", "max") for name in columns
+    ]
+    with pytest.raises(ValueError, match="feature_names_in_"):
+        classifier[:-1].get_feature_names_out(["x", "y", "z"])
+
+
+def test_a_classifier_fitted_on_an_array_names_its_features_after_the_ranks():
+    x, y = table(width=3)
+    classifier = WEPRClassifier(k=3).fit(x, y)
+    assert list(classifier[:-1].get_feature_names_out()) == [
+        f"wepr_{branch}_rank{i}" for branch in ("mean", "max") for i in range(3)
+    ]
+
+
+# --- k reaches every step ----------------------------------------------------------------
+
+
+@pytest.mark.parametrize("cls", [WEPR, WEPRClassifier], ids=["WEPR", "WEPRClassifier"])
+def test_set_params_k_reaches_every_step_that_takes_it(cls):
+    estimator = cls(k=K).set_params(k=5)
+    assert estimator.k == estimator.named_steps["entropy"].k == 5
+    if cls in DETECTORS:
+        assert estimator.named_steps["parser"].k == 5
+    assert len(estimator[:-1].get_feature_names_out()) == 10
+
+
+@pytest.mark.parametrize("cls", [WEPR, WEPRClassifier], ids=["WEPR", "WEPRClassifier"])
+def test_clone_keeps_k_on_every_step(cls):
+    copy = clone(fitted(cls).set_params(k=7))
+    assert copy.k == copy.named_steps["entropy"].k == 7
+    if cls in DETECTORS:
+        assert copy.named_steps["parser"].k == 7
+
+
 def test_a_step_level_k_narrower_than_the_cube_keeps_the_first_ranks():
     detector = WEPR(k=K).set_params(entropy__k=5)
     assert detector[:-1].transform(RESPONSES).shape[1] == 10
+
+
+def test_a_parser_level_k_that_disagrees_cannot_be_named_into_a_frame():
+    pytest.importorskip("pandas")
+    detector = WEPR(k=K).set_params(parser__k=5)
+    with pytest.raises(ValueError, match="10"):
+        detector[:-1].set_output(transform="pandas").transform(RESPONSES)
 
 
 # --- a classifier takes arrays and a detector takes responses ----------------------------

@@ -145,7 +145,7 @@ def _(response: ResponsesPayload) -> list[np.ndarray]:
 # `TransformerMixin` must precede `BaseEstimator` for the mixin's override to run. In the
 # reverse order `transformer_tags` stays `None` and scikit-learn does not treat the class
 # as a transformer.
-class LogProbParser(TransformerMixin, BaseEstimator):
+class LogProbParser(TransformerMixin, BaseEstimator, auto_wrap_output_keys=None):
     """First pipeline step: completion responses in, a dense logprob array out.
 
     Accepts raw responses rather than arrays, so it opts out of scikit-learn's input
@@ -165,6 +165,32 @@ class LogProbParser(TransformerMixin, BaseEstimator):
 
     def __init__(self, k: int | None = None) -> None:
         self.k = k
+
+    def set_output(self, *, transform: str | None = None) -> "LogProbParser":  # noqa: ARG002 — accepted so `Pipeline.set_output` can reach the steps after it
+        """Accepted and ignored: the `(n, tokens, k)` cube has no table form to convert to.
+
+        Output wrapping is off for this step. `Pipeline.set_output` calls every step, and the
+        entropy step after this one is the first that yields a table.
+        """
+        return self
+
+    def get_feature_names_out(self, input_features=None) -> np.ndarray:
+        """Names of the rank columns, which the entropy step maps on.
+
+        Args:
+            input_features: If given, its first `k` entries name the columns instead of
+                `rank0`, ...
+
+        Raises:
+            ValueError: If `k` is `None` and no `input_features` are given, since the width is
+                then only known from data.
+        """
+        if input_features is not None:
+            return np.asarray(input_features, dtype=object)[: self.k]
+        if self.k is None:
+            msg = "The width is only known from data when k is None; set k to name the rank columns."
+            raise ValueError(msg)
+        return np.array([f"rank{i}" for i in range(self.k)], dtype=object)
 
     def fit(self, X, y=None) -> "LogProbParser":  # noqa: ARG002, N803 — X / y unused but required by the sklearn fit signature
         """No-op, present so the step composes in a `Pipeline`. Returns self."""
