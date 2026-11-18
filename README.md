@@ -10,6 +10,9 @@ Artefactual is a Python module that assigns a language model's answer a probabil
 being a hallucination. It reads the answer that has already been generated, together with
 the token probabilities returned alongside it, and needs nothing else from the model.
 
+The detectors are scikit-learn estimators, checked with `parametrize_with_checks`; see the
+[scikit-learn compatibility guide](https://artefactory.github.io/artefactual/guide/sklearn.html).
+
 ## Quick start
 
 ```python
@@ -92,7 +95,8 @@ uv sync
 
 Two detectors are provided. `WEPR` fits `2k` coefficients and is the more accurate; `EPR`
 fits a single coefficient instead, for when labelled data is scarce. Both take the same
-arguments and return the same type.
+arguments and return the same type. They score completion responses; `EPRClassifier` and
+`WEPRClassifier` are the same estimators over logprob arrays you already hold.
 
 ```python
 from artefactual import EPR, WEPR, WEPRClassifier
@@ -104,6 +108,9 @@ WEPR(k=15).fit(responses, y)
 WEPR.from_pretrained("artefactory/wepr-phi4")
 WEPR.from_pretrained("/path/to/my_detector.skops")
 EPR.from_pretrained("artefactory/epr-phi4")   # the single-coefficient variant
+
+# Logprob arrays, shaped (n_sequences, n_tokens, k) or one token per row (n, k)
+WEPRClassifier(k=15).fit(logprobs, y)
 ```
 
 Scoring a batch, reading per-token scores, scoring Langfuse traces, composing into
