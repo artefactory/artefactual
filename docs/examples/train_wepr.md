@@ -149,8 +149,9 @@ reduction keeps a mean and a max per rank, so `k=15` becomes **30** features per
 coefficient each for the classifier to weight.
 
 ```{code-cell} ipython3
+from artefactual import WEPR
 from artefactual.preprocessing.parser import LogProbParser
-from artefactual.scoring import WEPR, BaseDetector, EntropyTransformer
+from artefactual.scoring import BaseDetector, EntropyTransformer
 
 logprobs = LogProbParser(k=K).transform(responses)  # (responses, tokens, ranks), NaN-padded
 s_kj = EntropyTransformer.entropy_contributions(logprobs)  # -p*ln(p) per candidate, peaking at p=1/e

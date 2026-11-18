@@ -88,8 +88,9 @@ from langfuse import get_client, observe
 from langfuse.openai import OpenAI
 from openai.types.chat import ChatCompletion
 
+from artefactual import EPR, WEPR
 from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator
-from artefactual.scoring import EPR, WEPR, BaseDetector
+from artefactual.scoring import BaseDetector
 ```
 
 Every knob in one place. `OPENAI_API_KEY` has no default because it is a credential.

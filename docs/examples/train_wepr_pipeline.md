@@ -527,8 +527,9 @@ import numpy as np
 from sklearn.metrics import classification_report, roc_auc_score
 from sklearn.model_selection import train_test_split
 
+from artefactual import WEPR
 from artefactual.preprocessing import index_by_custom_id, read_batch, read_judgment, read_message
-from artefactual.scoring import WEPR, BaseDetector
+from artefactual.scoring import BaseDetector
 
 # Read back from disk rather than from the variables above: this is the path a fresh kernel
 # takes, and the one anything else reading these files takes too. `read_batch` validates

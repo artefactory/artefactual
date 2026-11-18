@@ -84,7 +84,7 @@ from sklearn.exceptions import InconsistentVersionWarning
 # reader loading it, and the estimator it produces is the same either way.
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 
-from artefactual.scoring import WEPR
+from artefactual import WEPR
 ```
 
 ```{code-cell} ipython3
