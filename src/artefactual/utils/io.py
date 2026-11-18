@@ -160,18 +160,31 @@ class EstimatorPersistenceMixin:
         The route to a fitted object that never calls `fit`: the weights were fitted
         elsewhere, and what is rebuilt here is only the machinery around them.
 
-        Args:
-            identifier: A Hugging Face repository id, a `.skops` file, or a directory
-                holding `model.skops`.
-            trusted: Type names to accept beyond skops' defaults. See `read_estimator`.
-            **kwargs: Passed to `_from_estimator`, which decides what the owner needs.
+        Parameters
+        ----------
+        identifier : str or Path
+            A Hugging Face repository id, a `.skops` file, or a directory holding
+            `model.skops`.
+        trusted : list of str, default=None
+            Type names to accept beyond skops' defaults. See `read_estimator`.
+        **kwargs
+            Passed to `_from_estimator`, which decides what the owner needs.
 
-        Returns:
+        Returns
+        -------
+        object
             An instance of the owner, carrying the loaded estimator.
 
-        Raises:
-            ValueError: If the identifier resolves to nothing, the file holds a type that
-                was not asked for, or the estimator does not fit the owner.
+        Raises
+        ------
+        ValueError
+            If the identifier resolves to nothing, the file holds a type that was not
+            asked for, or the estimator does not fit the owner.
+
+        Examples
+        --------
+        >>> detector = WEPR.from_pretrained("artefactory/wepr-phi4")  # doctest: +SKIP
+        >>> detector = WEPR.from_pretrained("/path/to/model.skops", k=15)  # doctest: +SKIP
         """
         estimator = cls.load_estimator(identifier, trusted=trusted)
         return cls._from_estimator(estimator, identifier, **kwargs)
@@ -182,17 +195,28 @@ class EstimatorPersistenceMixin:
         Persists the estimator alone rather than the whole object, so the file stays
         readable by a differently-versioned install: it names only scikit-learn types.
 
-        Args:
-            path: Destination file, or a directory in which to write `model.skops`. Missing
-                parent directories are created.
+        Parameters
+        ----------
+        path : str or Path
+            Destination file, or a directory in which to write `model.skops`. Missing
+            parent directories are created.
 
-        Returns:
+        Returns
+        -------
+        Path
             The path written.
 
-        Raises:
-            NotFittedError: If the estimator has not been fitted. An unfitted estimator
-                writes a file that looks valid and fails only when something later tries to
-                score with it, far from the call that forgot to fit.
+        Raises
+        ------
+        NotFittedError
+            If the estimator has not been fitted. An unfitted estimator writes a file that
+            looks valid and fails only when something later tries to score with it, far
+            from the call that forgot to fit.
+
+        Examples
+        --------
+        >>> detector.save_estimator("my_detector.skops")  # doctest: +SKIP
+        >>> WEPR.from_pretrained("my_detector.skops")  # doctest: +SKIP
         """
         check_is_fitted(self.estimator)
         path = Path(path)

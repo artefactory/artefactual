@@ -69,13 +69,18 @@ autodoc_default_options = {
 }
 autosummary_generate = True
 
-# Napoleon settings. The codebase documents with Google-style Args:/Returns:/Raises:
-# sections; NumPy style stays on so a contributor using it is still parsed.
+# Napoleon settings. The scoring and parser modules document with NumPy-style
+# Parameters/Returns/Raises sections; Google style stays on because other modules still
+# use Args:/Returns:/Raises:.
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = True
 napoleon_include_private_with_doc = False
 napoleon_use_param = True
+# Attributes render as :ivar: fields, not `.. attribute::` directives: BaseDetector lists
+# `estimator` and `n_features_in_` there and defines them as properties, and the directive
+# would document each twice.
+napoleon_use_ivar = True
 napoleon_use_rtype = True
 
 # Intersphinx mapping

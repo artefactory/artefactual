@@ -68,18 +68,24 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
 
     Learns nothing, but `fit` records the width and column names of a 2-D table, as
     scikit-learn's validation does, so the features of a named table are named after its
-    columns. `k` is optional: the width of a parsed cube is already
-    the calibrated `k`, since the parser sizes the rank axis. Giving `k` keeps only the
-    first `k` ranks of wider input, which are the `k` most likely candidates, and names the
-    `wepr` features without being shown any data, which is what scikit-learn's `set_output`
-    needs to label the columns of `transform`. Narrower input is used as it is.
+    columns. `k` is optional: the width of a parsed cube is already the calibrated `k`,
+    since the parser sizes the rank axis. Giving `k` keeps only the first `k` ranks of
+    wider input, which are the `k` most likely candidates, and names the `wepr` features
+    without being shown any data, which is what scikit-learn's `set_output` needs to label
+    the columns of `transform`. Narrower input is used as it is.
 
-    Args:
-        reduction: `"epr"`, `"wepr"`, or a callable `(s_kj, axis) -> features` reducing the
-            token axis.
-        k: Candidates per token to keep, the first `k` ranks. `None` keeps every rank, and
-            then a `wepr` step cannot name its features without `input_features` or a
-            fitted table.
+    Parameters
+    ----------
+    reduction : {"epr", "wepr"} or callable, default="epr"
+        A name, or a callable `(s_kj, axis) -> features` reducing the token axis.
+    k : int, default=None
+        Candidates per token to keep, the first `k` ranks. `None` keeps every rank, and then a `wepr` step
+        cannot name its features without `input_features` or a fitted table.
+
+    Examples
+    --------
+    >>> features = EntropyTransformer("wepr").transform(logprobs)  # doctest: +SKIP
+    >>> features.shape  # (n_sequences, 2 * k)  # doctest: +SKIP
     """
 
     def __init__(self, reduction: str | Callable = "epr", k: int | None = None) -> None:
@@ -145,22 +151,27 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
     def get_feature_names_out(self, input_features=None) -> np.ndarray:
         """Names of the features `transform` returns.
 
-        Args:
-            input_features: Names of the rank columns the step reads, as the parser names
-                them (`rank0`, ...); its length must equal `k` when `k` is set, and it must
-                equal the column names the step was fitted on, if any. Without it the names
-                are the fitted table's columns (the first `k`), or come from `k`.
+        Parameters
+        ----------
+        input_features : array-like of str, default=None
+            Names of the rank columns the step reads, as the parser names them
+            (`rank0`, ...); its length must equal `k` when `k` is set, and it must equal
+            the column names the step was fitted on, if any. Without it the names are
+            the fitted table's columns (the first `k`), or come from `k`.
 
-        Returns:
+        Returns
+        -------
+        ndarray of str
             `["epr"]`, or for `wepr` `wepr_mean_<rank>` for each rank followed by
             `wepr_max_<rank>` for each rank. A rank is named by the column it was read
             from when the step was fitted on a named table.
 
-        Raises:
-            ValueError: If `reduction` is a callable; if `input_features` does not have `k`
-                entries or disagrees with the fitted column names; or if `reduction` is
-                `"wepr"` and none of `k`, `input_features` or fitted column names is
-                available.
+        Raises
+        ------
+        ValueError
+            If `reduction` is a callable; if `input_features` does not have `k` entries or
+            disagrees with the fitted column names; or if `reduction` is `"wepr"` and none
+            of `k`, `input_features` or fitted column names is available.
         """
         if callable(self.reduction):
             msg = "Feature names are unknown for a custom reduction callable; only 'epr' and 'wepr' are named."
@@ -184,13 +195,17 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
     def fit(self, X, y=None) -> "EntropyTransformer":  # noqa: ARG002, N803 — y unused but required by the sklearn fit signature
         """Learns nothing; a 2-D table is validated so its width and column names are recorded.
 
-        Args:
-            X: A 3-D cube is only validated; a 2-D table sets `n_features_in_` and
-                `feature_names_in_`. `None` is accepted, and fits nothing.
-            y: Ignored.
+        Parameters
+        ----------
+        X : array-like, default=None
+            A 3-D cube is only validated; a 2-D table sets `n_features_in_` and
+            `feature_names_in_`. `None` is accepted, and fits nothing.
+        y : array-like, default=None
+            Ignored.
 
-        Returns:
-            self.
+        Returns
+        -------
+        self : EntropyTransformer
         """
         if X is not None:
             self.validate(X, reset=True)
@@ -203,8 +218,10 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         Resolved here rather than in `__init__` because sklearn requires constructor
         arguments to survive `get_params`/`set_params`/`clone` unmodified.
 
-        Raises:
-            ValueError: If `reduction` is neither a known name nor callable.
+        Raises
+        ------
+        ValueError
+            If `reduction` is neither a known name nor callable.
         """
         if callable(self.reduction):
             return self.reduction
@@ -220,19 +237,27 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         which makes the downstream classifier return `sigmoid(intercept_)`, its base rate,
         and a warning is raised rather than letting the degenerate input pass unremarked.
 
-        Args:
-            X: `(n_sequences, n_tokens, k)` or `(n_sequences, k)` logprobs, NaN-padded. A
-                nested list is accepted, and a 2-D table is one token per row. Ranks
-                beyond `k` are dropped.
+        Parameters
+        ----------
+        X : array-like of shape (n_sequences, n_tokens, k) or (n_sequences, k)
+            Logprobs, NaN-padded; a nested list is accepted. A 2-D table is one token per
+            row. Ranks beyond `k` are dropped.
 
-        Returns:
-            `(n_sequences, n_features)` — 1 column for `epr`, `2k` for `wepr`.
+        Returns
+        -------
+        ndarray of shape (n_sequences, n_features)
+            1 column for `epr`, `2k` for `wepr`. After `set_output(transform="pandas")` or
+            `"polars"`, a frame whose columns are `get_feature_names_out()`.
 
-        Raises:
-            ValueError: If `x` holds infinity, or is a table that is not numeric 2-D.
+        Raises
+        ------
+        ValueError
+            If `X` holds infinity, or is a table that is not numeric 2-D.
 
-        Warns:
-            EmptySequenceWarning: If any sequence carries no tokens.
+        Warns
+        -----
+        EmptySequenceWarning
+            If any sequence carries no tokens.
         """
         s_kj = self.entropy_contributions(self.validate(X))
         features = self.reduction_fn(s_kj, axis=1)
@@ -252,15 +277,21 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         Applies the same reduction over a one-token window per position, so token features
         are computed exactly as sequence features are.
 
-        Args:
-            X: `(n_sequences, n_tokens, k)` or `(n_sequences, k)` logprobs, NaN-padded. A
-                2-D table is one token per row. Ranks beyond `k` are dropped.
+        Parameters
+        ----------
+        X : ndarray of shape (n_sequences, n_tokens, k) or (n_sequences, k)
+            Logprobs, NaN-padded. A 2-D table is one token per row. Ranks beyond `k` are
+            dropped.
 
-        Returns:
-            `(n_sequences, n_tokens, n_features)`, padded tokens still NaN.
+        Returns
+        -------
+        ndarray of shape (n_sequences, n_tokens, n_features)
+            Padded tokens are still NaN. Never wrapped by `set_output`.
 
-        Raises:
-            ValueError: If `x` holds infinity, or is a table that is not numeric 2-D.
+        Raises
+        ------
+        ValueError
+            If `X` holds infinity, or is a table that is not numeric 2-D.
         """
         s_kj = self.entropy_contributions(self.validate(X))
         windows = np.expand_dims(s_kj, axis=2)  # (n, T, 1, k) — one 1-token window per token

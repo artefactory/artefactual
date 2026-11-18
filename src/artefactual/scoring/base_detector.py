@@ -23,6 +23,44 @@ class BaseDetector(BaseEntropyClassifier):
     Input is completion responses, one row per sampled sequence: chat completions,
     Responses API payloads or batch output lines. A numeric table is refused with a
     `TypeError`; scoring one is what `EPRClassifier` and `WEPRClassifier` are for.
+
+    Parameters
+    ----------
+    k : int, default=15
+        Candidates per token the responses carry. Responses carrying fewer are rejected
+        when parsed, rather than padded, since the missing candidates were never fetched.
+        Written to the parser and the entropy step, and any loaded weights were checked
+        against it beforehand.
+    estimator : estimator, default=None
+        Final estimator. Unfitted by default: the unregularised logistic regression the
+        published detectors were fit with.
+    transform_input : list of str, default=None
+        Passed to `Pipeline`.
+    memory : str or object with the joblib.Memory interface, default=None
+        Passed to `Pipeline`.
+    verbose : bool, default=False
+        Passed to `Pipeline`.
+
+    Attributes
+    ----------
+    classes_ : ndarray of shape (2,)
+        The class labels, sorted. Available once fitted.
+    named_steps : Bunch
+        The steps by name: `"parser"`, `"entropy"` and `"classifier"`.
+    steps : list of (str, estimator)
+        The same steps, in order.
+    estimator : estimator
+        The final step.
+
+    Raises
+    ------
+    TypeError
+        If constructed directly rather than through `EPR` or `WEPR`.
+
+    See Also
+    --------
+    EPR : One pooled feature.
+    WEPR : A mean and a max per rank.
     """
 
     def __init__(
@@ -34,22 +72,7 @@ class BaseDetector(BaseEntropyClassifier):
         memory=None,
         verbose=False,
     ) -> None:
-        """Assemble a parser -> entropy -> classifier pipeline pinned to `k` candidates.
-
-        Args:
-            k: Candidates per token the responses carry. Responses carrying fewer are
-                rejected when parsed, rather than padded, since the missing candidates were
-                never fetched. Written to the parser and the entropy step, and any loaded
-                weights were checked against it beforehand.
-            estimator: Final estimator. Unfitted by default -- the unregularised logistic
-                regression the published detectors were fit with.
-            transform_input: Passed to `Pipeline`.
-            memory: Passed to `Pipeline`.
-            verbose: Passed to `Pipeline`.
-
-        Raises:
-            TypeError: If constructed directly rather than through `EPR` or `WEPR`.
-        """
+        """Assemble a parser -> entropy -> classifier pipeline pinned to `k` candidates."""
         super().__init__(k=k, estimator=estimator, transform_input=transform_input, memory=memory, verbose=verbose)
         self.steps.insert(0, ("parser", LogProbParser(k=k)))
 
@@ -72,13 +95,19 @@ class BaseDetector(BaseEntropyClassifier):
         -- so that selecting one never means re-deriving the mapping from its name to a
         class.
 
-        Args:
-            reduction: `"epr"` or `"wepr"`, which selects the class.
-            k: Candidates per token the responses carry.
-            estimator: Final estimator to fit. Defaults to the unregularised logistic
-                regression the published detectors were fit with.
+        Parameters
+        ----------
+        reduction : {"epr", "wepr"}
+            The reduction, which selects the class.
+        k : int, default=15
+            Candidates per token the responses carry.
+        estimator : estimator, default=None
+            Final estimator to fit. Defaults to the unregularised logistic regression the
+            published detectors were fit with.
 
-        Returns:
+        Returns
+        -------
+        BaseDetector
             A detector ready to `fit`.
         """
         return {"epr": EPR, "wepr": WEPR}[reduction](k=k, estimator=estimator)
@@ -97,9 +126,34 @@ class EPR(BaseDetector):
     work over `WEPR` -- only parameters. Prefer `WEPR` unless there is too little labelled
     data to fit its larger coefficient vector.
 
-    Args:
-        k: Candidates per token the responses carry. See `BaseDetector`.
-        estimator: Final estimator; the unregularised logistic regression by default.
+    Parameters
+    ----------
+    k : int, default=15
+        Candidates per token the responses carry. See `BaseDetector`.
+    estimator : estimator, default=None
+        Final estimator; the unregularised logistic regression by default.
+
+    Attributes
+    ----------
+    classes_ : ndarray of shape (2,)
+        The class labels, sorted. Available once fitted.
+    named_steps : Bunch
+        The steps by name: `"parser"`, `"entropy"` and `"classifier"`.
+    steps : list of (str, estimator)
+        The same steps, in order.
+    estimator : estimator
+        The final step.
+
+    See Also
+    --------
+    WEPR : Reads each rank separately, at the cost of `2k` coefficients.
+    EPRClassifier : The same reduction over logprob arrays.
+
+    Examples
+    --------
+    >>> detector = EPR().fit(responses, y)  # doctest: +SKIP
+    >>> published = EPR.from_pretrained("artefactory/epr-phi4")  # doctest: +SKIP
+    >>> published.predict_proba(response)[:, 1]  # doctest: +SKIP
     """
 
     reduction: ClassVar[Reduction | None] = "epr"
@@ -118,9 +172,34 @@ class WEPR(BaseDetector):
     Input is completion responses. Targets are binary, 1 marking hallucination. To score
     logprob arrays, use `WEPRClassifier`.
 
-    Args:
-        k: Candidates per token the responses carry. See `BaseDetector`.
-        estimator: Final estimator; the unregularised logistic regression by default.
+    Parameters
+    ----------
+    k : int, default=15
+        Candidates per token the responses carry. See `BaseDetector`.
+    estimator : estimator, default=None
+        Final estimator; the unregularised logistic regression by default.
+
+    Attributes
+    ----------
+    classes_ : ndarray of shape (2,)
+        The class labels, sorted. Available once fitted.
+    named_steps : Bunch
+        The steps by name: `"parser"`, `"entropy"` and `"classifier"`.
+    steps : list of (str, estimator)
+        The same steps, in order.
+    estimator : estimator
+        The final step.
+
+    See Also
+    --------
+    EPR : One pooled feature, for scarce labelled data.
+    WEPRClassifier : The same reduction over logprob arrays.
+
+    Examples
+    --------
+    >>> detector = WEPR().fit(responses, y)  # doctest: +SKIP
+    >>> published = WEPR.from_pretrained("artefactory/wepr-phi4")  # doctest: +SKIP
+    >>> published.predict_proba(response)[:, 1]  # doctest: +SKIP
     """
 
     reduction: ClassVar[Reduction | None] = "wepr"
