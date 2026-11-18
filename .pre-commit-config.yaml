@@ -13,6 +13,8 @@ repos:
         exclude: ^scripts/ecir/prompts/
     -   id: check-yaml
     -   id: check-added-large-files
+        # The lockfile is generated, not authored, and CI installs from it with --frozen.
+        exclude: ^uv\.lock$
     -   id: check-merge-conflict
     -   id: debug-statements
     -   id: no-commit-to-branch
@@ -63,8 +65,8 @@ repos:
     - id: ty
       name: ty check
       entry: >
-        uvx --prerelease=allow ty check src/artefactual
-        --ignore=unresolved-import
+        uvx --prerelease=allow ty@0.0.107 check src/artefactual
+        --ignore=import-not-found
         --output-format=concise
       language: python
       files: ^src/artefactual/

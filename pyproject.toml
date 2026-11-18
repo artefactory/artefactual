@@ -364,7 +364,7 @@ output-format = "concise"
 exclude = ["tests/", "scripts", "examples"]
 
 [tool.ty.rules]
-unresolved-import = "ignore"
+import-not-found = "ignore"
 
 # Computes the next version and creates its tag; it writes no files and makes no commit,
 # because the tag is what the version is read from. `current_version` is absent so the
