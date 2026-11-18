@@ -68,8 +68,10 @@ Artefactual requires:
 
 - Python (>= 3.11)
 - NumPy
-- scikit-learn
+- scikit-learn (>= 1.8)
 - pydantic
+- skops
+- huggingface-hub
 - beartype
 
 Two optional extras are available: `[adapters]` installs `langfuse` and `openai` for the
@@ -86,12 +88,12 @@ uv sync
 
 ## Usage
 
-Two detectors are provided. `wepr` is the default and the more accurate; `epr` fits a
-single coefficient instead of `2k`, for when labelled data is scarce. Both take the same
+Two detectors are provided. `WEPR` fits `2k` coefficients and is the more accurate; `EPR`
+fits a single coefficient instead, for when labelled data is scarce. Both take the same
 arguments and return the same type.
 
 ```python
-from artefactual.scoring import BaseDetector, wepr
+from artefactual.scoring import EPR, WEPR
 
 # Unfitted, as a scikit-learn estimator is; y is 0/1 per sequence, 1 marking a hallucination
 WEPR(k=15).fit(responses, y)
@@ -111,14 +113,14 @@ Scoring a batch, reading per-token scores, scoring Langfuse traces, composing in
 A detector is named by its own Hugging Face repository, not by the model it scores. Pick
 the row for the model that produced the responses, and the column for the reduction:
 
-| Model that produced the responses | `"epr"` | `"wepr"` |
+| Model that produced the responses | `EPR` | `WEPR` |
 |---|---|---|
 | `mistralai/Ministral-8B-Instruct-2410` | `artefactory/epr-ministral` | `artefactory/wepr-ministral` |
 | `mistralai/Mistral-Small-3.1-24B-Instruct-2503` | `artefactory/epr-mistral-small` | `artefactory/wepr-mistral-small` |
 | `tiiuae/Falcon3-10B-Instruct` | `artefactory/epr-falcon3` | `artefactory/wepr-falcon3` |
 | `microsoft/phi-4` | `artefactory/epr-phi4` | `artefactory/wepr-phi4` |
 
-All are trained at `k = 15`. Both factories also accept a path to a `.skops` file, so a
+All are trained at `k = 15`. Both classes also accept a path to a `.skops` file, so a
 detector you trained yourself is named the same way one published here is — the package
 holds no list of models, and publishing another detector needs no release.
 
