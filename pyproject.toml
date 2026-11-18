@@ -36,6 +36,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/artefactory/artefactual"
+Documentation = "https://artefactory.github.io/artefactual/"
 Repository = "https://github.com/artefactory/artefactual"
 Issues = "https://github.com/artefactory/artefactual/issues"
 
