@@ -149,18 +149,25 @@ class LogProbParser(TransformerMixin, BaseEstimator, auto_wrap_output_keys=None)
     """First pipeline step: completion responses in, a dense logprob array out.
 
     Accepts raw responses rather than arrays, so it opts out of scikit-learn's input
-    validation, and refuses a numeric array with a `TypeError`. Cross-validation over a
-    `BaseDetector` therefore has to start from data this step has already parsed, since
-    sklearn cannot index a response object by row.
+    validation. Cross-validation over a `BaseDetector` therefore has to start from data
+    this step has already parsed, since sklearn cannot index a response object by row.
+    A numeric array is refused with a `TypeError`.
 
     This step owns the rank axis -- a token's candidates ordered by likelihood, one column
     per rank. It sizes the output to `k` and refuses responses carrying fewer candidates,
     which is possible only here: downstream, every token has been padded to a common width
     and a token's original candidate count is no longer recoverable.
 
-    Args:
-        k: Number of candidates to emit per token, and so the width of the rank axis.
-            `None` uses the widest present in the batch.
+    Parameters
+    ----------
+    k : int, default=None
+        Number of candidates to emit per token, and so the width of the rank axis. `None`
+        uses the widest present in the batch.
+
+    Examples
+    --------
+    >>> cube = LogProbParser(k=15).transform(responses)  # doctest: +SKIP
+    >>> cube.shape  # (n_sequences, max_tokens, 15)  # doctest: +SKIP
     """
 
     def __init__(self, k: int | None = None) -> None:
@@ -171,19 +178,36 @@ class LogProbParser(TransformerMixin, BaseEstimator, auto_wrap_output_keys=None)
 
         Output wrapping is off for this step. `Pipeline.set_output` calls every step, and the
         entropy step after this one is the first that yields a table.
+
+        Parameters
+        ----------
+        transform : str, default=None
+            Ignored.
+
+        Returns
+        -------
+        self : LogProbParser
         """
         return self
 
     def get_feature_names_out(self, input_features=None) -> np.ndarray:
         """Names of the rank columns, which the entropy step maps on.
 
-        Args:
-            input_features: If given, its first `k` entries name the columns instead of
-                `rank0`, ...
+        Parameters
+        ----------
+        input_features : array-like of str, default=None
+            If given, its first `k` entries name the columns instead of `rank0`, ...
 
-        Raises:
-            ValueError: If `k` is `None` and no `input_features` are given, since the width is
-                then only known from data.
+        Returns
+        -------
+        ndarray of str
+            One name per rank column.
+
+        Raises
+        ------
+        ValueError
+            If `k` is `None` and no `input_features` are given, since the width is then
+            only known from data.
         """
         if input_features is not None:
             return np.asarray(input_features, dtype=object)[: self.k]
@@ -193,27 +217,45 @@ class LogProbParser(TransformerMixin, BaseEstimator, auto_wrap_output_keys=None)
         return np.array([f"rank{i}" for i in range(self.k)], dtype=object)
 
     def fit(self, X, y=None) -> "LogProbParser":  # noqa: ARG002, N803 — X / y unused but required by the sklearn fit signature
-        """No-op, present so the step composes in a `Pipeline`. Returns self."""
+        """No-op, present so the step composes in a `Pipeline`.
+
+        Parameters
+        ----------
+        X : list
+            Ignored.
+        y : array-like, default=None
+            Ignored.
+
+        Returns
+        -------
+        self : LogProbParser
+        """
         return self
 
     def transform(self, X: list) -> np.ndarray:  # noqa: N803
         """Parse responses into a NaN-padded logprob array.
 
-        Args:
-            X: One completion response, or a sequence of them. Each yields one row per
-                sampled sequence.
+        Parameters
+        ----------
+        X : list
+            One completion response, or a sequence of them. Each yields one row per
+            sampled sequence.
 
-        Returns:
-            `(n_sequences, max_tokens, k)`, NaN where a sequence is shorter than the
-            longest in the batch or a token position carried no candidates. Empty input gives
-            an empty `(0, 0, 0)` array.
+        Returns
+        -------
+        ndarray of shape (n_sequences, max_tokens, k)
+            NaN where a sequence is shorter than the longest in the batch or a token
+            position carried no candidates. Empty input gives an empty `(0, 0, 0)` array.
 
-        Raises:
-            TypeError: If a response is not a recognised completion format, including a
-                batch line whose body is not one.
-            ValueError: If a logprob is missing, non-finite or positive, if no response
-                carries any log-probabilities, if a response carries fewer than `k` candidates
-                per token, or if a batch line carries no completion at all.
+        Raises
+        ------
+        TypeError
+            If a response is not a recognised completion format, including a batch line
+            whose body is not one.
+        ValueError
+            If a logprob is missing, non-finite or positive, if no response carries any
+            log-probabilities, if a response carries fewer than `k` candidates per token, or
+            if a batch line carries no completion at all.
         """
         parsed = parse_top_logprobs(X)
         if not parsed:
