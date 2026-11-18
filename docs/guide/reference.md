@@ -1,7 +1,7 @@
 # Reference
 
-Detail behind the width a detector is pinned to, the format of a weights file,
-and the response shapes the parser accepts.
+Detail behind the width a detector is pinned to, the layout of a weights file,
+and the inputs the parser accepts.
 
 ## The `k` parameter
 
@@ -36,17 +36,18 @@ two directions are not symmetric:
   Each response is checked individually, so a wide response cannot mask a narrow one in
   the same batch.
 
-WEPR additionally validates the weights themselves, since its coefficient vector has one
-entry per rank:
+`from_pretrained` also checks the weights against `k`, since a WEPR coefficient vector has
+two entries per rank:
 
 ```
-ValueError: Weights cover 15 rank(s) but k=20 was requested. WEPR coefficients are
-fixed at the width they were trained at; pass k=15, or supply weights
+ValueError: The WEPR detector at 'weights.skops' takes 30 feature(s), but k=20 needs 40.
+Its coefficients are fixed at the width they were trained at; pass k=15, or use a detector
 trained at k=20.
 ```
 
-EPR detectors record no width of their own, so for an `epr` detector the `k` passed governs the
-input width.
+An EPR detector pools every candidate into one feature, so its file records no width and `k`
+only sizes the parser. A classifier given an array wider than `k` keeps the first `k` ranks,
+and a narrower one is used as it is; {doc}`sklearn` has the details.
 
 ## Detector files
 
@@ -57,30 +58,22 @@ detector = WEPR.from_pretrained("/path/to/my_detector.skops")
 ```
 
 `save_estimator` and `from_pretrained` are the entry points: the first writes the fitted
-estimator alone, the second reads it back. Dumping the whole detector with `skops.io.dump`
-also works, but loading it needs `trusted=` listing the artefactual types it holds. Get the
-exact list with `skops.io.get_untrusted_types(file=path)`; for a `WEPR` it is
-`artefactual.scoring.base_detector.WEPR`, `artefactual.scoring.base_detector._DetectorParser`
-and `artefactual.scoring.entropy_methods.entropy_transformer.EntropyTransformer`. `joblib`
-also works, but unpickling runs arbitrary code, so use it only on files you wrote.
+estimator alone, the second reads it back. A detector file is the skops dump of a fitted
+`LogisticRegression`, named `model.skops` when it sits in a directory; the coefficients are
+in `coef_` and `intercept_`, and nothing else is stored. It names only scikit-learn types, so
+it loads under any install of artefactual.
 
-Weight files are JSON. EPR files carry a single coefficient:
-
-```json
-{"intercept": -2.91, "coefficients": {"mean_entropy": 58.17}}
-```
-
-WEPR weights carry a `mean_rank_i` and `max_rank_i` pair for each rank `1..k`:
-
-```json
-{"intercept": -3.02, "coefficients": {"mean_rank_1": 3.81, "max_rank_1": -0.44}}
-```
+Dumping the whole detector with `skops.io.dump` also works, but loading it needs `trusted=`
+listing the artefactual types it holds. Ask skops for that list with
+`skops.io.get_untrusted_types(file=path)`. Do not open an untrusted file with `joblib` or
+`pickle`: they run code from the file ({doc}`sklearn` covers persistence).
 
 ## Input formats
 
-Three shapes are accepted, as SDK objects or plain mappings: a chat completion, a
+Three inputs are accepted, as SDK objects or plain mappings: a chat completion, a
 Responses API payload, and one line of an OpenAI Batch output file -- which is also what
-`vllm run-batch` writes, so a batch file is scored as it is read. A batch line whose
+`vllm run-batch` writes, so a batch file is scored as it is read. Numeric arrays go to
+`EPRClassifier` and `WEPRClassifier`, described in {doc}`sklearn`. A batch line whose
 request failed is *refused*, not skipped: this step emits one row per line, and dropping
 one would shift every later response against its label. Filter the failed lines out first,
 where their `custom_id` can still be reported.
@@ -124,9 +117,12 @@ response = {
 }
 ```
 
-Malformed input fails loudly: a payload carrying no logprobs raises `TypeError`, and a
-positive or non-finite log-probability raises `ValueError` naming the offending sample,
-token and rank.
+Malformed input fails loudly. A payload that is not a completion in any of these formats
+raises `TypeError`. A completion whose `top_logprobs` are absent or empty, which is what a
+provider returns when logprobs were not requested, raises `ValueError`, as does a positive
+or non-finite log-probability, naming the offending sample, token and rank.
 
-The generated signatures for every public object are in the
-[API reference](https://artefactory.github.io/artefactual/api.html).
+A 1-D array or Series of responses is read as responses; a numeric 2-D array raises
+`TypeError`, which names the classifiers.
+
+The generated signatures for every public object are in the {doc}`../api`.
