@@ -6,7 +6,7 @@ from collections.abc import Callable
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils import Tags
-from sklearn.utils.validation import check_array, validate_data
+from sklearn.utils.validation import _check_feature_names_in, check_array, validate_data
 
 from artefactual.exceptions import EmptySequenceWarning
 from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin
@@ -67,15 +67,19 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
     1 column for `epr`, `2k` for `wepr`.
 
     Learns nothing, but `fit` records the width and column names of a 2-D table, as
-    scikit-learn's validation does. `k` is optional: the width of a parsed cube is already
+    scikit-learn's validation does, so the features of a named table are named after its
+    columns. `k` is optional: the width of a parsed cube is already
     the calibrated `k`, since the parser sizes the rank axis. Giving `k` keeps only the
-    first `k` ranks of wider input, which are the `k` most likely candidates. Narrower
-    input is used as it is.
+    first `k` ranks of wider input, which are the `k` most likely candidates, and names the
+    `wepr` features without being shown any data, which is what scikit-learn's `set_output`
+    needs to label the columns of `transform`. Narrower input is used as it is.
 
     Args:
         reduction: `"epr"`, `"wepr"`, or a callable `(s_kj, axis) -> features` reducing the
             token axis.
-        k: Candidates per token to keep, the first `k` ranks. `None` keeps every rank.
+        k: Candidates per token to keep, the first `k` ranks. `None` keeps every rank, and
+            then a `wepr` step cannot name its features without `input_features` or a
+            fitted table.
     """
 
     def __init__(self, reduction: str | Callable = "epr", k: int | None = None) -> None:
@@ -137,6 +141,45 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         else:
             cube = validate_data(self, X, reset=reset, dtype=np.float64)[:, None, :]
         return cube if self.k is None else cube[..., : self.k]
+
+    def get_feature_names_out(self, input_features=None) -> np.ndarray:
+        """Names of the features `transform` returns.
+
+        Args:
+            input_features: Names of the rank columns the step reads, as the parser names
+                them (`rank0`, ...); its length must equal `k` when `k` is set, and it must
+                equal the column names the step was fitted on, if any. Without it the names
+                are the fitted table's columns (the first `k`), or come from `k`.
+
+        Returns:
+            `["epr"]`, or for `wepr` `wepr_mean_<rank>` for each rank followed by
+            `wepr_max_<rank>` for each rank. A rank is named by the column it was read
+            from when the step was fitted on a named table.
+
+        Raises:
+            ValueError: If `reduction` is a callable; if `input_features` does not have `k`
+                entries or disagrees with the fitted column names; or if `reduction` is
+                `"wepr"` and none of `k`, `input_features` or fitted column names is
+                available.
+        """
+        if callable(self.reduction):
+            msg = "Feature names are unknown for a custom reduction callable; only 'epr' and 'wepr' are named."
+            raise ValueError(msg)  # noqa: TRY004
+        if input_features is not None and self.k is not None and len(input_features) != self.k:
+            msg = f"input_features has {len(input_features)} entries but the step reads k={self.k} candidates."
+            raise ValueError(msg)
+        if self.reduction_fn is _epr:
+            return np.array(["epr"], dtype=object)
+        names = _check_feature_names_in(self, input_features, generate_names=False)
+        if names is not None:
+            ranks = [str(name) for name in names[: self.k]]
+        elif self.k is not None:
+            ranks = [f"rank{i}" for i in range(self.k)]
+        else:
+            msg = "A wepr step with k=None holds no width: set k or pass input_features to name its features."
+            raise ValueError(msg)
+        # `_wepr` concatenates the mean branch, then the max branch, on the last axis.
+        return np.array([f"wepr_{branch}_{rank}" for branch in ("mean", "max") for rank in ranks], dtype=object)
 
     def fit(self, X, y=None) -> "EntropyTransformer":  # noqa: ARG002, N803 — y unused but required by the sklearn fit signature
         """Learns nothing; a 2-D table is validated so its width and column names are recorded.
