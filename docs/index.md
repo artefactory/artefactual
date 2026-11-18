@@ -9,7 +9,7 @@ pip install artefactual
 ```
 
 ```python
-from artefactual.scoring import BaseDetector
+from artefactual import WEPR
 
 # response is what any OpenAI-compatible client returns with logprobs=True, top_logprobs=15
 detector = WEPR.from_pretrained("artefactory/wepr-ministral")

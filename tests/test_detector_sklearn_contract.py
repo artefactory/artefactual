@@ -495,6 +495,19 @@ def test_the_detectors_do_not_inherit_from_the_classifiers():
         assert detector.k_for(5) == classifier.k_for(5)
 
 
+# --- package root exports ----------------------------------------------------------------
+
+
+def test_the_estimators_are_exported_from_the_package_root_and_from_scoring():
+    import artefactual
+    import artefactual.scoring
+
+    for cls in ESTIMATORS:
+        assert vars(artefactual)[cls.__name__] is cls
+        assert vars(artefactual.scoring)[cls.__name__] is cls
+    assert {cls.__name__ for cls in ESTIMATORS} <= set(artefactual.__all__)
+
+
 @pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
 def test_a_slice_is_a_plain_pipeline_over_the_same_steps(cls):
     detector = cls()
