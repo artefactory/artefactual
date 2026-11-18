@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: If artefactual is useful in your research, please cite the paper below.
+title: artefactual
+type: software
+license: MIT
+repository-code: https://github.com/artefactory/artefactual
+url: https://artefactory.github.io/artefactual/
+authors:
+  - family-names: Moslonka
+    given-names: Charles
+  - family-names: Randrianarivo
+    given-names: Hicham
+  - family-names: Garnier
+    given-names: Arthur
+  - family-names: Malherbe
+    given-names: Emmanuel
+preferred-citation:
+  type: conference-paper
+  title: Learned Hallucination Detection in Black-Box LLMs Using Token-Level Entropy Production Rate
+  authors:
+    - family-names: Moslonka
+      given-names: Charles
+    - family-names: Randrianarivo
+      given-names: Hicham
+    - family-names: Garnier
+      given-names: Arthur
+    - family-names: Malherbe
+      given-names: Emmanuel
+  collection-title: Advances in Information Retrieval
+  collection-type: proceedings
+  volume: 16483
+  start: 115
+  end: 130
+  publisher:
+    name: Springer, Cham
+  year: 2026
+  doi: 10.1007/978-3-032-21289-4_8
