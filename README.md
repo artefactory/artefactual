@@ -15,7 +15,7 @@ the token probabilities returned alongside it, and needs nothing else from the m
 ```python
 from openai import OpenAI
 
-from artefactual.scoring import BaseDetector
+from artefactual import WEPR
 
 MODEL = "mistralai/Ministral-8B-Instruct-2410"  # the model being scored
 DETECTOR = "artefactory/wepr-ministral"         # the detector trained for it
@@ -93,7 +93,7 @@ fits a single coefficient instead, for when labelled data is scarce. Both take t
 arguments and return the same type.
 
 ```python
-from artefactual.scoring import EPR, WEPR
+from artefactual import EPR, WEPR, WEPRClassifier
 
 # Unfitted, as a scikit-learn estimator is; y is 0/1 per sequence, 1 marking a hallucination
 WEPR(k=15).fit(responses, y)
