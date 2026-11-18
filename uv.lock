@@ -266,7 +266,6 @@ wheels = [
 name = "artefactual"
 source = { editable = "." }
 dependencies = [
-    { name = "absl-py" },
     { name = "beartype" },
     { name = "huggingface-hub" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -294,6 +293,7 @@ docs = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "absl-py" },
     { name = "bump-my-version" },
     { name = "datasets" },
     { name = "einops" },
@@ -341,7 +341,6 @@ notebooks = [
 
 [package.metadata]
 requires-dist = [
-    { name = "absl-py", specifier = ">=2.1.0" },
     { name = "beartype", specifier = ">=0.19.0" },
     { name = "huggingface-hub", specifier = ">=0.30.0" },
     { name = "jupytext", marker = "extra == 'docs'", specifier = ">=1.19.5" },
@@ -363,6 +362,7 @@ provides-extras = ["adapters", "docs"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "absl-py", specifier = ">=2.1.0" },
     { name = "bump-my-version", specifier = ">=0.28.0" },
     { name = "datasets", specifier = ">=3.2.0" },
     { name = "einops", specifier = ">=0.8.0" },
