@@ -56,6 +56,14 @@ A locally trained detector is loaded by passing a path instead of a name:
 detector = WEPR.from_pretrained("/path/to/my_detector.skops")
 ```
 
+`save_estimator` and `from_pretrained` are the entry points: the first writes the fitted
+estimator alone, the second reads it back. Dumping the whole detector with `skops.io.dump`
+also works, but loading it needs `trusted=` listing the artefactual types it holds. Get the
+exact list with `skops.io.get_untrusted_types(file=path)`; for a `WEPR` it is
+`artefactual.scoring.base_detector.WEPR`, `artefactual.scoring.base_detector._DetectorParser`
+and `artefactual.scoring.entropy_methods.entropy_transformer.EntropyTransformer`. `joblib`
+also works, but unpickling runs arbitrary code, so use it only on files you wrote.
+
 Weight files are JSON. EPR files carry a single coefficient:
 
 ```json
