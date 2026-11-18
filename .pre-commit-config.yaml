@@ -64,9 +64,10 @@ repos:
   hooks:
     - id: ty
       name: ty check
-      entry: >
-        uvx --prerelease=allow ty check src/artefactual
-        --ignore=unresolved-import
-        --output-format=concise
-      language: python
+      # Run in the project environment, at the ty version uv.lock pins: without the
+      # dependencies installed, `beartype.typing.Protocol` and `is_bearable` resolve to
+      # Unknown, and ty reports protocol stubs and narrowed returns as errors.
+      entry: uv run --frozen ty check src/artefactual --output-format=concise
+      language: system
+      pass_filenames: false
       files: ^src/artefactual/
