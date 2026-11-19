@@ -21,8 +21,10 @@ You start with an endpoint and nothing else. This notebook builds the whole trai
 for the model that endpoint serves — it asks your questions, keeps the `top_logprobs`
 behind each response, has a judge grade them — then fits a WEPR detector and saves it.
 
-A detector is trained for one model, on answers that model produced plus a verdict on
-each. The wider context is in the guide's *Training a detector*.
+A detector is trained for one generator model, on answers that model produced plus a verdict
+on each from a judge, which should be a different model: a model that grades its own answers
+teaches the detector its own self-agreement rather than its hallucinations. The wider context
+is in the guide's *Training a detector*.
 
 Four sections. The first costs no requests and is still the expensive one: a gold answer
 per question is written by someone. The two that do spend requests write their results to
@@ -31,8 +33,8 @@ disk, so a refit never pays for them twice.
 | Section | What it does | Cost |
 |---|---|---|
 | Bring the questions | Your questions, each with a gold answer | the work: writing the gold answers |
-| Generate the responses | One request each, keeping `top_logprobs` | N requests |
-| Judge the responses | One request each, against the gold answer | N requests |
+| Generate the responses | One request each, keeping `top_logprobs` | N requests to `OPENAI_MODEL` |
+| Judge the responses | One request each, against the gold answer | N requests to `JUDGE_MODEL` |
 | Fit and evaluate | Fit, evaluate, save | seconds |
 
 Both written files are the **OpenAI Batch output shape** — one JSON object per line wrapping
@@ -46,6 +48,16 @@ a completion under `custom_id` — which is what the Batch API returns and what
 | `OPENAI_BASE_URL` | Any OpenAI-compatible endpoint returning `top_logprobs` |
 | `OPENAI_API_KEY` | Its key |
 | `OPENAI_MODEL` | The model being scored — the detector belongs to it, and the id has to be one your endpoint serves |
+| `JUDGE_BASE_URL` | Optional. The endpoint that grades the answers; defaults to `OPENAI_BASE_URL` |
+| `JUDGE_API_KEY` | Optional. Its key; defaults to `OPENAI_API_KEY` |
+| `JUDGE_MODEL` | Optional. The model that grades; defaults to `OPENAI_MODEL`, which means the model grades itself |
+
+Generation and judging are two different jobs and this notebook keeps them apart. The
+generator must return `top_logprobs`, which usually means a self-hosted endpoint; the judge
+only has to follow the reply format, and reads no log-probabilities at all. Leave the
+`JUDGE_*` variables unset and both run against the same endpoint, which is the cheapest
+setup and the one whose labels are worth doubting: a model that is confidently wrong grades
+its own wrong answer as correct, and that verdict becomes the training label.
 
 The endpoint must return at least `K` candidates per token. `top_logprobs` is commonly capped at
 20, so `K = 15` fits; an endpoint that caps lower is refused by name when the responses are
@@ -104,6 +116,19 @@ from jinja2 import Template
 # No default: a model id only means something to the endpoint serving it, and a wrong one
 # fails on every generation request rather than here.
 MODEL = os.environ["OPENAI_MODEL"]
+
+# The judge is a second model, and deliberately not this one. The verdict becomes the label
+# -- `y = int(not verdict)` -- so a model grading its own answers writes a label that agrees
+# with its own confidence, which is the signal the detector reads off the log-probabilities.
+# The two would then be correlated through the grader rather than through hallucination.
+#
+# There is a practical reason too: the generator has to serve `top_logprobs`, which in
+# practice means a self-hosted endpoint, while the judge only has to follow the reply format
+# and needs no log-probabilities at all. Each JUDGE_* falls back to its generator
+# counterpart, so a single-endpoint run still works with nothing new set.
+JUDGE_MODEL = os.environ.get("JUDGE_MODEL", MODEL)
+JUDGE_BASE_URL = os.environ.get("JUDGE_BASE_URL", os.environ.get("OPENAI_BASE_URL"))
+JUDGE_API_KEY = os.environ.get("JUDGE_API_KEY", os.environ.get("OPENAI_API_KEY"))
 
 # Candidates kept per token -- the tokens the model considered, most likely first, one per
 # rank. Part of the feature definition, not a batch size: WEPR fits one coefficient per
@@ -225,16 +250,26 @@ from artefactual.preprocessing import BatchRequestOutput, BatchResponseData
 # `max_retries` above the SDK's default of 2: this fires N requests at once, and a burst
 # of 429s that exhausts the retries becomes a thinner dataset rather than an error.
 client = OpenAI(max_retries=6)  # reads OPENAI_BASE_URL and OPENAI_API_KEY
+# A separate client so the judge can live on another endpoint entirely. Passing the values
+# explicitly rather than reading the environment again keeps the fallback in one place --
+# the configuration cell -- instead of splitting it across two constructors.
+judge_client = OpenAI(max_retries=6, base_url=JUDGE_BASE_URL, api_key=JUDGE_API_KEY)
 
-# Which endpoint this is actually talking to. Unset, OPENAI_BASE_URL silently means
+# Which endpoints these are actually talking to. Unset, OPENAI_BASE_URL silently means
 # api.openai.com, and a self-hosted run then fails N times with an authentication error.
-print(f"endpoint: {client.base_url}")
+print(f"generating with {MODEL} at {client.base_url}")
+print(f"judging with    {JUDGE_MODEL} at {judge_client.base_url}")
+if (JUDGE_MODEL, judge_client.base_url) == (MODEL, client.base_url):
+    # Not fatal -- it is the default, and it still produces a detector. But it is the one
+    # configuration whose labels are worth doubting, and silence here is how a run ends up
+    # reported as if the judge had been independent.
+    print("note: the model is grading its own answers; set JUDGE_MODEL for an independent judge")
 
 
-def ask(prompt, **options):
-    """The model's reply to `prompt`, or the `OpenAIError` that replaced it."""
+def ask(prompt, *, api=client, model=MODEL, **options):
+    """The reply of `model` on `api` to `prompt`, or the `OpenAIError` that replaced it."""
     try:
-        return client.chat.completions.create(model=MODEL, messages=[{"role": "user", "content": prompt}], **options)
+        return api.chat.completions.create(model=model, messages=[{"role": "user", "content": prompt}], **options)
     except OpenAIError as error:
         # Every failure this call can produce -- transport, timeout, rate limit, a rejected
         # request -- is an OpenAIError, and one of them should not cost the run. Anything
@@ -375,7 +410,8 @@ from artefactual.preprocessing import LogProbParser
 # endpoint does not serve. Checked before indexing, because the errors above say what
 # happened and a bare IndexError here would not.
 assert ok, (
-    "no responses were generated. Check OPENAI_BASE_URL, OPENAI_API_KEY and OPENAI_MODEL, "
+    "no responses were generated. Check OPENAI_BASE_URL, OPENAI_API_KEY and OPENAI_MODEL -- "
+    "the generator's three, not the JUDGE_* ones, which are not used until the next section, "
     "and read the per-request errors above: an endpoint that rejects `top_logprobs`, "
     "`temperature` or `max_completion_tokens` fails every request the same way."
 )
@@ -427,7 +463,13 @@ from artefactual.preprocessing import read_judgment
 def judge(pair):
     """The judge's reply, kept whole: the verdict is derived from it, not instead of it."""
     question, completion = pair
-    return ask(render_judge(question, completion), temperature=0, max_completion_tokens=200)
+    return ask(
+        render_judge(question, completion),
+        api=judge_client,
+        model=JUDGE_MODEL,
+        temperature=0,
+        max_completion_tokens=200,
+    )
 
 
 verdicts = run(judge, [(question["question_id"], (question, completion)) for question, completion in ok], JUDGMENTS)
