@@ -22,8 +22,9 @@ ends in a saved `.skops` file.
 | an endpoint, and nothing else | {doc}`../examples/train_wepr_pipeline` |
 
 Each runs top to bottom as it ships — the first two on committed sample files, the third on
-a hundred TriviaQA questions — so the detector is fitted before anything is edited. Pointing
-one at your own data is two file paths, or for the third, the question list in one cell.
+a hundred questions, half TriviaQA and half SimpleQA — so the detector is fitted before
+anything is edited. Pointing one at your own data is two file paths, or for the third, the
+question list in one cell.
 
 ## How much data
 
@@ -33,6 +34,13 @@ questions per model — the procedure is in
 [`scripts/ecir`](https://github.com/artefactory/artefactual/tree/main/scripts/ecir). `epr`
 fits one coefficient rather than `2k`, so it is the one to reach for when labels are scarcer
 than that.
+
+*How hard* the questions are matters as much as how many. A model that answers nearly all
+of them correctly produces almost no hallucinations to learn from, and a detector fitted
+there separates a problem that was already nearly separable — the ROC-AUC then describes
+the question set. TriviaQA on its own is that easy for a current model, which is why the
+shipped pack and `build_questions.sh mixed` draw half from SimpleQA, a set selected for
+questions strong models get wrong.
 
 ## The label a judge's verdict becomes
 

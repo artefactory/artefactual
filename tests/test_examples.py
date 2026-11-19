@@ -281,3 +281,38 @@ def test_every_fetched_file_is_committed_beside_the_notebook():
     repository = EXAMPLES.parents[1]
     missing = [path for path in sorted(fetched) if not (repository / path).is_file()]
     assert not missing, f"fetched from a path that is not in the repository: {missing}"
+
+
+def test_the_shipped_question_pack_draws_on_both_sources():
+    """Half TriviaQA, half SimpleQA -- the mix is the point, not an accident of sampling.
+
+    TriviaQA on its own is easy enough for a current model that almost every answer comes
+    back correct, so `y = int(not verdict)` is nearly all zeros and the fit separates a
+    problem that was already separable. SimpleQA is selected for questions strong models
+    get wrong. A pack that drifts back to one source produces a detector whose ROC-AUC
+    describes the questions, and nothing downstream would report it.
+
+    SimpleQA ids are the only ones this can key on: TriviaQA's own ids carry a dozen
+    different prefixes (`tc_`, `sfq_`, `bb_`, ...), so "not SimpleQA" is what identifies
+    them.
+    """
+    pack = json.loads((EXAMPLES / "questions_sample.json").read_text(encoding="utf-8"))
+
+    from_simpleqa = [row for row in pack if row["question_id"].startswith("sq-")]
+    from_triviaqa = [row for row in pack if not row["question_id"].startswith("sq-")]
+
+    assert len(from_simpleqa) == len(from_triviaqa), (
+        f"the pack is {len(from_triviaqa)} TriviaQA to {len(from_simpleqa)} SimpleQA; "
+        "regenerate it with `./build_questions.sh mixed 100`"
+    )
+
+    # An id is the join key for every later stage, so a collision between the two
+    # namespaces would pair an answer with another question's gold answer.
+    identifiers = [row["question_id"] for row in pack]
+    assert len(set(identifiers)) == len(identifiers), "the pack repeats a question_id"
+
+    # SimpleQA selects for a single unambiguous answer, so an alias list on one of its rows
+    # means the shaping step invented something the dataset does not carry.
+    assert all(row["answer_aliases"] == [] for row in from_simpleqa), (
+        "a SimpleQA row carries answer aliases; the dataset has none"
+    )

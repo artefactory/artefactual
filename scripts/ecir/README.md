@@ -56,7 +56,9 @@ Steps 2 and 4 read one file, `questions.json`, a list of:
 
 Step 1 writes it either from a Hugging Face QA dataset or by hand. The paper trains on **TriviaQA**, which ships each gold answer with the
 aliases the judge should also accept; it tests generalisation on **WebQuestions**, and uses
-a financial RAG corpus (ArGiMi-Ardian) for missing-context detection.
+a financial RAG corpus (ArGiMi-Ardian) for missing-context detection. TriviaQA on its own
+is easy enough for a current model that the fit sees almost one class, so the default pack
+here mixes it half and half with **SimpleQA**.
 
 Any short-form QA set works either way, including a domain-specific one that exists only as
 your own file. Two properties matter:
@@ -96,6 +98,14 @@ Steps 2 and 4 read this file, in the schema [above](#the-training-data); after t
 `question_id` travels on as `custom_id` and the later stages join on that.
 
 ```bash
+./build_questions.sh mixed 500 > questions.json
+```
+
+**`mixed`** is the default and draws half from each of the two sets below. It refuses an odd
+`n`: the point of the mix is that neither source is the majority class, and rounding would
+quietly give one of them the extra question.
+
+```bash
 ./build_questions.sh triviaqa 500 > questions.json
 ```
 
@@ -105,6 +115,17 @@ questions at the default seed: the split concatenates two evidence sources, so s
 questions appear twice
 under one id and the script keeps one of each. `./build_questions.sh --help` explains that
 and the alias handling.
+
+```bash
+./build_questions.sh simpleqa 500 > questions.json
+```
+
+**SimpleQA** is the hard half. Its 4,326 questions were selected so that strong models get
+them wrong, which is what gives the fit a second class to learn. Every row carries an empty
+`answer_aliases`: the benchmark selects for a single unambiguous answer, so there is nothing
+to list, and `build_judge_requests.sh` renders no alias block for those rows. Ids are
+`sq-<row>`, the row's position in the full test split rather than in the sample, so a new
+seed or size does not rebind them.
 
 ```bash
 ./build_questions.sh webquestions > questions.json
