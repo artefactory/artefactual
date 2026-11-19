@@ -176,8 +176,9 @@ direction; the label beside it is its negation.
 
 Those are the three values `read_judgment` returns.
 
-The sample responses are bare one-word strings, which this checkpoint judges erratically:
-some verbatim matches against the gold answer come back `false`.
+The sample responses are short answers, 98 with text and about half of them more than one
+word, and this checkpoint judges such answers erratically: some verbatim matches against the
+gold answer come back `false`.
 
 ```{code-cell} ipython3
 from bert_judge.judges import BERTJudge
@@ -347,7 +348,7 @@ for row, label in list(zip(x_test, y_test, strict=True))[:5]:
   judging cell at another value relabels the run in seconds — the download is already paid
   for.
 - **Compare against a generative judge.** Ask one for a verdict on the same responses and
-  join the two files on `custom_id` — both carry the same three words. Where they disagree
+  join the two files on `custom_id` — both carry one of the same three values (`true`, `false`, `null`). Where they disagree
   is where the alias list mattered, since this judge reads `short_answer` alone, or where
   one of them is wrong.
 - **Feed the CLI.** `judgments.jsonl` and `responses_sample.jsonl` go straight into the
