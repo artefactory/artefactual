@@ -41,8 +41,8 @@ This notebook demonstrates how to use the **HallucinationEvaluator** with the sk
     The endpoint must return `logprobs` with `top_logprobs`, otherwise there is nothing to score.
 
     `TOP_LOGPROBS` is passed to the detectors as `k`. Every shipped WEPR weights file is
-    calibrated at 15 ranks, so raising it will make `WEPR()` raise — deliberately, since the
-    coefficient vector is fixed at its calibration rank count. Either leave it at 15 or
+    calibrated at 15 candidates per token, so raising it will make `WEPR()` raise — deliberately, since the
+    coefficient vector is fixed at its calibration width. Either leave it at 15 or
     supply weights calibrated at the value you choose. `EPR()` is unaffected: an EPR
     calibration is a single coefficient, and `k` only governs how the rank axis is aligned. The defaults below target the HuggingFace router, where `OPENAI_API_KEY` is a token from your HuggingFace account.
 
@@ -73,7 +73,7 @@ OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]  # no default: it is a credential
 TOP_LOGPROBS = int(os.environ.get("TOP_LOGPROBS", "15"))
 
 # Both factories resolve a registry model name; pass a path instead to use your
-# own calibration. K must match the rank count requested above.
+# own calibration. K must match the width requested above.
 # The detectors trained for OPENAI_MODEL, not OPENAI_MODEL itself: `EPR()` and `WEPR()`
 # resolve a repository holding `model.skops`, and a generator's repository has none. The
 # two reductions are published separately, so there are two ids. Swap both when you swap

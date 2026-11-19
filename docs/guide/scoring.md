@@ -132,14 +132,13 @@ provider returns when logprobs were not requested or are unsupported. Regenerate
 logprobs=True and top_logprobs=15.
 ```
 
-A response carrying fewer ranks than the detector was trained at:
+A response carrying fewer candidates per token than the detector was trained at:
 
 ```
-ValueError: Response 0 carries 5 rank(s) per token but k=15 was requested. The missing
-ranks are not absent from the distribution, only unfetched, so zero-filling them would
+ValueError: Response 0 carries 5 candidate(s) per token but k=15 was requested. The missing
+candidates are not absent from the distribution, only unfetched, so zero-filling them would
 drop their entropy contributions and score the response as more confident than it was.
-Regenerate with top_logprobs=15, or score at k=5 with a detector trained at that rank
-count.
+Regenerate with top_logprobs=15, or score at k=5 with a detector trained at that width.
 ```
 
 Why the second is refused rather than padded is in

@@ -15,7 +15,7 @@ kernelspec:
 
 # Artefactual Package Demo: Hallucination Detection with WEPR
 
-This notebook demonstrates the `artefactual` package for scoring LLM outputs, specifically focusing on hallucination detection using entropy-based methods. Here we will use WEPR (Weighted Entropy Production Rate) learned weights per rank, with certain ranks being more informative than others.
+This notebook demonstrates the `artefactual` package for scoring LLM outputs, specifically focusing on hallucination detection using entropy-based methods. Here we will use WEPR (Weighted Entropy Production Rate), which learns one weight per rank -- a candidate's position in the token's top-k list -- because the second-most-likely candidate carries different information from the fifteenth.
 
 We explore two examples:
 1.  **General Knowledge Question**:
@@ -27,8 +27,8 @@ We explore two examples:
     *"Who is Charles Moslonka?"* → a fabricated biography (expected high uncertainty, high entropy expected)
 
 We will use:
-* **JSON fixture (open_ai_responses_top15.json):** two mock OpenAI Responses API outputs with **15 top logprobs per token**, matching the rank count the WEPR weights were trained on
-* **Published detector:** named by its own Hugging Face repository (`artefactory/wepr-falcon3`), fetched on first use and cached. WEPR coefficients are fixed at the rank count they were trained at, so `k` must match — passing a different value raises rather than producing a mis-shaped score.
+* **JSON fixture (open_ai_responses_top15.json):** two mock OpenAI Responses API outputs with the **15 most likely candidates per token**, matching the width the WEPR weights were trained on
+* **Published detector:** named by its own Hugging Face repository (`artefactory/wepr-falcon3`), fetched on first use and cached. WEPR coefficients are fixed at the width they were trained at, so `k` must match — passing a different value raises rather than producing a mis-shaped score.
 * **WEPR:** scorer from the artefactual package via the scikit-learn pipeline API
 * **Visualizations:** each token highlighted by its own score, so the uncertain stretches of an answer are visible rather than inferred.
 
@@ -57,9 +57,9 @@ from artefactual.scoring import WEPR
 DETECTOR = "artefactory/wepr-falcon3"
 DATA_PATH = "open_ai_responses_top15.json"
 
-# The rank count the detector was calibrated at, which the fixture also carries. Passing a
+# Candidates per token the detector was calibrated at, which the fixture also carries. Passing a
 # different value raises rather than producing a mis-shaped score, and a response narrower
-# than K is refused rather than padded: the missing ranks are unfetched, not absent, so
+# than K is refused rather than padded: the missing candidates are unfetched, not absent, so
 # filling them would understate the entropy.
 K = 15
 
