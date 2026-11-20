@@ -2,6 +2,10 @@ import os
 import shutil
 import tempfile
 
+# Headless: the notebook tests execute figure-drawing cells with plain `exec` rather than
+# through a kernel, and matplotlib picks its backend from this variable when first imported.
+os.environ["MPLBACKEND"] = "Agg"
+
 # huggingface_hub reads HF_HUB_CACHE and HF_HUB_OFFLINE once, when it imports `constants`, so
 # they are set before anything imports it. Assigned, never defaulted: a machine that already
 # points HF_HUB_CACHE at a shared cache would otherwise have the suite read and write it.

@@ -10,6 +10,7 @@ downloads a 420 MB judge, so those three are checked statically -- imports resol
 are defined -- rather than executed.
 """
 
+import contextlib
 import json
 from pathlib import Path
 
@@ -72,18 +73,21 @@ def test_the_notebook_parses(name):
     compile(code_of(load(name)), name, "exec")
 
 
-@pytest.mark.usefixtures("published_detectors")
+@pytest.fixture
+def in_examples_directory():
+    """Run from `EXAMPLES`, where the notebooks' relative data paths resolve; restore the cwd after."""
+    with contextlib.chdir(EXAMPLES):
+        yield
+
+
+@pytest.mark.usefixtures("published_detectors", "in_examples_directory")
 @pytest.mark.parametrize("name", OFFLINE_NOTEBOOKS)
-def test_the_notebook_runs_against_the_current_source(name, monkeypatch):
+def test_the_notebook_runs_against_the_current_source(name):
     """Execute every code cell in order, from the notebook's own directory.
 
     Run in-process rather than through nbconvert: the failure surfaces as an ordinary
     traceback pointing at the offending cell, and there is no kernel to install.
     """
-    monkeypatch.chdir(EXAMPLES)
-    # Headless: the notebooks draw figures, and this path executes them with plain `exec`
-    # rather than through a kernel, so the backend is whatever the machine defaults to.
-    monkeypatch.setenv("MPLBACKEND", "Agg")
     namespace = {"__name__": "__main__"}
 
     exec(compile(code_of(load(name)), name, "exec"), namespace)
