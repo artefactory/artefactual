@@ -568,12 +568,15 @@ first, printed with the question, the gold answer and the judge's own explanatio
 ```{code-cell} ipython3
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 
+from artefactual.preprocessing import Judgment
+
 # What each verdict was made against, and the sentence the judge gave for it.
 asked = {question["question_id"]: question for question in questions}
+judged = read_batch(JUDGMENTS)
 explanations = {
-    row.custom_id: json.loads(read_message(row.completion) or "{}").get("explanation", "")
-    for row in read_batch(JUDGMENTS)
-    if read_message(row.completion)
+    row.custom_id: judgment.explanation
+    for row, judgment in zip(judged, Judgment.from_batch(judged), strict=True)
+    if judgment is not None
 }
 
 folds = StratifiedKFold(5, shuffle=True, random_state=SEED)

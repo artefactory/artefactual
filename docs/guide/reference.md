@@ -81,7 +81,7 @@ where their `custom_id` can still be reported.
 `artefactual.preprocessing` owns that reading:
 
 ```python
-from artefactual.preprocessing import index_by_custom_id, read_batch, read_judgment, read_message
+from artefactual.preprocessing import Judgment, index_by_custom_id, read_batch, read_judgment, read_message
 
 rows = read_batch("responses.jsonl")     # validates each line; refuses a repeated custom_id
 for row in rows:
@@ -91,7 +91,18 @@ for row in rows:
 responses = index_by_custom_id(rows)     # the lines that carry a completion, keyed to join on
 read_message(row.completion)             # what the model said, or None
 read_judgment(row.completion)            # a judge's True / False verdict, or None
+Judgment.from_completion(row.completion) # the verdict and the explanation, or None
+Judgment.from_text(reply)                # the same, from the reply text
+verdicts = Judgment.from_batch(rows)     # one per row, in row order, None where unreadable
 ```
+
+`Judgment` is also the schema the judge prompt asks for, `{"judgment": true|false,
+"explanation": "..."}`, so it can be passed as a structured-output `response_format`.
+`judgment=True` means the judge called the answer *correct*, the opposite of the class a
+detector predicts. The readers accept a reply that wraps the object in a Markdown fence, or
+that is a bare `true` / `false`, and return `None` for anything else rather than a guess;
+a stringified `"false"` is not a verdict. `Judgment.from_batch` keeps its result aligned
+with `rows`, so `zip(rows, verdicts)` joins on `custom_id`.
 
 `failure` names each way a line can carry nothing -- a non-HTTP error, a status outside
 2xx, a missing envelope or body -- and `completion` is `None` for every one of them, so a
