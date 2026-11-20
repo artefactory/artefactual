@@ -24,7 +24,7 @@ from openai import OpenAI
 from artefactual import WEPR
 
 MODEL = "mistralai/Ministral-8B-Instruct-2410"  # the model being scored
-DETECTOR = "artefactory/wepr-ministral"         # the detector trained for it
+DETECTOR = "artefactory/wepr-ministral"  # the detector trained for it
 
 client = OpenAI(base_url="https://your-provider.example/v1")  # any OpenAI-compatible endpoint
 response = client.chat.completions.create(
@@ -35,8 +35,8 @@ response = client.chat.completions.create(
 )
 
 detector = WEPR.from_pretrained(DETECTOR)
-print(detector.predict_proba(response)[:, 1])   # P(hallucination) per sequence
-print(detector.predict_token_proba(response))   # ...and per token
+print(detector.predict_proba(response)[:, 1])  # P(hallucination) per sequence
+print(detector.predict_token_proba(response))  # ...and per token
 ```
 
 Column order follows `detector.classes_`: with `0`/`1` labels, column 1 is the hallucination class. With other labels, pick the column with `list(detector.classes_).index(label)`.
@@ -110,7 +110,7 @@ WEPR(k=15).fit(responses, y)
 # Published weights, or your own file, are loaded rather than fitted
 WEPR.from_pretrained("artefactory/wepr-phi4")
 WEPR.from_pretrained("/path/to/my_detector.skops")
-EPR.from_pretrained("artefactory/epr-phi4")   # the single-coefficient variant
+EPR.from_pretrained("artefactory/epr-phi4")  # the single-coefficient variant
 
 # Logprob arrays, shaped (n_sequences, n_tokens, k) or one token per row (n, k)
 WEPRClassifier(k=15).fit(logprobs, y)

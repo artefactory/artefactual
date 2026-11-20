@@ -13,7 +13,7 @@ from artefactual import WEPR
 
 # response is what any OpenAI-compatible client returns with logprobs=True, top_logprobs=15
 detector = WEPR.from_pretrained("artefactory/wepr-ministral")
-detector.predict_proba(response)[:, 1]   # P(hallucination) per sequence
+detector.predict_proba(response)[:, 1]  # P(hallucination) per sequence
 ```
 
 Column order follows `detector.classes_`: with `0`/`1` labels, column 1 is the hallucination class. With other labels, look the column up as {doc}`guide/sklearn` shows.

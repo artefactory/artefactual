@@ -7,7 +7,7 @@ import artefactual
 
 # Project information
 project = "Artefactual"
-copyright = "2025, Artefact Research Center"  # noqa: A001
+copyright = "2025, Artefact Research Center"  # ruff: ignore[builtin-variable-shadowing]
 author = "Hicham Randrianarivo, Gauthier Jeannin, Charles Moslonka"
 
 # Read from the installed package, which hatch-vcs derives from the git tag, so the site
@@ -201,7 +201,7 @@ _ARCHIVE_DIR = "stable" if _is_development_build else release
 _COLAB = f"https://colab.research.google.com/github/{_REPOSITORY}/blob/gh-pages/{_ARCHIVE_DIR}/"
 
 
-def _notebook_buttons(app, pagename: str, templatename: str, context: dict, doctree) -> None:  # noqa: ARG001
+def _notebook_buttons(app, pagename: str, templatename: str, context: dict, doctree) -> None:  # ruff: ignore[unused-function-argument]
     """Give an example page the two values its header component renders, and others none.
 
     The download href is a bare filename, so it resolves whatever the depth of the page and

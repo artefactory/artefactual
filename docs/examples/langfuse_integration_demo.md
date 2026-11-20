@@ -59,7 +59,7 @@ cells are the record of a session you run yourself.
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-import subprocess  # noqa: S404
+import subprocess  # ruff: ignore[suspicious-subprocess-import]
 import sys
 
 # Colab starts from a runtime with neither the package nor the files that sit beside
@@ -73,7 +73,7 @@ PACKAGES = [
 ]
 
 if ON_COLAB:
-    subprocess.run([sys.executable, "-m", "pip", "install", "-q", *PACKAGES], check=True)  # noqa: S603
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", *PACKAGES], check=True)  # ruff: ignore[subprocess-without-shell-equals-true]
 ```
 
 ## Run a generation and send it to Langfuse

@@ -28,7 +28,7 @@ MUST_RUN = {"check_classifiers_train", "check_estimators_pickle", "check_fit2d_1
 
 @parametrize_with_checks(
     [EPRClassifier(), WEPRClassifier()],
-    expected_failed_checks=lambda estimator: EXPECTED_FAILED_CHECKS,  # noqa: ARG005
+    expected_failed_checks=lambda estimator: EXPECTED_FAILED_CHECKS,  # ruff: ignore[unused-lambda-argument]
     # Strict: if the declared failure ever passes, the suite goes red and the entry must go.
     xfail_strict=True,
 )

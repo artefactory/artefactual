@@ -22,7 +22,7 @@ repos:
     -   id: mixed-line-ending
 
 -  repo: https://github.com/astral-sh/ruff-pre-commit
-   rev: v0.14.11
+   rev: v0.17.6
    hooks:
    -   id: ruff-check
        types_or: [python, pyi]
@@ -46,7 +46,7 @@ repos:
       name: jupytext ruff-format (examples)
       files: ^docs/examples/(?!index\.md$).*\.md$
       args: ["--pipe", "ruff format -", "--pre-commit-mode"]
-      additional_dependencies: ["ruff>=0.14.8,<0.15"]
+      additional_dependencies: ["ruff>=0.17.6,<0.18"]
     - id: jupytext
       alias: jupytext-ruff-check
       name: jupytext ruff check (examples)
@@ -54,7 +54,7 @@ repos:
       args:
         - "--check"
         - "ruff check --extend-ignore=T201,T203,ANN,B905,E501,PLR2004,S101,ERA001,F401,INP001 {}"
-      additional_dependencies: ["ruff>=0.14.8,<0.15"]
+      additional_dependencies: ["ruff>=0.17.6,<0.18"]
 - repo: https://github.com/codespell-project/codespell
   rev: v2.4.1
   hooks:

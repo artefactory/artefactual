@@ -143,7 +143,7 @@ dev = [
     # bare `uv sync` rather than only where the docs are built.
     "matplotlib>=3.9.0",
     "hypothesis>=6.127.8",
-    "ruff>=0.14.8,<0.15",
+    "ruff>=0.17.6,<0.18",
     "ty>=0.0.1a32",
     "pre-commit>=4.0.0",
     "bump-my-version>=0.28.0",
@@ -263,30 +263,30 @@ select = [
     "FURB",# refurb refactors
 ]
 extend-select = [
-    "ANN201", # public functions must have return type
-    "ANN205", # staticmethod must have return type
-    "ANN206", # classmethod must have return type
-    "PLR0911", # too many return statements
-    "PLR0912", # too many branches
-    "PLR0913", # too many arguments
-    "PLR0915", # too many statements
-    "PLR1722", # consider using sys.exit over exit/quit
+    "missing-return-type-public-function", # public functions must have return type
+    "missing-return-type-static-method", # staticmethod must have return type
+    "missing-return-type-class-method", # classmethod must have return type
+    "too-many-return-statements", # too many return statements
+    "too-many-branches", # too many branches
+    "too-many-arguments", # too many arguments
+    "too-many-statements", # too many statements
+    "sys-exit-alias", # consider using sys.exit over exit/quit
 ]
 
 ignore = [
-    "ISC001",
-    "F811",
-    "SIM117",    # low-signal simplify cases
-    "SIM300",    # low-signal simplify cases
-    "RUF009",    # docstring param order (style)
+    "single-line-implicit-string-concatenation",
+    "redefined-while-unused",
+    "multiple-with-statements",    # low-signal simplify cases
+    "yoda-conditions",    # low-signal simplify cases
+    "function-call-in-dataclass-default-argument",    # docstring param order (style)
     # Formatter conflicts (Ruff docs)
-    "W191",      # tab indentation
-    "E111",      # indentation with invalid multiple
-    "E114",      # indentation with invalid multiple (comment)
-    "E117",      # over-indented
-    "ISC002",    # multi-line implicit string concat (formatter handles)
+    "tab-indentation",      # tab indentation
+    "indentation-with-invalid-multiple",      # indentation with invalid multiple
+    "indentation-with-invalid-multiple-comment",      # indentation with invalid multiple (comment)
+    "over-indented",      # over-indented
+    "multi-line-implicit-string-concatenation",    # multi-line implicit string concat (formatter handles)
     # Bandit: keep only Jinja-template-related ignores
-    "S701", "S702", "S704",
+    "jinja2-autoescape-false", "mako-templates", "unsafe-markup-use",
 ]
 
 [tool.ruff.lint.mccabe]
@@ -312,45 +312,45 @@ max-args = 8
 # The glob is `docs/examples/*`, not a suffix: jupytext lints a MyST example by writing its
 # cells out as a `.py` beside itself and running ruff on that, under a generated name. It
 # matches at any depth, so a `.py` added anywhere under `docs/examples/` is covered too.
-"docs/examples/*" = ["B018", "E402"]
+"docs/examples/*" = ["useless-expression", "module-import-not-at-top-of-file"]
 "**/scripts/*" = [
-    "INP001",
-    "T201",
+    "implicit-namespace-package",
+    "print",
     "T20",
-    "PLR0917",
-    "PLR0913",
-    "RUF009",
-    "FBT003",
-    "E501",
-    "PLR0914",
-    "A004",
+    "too-many-positional-arguments",
+    "too-many-arguments",
+    "function-call-in-dataclass-default-argument",
+    "boolean-positional-value-in-call",
+    "line-too-long",
+    "too-many-locals",
+    "builtin-import-shadowing",
 ]
 # The conftest sets the Hub environment before its first import: huggingface_hub reads it
 # once, when `constants` is imported, so every later import is by design after code.
-"tests/conftest.py" = ["E402"]
+"tests/conftest.py" = ["module-import-not-at-top-of-file"]
 "**/tests/**/*" = [
-    "PLC1901",
-    "PLR2004",
-    "PLR6301",
+    "compare-to-empty-string",
+    "magic-value-comparison",
+    "no-self-use",
     "S",
-    "TID252",
+    "relative-imports",
     "ANN",  # allow untyped returns in tests
 ]
 "**/*.ipynb" = [
-    "T201",    # print statements allowed in notebooks
-    "T203",    # pprint statements allowed in notebooks
-    "A004",    # notebooks import IPython's `display`, which shadows a builtin
+    "print",    # print statements allowed in notebooks
+    "p-print",    # pprint statements allowed in notebooks
+    "builtin-import-shadowing",    # notebooks import IPython's `display`, which shadows a builtin
     "ANN",     # type annotations not required in notebooks
-    "B905",    # zip() without strict is fine in notebooks
-    "E501",    # line length relaxed in notebooks
-    "PLR2004", # magic values allowed in notebooks
-    "S101",    # assert allowed in notebooks
-    "ERA001",  # commented-out code allowed in notebooks
-    "F401",    # unused imports allowed (often for demo/exploration)
-    "INP001",  # implicit namespace package
-    "A004",    # IPython's display shadows a builtin; that is the documented import
+    "zip-without-explicit-strict",    # zip() without strict is fine in notebooks
+    "line-too-long",    # line length relaxed in notebooks
+    "magic-value-comparison", # magic values allowed in notebooks
+    "assert",    # assert allowed in notebooks
+    "commented-out-code",  # commented-out code allowed in notebooks
+    "unused-import",    # unused imports allowed (often for demo/exploration)
+    "implicit-namespace-package",  # implicit namespace package
+    "builtin-import-shadowing",    # IPython's display shadows a builtin; that is the documented import
 ]
-"examples/*.ipynb" = ["T201", "T203", "A004"]
+"examples/*.ipynb" = ["print", "p-print", "builtin-import-shadowing"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["artefactual"]

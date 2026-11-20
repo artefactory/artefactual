@@ -545,7 +545,7 @@ def test_a_slice_is_a_plain_pipeline_over_the_same_steps(cls):
 def test_n_features_in_is_the_width_of_the_fitted_table_and_absent_before(cls):
     detector = cls()
     with pytest.raises(AttributeError):
-        detector.n_features_in_  # noqa: B018
+        detector.n_features_in_  # ruff: ignore[useless-expression]
     x, y = table(width=6)
     assert detector.fit(x, y).n_features_in_ == 6
 
