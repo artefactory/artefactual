@@ -148,23 +148,41 @@ class LogProbParser(TransformerMixin, BaseEstimator, auto_wrap_output_keys=None)
                             f"rank {rank}: {lp!r}. Expected a finite value <= 0."
                         )
                         raise ValueError(error_msg)
-        max_tokens = max((max(d.keys()) + 1 for d in parsed if d), default=0)
+        max_tokens = max((max(d, default=-1) + 1 for d in parsed), default=0)
         if max_tokens == 0 and self.k is not None:
             # The shape was recognised but nothing carried candidates, which is what a provider
             # returns when logprobs were not requested or are not supported. Caught here
             # because a (n, 0, k) array reaches the entropy step as a zero-size reduction,
             # whose numpy error names nothing the caller can act on. Gated on `k` for the
-            # same reason `_reject_narrow` is: without a declared candidate count the parser has
+            # same reason the width check below is: without a declared candidate count the parser has
             # no expectation to contradict, and an empty parse is just an empty parse.
             error_msg = (
                 f"None of the {len(parsed)} response(s) carry any log-probabilities. The "
                 f"payload is a recognised completion format but its top_logprobs are "
                 f"absent or empty, which is what a provider returns when logprobs were "
                 f"not requested or are unsupported. Regenerate with logprobs=True and "
-                f"top_logprobs={self.k if self.k is not None else 'k'}."
+                f"top_logprobs={self.k}."
             )
             raise ValueError(error_msg)
-        self._reject_narrow(parsed)
+        # Narrow responses are refused per response, not across the batch, because padding is
+        # applied per batch: a wide response would otherwise raise the measured width above a
+        # narrow sibling's own candidate count. Token positions holding no candidates are
+        # skipped: they are the empty-`top_logprobs` case and remain padding, which the
+        # entropy step reports as an empty sequence.
+        k = self.k
+        if k is not None:
+            for i, sample in enumerate(parsed):
+                narrowest = min(map(len, filter(None, sample.values())), default=k)
+                if narrowest < k:
+                    error_msg = (
+                        f"Response {i} carries {narrowest} candidate(s) per token but k={k} "
+                        f"was requested. The missing candidates are not absent from the "
+                        f"distribution, only unfetched, so zero-filling them would drop their "
+                        f"entropy contributions and score the response as more confident than "
+                        f"it was. Regenerate with top_logprobs={k}, or score at "
+                        f"k={narrowest} with a detector trained at that width."
+                    )
+                    raise ValueError(error_msg)
 
         # float64: `LogisticRegression` takes the dtype of the features it is fitted on, and
         # the pretrained coefficients are stored at full float64 precision. Matching
@@ -182,32 +200,6 @@ class LogProbParser(TransformerMixin, BaseEstimator, auto_wrap_output_keys=None)
                 arr[i, token_idx, : len(candidates)] = candidates  # [depth, row, columns]
 
         return arr
-
-    def _reject_narrow(self, parsed: list[dict[int, list[float]]]) -> None:
-        """Raise if any response carries fewer than `k` candidates per token.
-
-        Compared per response, not across the batch, because padding is applied per batch:
-        a wide response would otherwise raise the measured width above a narrow sibling's
-        own candidate count.
-
-        Token positions holding no candidates are skipped. Those are the empty-`top_logprobs`
-        case and remain padding, which the entropy step reports as an empty sequence.
-        """
-        if self.k is None:
-            return
-
-        for i, sample in enumerate(parsed):
-            widths = [len(logprobs) for logprobs in sample.values() if logprobs]
-            if widths and min(widths) < self.k:
-                error_msg = (
-                    f"Response {i} carries {min(widths)} candidate(s) per token but k={self.k} "
-                    f"was requested. The missing candidates are not absent from the "
-                    f"distribution, only unfetched, so zero-filling them would drop their "
-                    f"entropy contributions and score the response as more confident than "
-                    f"it was. Regenerate with top_logprobs={self.k}, or score at "
-                    f"k={min(widths)} with a detector trained at that width."
-                )
-                raise ValueError(error_msg)
 
     def __sklearn_tags__(self) -> Tags:
         """Declares the step stateless and exempt from array validation."""
