@@ -1,6 +1,6 @@
 """Persisting and reading estimators.
 
-Every test names a path. `cached_file` returns a local file without consulting the
+Every test names a path. `PretrainedMixin.cached_file` returns a local file without consulting the
 Hub, so the suite exercises the whole loading path without a network, credentials, or a
 stand-in for either. What is deliberately *not* covered here is the download itself: it is
 the one step that needs the Hub, and it is reached only after the pure decisions -- which
@@ -10,7 +10,8 @@ file, which repository -- have been made, each of which is tested below on its o
 import numpy as np
 import pytest
 import skops.io as sio
-from conftest import estimators, fitted_logistic, write_estimator
+from beartype.roar import BeartypeCallHintParamViolation
+from conftest import cached_repo, estimators, fitted_logistic, write_estimator
 from hypothesis import given, settings
 from hypothesis import strategies as st
 from sklearn.base import BaseEstimator, ClassifierMixin
@@ -18,7 +19,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.exceptions import NotFittedError
 
 from artefactual.scoring import EPR, WEPR, BaseDetector
-from artefactual.utils.io import EstimatorPersistenceMixin
+from artefactual.utils.io import MODEL_FILENAME, PretrainedMixin, SavePretrainedMixin
 
 
 class AlwaysSure(ClassifierMixin, BaseEstimator):
@@ -106,10 +107,10 @@ def test_naming_the_type_makes_it_readable(tmp_path):
     assert isinstance(restored, AlwaysSure)
 
 
-# --- resolving -------------------------------------------------------------------------
+# --- locating -------------------------------------------------------------------------
 
 
-def test_a_file_resolves_to_itself(tmp_path):
+def test_a_local_file_is_returned_as_it_is(tmp_path):
     path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
 
     assert BaseDetector.cached_file(path) == path
@@ -120,6 +121,7 @@ def test_a_directory_resolves_to_the_model_inside_it(tmp_path):
     path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
 
     assert BaseDetector.cached_file(tmp_path) == path
+    assert path.name == MODEL_FILENAME
 
 
 # --- the Hub options, offline ----------------------------------------------------------
@@ -131,17 +133,6 @@ def offline_hub(monkeypatch):
     from huggingface_hub import constants
 
     monkeypatch.setattr(constants, "HF_HUB_OFFLINE", True)
-
-
-def cached_repo(cache_dir, repo_id, revision, commit):
-    """A Hub cache holding `model.skops` for `revision`, laid out as the client writes it."""
-    root = cache_dir / ("models--" + repo_id.replace("/", "--"))
-    snapshot = root / "snapshots" / commit
-    snapshot.mkdir(parents=True)
-    (root / "refs").mkdir()
-    (root / "refs" / revision).write_text(commit)
-    write_estimator(snapshot, "model.skops", fitted_logistic(0.0, [1.0]))
-    return snapshot / "model.skops"
 
 
 @pytest.mark.usefixtures("offline_hub")
@@ -255,7 +246,7 @@ def test_saving_creates_the_parent_directory(tmp_path):
 # --- building an owner from published weights -------------------------------------------
 
 
-class Owner(EstimatorPersistenceMixin):
+class Owner(PretrainedMixin, SavePretrainedMixin):
     """A minimal owner of an estimator, of the kind the mixin is written for.
 
     Deliberately not a detector: the mixin resolves, reads and hands over a file, and the
@@ -310,14 +301,24 @@ def test_an_owner_may_refuse_the_estimator_it_is_handed(tmp_path):
     assert PickyOwner.from_pretrained(path, n_features=2).estimator.n_features_in_ == 2
 
 
-def test_an_owner_that_does_not_implement_the_hook_says_so(tmp_path):
+def test_a_class_without_from_estimator_is_rejected(tmp_path):
     path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
 
-    class Bare(EstimatorPersistenceMixin):
+    class Bare(PretrainedMixin):
         pass
 
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(BeartypeCallHintParamViolation, match="EstimatorFactory"):
         Bare.from_pretrained(path)
+
+
+def test_an_object_without_an_estimator_is_rejected_by_save_pretrained(tmp_path):
+    class Bare(SavePretrainedMixin):
+        pass
+
+    with pytest.raises(BeartypeCallHintParamViolation, match="EstimatorOwner"):
+        Bare().save_pretrained(tmp_path / "model.skops")
+
+    assert not (tmp_path / "model.skops").exists()
 
 
 def test_an_untrusted_type_is_refused_before_the_owner_sees_it(tmp_path):
@@ -327,3 +328,57 @@ def test_an_untrusted_type_is_refused_before_the_owner_sees_it(tmp_path):
         Owner.from_pretrained(path)
 
     assert Owner.from_pretrained(path, trusted=["test_estimator_persistence.AlwaysSure"])
+
+
+# --- the load path, through from_pretrained ---------------------------------------------
+
+
+@given(published=estimators(), data=st.data())
+@settings(deadline=None, max_examples=15)
+def test_from_pretrained_hands_the_owner_the_file_as_written(tmp_path_factory, published, data):
+    # `from_pretrained` reaches the file by name, by string or by directory
+    directory = tmp_path_factory.mktemp("load")
+    path = write_estimator(directory, "model.skops", published)
+    named = data.draw(st.sampled_from([path, directory, str(path)]))
+
+    owner = Owner.from_pretrained(named)
+
+    x = np.linspace(-3, 3, 5 * published.n_features_in_).reshape(-1, published.n_features_in_)
+    assert np.array_equal(owner.estimator.predict_proba(x), published.predict_proba(x))
+
+
+def test_a_local_path_is_loaded_without_the_hub_options(tmp_path):
+    path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
+
+    owner = Owner.from_pretrained(path, revision="ignored", token="ignored", cache_dir=tmp_path / "unused")
+
+    assert owner.estimator.n_features_in_ == 1
+
+
+def test_save_pretrained_is_usable_without_from_pretrained(tmp_path):
+    class SaveOnly(SavePretrainedMixin):
+        estimator = fitted_logistic(0.0, [1.0])
+
+    written = SaveOnly().save_pretrained(tmp_path)
+
+    assert written == tmp_path / "model.skops"
+    assert Owner.from_pretrained(written).estimator.n_features_in_ == 1
+
+
+# --- save_pretrained -> from_pretrained -------------------------------------------------
+
+
+@given(published=estimators(), as_directory=st.booleans())
+@settings(deadline=None, max_examples=15)
+def test_what_is_saved_is_what_from_pretrained_loads(tmp_path_factory, published, as_directory):
+    directory = tmp_path_factory.mktemp("saved")
+    target = directory / "out" if as_directory else directory / "named.skops"
+    if as_directory:
+        target.mkdir()
+
+    written = Owner(published).save_pretrained(target)
+    reloaded = Owner.from_pretrained(target)
+
+    assert written == (target / MODEL_FILENAME if as_directory else target)
+    x = np.linspace(-3, 3, 5 * published.n_features_in_).reshape(-1, published.n_features_in_)
+    assert np.array_equal(reloaded.estimator.predict_proba(x), published.predict_proba(x))

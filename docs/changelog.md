@@ -16,9 +16,13 @@ Releases before the entries below are listed, with their notes, on the
   `EPRClassifier` and `WEPRClassifier`.
 - `artefactual.preprocessing.openai_parser` is removed: call `top_logprobs()` and
   `sampled_logprobs()` on `ChatCompletion` or `ResponsesPayload`.
-- The persistence methods are renamed: `save_estimator` to `save_pretrained`,
-  `resolve_estimator` to `cached_file`, `read_estimator` to `load_file` and
-  `_from_estimator` to the public `from_estimator`.
+- Estimator persistence is split into `PretrainedMixin` (`from_pretrained`, with the public
+  override points `cached_file` and `load_file`) and `SavePretrainedMixin` (`save_pretrained`),
+  importable from `artefactual.utils.io` only. Renamed:
+  `EstimatorPersistenceMixin` to `PretrainedMixin` and `SavePretrainedMixin`;
+  `save_estimator` to `save_pretrained`; `resolve_estimator` and `local_estimator` to
+  `cached_file`; `read_estimator` to `load_file`; `_from_estimator` to `from_estimator`.
+  `load_estimator` is removed: call `from_pretrained`.
 
 ### Added
 
@@ -39,9 +43,8 @@ Releases before the entries below are listed, with their notes, on the
   Rank columns are `rank0`..`rank{k-1}`; `EPR` and `EPRClassifier` have one feature, `epr`;
   `WEPR` and `WEPRClassifier` have `wepr_mean_rank*` then `wepr_max_rank*`. A classifier
   fitted on a table with column names uses them in place of `rank*`.
-- `from_pretrained` (and `cached_file`, `load_estimator`) take keyword-only `revision`,
-  `token` and `cache_dir`, forwarded to the Hugging Face download, so a published detector
-  can be pinned to a commit.
+- `from_pretrained` takes keyword-only `revision`, `token` and `cache_dir`, forwarded to the
+  Hugging Face download, so a published detector can be pinned to a commit.
 - `EntropyTransformer` validates its `reduction` and `k` at `fit`, and a detector validates `k`
   and `estimator`, with scikit-learn's `InvalidParameterError` (a `ValueError`).
 - `from artefactual import EPR, WEPR, EPRClassifier, WEPRClassifier`: the four estimators are

@@ -14,36 +14,90 @@ from pathlib import Path
 from typing import Any, Literal
 
 import skops.io as sio
+from beartype import beartype
+from beartype.typing import Protocol
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_is_fitted
 
 Reduction = Literal["epr", "wepr"]
 
+MODEL_FILENAME = "model.skops"
+"""Name of the estimator file inside a directory or a published repository.
 
-class EstimatorPersistenceMixin:
-    """Reading and writing estimators, for the estimator that owns one.
+A module constant rather than a mixin attribute: the loading steps and the saving step
+share it, and the owner protocols below are meant to hold methods only.
+"""
 
-    Mixed into the detector so persistence is part of its surface rather than a separate
-    set of helpers: a detector saves the fitted estimator it scores with, and loads one
-    the same way regardless of whether the caller names a file or a published model.
+
+class EstimatorFactory(Protocol):
+    """What `PretrainedMixin.from_pretrained` requires of its class: the three steps it takes.
+
+    `from_pretrained` finds a file (`cached_file`), reads it (`load_file`) and builds the
+    instance (`from_estimator`). `PretrainedMixin` supplies the first two; a class supplies
+    the third by assembling itself around a loaded estimator and rejecting one that does not
+    fit. A class that overrides either of the first two changes where weights come from or
+    how they are read, and `from_pretrained` follows.
+
+    A protocol of its own, apart from `EstimatorOwner`, because a protocol with a data
+    member (a property is one) cannot be checked with `issubclass`, which is how a class
+    is checked.
     """
 
-    MODEL_FILENAME = "model.skops"
+    @classmethod
+    def from_estimator(cls, estimator: BaseEstimator, identifier: str | Path, **kwargs: Any) -> Any:
+        """Wrap a loaded estimator in the object that scores with it.
+
+        Args:
+            estimator: The fitted estimator read from the file.
+            identifier: What named it, so a rejection can name the file it came from.
+            **kwargs: Whatever `from_pretrained` was called with beyond its own options.
+
+        Returns:
+            An instance of the class, ready to score.
+
+        Raises:
+            ValueError: If the estimator does not fit the class.
+        """
 
     @classmethod
-    def local_estimator(cls, identifier: str | Path) -> Path | None:
-        """The `.skops` file *identifier* names on disk, or None if it names none.
+    def cached_file(
+        cls,
+        identifier: str | Path,
+        *,
+        revision: str | None,
+        token: str | bool | None,
+        cache_dir: str | Path | None,
+    ) -> Path:
+        """The local `.skops` file *identifier* names. See `PretrainedMixin.cached_file`."""
 
-        A directory is accepted and read as the `model.skops` inside it, which is the
-        layout a published repository has once downloaded, so a clone and a repository name
-        reach the same file.
-        """
-        local = Path(identifier)
-        if local.is_file():
-            return local
-        if local.is_dir() and (local / cls.MODEL_FILENAME).is_file():
-            return local / cls.MODEL_FILENAME
-        return None
+    @classmethod
+    def load_file(cls, path: str | Path, trusted: list[str] | None = None) -> BaseEstimator:
+        """The estimator a `.skops` file holds. See `PretrainedMixin.load_file`."""
+
+
+class EstimatorOwner(Protocol):
+    """What `SavePretrainedMixin.save_pretrained` requires of its object: a fitted estimator.
+
+    Checked on the instance. Satisfying it evaluates `estimator`, so a property that
+    raises raises at the check, before `save_pretrained` runs.
+    """
+
+    @property
+    def estimator(self) -> BaseEstimator:
+        """The estimator this object scores with."""
+
+
+class PretrainedMixin:
+    """Loading an instance from a published estimator: `from_pretrained`.
+
+    The class using it must satisfy `EstimatorFactory`. It loads the same way whether the
+    caller names a file, a directory or a published model.
+
+    `cached_file` and `load_file` are public override points: the first decides where the
+    weights come from, the second how they are read. A subclass overrides one to load from
+    somewhere else (another registry, an encrypted store) or to read another format, and
+    `from_pretrained` uses the override without further change.
+    """
 
     @classmethod
     def cached_file(
@@ -54,14 +108,19 @@ class EstimatorPersistenceMixin:
         token: str | bool | None = None,
         cache_dir: str | Path | None = None,
     ) -> Path:
-        """Resolve *identifier* to a local `.skops` file, downloading it if it names a repo.
+        """The local `.skops` file *identifier* names, downloading it if it names a repository.
 
-        The only step here that reaches the network is the download itself; which file to
-        read, and which repository a name means, are both decided beforehand.
+        A `.skops` file is returned as it is. A directory resolves to the `MODEL_FILENAME`
+        inside it, the layout a downloaded repository has, so a clone and a repository name
+        reach the same file. Anything else is a Hugging Face repository id, downloaded into
+        the cache. The only step that reaches the network is that download; which file to
+        read is decided beforehand.
+
+        Override to change where weights come from.
 
         Args:
             identifier: A Hugging Face repository id, a `.skops` file, or a directory
-                holding `model.skops`.
+                holding `MODEL_FILENAME`.
             revision: Branch, tag or commit of the repository to download. `None` takes the
                 default branch, which a published repository may move; pin a commit for a
                 reproducible download. Ignored for a local path.
@@ -80,9 +139,11 @@ class EstimatorPersistenceMixin:
                 Connection, authentication and rate-limit failures are not wrapped: they
                 propagate as the `huggingface_hub` error they are.
         """
-        local = cls.local_estimator(identifier)
-        if local is not None:
+        local = Path(identifier)
+        if local.is_file():
             return local
+        if local.is_dir() and (local / MODEL_FILENAME).is_file():
+            return local / MODEL_FILENAME
 
         # Imported here rather than at module scope: loading a local file never reaches the
         # Hub, so it does not pay the import cost. The dependency is required either way.
@@ -94,15 +155,14 @@ class EstimatorPersistenceMixin:
             RevisionNotFoundError,
         )
 
-        repo_id = str(identifier)
         try:
             return Path(
-                hf_hub_download(repo_id, cls.MODEL_FILENAME, revision=revision, token=token, cache_dir=cache_dir)
+                hf_hub_download(str(identifier), MODEL_FILENAME, revision=revision, token=token, cache_dir=cache_dir)
             )
         except (RepositoryNotFoundError, RevisionNotFoundError, EntryNotFoundError, HFValidationError) as error:
             msg = (
                 f"Could not load an estimator from '{identifier}'. Expected a path to a "
-                f".skops file, a directory holding {cls.MODEL_FILENAME}, or a Hugging Face "
+                f".skops file, a directory holding {MODEL_FILENAME}, or a Hugging Face "
                 f"repository id holding one. Fetching it failed with: {error}"
             )
             raise ValueError(msg) from error
@@ -129,6 +189,8 @@ class EstimatorPersistenceMixin:
         Raises:
             ValueError: If the file holds a type that is neither trusted by default nor
                 listed in *trusted*.
+
+        Override to change how weights are read; keep the refusal of types not asked for.
         """
         # Checked here rather than left to `sio.load`: its refusal is a `TypeError` that
         # lists the types but does not say how to accept them, and callers catch the
@@ -145,62 +207,9 @@ class EstimatorPersistenceMixin:
         return sio.load(path, trusted=trusted)
 
     @classmethod
-    def load_estimator(
-        cls,
-        identifier: str | Path,
-        trusted: list[str] | None = None,
-        *,
-        revision: str | None = None,
-        token: str | bool | None = None,
-        cache_dir: str | Path | None = None,
-    ) -> BaseEstimator:
-        """Resolve *identifier* and read the estimator it names.
-
-        Args:
-            identifier: A repository id or path. See `cached_file`.
-            trusted: Type names to accept beyond skops' defaults.
-            revision: Repository revision to download. See `cached_file`.
-            token: Hugging Face access token. See `cached_file`.
-            cache_dir: Download cache directory. See `cached_file`.
-
-        Returns:
-            The fitted estimator.
-
-        Raises:
-            ValueError: If the identifier resolves to nothing, or the file holds a type
-                that was not asked for.
-        """
-        # Only what the caller set is forwarded, so a resolver that predates these options
-        # is called exactly as before.
-        hub: dict[str, Any] = {
-            name: value
-            for name, value in {"revision": revision, "token": token, "cache_dir": cache_dir}.items()
-            if value is not None
-        }
-        return cls.load_file(cls.cached_file(identifier, **hub), trusted=trusted)
-
-    @classmethod
-    def from_estimator(cls, estimator: BaseEstimator, identifier: str | Path, **kwargs: Any) -> Any:
-        """Wrap a loaded estimator in the object that scores with it.
-
-        The extension point of `from_pretrained`: this mixin knows how to fetch and read a
-        file, and nothing about what the estimator is for. An owner implements this to
-        assemble itself around the estimator, and to reject one that does not fit -- the
-        identifier is passed so that rejection can name the file it came from.
-
-        Args:
-            estimator: The fitted estimator read from the file.
-            identifier: What named it, for error messages.
-            **kwargs: Whatever `from_pretrained` was called with beyond the identifier.
-
-        Returns:
-            An instance of the owner, ready to score.
-        """
-        raise NotImplementedError
-
-    @classmethod
+    @beartype
     def from_pretrained(
-        cls,
+        cls: type[EstimatorFactory],
         identifier: str | Path,
         *,
         trusted: list[str] | None = None,
@@ -212,13 +221,15 @@ class EstimatorPersistenceMixin:
         """An instance carrying published weights, ready to score.
 
         The route to a fitted object that never calls `fit`: the weights were fitted
-        elsewhere, and what is rebuilt here is only the machinery around them.
+        elsewhere, and what is rebuilt here is only the machinery around them. The class
+        must define `from_estimator` (`EstimatorFactory`); one that does not is rejected
+        before anything is fetched.
 
         Parameters
         ----------
         identifier : str or Path
             A Hugging Face repository id, a `.skops` file, or a directory holding
-            `model.skops`.
+            `MODEL_FILENAME`.
         trusted : list of str, default=None
             Type names to accept beyond skops' defaults. See `load_file`.
         revision : str, default=None
@@ -231,18 +242,18 @@ class EstimatorPersistenceMixin:
             Download cache directory; `None` uses the Hugging Face cache. Ignored for a
             local path.
         **kwargs
-            Passed to `from_estimator`, which decides what the owner needs.
+            Passed to `from_estimator`, which decides what the class needs.
 
         Returns
         -------
         object
-            An instance of the owner, carrying the loaded estimator.
+            An instance of the class, carrying the loaded estimator.
 
         Raises
         ------
         ValueError
             If the identifier resolves to nothing, the file holds a type that was not
-            asked for, or the estimator does not fit the owner.
+            asked for, or the estimator does not fit the class.
 
         Examples
         --------
@@ -252,10 +263,19 @@ class EstimatorPersistenceMixin:
         ...     "artefactory/wepr-phi4", revision="main"
         ... )  # doctest: +SKIP
         """
-        estimator = cls.load_estimator(identifier, trusted=trusted, revision=revision, token=token, cache_dir=cache_dir)
-        return cls.from_estimator(estimator, identifier, **kwargs)
+        path = cls.cached_file(identifier, revision=revision, token=token, cache_dir=cache_dir)
+        return cls.from_estimator(cls.load_file(path, trusted=trusted), identifier, **kwargs)
 
-    def save_pretrained(self, path: str | Path) -> Path:
+
+class SavePretrainedMixin:
+    """Writing the fitted estimator of an object: `save_pretrained`.
+
+    The object using it must satisfy `EstimatorOwner`. It is usable without `PretrainedMixin`,
+    so an owner that only ships weights does not inherit a method it cannot support.
+    """
+
+    @beartype
+    def save_pretrained(self: EstimatorOwner, path: str | Path) -> Path:
         """Write this object's fitted estimator to a `.skops` file.
 
         Persists the estimator alone rather than the whole object, so the file stays
@@ -264,7 +284,7 @@ class EstimatorPersistenceMixin:
         Parameters
         ----------
         path : str or Path
-            Destination file, or a directory in which to write `model.skops`. Missing
+            Destination file, or a directory in which to write `MODEL_FILENAME`. Missing
             parent directories are created.
 
         Returns
@@ -274,6 +294,8 @@ class EstimatorPersistenceMixin:
 
         Raises
         ------
+        beartype.roar.BeartypeCallHintParamViolation
+            If the object has no `estimator` (see `EstimatorOwner`).
         NotFittedError
             If the estimator has not been fitted. An unfitted estimator writes a file that
             looks valid and fails only when something later tries to score with it, far
@@ -287,12 +309,7 @@ class EstimatorPersistenceMixin:
         check_is_fitted(self.estimator)
         path = Path(path)
         if path.is_dir():
-            path = path / self.MODEL_FILENAME
+            path = path / MODEL_FILENAME
         path.parent.mkdir(parents=True, exist_ok=True)
         sio.dump(self.estimator, path)
         return path
-
-    @property
-    def estimator(self) -> Any:
-        """The fitted estimator this object scores with. Overridden by the owner."""
-        raise NotImplementedError
