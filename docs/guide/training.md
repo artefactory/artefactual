@@ -19,14 +19,14 @@ ends in a saved `.skops` file.
 
 | You already have | Notebook |
 |---|---|
-| the answers, and a verdict on each | {doc}`../examples/train_wepr` |
-| the answers, but nothing judged yet, and no budget to judge them | {doc}`../examples/train_wepr_lightweight_judge` |
 | an endpoint, and nothing else | {doc}`../examples/train_wepr_pipeline` |
+| the answers, but nothing judged yet, and no budget to judge them | {doc}`../examples/train_wepr_lightweight_judge` |
+| the answers, and a verdict on each | {doc}`../examples/train_wepr` |
 
-Each runs top to bottom as it ships — the first two on committed sample files, the third on
-a hundred questions, half TriviaQA and half SimpleQA — so the detector is fitted before
-anything is edited. Pointing one at your own data is two file paths, or for the third, the
-question list in one cell.
+Each runs top to bottom as it ships — the first on a hundred questions, half TriviaQA and
+half SimpleQA, the other two on committed sample files — so the detector is fitted before
+anything is edited. Pointing one at your own data is the question list in one cell for the
+first, or two file paths for the other two.
 
 ## How much data
 
@@ -73,7 +73,7 @@ To choose `k` or the classifier's regularisation, give the unfitted detector to
 :maxdepth: 1
 :hidden:
 
-/examples/train_wepr
-/examples/train_wepr_lightweight_judge
 /examples/train_wepr_pipeline
+/examples/train_wepr_lightweight_judge
+/examples/train_wepr
 ```
