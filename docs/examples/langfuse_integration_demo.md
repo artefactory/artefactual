@@ -15,7 +15,7 @@ mystnb:
   execution_mode: 'off'
 ---
 
-# Langfuse Adapter Demo
+# Score Langfuse traces with a detector
 
 This notebook demonstrates how to use the **HallucinationEvaluator** with the sklearn compatible **EPR** and **WEPR** detectors to score LLM traces in Langfuse.
 

@@ -13,7 +13,7 @@ kernelspec:
   name: python3
 ---
 
-# Artefactual Package Demo: Hallucination Detection with EPR
+# Score responses with EPR
 
 This notebook demonstrates the `artefactual` package for scoring LLM outputs, specifically focusing on hallucination detection using entropy-based methods. Here we will use EPR (Entropy Production Rate), which computes entropy at each token and averages it across the entire sequence.
 

@@ -13,7 +13,7 @@ kernelspec:
   name: python3
 ---
 
-# Train a detector on answers you have already judged
+# Train a WEPR detector from answers that are already judged
 
 You start with the whole training set already in hand: answers the model under test
 generated, and a verdict on each. This notebook turns that pair into a fitted detector.

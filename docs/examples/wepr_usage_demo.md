@@ -13,7 +13,7 @@ kernelspec:
   name: python3
 ---
 
-# Artefactual Package Demo: Hallucination Detection with WEPR
+# Score responses with WEPR
 
 This notebook demonstrates the `artefactual` package for scoring LLM outputs, specifically focusing on hallucination detection using entropy-based methods. Here we will use WEPR (Weighted Entropy Production Rate), which learns one weight per rank -- a candidate's position in the token's top-k list -- because the second-most-likely candidate carries different information from the fifteenth.
 
