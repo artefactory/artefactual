@@ -8,15 +8,16 @@ and `parse_top_logprobs` is the supported way in.
 `read_batch` reads a Batch output file into `BatchRequestOutput` rows, and
 `index_by_custom_id` keys the successful ones by the id every stage joins on.
 
-`read_message` reads what a model said out of a completion, and `read_judgment` reads the
-other half of a training set: the verdict an LLM-as-a-judge run wrote into a second one.
+`read_message` reads what a model said out of a completion, and `Judgment` reads the other
+half of a training set: the verdict an LLM-as-a-judge run wrote into a second one, from a
+reply, a completion or a whole batch (`read_judgment` is its bare-boolean form).
 
 The payload models are re-exported here as well, since writing a batch file means building
 the shape `read_batch` reads.
 """
 
 from artefactual.preprocessing.batch_output import index_by_custom_id, read_batch
-from artefactual.preprocessing.judgments import read_judgment
+from artefactual.preprocessing.judgments import Judgment, read_judgment
 from artefactual.preprocessing.parser import (
     LogProbParser,
     parse_sampled_token_logprobs,
@@ -37,6 +38,7 @@ __all__ = [
     "ChatChoice",
     "ChatCompletion",
     "ChatMessage",
+    "Judgment",
     "LogProbParser",
     "index_by_custom_id",
     "parse_sampled_token_logprobs",

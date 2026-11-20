@@ -46,6 +46,11 @@ Releases before the entries below are listed, with their notes, on the
 - Guide pages: {doc}`install`, {doc}`guide/sklearn`, this changelog, and a curated
   {doc}`api` reference. `CITATION.cff` at the repository root.
 
+- `Judgment`, the schema of a judge's reply (`judgment`, `explanation`), usable as a
+  structured-output `response_format`. `Judgment.from_text`, `from_completion` and
+  `from_batch` read a reply, a completion or a whole batch of verdicts, keeping the
+  explanation; `read_judgment` keeps working and returns the same verdicts.
+
 ### Changed
 
 - `predict_proba` columns follow `classes_`. With `0`/`1` labels column 1 is the
