@@ -151,18 +151,18 @@ coefficient each for the classifier to weight.
 ```{code-cell} ipython3
 from artefactual import WEPR
 from artefactual.preprocessing.parser import LogProbParser
-from artefactual.scoring import BaseDetector, EntropyTransformer
+from artefactual.scoring import BaseDetector, EntropyTransformer, WEPRPooling
 
 logprobs = LogProbParser(k=K).transform(responses)  # (responses, tokens, ranks), NaN-padded
 s_kj = EntropyTransformer.entropy_contributions(logprobs)  # -p*ln(p) per candidate, peaking at p=1/e
-features = EntropyTransformer(reduction="wepr").transform(logprobs)
+features = EntropyTransformer(pooling=WEPRPooling(), k=15).transform(logprobs)
 
 logprobs.shape, s_kj.shape, features.shape
 ```
 
 ## Fit
 
-`WEPR()` returns the pipeline unfitted, so `fit` takes the batch lines directly and
+`WEPR(k=15)` returns the pipeline unfitted, so `fit` takes the batch lines directly and
 there is no feature extraction to write. The split is stratified and happens first, so what
 is reported describes responses the detector never saw.
 
@@ -259,7 +259,7 @@ value forever after. Every published detector was fitted at 15.
 ```{code-cell} ipython3
 from sklearn.model_selection import GridSearchCV
 
-search = GridSearchCV(WEPR(), {"k": [5, 10, 15]}, cv=folds, scoring="roc_auc")
+search = GridSearchCV(WEPR(k=15), {"k": [5, 10, 15]}, cv=folds, scoring="roc_auc")
 search.fit(responses, y)
 for k, mean in zip(search.cv_results_["param_k"], search.cv_results_["mean_test_score"], strict=True):
     print(f"  k={k:>2}: {mean:.2f}")
@@ -395,8 +395,9 @@ except ValueError as error:
 
 - `epr` is the same call with one word changed: it pools every candidate into a single feature
   instead of `2k`, which is the one to reach for when there is too little labelled data to
-  fit `wepr`'s coefficients. `EntropyTransformer(reduction=...)` also takes a callable
-  `(s_kj, axis) -> features`, so the two named reductions are not the only ones.
+  fit `wepr`'s coefficients. `EntropyTransformer(pooling=...)` also takes a `Pooling`
+  subclass or a callable `(s_kj, axis) -> features`, so the two shipped poolings are not the
+  only ones.
 - `scripts/train_detector.py` reads these same two files and reports bootstrap confidence
   intervals around the AUC, which a holdout this size needs.
 - `predict_proba` and `predict_token_proba` are the whole scoring surface; a fitted detector

@@ -81,7 +81,7 @@ from langfuse import get_client
 from artefactual import WEPR
 from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator
 
-evaluator = HallucinationEvaluator("wepr", get_client(), WEPR.from_pretrained("artefactory/wepr-phi4"))
+evaluator = HallucinationEvaluator("wepr", get_client(), WEPR.from_pretrained("artefactory/wepr-phi4", k=15))
 evaluator.score_trace(trace_id)
 ```
 
@@ -90,7 +90,7 @@ A worked version is in the [example notebooks](../examples/index.md).
 ## Training a detector for another model
 
 Any model that returns `top_logprobs` can be scored, not only the published ones.
-`WEPR()` and `EPR()` return an unfitted detector, which is fitted on 0/1 labels where 1
+`WEPR(k=15)` and `EPR(k=15)` return an unfitted detector, which is fitted on 0/1 labels where 1
 marks a hallucination:
 
 ```python
@@ -119,13 +119,13 @@ work:
 ```python
 from sklearn.base import clone
 
-detector = WEPR.from_pretrained("artefactory/wepr-ministral")
+detector = WEPR.from_pretrained("artefactory/wepr-ministral", k=15)
 detector.named_steps  # {'parser': ..., 'entropy': ..., 'classifier': ...}
 clone(detector)  # get_params / set_params round-trip
 ```
 
 A detector takes raw responses in `fit` and in the scikit-learn tools built on it, so
-`cross_val_score(WEPR(), responses, y)` and `GridSearchCV` work without parsing first.
+`cross_val_score(WEPR(k=15), responses, y)` and `GridSearchCV` work without parsing first.
 {doc}`sklearn` has the model-selection recipes, the feature names and the persistence
 rules.
 

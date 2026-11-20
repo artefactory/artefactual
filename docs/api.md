@@ -2,7 +2,7 @@
 
 The public surface of `artefactual`, grouped by what it is for. Detectors are built from
 `artefactual.EPR` and `artefactual.WEPR`, which score responses, and `artefactual.EPRClassifier`
-and `artefactual.WEPRClassifier`, which score logprob arrays; the other sections are the
+and `artefactual.WEPRClassifier`, which score logprob arrays; `artefactual.PoolingDetector` takes any `Pooling` or pooling function; the other sections are the
 parts they are made of and the helpers around them.
 
 ## Detectors
@@ -19,6 +19,7 @@ parts they are made of and the helpers around them.
    WEPR
    EPRClassifier
    WEPRClassifier
+   scoring.PoolingDetector
    scoring.BaseDetector
    scoring.BaseEntropyClassifier
 ```
@@ -43,6 +44,19 @@ parts they are made of and the helpers around them.
 
    scoring.epr_reduction
    scoring.wepr_reduction
+
+.. autosummary::
+   :toctree: _autosummary
+   :template: autosummary/class.rst
+   :nosignatures:
+
+   scoring.Pooling
+   scoring.EPRPooling
+   scoring.WEPRPooling
+   scoring.FunctionPooling
+
+Subclass `scoring.Pooling` for a pooling of your own, or pass a plain function
+`f(x, axis)`; either goes to `scoring.EntropyTransformer` or `scoring.PoolingDetector`.
 ```
 
 ## Reading responses

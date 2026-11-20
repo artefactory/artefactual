@@ -54,7 +54,7 @@ def truncate(payload, k):
 @settings_for_tmp_path
 @given(payload=narrow_payloads, detector=estimators(n_features=1))
 def test_epr_refuses_a_response_narrower_than_k(tmp_path, payload, detector):
-    detector = EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)))
+    detector = EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)), k=15)
 
     with pytest.raises(
         ValueError, match=rf"carries {payload_width(payload)} candidate\(s\) per token but k={CALIBRATED_K}"
@@ -65,7 +65,7 @@ def test_epr_refuses_a_response_narrower_than_k(tmp_path, payload, detector):
 @settings_for_tmp_path
 @given(payload=narrow_payloads, weights=dense_weights)
 def test_wepr_refuses_a_response_narrower_than_k(tmp_path, payload, weights):
-    detector = WEPR.from_pretrained(str(write_estimator(tmp_path, "w.skops", weights)))
+    detector = WEPR.from_pretrained(str(write_estimator(tmp_path, "w.skops", weights)), k=15)
 
     with pytest.raises(
         ValueError, match=rf"carries {payload_width(payload)} candidate\(s\) per token but k={CALIBRATED_K}"
@@ -81,7 +81,7 @@ def test_the_refusal_names_the_remedy(tmp_path, payload, detector):
     A bare shape error names feature counts and tells the caller nothing about
     `top_logprobs`, which is the knob that actually produced the mismatch.
     """
-    detector = EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)))
+    detector = EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)), k=15)
 
     with pytest.raises(ValueError, match=f"Regenerate with top_logprobs={CALIBRATED_K}"):
         detector.predict_proba(payload)
@@ -92,7 +92,7 @@ def test_the_refusal_names_the_remedy(tmp_path, payload, detector):
 def test_the_refusal_explains_the_direction_of_the_error(tmp_path, payload, detector):
     # which way the score would be wrong is the part that tells a reader whether they can
     # live with it -- a narrow response looks *more* confident, so hallucinations slip past
-    detector = EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)))
+    detector = EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)), k=15)
 
     with pytest.raises(ValueError, match="more confident than it was"):
         detector.predict_proba(payload)
@@ -102,7 +102,7 @@ def test_the_refusal_explains_the_direction_of_the_error(tmp_path, payload, dete
 @given(payload=narrow_payloads, weights=dense_weights)
 def test_token_scoring_refuses_a_narrow_response_too(tmp_path, payload, weights):
     # predict_token_proba routes around transform(), so it needs the guard to hold there too
-    detector = WEPR.from_pretrained(str(write_estimator(tmp_path, "w.skops", weights)))
+    detector = WEPR.from_pretrained(str(write_estimator(tmp_path, "w.skops", weights)), k=15)
 
     with pytest.raises(ValueError, match=f"but k={CALIBRATED_K}"):
         detector.predict_token_proba(payload)
@@ -120,7 +120,7 @@ def test_a_narrow_member_is_caught_wherever_it_sits(tmp_path, narrow, wide, dete
     and a batch-level check sees nothing wrong -- while the narrow member is scored on
     ranks it never carried. The offending response is named by position either way.
     """
-    detector = EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)))
+    detector = EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)), k=15)
     batch = [wide, narrow] if position else [narrow, wide]
     index = 1 if position else 0
 
@@ -134,7 +134,7 @@ def test_a_narrow_member_is_caught_wherever_it_sits(tmp_path, narrow, wide, dete
 @settings_for_tmp_path
 @given(payload=wide_payloads, detector=estimators(n_features=1))
 def test_a_response_at_least_k_wide_is_scored(tmp_path, payload, detector):
-    scores = EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector))).predict_proba(payload)
+    scores = EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)), k=15).predict_proba(payload)
 
     assert scores.shape == (1, 2)
     assert np.all((scores >= 0) & (scores <= 1))
@@ -149,7 +149,7 @@ def test_epr_drops_ranks_beyond_the_calibrated_k(tmp_path, payload, detector):
     saturate the sigmoid, and two saturated probabilities agree whether or not the
     truncation was right.
     """
-    front = EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)))[:-1]
+    front = EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)), k=15)[:-1]
 
     np.testing.assert_allclose(front.transform(payload), front.transform(truncate(payload, CALIBRATED_K)), rtol=1e-6)
 
@@ -157,7 +157,7 @@ def test_epr_drops_ranks_beyond_the_calibrated_k(tmp_path, payload, detector):
 @settings_for_tmp_path
 @given(payload=wide_payloads, weights=dense_weights)
 def test_wepr_drops_ranks_beyond_the_calibrated_k(tmp_path, weights, payload):
-    front = WEPR.from_pretrained(str(write_estimator(tmp_path, "w.skops", weights)))[:-1]
+    front = WEPR.from_pretrained(str(write_estimator(tmp_path, "w.skops", weights)), k=15)[:-1]
 
     np.testing.assert_allclose(front.transform(payload), front.transform(truncate(payload, CALIBRATED_K)), rtol=1e-6)
 
@@ -170,7 +170,7 @@ def test_a_score_does_not_move_when_the_response_is_batched(tmp_path, payload, o
     The same response scored alone and scored beside a wider one has to come out equal, or
     probabilities stop being comparable between calls.
     """
-    detector = EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)))
+    detector = EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)), k=15)
 
     alone = float(detector.predict_proba(payload)[0, 1])
     batched = float(detector.predict_proba([payload, other])[0, 1])
@@ -185,6 +185,6 @@ def test_a_score_does_not_move_when_the_response_is_batched(tmp_path, payload, o
 @given(payload=wide_payloads, weights=dense_weights)
 def test_wepr_feature_width_matches_the_calibration(tmp_path, payload, weights):
     # 2k columns (mean branch + max branch) regardless of how wide the response was
-    features = WEPR.from_pretrained(str(write_estimator(tmp_path, "w.skops", weights)))[:-1].transform(payload)
+    features = WEPR.from_pretrained(str(write_estimator(tmp_path, "w.skops", weights)), k=15)[:-1].transform(payload)
 
     assert features.shape == (1, 2 * CALIBRATED_K)

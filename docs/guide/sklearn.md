@@ -60,12 +60,12 @@ rng = np.random.default_rng(0)
 logprobs = -rng.exponential(size=(40, 15)).cumsum(axis=1)  # 40 one-token rows, 15 ranks
 y = rng.integers(0, 2, size=40)
 
-classifier = WEPRClassifier().fit(logprobs, y)
+classifier = WEPRClassifier(k=15).fit(logprobs, y)
 classifier.predict_proba(logprobs)[:3, 1]
 ```
 
 Targets must be binary. A multi-class `y` raises `ValueError` at `fit`, and the tags say
-so: `get_tags(WEPRClassifier()).classifier_tags.multi_class` is `False`, and the input is
+so: `get_tags(WEPRClassifier(k=15)).classifier_tags.multi_class` is `False`, and the input is
 declared as a 2-D array.
 
 The code below uses the two responses shipped with the repository, repeated to make a
@@ -77,7 +77,7 @@ RESPONSES = json.load(open(path))["responses"]
 responses = RESPONSES * 10
 labels = np.array([0, 1] * 10)
 
-detector = WEPR().fit(responses, labels)
+detector = WEPR(k=15).fit(responses, labels)
 detector.predict_proba(RESPONSES)[:, 1]
 ```
 
@@ -102,10 +102,10 @@ are named `parser`, `entropy` and `classifier`. A classifier has the last two:
 ```python
 from sklearn.model_selection import GridSearchCV, cross_val_score
 
-cross_val_score(WEPR(), responses, labels, cv=3)
+cross_val_score(WEPR(k=15), responses, labels, cv=3)
 
 search = GridSearchCV(
-    WEPR(),
+    WEPR(k=15),
     {"k": [5, 10, 15], "classifier__C": [0.1, 1.0, 10.0]},
     cv=3,
 ).fit(responses, labels)
@@ -127,9 +127,9 @@ Sample weights reach the logistic regression through the pipeline's own prefix:
 
 ```python
 weights = np.linspace(1.0, 2.0, len(labels))
-WEPR().fit(responses, labels, classifier__sample_weight=weights)
+WEPR(k=15).fit(responses, labels, classifier__sample_weight=weights)
 
-GridSearchCV(WEPR(), {"classifier__C": [0.1, 1.0]}, cv=3).fit(responses, labels, classifier__sample_weight=weights)
+GridSearchCV(WEPR(k=15), {"classifier__C": [0.1, 1.0]}, cv=3).fit(responses, labels, classifier__sample_weight=weights)
 ```
 
 ## Feature names and DataFrame output
@@ -147,8 +147,8 @@ front.transform(RESPONSES)  # a DataFrame with those columns
 ```
 
 The parser yields a three-dimensional array that has no table form, so it is never
-converted; only the entropy step's `transform` is. An estimator with a custom reduction
-callable has no feature names.
+converted; only the entropy step's `transform` is. A custom pooling function is named after itself,
+and a `Pooling` subclass by its `feature_names`.
 
 ## Persistence
 
@@ -159,7 +159,7 @@ Hugging Face repository id ({doc}`reference` has the file layout):
 
 ```python
 saved = detector.save_pretrained("my_detector.skops")
-again = WEPR.from_pretrained(saved)
+again = WEPR.from_pretrained(saved, k=15)
 ```
 
 Dumping the whole detector with `skops.io.dump` also works, but loading it names the

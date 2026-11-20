@@ -13,6 +13,7 @@ writes: `response` is `{status_code, request_id, body}` and the completion is th
 import json
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -356,3 +357,47 @@ def test_training_refuses_a_repeat_whose_first_line_failed(pack, tmp_path):
 
     with pytest.raises(ValueError, match="appears more than once"):
         tc.read_responses(doubled)
+
+
+@pytest.fixture
+def my_pooling_module(tmp_path):
+    """An importable `my_pooling` module defining a pooling class, an instance and a function.
+
+    Its directory is on `sys.path` for the test only; the path entry and the imported module
+    are removed after, so no other test can import it.
+    """
+    (tmp_path / "my_pooling.py").write_text(
+        "import numpy as np\n"
+        "from artefactual import Pooling\n\n"
+        "class Median(Pooling):\n"
+        "    def __call__(self, X, axis):\n"
+        "        return np.nanmedian(np.nansum(X, axis=-1, keepdims=True), axis=axis)\n\n"
+        "INSTANCE = Median()\n\n"
+        "def function(x, axis):\n"
+        "    return np.nanmean(x, axis=axis)\n",
+        encoding="utf-8",
+    )
+    sys.path.insert(0, str(tmp_path))
+    yield
+    sys.path.remove(str(tmp_path))
+    sys.modules.pop("my_pooling", None)
+
+
+@pytest.mark.usefixtures("my_pooling_module")
+def test_the_pooling_flag_takes_the_shipped_names_and_an_import_path():
+    from artefactual import EPR, WEPR, PoolingDetector
+
+    sys.path.insert(0, str(TRAIN.parent))
+    import train_detector as tc
+
+    assert type(tc.build_detector("epr", 3)) is EPR
+    assert type(tc.build_detector("wepr", 3)) is WEPR
+    from_class = tc.build_detector("my_pooling:Median", 3)
+    assert type(from_class) is PoolingDetector
+    assert from_class.pooling.name == "median"
+    assert tc.build_detector("my_pooling:INSTANCE", 3).pooling.name == "median"
+    assert tc.build_detector("my_pooling:function", 3).pooling.__name__ == "function"
+    with pytest.raises(ValueError, match="import path"):
+        tc.build_detector("median", 3)
+    with pytest.raises(ValueError, match="expected a Pooling"):
+        tc.build_detector("my_pooling:__name__", 3)

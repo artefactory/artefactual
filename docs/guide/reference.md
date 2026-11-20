@@ -40,9 +40,8 @@ two directions are not symmetric:
 two entries per rank:
 
 ```
-ValueError: The WEPR detector at 'weights.skops' takes 30 feature(s), but k=20 needs 40.
-Its coefficients are fixed at the width they were trained at; pass k=15, or use a detector
-trained at k=20.
+ValueError: The WEPR detector at 'weights.skops' takes 30 feature(s), but k=20 gives 40. Its
+coefficients are fixed at the width they were trained at; pass the k it was trained with.
 ```
 
 An EPR detector pools every candidate into one feature, so its file records no width and `k`
@@ -54,7 +53,7 @@ and a narrower one is used as it is; {doc}`sklearn` has the details.
 A locally trained detector is loaded by passing a path instead of a name:
 
 ```python
-detector = WEPR.from_pretrained("/path/to/my_detector.skops")
+detector = WEPR.from_pretrained("/path/to/my_detector.skops", k=15)
 ```
 
 `save_pretrained` and `from_pretrained` are the entry points: the first writes the fitted

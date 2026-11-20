@@ -27,7 +27,7 @@ class HallucinationEvaluator:
             name: Score name recorded in Langfuse, used as the metric label in its UI.
             langfuse_client: An authenticated `Langfuse` client.
             detector: A fitted detector, e.g.
-                `EPR.from_pretrained("artefactory/epr-ministral")`.
+                `EPR.from_pretrained("artefactory/epr-ministral", k=15)`.
         """
         self.name = name
         self.langfuse = langfuse_client

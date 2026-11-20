@@ -248,7 +248,7 @@ for (question, _, response), verdict in list(zip(graded, verdicts, strict=True))
 
 This step reads both files back rather than using what is still in memory, which is what
 makes it true that you can come back tomorrow, change `k`, and refit without scoring
-anything again. `WEPR()` returns the pipeline unfitted, so `fit` takes the batch
+anything again. `WEPR(k=15)` returns the pipeline unfitted, so `fit` takes the batch
 lines directly and there is no feature extraction to write: `wepr`'s own parser opens the
 Batch envelope and reads the `top_logprobs`. The split is stratified and happens first, so what is reported
 describes responses the detector never saw.

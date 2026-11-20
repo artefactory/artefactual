@@ -513,7 +513,7 @@ This step reads the two files back rather than using what is still in memory, so
 another `k` costs no requests. `read_batch` is the reader, so a file written by anything
 else parses the same way.
 
-`WEPR()` returns the unfitted pipeline, which takes the batch lines directly: the
+`WEPR(k=15)` returns the unfitted pipeline, which takes the batch lines directly: the
 parser opens the envelope itself, so there is no feature extraction to write.
 
 **ROC-AUC** scores the ranking — whether hallucinations sort above grounded responses —

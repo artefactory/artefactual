@@ -1,6 +1,8 @@
-"""The `EPR` / `WEPR` detectors, which score completion responses, and the deprecated factories."""
+"""The `EPR` / `WEPR` detectors and `PoolingDetector`, which score completion responses."""
 
-from typing import ClassVar
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any, ClassVar
 
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
@@ -8,7 +10,7 @@ from sklearn.utils import Tags
 
 from artefactual.preprocessing.parser import LogProbParser
 from artefactual.scoring.entropy_classifier import DEFAULT_K, BaseEntropyClassifier
-from artefactual.utils.io import Reduction
+from artefactual.scoring.entropy_methods.pooling import EPRPooling, Pooling, WEPRPooling, as_pooling
 
 
 class BaseDetector(BaseEntropyClassifier):
@@ -18,7 +20,9 @@ class BaseDetector(BaseEntropyClassifier):
     responses rather than logprob arrays. It keeps everything the classifier does -- the
     parameters, targets, persistence and `predict_token_proba` -- and adds only the parsing.
 
-    Abstract in the reduction: `EPR` and `WEPR` are the detectors to construct.
+    Abstract in the pooling: `EPR` and `WEPR` are the detectors to construct, and
+    `PoolingDetector` takes any pooling. A subclass fixes its pooling with the `pooling`
+    class attribute, a `Pooling` instance.
 
     Input is completion responses, one row per sampled sequence: chat completions,
     Responses API payloads or batch output lines. A numeric table is refused with a
@@ -55,7 +59,7 @@ class BaseDetector(BaseEntropyClassifier):
     Raises
     ------
     TypeError
-        If constructed directly rather than through `EPR` or `WEPR`.
+        If constructed directly rather than through `EPR`, `WEPR` or `PoolingDetector`.
 
     See Also
     --------
@@ -74,6 +78,10 @@ class BaseDetector(BaseEntropyClassifier):
     ) -> None:
         """Assemble a parser -> entropy -> classifier pipeline pinned to `k` candidates."""
         super().__init__(k=k, estimator=estimator, transform_input=transform_input, memory=memory, verbose=verbose)
+
+    def assemble_steps(self, pooling, k, estimator, transform_input, memory, verbose) -> None:
+        """Build the entropy -> classifier steps, then put the parser in front."""
+        super().assemble_steps(pooling, k, estimator, transform_input, memory, verbose)
         self.steps.insert(0, ("parser", LogProbParser(k=k)))
 
     def __sklearn_tags__(self) -> Tags:
@@ -82,35 +90,8 @@ class BaseDetector(BaseEntropyClassifier):
         # takes none; the parser's own tags are what `Pipeline` reports for its input.
         tags = Pipeline.__sklearn_tags__(self)
         tags.classifier_tags.multi_class = False
-        tags.classifier_tags.poor_score = self.reduction == "epr"
+        tags.classifier_tags.poor_score = as_pooling(self.pooling).constant_width
         return tags
-
-    @classmethod
-    def trainable(
-        cls, reduction: Reduction, k: int = DEFAULT_K, *, estimator: BaseEstimator | None = None
-    ) -> "BaseDetector":
-        """An unfitted detector, selecting the reduction by name.
-
-        For callers that hold the reduction as data -- a CLI argument, a column in a sweep
-        -- so that selecting one never means re-deriving the mapping from its name to a
-        class.
-
-        Parameters
-        ----------
-        reduction : {"epr", "wepr"}
-            The reduction, which selects the class.
-        k : int, default=15
-            Candidates per token the responses carry.
-        estimator : estimator, default=None
-            Final estimator to fit. Defaults to the unregularised logistic regression the
-            published detectors were fit with.
-
-        Returns
-        -------
-        BaseDetector
-            A detector ready to `fit`.
-        """
-        return {"epr": EPR, "wepr": WEPR}[reduction](k=k, estimator=estimator)
 
 
 class EPR(BaseDetector):
@@ -151,12 +132,12 @@ class EPR(BaseDetector):
 
     Examples
     --------
-    >>> detector = EPR().fit(responses, y)  # doctest: +SKIP
-    >>> published = EPR.from_pretrained("artefactory/epr-phi4")  # doctest: +SKIP
+    >>> detector = EPR(k=15).fit(responses, y)  # doctest: +SKIP
+    >>> published = EPR.from_pretrained("artefactory/epr-phi4", k=15)  # doctest: +SKIP
     >>> published.predict_proba(response)[:, 1]  # doctest: +SKIP
     """
 
-    reduction: ClassVar[Reduction | None] = "epr"
+    pooling: ClassVar[Pooling | None] = EPRPooling()
 
 
 class WEPR(BaseDetector):
@@ -197,9 +178,98 @@ class WEPR(BaseDetector):
 
     Examples
     --------
-    >>> detector = WEPR().fit(responses, y)  # doctest: +SKIP
-    >>> published = WEPR.from_pretrained("artefactory/wepr-phi4")  # doctest: +SKIP
+    >>> detector = WEPR(k=15).fit(responses, y)  # doctest: +SKIP
+    >>> published = WEPR.from_pretrained(
+    ...     "artefactory/wepr-phi4", k=15
+    ... )  # doctest: +SKIP
     >>> published.predict_proba(response)[:, 1]  # doctest: +SKIP
     """
 
-    reduction: ClassVar[Reduction | None] = "wepr"
+    pooling: ClassVar[Pooling | None] = WEPRPooling()
+
+
+class PoolingDetector(BaseDetector):
+    """A detector over any pooling: a `Pooling` instance or a function `f(x, axis)`.
+
+    The pooling is a constructor parameter, so `get_params`, `clone` and a grid search see
+    it, and it is never a class attribute. Everything else is `BaseDetector`.
+
+    The saved file holds the fitted classifier alone, not the pooling, so loading one with
+    `from_pretrained` needs the pooling it was fitted with: pass `pooling=` there.
+
+    Parameters
+    ----------
+    pooling : Pooling or callable
+        A `Pooling` instance, or a function `f(x, axis) -> (..., n_features)` pooling the
+        token `axis` of NaN-padded entropy contributions whose last axis is the rank axis.
+    k : int, default=15
+        Candidates per token the responses carry. See `BaseDetector`.
+    estimator : estimator, default=None
+        Final estimator; the unregularised logistic regression by default.
+    transform_input : list of str, default=None
+        Passed to `Pipeline`.
+    memory : str or object with the joblib.Memory interface, default=None
+        Passed to `Pipeline`.
+    verbose : bool, default=False
+        Passed to `Pipeline`.
+
+    Attributes
+    ----------
+    pooling : Pooling or callable
+        Read from, and writing it replaces, the pooling of the entropy step.
+    classes_ : ndarray of shape (2,)
+        The class labels, sorted. Available once fitted.
+    named_steps : Bunch
+        The steps by name: `"parser"`, `"entropy"` and `"classifier"`.
+
+    Raises
+    ------
+    TypeError
+        When fitted or scored, if `pooling` is neither a `Pooling` nor callable.
+
+    See Also
+    --------
+    Pooling : The base class to subclass.
+    EPR : The detector for the shipped `EPRPooling`.
+
+    Examples
+    --------
+    >>> class Median(Pooling):
+    ...     def __call__(self, X, axis):
+    ...         return np.nanmedian(np.nansum(X, axis=-1, keepdims=True), axis=axis)
+    >>> detector = PoolingDetector(Median(), k=15).fit(responses, y)  # doctest: +SKIP
+    """
+
+    def __init__(
+        self,
+        pooling: Pooling | Callable,
+        k: int = DEFAULT_K,
+        estimator: BaseEstimator | None = None,
+        *,
+        transform_input=None,
+        memory=None,
+        verbose=False,
+    ) -> None:
+        """Assemble a parser -> entropy -> classifier pipeline over `pooling`."""
+        self.assemble_steps(pooling, k, estimator, transform_input, memory, verbose)
+
+    @classmethod
+    def from_pretrained(  # ty: ignore[incompatible-method-override]
+        cls, identifier: str | Path, *, pooling: Pooling | Callable, **kwargs: Any
+    ) -> "PoolingDetector":
+        """Load the fitted classifier at `identifier` and score with `pooling`.
+
+        The file holds the classifier alone, so `pooling` must be the one it was fitted with;
+        it is required because no pooling is a safe guess. Other options are those of
+        `PretrainedMixin.from_pretrained`, and `k` the width it was fitted at.
+        """
+        return super().from_pretrained(identifier, pooling=pooling, **kwargs)
+
+    @property
+    def pooling(self) -> Pooling | Callable:
+        """The pooling, read off the entropy step so `set_params(pooling=)` and `k` agree on one source."""
+        return self.named_steps["entropy"].pooling
+
+    @pooling.setter
+    def pooling(self, value: Pooling | Callable) -> None:  # ty: ignore[incompatible-property-override]
+        self.named_steps["entropy"].pooling = value

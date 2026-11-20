@@ -3,12 +3,17 @@ Trains a hallucination detector and evaluates the model it produces.
 
 Usage:
     uv run scripts/train_detector.py \
-        --responses responses.jsonl --judgments judgments.jsonl --reduction wepr \
+        --responses responses.jsonl --judgments judgments.jsonl --pooling wepr \
         --output wepr.skops --report wepr_evaluation.json
 
 Both inputs are `vllm run-batch` outputs: one line per request, carrying the `custom_id`
 the generation request was built with. Rows are joined on that id rather than on position,
 so a reordered or partially failed batch cannot silently train on mismatched pairs.
+
+`--pooling` is `epr`, `wepr`, or an import path `package.module:Attr` to your own pooling:
+a `Pooling` subclass (instantiated without arguments), a `Pooling` instance, or a function
+`f(x, axis)`. The module must be importable: installed, or on `PYTHONPATH`
+(`PYTHONPATH=. uv run scripts/train_detector.py --pooling my_pooling:Median ...`).
 
 `--responses` holds the generations, whose `logprobs`/`top_logprobs` the detector scores.
 `--judgments` holds the LLM-as-a-judge verdicts, as JSON `{"judgment": true|false}` in the
@@ -33,19 +38,20 @@ The fitted estimator is written to `--output` as a `.skops` file, the shape
 """
 
 import json
+import pkgutil
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 from absl import app, flags, logging
+from beartype.door import is_bearable
 from sklearn.metrics import average_precision_score, classification_report, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.utils import resample
 
 from artefactual.preprocessing import index_by_custom_id, read_batch, read_judgment
-from artefactual.scoring import BaseDetector
+from artefactual.scoring import EPR, WEPR, BaseDetector, Pooling, PoolingDetector
 from artefactual.scoring.base_detector import DEFAULT_K
-from artefactual.scoring.entropy_methods.entropy_transformer import STRATEGIES
 
 SEED = 42
 REPETITIONS = 1000
@@ -56,7 +62,7 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string("responses", None, "vllm run-batch output with logprobs")
 flags.DEFINE_string("judgments", None, "vllm run-batch output with judge verdicts")
-flags.DEFINE_enum("reduction", "epr", sorted(STRATEGIES), "scoring variant")
+flags.DEFINE_string("pooling", None, "epr, wepr, or an import path package.module:Attr to a Pooling or a function")
 flags.DEFINE_integer("k", DEFAULT_K, "top_logprobs the batch was generated with")
 flags.DEFINE_string("output", None, "where to write the fitted detector (.skops)")
 flags.DEFINE_string("report", None, "where to write the evaluation as JSON")
@@ -64,7 +70,36 @@ flags.DEFINE_float("test_size", TEST_SIZE, "held-out fraction; 0 fits on everyth
 flags.DEFINE_integer("repetitions", REPETITIONS, "resamples used for the confidence intervals")
 flags.DEFINE_integer("seed", SEED, "seed for the split and the resampling")
 
-flags.mark_flags_as_required(["responses", "judgments"])
+flags.mark_flags_as_required(["responses", "judgments", "pooling"])
+
+
+# The two shipped poolings, by their detectors; any other pooling goes through an import path.
+SHIPPED_DETECTORS = {"epr": EPR, "wepr": WEPR}
+
+
+def build_detector(spec: str, k: int) -> BaseDetector:
+    """An unfitted detector for `--pooling`: `epr`, `wepr`, or `package.module:Attr`.
+
+    `Attr` is a `Pooling` subclass, which is instantiated without arguments, a `Pooling`
+    instance, or a function `f(x, axis)`.
+
+    Raises
+    ------
+    ValueError
+        If `spec` is neither a shipped name nor an import path with a `:`, or `Attr` is none of those.
+    """
+    if spec in SHIPPED_DETECTORS:
+        return SHIPPED_DETECTORS[spec](k=k)
+    if ":" not in spec:
+        msg = f"--pooling {spec!r} is neither epr, wepr nor an import path package.module:Attr."
+        raise ValueError(msg)
+    target = pkgutil.resolve_name(spec)
+    if is_bearable(target, type[Pooling]):
+        target = target()
+    if not (is_bearable(target, Pooling) or callable(target)):
+        msg = f"--pooling {spec!r} resolved to {target!r}: expected a Pooling, a Pooling subclass or a function."
+        raise ValueError(msg)
+    return PoolingDetector(target, k=k)
 
 
 def read_responses(path: Path) -> dict[str, Any]:
@@ -199,7 +234,7 @@ def main(argv: list[str]) -> None:
         x_train, y_train, x_test, y_test = x, y, None, None
         logging.info(f"fitting on all {len(y)} response(s); --test_size 0, so no evaluation")
 
-    detector = BaseDetector.trainable(FLAGS.reduction, k=FLAGS.k).fit(x_train, y_train)
+    detector = build_detector(FLAGS.pooling, FLAGS.k).fit(x_train, y_train)
 
     classifier = detector.named_steps["classifier"]
     logging.info(f"intercept: {float(classifier.intercept_[0])}")
