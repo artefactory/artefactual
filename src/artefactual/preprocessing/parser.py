@@ -1,144 +1,19 @@
 """Extraction of top-k logprobs from completion responses into a dense array.
 
-Responses are validated against the models in `response_models` and dispatched by type,
-so a new provider format is added by registering an extractor rather than by editing the
-entry points here.
+Responses are validated against the models in `response_models`, which carry the
+extraction themselves, so a new provider format is a new model there rather than an edit
+to the entry points here.
 """
 
 from collections.abc import Collection, Mapping
-from functools import singledispatch
 from typing import Any
 
 import numpy as np
 from beartype.door import is_bearable
-from pydantic import TypeAdapter, ValidationError
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils import Tags
 
-from artefactual.preprocessing.openai_parser import (
-    process_openai_chat_completion,
-    process_openai_responses_api,
-    sampled_tokens_logprobs_chat_completion_api,
-    sampled_tokens_logprobs_responses_api,
-)
-from artefactual.preprocessing.response_models import BatchRequestOutput, ChatCompletion, ResponsesPayload
-
-_RESPONSE_ADAPTER = TypeAdapter(ChatCompletion | ResponsesPayload | BatchRequestOutput)
-
-# The payloads a batch line can carry. `BatchRequestOutput` is deliberately absent: a body
-# is a completion, never another batch line, and including it would let a body with a
-# `custom_id` validate as an envelope and recurse.
-_PAYLOAD_ADAPTER = TypeAdapter(ChatCompletion | ResponsesPayload)
-
-
-def _validate_response(outputs: Any) -> ChatCompletion | ResponsesPayload | BatchRequestOutput:
-    """Validate a payload against the completion formats, telling the two failures apart.
-
-    A payload that matches no format is not a completion response, which is a `TypeError`
-    about the input's kind. A payload that *is* recognisably one but carries bad data is a
-    validation failure, and pydantic's own report names the offending field; flattening it
-    into "unsupported format" would send the reader looking for an unsupported provider
-    instead.
-
-    A union member counts as recognised only once it reaches *inside* the structure a
-    format describes. A top-level key that is absent, or present carrying the wrong kind
-    of value, says nothing about the payload's intent -- an arbitrary mapping that happens
-    to hold a key named `output` is not a Responses payload with one bad field.
-
-    Args:
-        outputs: A single completion response, as a mapping or an object.
-
-    Returns:
-        The validated response, as whichever member of the union matched.
-
-    Raises:
-        TypeError: If the payload matches no completion format.
-        ValidationError: If it matches one and a field inside it is invalid.
-    """
-    try:
-        return _RESPONSE_ADAPTER.validate_python(outputs, from_attributes=True)
-    except ValidationError as error:
-        if _matched_a_format(error):
-            raise
-        msg = (
-            f"Unsupported output format: {type(outputs).__name__}. Expected a completion response carrying "
-            "logprobs. A numeric array of logprobs is scored by EPRClassifier or WEPRClassifier, not by "
-            "this parser or the detectors."
-        )
-        raise TypeError(msg) from error
-
-
-def _matched_a_format(error: ValidationError) -> bool:
-    """Whether some union member reached inside the payload before failing.
-
-    Errors are located as `(member, field, ...)`. Depth one is the member refusing the
-    input's type outright; depth two is a top-level key absent or holding the wrong kind of
-    value, which any unrelated mapping can produce by coincidence. Only a failure below
-    that names a payload a member walked into and objected to.
-    """
-    return any(len(item["loc"]) > 2 for item in error.errors())
-
-
-def _payload_of(record: BatchRequestOutput) -> ChatCompletion | ResponsesPayload:
-    """The payload a batch line carries, refusing a line that carries none.
-
-    Refused rather than skipped. This step emits one row per sampled sequence, so dropping
-    a failed line here would shift every later response against its label -- a silently
-    mistrained detector rather than an error. Filter the failed lines out before parsing,
-    which is where their failure can still be reported against a `custom_id`.
-
-    The body goes back through the same union the entry points use, so a batch of
-    Responses-API calls parses like any other and neither failure arrives as a bare
-    `ValidationError` that names no line.
-    """
-    if record.completion is None:
-        msg = (
-            f"Batch line {record.custom_id!r} carries no completion: {record.failure}. "
-            f"Drop failed lines before parsing -- keeping them would pair every later "
-            f"response with the wrong label."
-        )
-        raise ValueError(msg)
-    try:
-        return _PAYLOAD_ADAPTER.validate_python(record.completion)
-    except ValidationError as error:
-        msg = (
-            f"Batch line {record.custom_id!r} carries a body that is neither a chat completion nor a Responses payload."
-        )
-        raise TypeError(msg) from error
-
-
-@singledispatch
-def _top_logprobs(response: Any) -> list[dict[int, list[float]]]:
-    """Extract per-token top logprobs from a validated response. Register one per format."""
-    msg = f"No top-logprob extractor registered for {type(response).__name__}."
-    raise TypeError(msg)
-
-
-@_top_logprobs.register
-def _(response: ChatCompletion) -> list[dict[int, list[float]]]:
-    return process_openai_chat_completion(response)
-
-
-@_top_logprobs.register
-def _(response: ResponsesPayload) -> list[dict[int, list[float]]]:
-    return process_openai_responses_api(response)
-
-
-@singledispatch
-def _sampled_logprobs(response: Any) -> list[np.ndarray]:
-    """Extract sampled-token logprobs from a validated response. Register one per format."""
-    msg = f"No sampled-logprob extractor registered for {type(response).__name__}."
-    raise TypeError(msg)
-
-
-@_sampled_logprobs.register
-def _(response: ChatCompletion) -> list[np.ndarray]:
-    return sampled_tokens_logprobs_chat_completion_api(response)
-
-
-@_sampled_logprobs.register
-def _(response: ResponsesPayload) -> list[np.ndarray]:
-    return sampled_tokens_logprobs_responses_api(response)
+from artefactual.preprocessing.response_models import LogprobsMixin
 
 
 # Base order is significant. `__sklearn_tags__` resolves through `super()`, so
@@ -364,7 +239,7 @@ def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
         ValueError: If a batch line carries no completion, because its request failed.
     """
     try:
-        response = _validate_response(outputs)
+        response = LogprobsMixin.parse(outputs)
     except TypeError:
         # A collection of responses is read by iterating it, whatever holds it: a list, a
         # tuple, a 1-D object array, a Series. A single response is tried first because a
@@ -373,11 +248,7 @@ def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
             raise
         return [sequence for item in outputs for sequence in parse_top_logprobs(item)]
 
-    # A batch line is an envelope around one of the formats below, not a fourth one,
-    # so it is opened here and the extractors stay keyed to what they actually read.
-    if is_bearable(response, BatchRequestOutput):
-        response = _payload_of(response)
-    return _top_logprobs(response)
+    return response.top_logprobs()
 
 
 def parse_sampled_token_logprobs(outputs: Any) -> list[np.ndarray]:
@@ -399,10 +270,4 @@ def parse_sampled_token_logprobs(outputs: Any) -> list[np.ndarray]:
             error pydantic raised.
         ValueError: If a batch line carries no completion, because its request failed.
     """
-    response = _validate_response(outputs)
-
-    # A batch line is an envelope around one of the formats below, not a fourth one,
-    # so it is opened here and the extractors stay keyed to what they actually read.
-    if is_bearable(response, BatchRequestOutput):
-        response = _payload_of(response)
-    return _sampled_logprobs(response)
+    return LogprobsMixin.parse(outputs).sampled_logprobs()

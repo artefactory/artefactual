@@ -1,9 +1,11 @@
 """Parsing of completion responses into the logprob arrays the scorers consume.
 
 `LogProbParser` is the pipeline step; `parse_top_logprobs` and
-`parse_sampled_token_logprobs` are its functional form. The per-format extractors in
-`openai_parser` are implementation detail — they take validated models, not raw payloads,
-and `parse_top_logprobs` is the supported way in.
+`parse_sampled_token_logprobs` are its functional form. The extraction itself is a method
+of the payload models: `ChatCompletion` and `ResponsesPayload` carry `top_logprobs()` and
+`sampled_logprobs()` (from `LogprobsMixin`, importable from
+`artefactual.preprocessing.response_models`), and `LogprobsMixin.parse` turns a raw payload
+into one; `ChatCompletion.parse` and `ResponsesPayload.parse` accept their own format only.
 
 `read_batch` reads a Batch output file into `BatchRequestOutput` rows, and
 `index_by_custom_id` keys the successful ones by the id every stage joins on.
@@ -29,6 +31,7 @@ from artefactual.preprocessing.response_models import (
     ChatChoice,
     ChatCompletion,
     ChatMessage,
+    ResponsesPayload,
     read_message,
 )
 
@@ -40,6 +43,7 @@ __all__ = [
     "ChatMessage",
     "Judgment",
     "LogProbParser",
+    "ResponsesPayload",
     "index_by_custom_id",
     "parse_sampled_token_logprobs",
     "parse_top_logprobs",

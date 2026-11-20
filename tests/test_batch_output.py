@@ -14,8 +14,8 @@ from hypothesis import strategies as st
 from pydantic import ValidationError
 
 from artefactual.preprocessing import index_by_custom_id, read_batch, read_judgment, read_message
-from artefactual.preprocessing.parser import _RESPONSE_ADAPTER, LogProbParser
-from artefactual.preprocessing.response_models import BatchRequestOutput, ChatCompletion
+from artefactual.preprocessing.parser import LogProbParser
+from artefactual.preprocessing.response_models import BatchRequestOutput, ChatCompletion, LogprobsMixin
 
 COMPLETION = {
     "id": "chatcmpl-1",
@@ -140,7 +140,7 @@ def completion(k=3):
 def test_each_payload_validates_as_its_own_type(payload, expected):
     """The union must not coerce one format into another: a batch line has no top-level
     `choices` and a completion has no `custom_id`, which is what keeps them apart."""
-    assert type(_RESPONSE_ADAPTER.validate_python(payload)).__name__ == expected
+    assert type(LogprobsMixin.adapter().validate_python(payload)).__name__ == expected
 
 
 def test_a_batch_line_parses_without_being_unwrapped():

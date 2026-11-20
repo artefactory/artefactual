@@ -67,6 +67,7 @@ Readers and validated models for the response shapes the parser accepts.
    ChatCompletion
    ChatMessage
    Judgment
+   ResponsesPayload
 ```
 
 ## Integrations

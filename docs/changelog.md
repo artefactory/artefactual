@@ -14,6 +14,8 @@ Releases before the entries below are listed, with their notes, on the
   fixes, for instance `EPR().set_params(entropy__reduction="wepr")`. Use `WEPR` instead.
 - `EPR` and `WEPR` take responses only. A numeric table raises `TypeError` naming
   `EPRClassifier` and `WEPRClassifier`.
+- `artefactual.preprocessing.openai_parser` is removed: call `top_logprobs()` and
+  `sampled_logprobs()` on `ChatCompletion` or `ResponsesPayload`.
 
 ### Added
 
@@ -50,6 +52,16 @@ Releases before the entries below are listed, with their notes, on the
   structured-output `response_format`. `Judgment.from_text`, `from_completion` and
   `from_batch` read a reply, a completion or a whole batch of verdicts, keeping the
   explanation; `read_judgment` keeps working and returns the same verdicts.
+- `ChatCompletion.top_logprobs()` and `sampled_logprobs()`, and the same two on the Responses
+  payload model, share one implementation through `LogprobsMixin`. A class that implements
+  the mixin is registered as a format, so a new format is one class. `LogprobsMixin.parse`
+  validates a completion, a Responses payload or a batch line into the model it is;
+  `ChatCompletion.parse` and `ResponsesPayload.parse` accept their own format only.
+  `BatchRequestOutput.payload()` returns the body of a successful line. `ChatCompletion`,
+  `ResponsesPayload` and `BatchRequestOutput` import from `artefactual` directly;
+  `LogprobsMixin` stays in `artefactual.preprocessing.response_models`. `TokenLogprobs.candidates()`
+  gives a token's candidates, highest first. `parse_top_logprobs`, `parse_sampled_token_logprobs`
+  and `LogProbParser` return the same results and raise the same errors as before.
 
 ### Changed
 

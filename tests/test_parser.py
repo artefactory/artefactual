@@ -7,8 +7,6 @@ from pydantic import ValidationError
 
 from artefactual.preprocessing.parser import (
     LogProbParser,
-    _sampled_logprobs,
-    _top_logprobs,
     parse_sampled_token_logprobs,
     parse_top_logprobs,
 )
@@ -91,21 +89,6 @@ def test_sklearn_roundtrip():
 # Edge cases
 def test_empty_batch_transforms_to_an_empty_cube():
     assert LogProbParser().transform([]).shape == (0, 0, 0)
-
-
-# --- format dispatch -------------------------------------------------------------------
-# Both extractors are singledispatch tables keyed on the validated response model. The
-# fallback exists so an unregistered model fails loudly instead of returning nothing.
-
-
-def test_top_logprob_dispatch_rejects_an_unregistered_response():
-    with pytest.raises(TypeError, match="No top-logprob extractor registered"):
-        _top_logprobs(object())
-
-
-def test_sampled_logprob_dispatch_rejects_an_unregistered_response():
-    with pytest.raises(TypeError, match="No sampled-logprob extractor registered"):
-        _sampled_logprobs(object())
 
 
 @pytest.mark.parametrize("payload", [None, 42, "text", {"unrelated": 1}])
