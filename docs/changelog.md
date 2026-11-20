@@ -63,6 +63,10 @@ Releases before the entries below are listed, with their notes, on the
   gives a token's candidates, highest first. `parse_top_logprobs`, `parse_sampled_token_logprobs`
   and `LogProbParser` return the same results and raise the same errors as before.
 
+- `epr_reduction` and `wepr_reduction`, the two reductions behind the detectors, and
+  `EntropyTransformer.validate`, its input check, are public, and import from
+  `artefactual.scoring`.
+
 ### Changed
 
 - `predict_proba` columns follow `classes_`. With `0`/`1` labels column 1 is the

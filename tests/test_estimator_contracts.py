@@ -183,7 +183,7 @@ def test_padding_reports_once_not_twice(reduction):
 def test_padded_tokens_do_not_drag_the_epr_mean_down():
     """NaN rows are padding, not zero-entropy tokens.
 
-    `_epr` restores NaN over fully-NaN tokens before the mean precisely so a short
+    `epr_reduction` restores NaN over fully-NaN tokens before the mean precisely so a short
     sequence in a padded batch is not penalised for its padding.
     """
     single = np.array([[[-0.5, -1.5]]])
@@ -305,6 +305,13 @@ def test_the_entropy_transformer_declares_three_dimensional_input():
     tags = EntropyTransformer().__sklearn_tags__()
     assert tags.input_tags.two_d_array is False
     assert tags.input_tags.three_d_array is True
+
+
+def test_the_reductions_are_public_and_are_what_the_strategies_name():
+    from artefactual.scoring import EntropyTransformer, epr_reduction, wepr_reduction
+
+    assert EntropyTransformer(reduction="epr").reduction_fn is epr_reduction
+    assert EntropyTransformer(reduction="wepr").reduction_fn is wepr_reduction
 
 
 def test_validate_returns_a_float_cube_and_refuses_infinity():
