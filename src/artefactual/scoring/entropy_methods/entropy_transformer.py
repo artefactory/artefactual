@@ -15,25 +15,7 @@ from artefactual.exceptions import EmptySequenceWarning
 from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin
 
 
-def _nan_reduce(reduction: Callable, x: np.ndarray, axis: int) -> np.ndarray:
-    """Apply a NaN-aware numpy reduction, silencing its all-NaN-slice warnings.
-
-    A fully padded sequence — or a padded token position, in `transform_tokens` — is an
-    expected input here, not an anomaly: `transform` detects it and raises
-    `EmptySequenceWarning`, which names the condition and says what the score will be.
-    numpy's "Mean of empty slice" and "All-NaN slice encountered" report the same thing a
-    second time, from a frame that points at this file rather than at the caller's data.
-
-    Scoped to these reductions rather than to `transform`, so a caller-supplied `reduction`
-    keeps whatever warnings it raises.
-    """
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "Mean of empty slice", RuntimeWarning)
-        warnings.filterwarnings("ignore", "All-NaN slice encountered", RuntimeWarning)
-        return reduction(x, axis=axis)
-
-
-def _epr(x, axis) -> np.ndarray:
+def epr_reduction(x: np.ndarray, axis: int) -> np.ndarray:
     """Entropy Production Rate: the truncated entropy, averaged over tokens.
 
     The paper's Eq. 6 -- the mean over the sequence of the top-K entropy estimate
@@ -43,20 +25,60 @@ def _epr(x, axis) -> np.ndarray:
 
     A token whose candidates are entirely NaN is padding rather than data, and is excluded from
     the token mean rather than contributing the 0 that `nansum` would give it.
+
+    A fully padded sequence is an expected input, not an anomaly: `EntropyTransformer.transform`
+    detects it and raises `EmptySequenceWarning`, which names the condition. numpy's "Mean of
+    empty slice" reports the same thing a second time from a frame that points here, so it is
+    silenced inside this reduction only, and a caller-supplied reduction keeps its own warnings.
+
+    Parameters
+    ----------
+    x : ndarray of shape (..., n_tokens, k)
+        Entropy contributions, NaN-padded; the last axis is the rank axis.
+    axis : int
+        The token axis to average over.
+
+    Returns
+    -------
+    ndarray
+        Shape `(n_sequences, 1)`: one value per sequence, NaN where the sequence has no token.
     """
     padded = np.all(np.isnan(x), axis=-1, keepdims=True)  # fully-NaN (padded) tokens
     s = np.nansum(x, axis=-1, keepdims=True)  # H~_K: sum over the K ranks
     s = np.where(padded, np.nan, s)  # nansum gave 0 for padded tokens → restore NaN
-    return _nan_reduce(np.nanmean, s, axis)  # EPR: mean over the token axis
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "Mean of empty slice", RuntimeWarning)
+        warnings.filterwarnings("ignore", "All-NaN slice encountered", RuntimeWarning)
+        return np.nanmean(s, axis=axis)  # EPR: mean over the token axis
 
 
-def _wepr(x, axis) -> np.ndarray:
-    mean_branch = _nan_reduce(np.nanmean, x, axis)
-    max_branch = _nan_reduce(np.nanmax, x, axis)
+def wepr_reduction(x: np.ndarray, axis: int) -> np.ndarray:
+    """Weighted EPR features: the per-rank mean over tokens, then the per-rank max.
+
+    Parameters
+    ----------
+    x : ndarray of shape (..., n_tokens, k)
+        Entropy contributions, NaN-padded; the last axis is the rank axis.
+    axis : int
+        The token axis to reduce.
+
+    Returns
+    -------
+    ndarray
+        The mean branch then the max branch concatenated on the last axis, so `2k` features
+        per sequence, NaN where the sequence has no token. The "Mean of empty slice" and
+        "All-NaN slice encountered" warnings are silenced inside this reduction, for the
+        reason `epr_reduction` gives.
+    """
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "Mean of empty slice", RuntimeWarning)
+        warnings.filterwarnings("ignore", "All-NaN slice encountered", RuntimeWarning)
+        mean_branch = np.nanmean(x, axis=axis)
+        max_branch = np.nanmax(x, axis=axis)
     return np.concatenate([mean_branch, max_branch], axis=-1)
 
 
-STRATEGIES = {"epr": _epr, "wepr": _wepr}
+STRATEGIES = {"epr": epr_reduction, "wepr": wepr_reduction}
 
 
 # Base order is significant. `__sklearn_tags__` resolves through `super()`, so
@@ -187,7 +209,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         if input_features is not None and self.k is not None and len(input_features) != self.k:
             msg = f"input_features has {len(input_features)} entries but the step reads k={self.k} candidates."
             raise ValueError(msg)
-        if self.reduction_fn is _epr:
+        if self.reduction_fn is epr_reduction:
             return np.array(["epr"], dtype=object)
         names = _check_feature_names_in(self, input_features, generate_names=False)
         if names is not None:
@@ -197,7 +219,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         else:
             msg = "A wepr step with k=None holds no width: set k or pass input_features to name its features."
             raise ValueError(msg)
-        # `_wepr` concatenates the mean branch, then the max branch, on the last axis.
+        # `wepr_reduction` concatenates the mean branch, then the max branch, on the last axis.
         return np.array([f"wepr_{branch}_{rank}" for branch in ("mean", "max") for rank in ranks], dtype=object)
 
     @_fit_context(prefer_skip_nested_validation=True)

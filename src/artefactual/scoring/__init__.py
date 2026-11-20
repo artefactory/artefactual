@@ -17,7 +17,11 @@ from artefactual.scoring.entropy_classifier import BaseEntropyClassifier, EPRCla
 from artefactual.scoring.entropy_methods.entropy_contributions import (
     EntropyContributionsMixin,
 )
-from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
+from artefactual.scoring.entropy_methods.entropy_transformer import (
+    EntropyTransformer,
+    epr_reduction,
+    wepr_reduction,
+)
 
 __all__ = [
     "EPR",
@@ -28,4 +32,6 @@ __all__ = [
     "EntropyContributionsMixin",
     "EntropyTransformer",
     "WEPRClassifier",
+    "epr_reduction",
+    "wepr_reduction",
 ]

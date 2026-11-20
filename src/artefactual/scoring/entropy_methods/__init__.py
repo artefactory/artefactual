@@ -1,7 +1,7 @@
 """The uncertainty measurement behind the shipped detectors.
 
 An implementation detail of `EPR` and `WEPR`; callers building a detector do not need
-anything from here. `EntropyTransformer` and `EntropyContributionsMixin` are supported
-under `artefactual.scoring`; within the package they are imported from the modules that
-define them.
+anything from here. `EntropyTransformer`, `EntropyContributionsMixin` and the two
+reductions `epr_reduction` and `wepr_reduction` are supported under `artefactual.scoring`;
+within the package they are imported from the modules that define them.
 """

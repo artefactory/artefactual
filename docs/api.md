@@ -36,6 +36,13 @@ parts they are made of and the helpers around them.
    preprocessing.LogProbParser
    scoring.EntropyTransformer
    scoring.EntropyContributionsMixin
+
+.. autosummary::
+   :toctree: _autosummary
+   :nosignatures:
+
+   scoring.epr_reduction
+   scoring.wepr_reduction
 ```
 
 ## Reading responses
