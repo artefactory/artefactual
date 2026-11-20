@@ -277,7 +277,7 @@ No GPU, seconds to run, and it never needs phase B repeated.
 uv run ../train_detector.py \
     --responses "$OUT/responses.jsonl" \
     --judgments "$OUT/judgments.jsonl" \
-    --reduction wepr --k "$K" \
+    --pooling wepr --k "$K" \
     --output "$OUT/wepr.skops" \
     --report "$OUT/wepr_evaluation.json"
 ```
@@ -324,7 +324,7 @@ two files, and neither needs phase B repeated:
 for reduction in epr wepr; do
   uv run ../train_detector.py \
       --responses "$OUT/responses.jsonl" --judgments "$OUT/judgments.jsonl" \
-      --reduction "$reduction" --k "$K" \
+      --pooling "$reduction" --k "$K" \
       --output "$OUT/${reduction}.skops" \
       --report "$OUT/${reduction}_evaluation.json" &
 done

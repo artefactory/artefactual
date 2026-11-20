@@ -10,8 +10,6 @@ Releases before the entries below are listed, with their notes, on the
 - `predict_token_proba`, `EntropyTransformer.transform` and `transform_tokens` name their
   input `X` instead of `x`, as scikit-learn does. Positional calls are unaffected; a call
   that passes `x=` must pass `X=`.
-- `fit` raises `ValueError` when the entropy step's reduction differs from the one the class
-  fixes, for instance `EPR().set_params(entropy__reduction="wepr")`. Use `WEPR` instead.
 - `EPR` and `WEPR` take responses only. A numeric table raises `TypeError` naming
   `EPRClassifier` and `WEPRClassifier`.
 - `artefactual.preprocessing.openai_parser` is removed: call `top_logprobs()` and
@@ -23,9 +21,33 @@ Releases before the entries below are listed, with their notes, on the
   `save_estimator` to `save_pretrained`; `resolve_estimator` and `local_estimator` to
   `cached_file`; `read_estimator` to `load_file`; `_from_estimator` to `from_estimator`.
   `load_estimator` is removed: call `from_pretrained`.
+- `EntropyTransformer(reduction=...)` is now `EntropyTransformer(pooling=...)`, and the entropy
+  step's parameter is `entropy__pooling`. A pooling is a `Pooling` instance (`EPRPooling()`,
+  `WEPRPooling()`, or a subclass of `Pooling` of your own) or a plain function
+  `f(x, axis)`; a string is refused with a `TypeError`. There is no name registry: nothing
+  is selected by name, and no global state holds a pooling. `STRATEGIES` and
+  `artefactual.utils.io.Reduction` are removed, and so is `BaseDetector.trainable`: construct
+  `EPR`, `WEPR` or `PoolingDetector(pooling)`. The class attribute `reduction` of the
+  estimators is now `pooling`, a `Pooling` instance, and `EntropyTransformer.reduction_fn` is
+  gone: call `transformer.applied_pooling()`.
+- `scripts/train_detector.py --reduction` is now `--pooling`: `epr`, `wepr`, or an import path
+  `package.module:Attr` to a `Pooling` subclass, a `Pooling` instance or a function.
+- `EntropyTransformer(pooling)` and `PoolingDetector.from_pretrained(path, pooling=...)` require
+  the pooling: nothing defaults to `EPRPooling()` and `pooling=None` is refused. `EPR`, `WEPR`
+  and their classifiers still fix theirs.
+- `get_feature_names_out` of a custom pooling function returns names (its own name, or
+  `name_0`, ...) instead of raising `ValueError`.
 
 ### Added
 
+- `Pooling`, `EPRPooling`, `WEPRPooling` and `FunctionPooling`: subclass `Pooling`, implement
+  `__call__(x, axis)`, and pass an instance to `EntropyTransformer` or `PoolingDetector`.
+  Override `name`, `width(k)`, `constant_width` and `feature_names(ranks)` to name the
+  features or declare the width; otherwise the width is probed and a one-feature pooling is
+  named after the class. A bare function works too and is named after itself.
+  `PoolingDetector(pooling, k, estimator)` is the detector over any pooling; its file holds the
+  classifier alone, so `PoolingDetector.from_pretrained` takes `pooling=`.
+  `BaseDetector` and `BaseEntropyClassifier` are importable from the package root.
 - `EPRClassifier` and `WEPRClassifier` score logprob arrays you already hold: a
   `(n_sequences, n_tokens, width)` array, or a numeric 2-D table read as one token per row.
   Targets must be binary. They pass scikit-learn's `check_estimator`, with one declared
@@ -33,7 +55,7 @@ Releases before the entries below are listed, with their notes, on the
   `Pipeline` itself). `EPR` and `WEPR` are the same estimators with a `LogProbParser` in
   front. See {doc}`guide/sklearn`.
 - `BaseEntropyClassifier`, the pipeline the four estimators share, and the class-level
-  `reduction`, `n_features(k)` and `k_for(n_features)`.
+  `pooling`.
 - `EntropyTransformer` keeps the first `k` ranks of input that is wider, which are the most
   likely candidates, so a `GridSearchCV` over `k` works on one wide array. Input narrower
   than `k` is used as it is.
@@ -45,7 +67,7 @@ Releases before the entries below are listed, with their notes, on the
   fitted on a table with column names uses them in place of `rank*`.
 - `from_pretrained` takes keyword-only `revision`, `token` and `cache_dir`, forwarded to the
   Hugging Face download, so a published detector can be pinned to a commit.
-- `EntropyTransformer` validates its `reduction` and `k` at `fit`, and a detector validates `k`
+- `EntropyTransformer` validates its `pooling` and `k` at `fit`, and a detector validates `k`
   and `estimator`, with scikit-learn's `InvalidParameterError` (a `ValueError`).
 - `from artefactual import EPR, WEPR, EPRClassifier, WEPRClassifier`: the four estimators are
   exported from the package root.

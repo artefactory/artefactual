@@ -18,10 +18,10 @@ from hypothesis import strategies as st
 
 from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator
 from artefactual.scoring import EPR
-from artefactual.scoring.base_detector import DEFAULT_K
 
-# The detector defaults to DEFAULT_K, and the parser refuses anything narrower.
-traces = chat_payloads_of_fixed_width(min_ranks=DEFAULT_K, max_ranks=20)
+# The detectors are built at K, and the parser refuses anything narrower.
+K = 15
+traces = chat_payloads_of_fixed_width(min_ranks=K, max_ranks=20)
 drawn = settings(suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
 
 
@@ -52,7 +52,7 @@ class StubLangfuse:
 
 
 def build_detector(tmp_path, detector):
-    return EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)))
+    return EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)), k=15)
 
 
 @drawn
@@ -126,7 +126,7 @@ def test_the_score_id_survives_a_change_of_value(tmp_path, payload, first_calibr
     """
     client = StubLangfuse(Trace(payload))
     for index, detector in enumerate((first_calibration, second_calibration)):
-        detector = EPR.from_pretrained(str(write_estimator(tmp_path, f"cal-{index}.skops", detector)))
+        detector = EPR.from_pretrained(str(write_estimator(tmp_path, f"cal-{index}.skops", detector)), k=15)
         HallucinationEvaluator("epr", client, detector).score_trace("trace-1")
 
     first, second = client.scores

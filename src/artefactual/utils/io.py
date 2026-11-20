@@ -11,15 +11,13 @@ survives their renaming.
 """
 
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 import skops.io as sio
 from beartype import beartype
 from beartype.typing import Protocol
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_is_fitted
-
-Reduction = Literal["epr", "wepr"]
 
 MODEL_FILENAME = "model.skops"
 """Name of the estimator file inside a directory or a published repository.

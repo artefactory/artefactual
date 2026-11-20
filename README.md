@@ -34,7 +34,7 @@ response = client.chat.completions.create(
     top_logprobs=15,
 )
 
-detector = WEPR.from_pretrained(DETECTOR)
+detector = WEPR.from_pretrained(DETECTOR, k=15)
 print(detector.predict_proba(response)[:, 1])  # P(hallucination) per sequence
 print(detector.predict_token_proba(response))  # ...and per token
 ```
@@ -108,9 +108,9 @@ from artefactual import EPR, WEPR, WEPRClassifier
 WEPR(k=15).fit(responses, y)
 
 # Published weights, or your own file, are loaded rather than fitted
-WEPR.from_pretrained("artefactory/wepr-phi4")
-WEPR.from_pretrained("/path/to/my_detector.skops")
-EPR.from_pretrained("artefactory/epr-phi4")  # the single-coefficient variant
+WEPR.from_pretrained("artefactory/wepr-phi4", k=15)
+WEPR.from_pretrained("/path/to/my_detector.skops", k=15)
+EPR.from_pretrained("artefactory/epr-phi4", k=15)  # the single-coefficient variant
 
 # Logprob arrays, shaped (n_sequences, n_tokens, k) or one token per row (n, k)
 WEPRClassifier(k=15).fit(logprobs, y)
@@ -123,7 +123,7 @@ Scoring a batch, reading per-token scores, scoring Langfuse traces, composing in
 ## Published detectors
 
 A detector is named by its own Hugging Face repository, not by the model it scores. Pick
-the row for the model that produced the responses, and the column for the reduction:
+the row for the model that produced the responses, and the column for the pooling:
 
 | Model that produced the responses | `EPR` | `WEPR` |
 |---|---|---|

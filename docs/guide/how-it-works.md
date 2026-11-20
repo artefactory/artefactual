@@ -38,9 +38,9 @@ one coefficient per rank, which is why it can weight the informative slots over 
 The middle step turns the raw distribution into a small feature vector
 summarising how uncertain the model was. The shipped detectors measure this with the
 entropy contribution of each candidate, `s_kj = -p_kj * log(p_kj)` for the candidate at
-rank *k* of token *j*, reduced two ways:
+rank *k* of token *j*, pooled two ways:
 
-| Reduction | Feature vector | Reads |
+| Pooling | Feature vector | Reads |
 |---|---|---|
 | `epr` (the `EPR` detector) | `mean_j( sum_k s_kj )` — 1 feature | The sequence's average top-`k` entropy |
 | `wepr` (the `WEPR` detector) | `mean_j(s_kj)` ‖ `max_j(s_kj)` — 2k features | Per-rank mean and peak, weighted separately |
@@ -64,17 +64,51 @@ are that same estimator with its coefficients already fitted, loaded by
 feature names: `detector[:-1].get_feature_names_out()` names the measured features, and
 `set_output(transform="pandas")` returns them as a DataFrame ({doc}`sklearn`).
 
-The measurement step is a plain transformer, so any callable can replace the reduction:
+The measurement step is a plain transformer, and a pooling is a `Pooling` instance, or any
+function `f(x, axis) -> (..., n_features)`: `x` holds the NaN-padded entropy contributions
+`s_kj`, its last axis is the rank axis, and `axis` is the token axis to pool. `EPR` and `WEPR`
+use `EPRPooling()` and `WEPRPooling()`. Pass a bare function when its name is enough:
 
 ```python
 import numpy as np
 
-from artefactual.scoring import EntropyTransformer
+from artefactual import EntropyTransformer, PoolingDetector
 
-transformer = EntropyTransformer(reduction=lambda s, axis: np.nanmax(s, axis=axis))
+
+def median(x, axis):
+    per_token = np.nansum(x, axis=-1, keepdims=True)
+    return np.nanmedian(per_token, axis=axis)
+
+
+EntropyTransformer(pooling=median, k=15)  # one feature, named "median"
+PoolingDetector(median, k=15).fit(responses, y)
 ```
 
-A custom reduction has no feature names, so `get_feature_names_out` and
-`set_output(transform="pandas")` raise `ValueError` for it.
+Subclass `Pooling` to name the features after the rank columns, to declare the width, or to
+carry parameters. The class name, lower-cased, is the pooling's `name`:
+
+```python
+from artefactual import Pooling
+
+
+class RankMedian(Pooling):
+    def __call__(self, X, axis):
+        return np.nanmedian(X, axis=axis)
+
+    def feature_names(self, ranks):
+        return [f"med_{r}" for r in ranks]
+
+
+EntropyTransformer(pooling=RankMedian(), k=15)
+PoolingDetector(RankMedian(), k=15)
+```
+
+Without `feature_names`, a pooling is named after itself for one feature and `name_0`,
+`name_1`, ... for more. The feature count is read by running the pooling on zeros; override
+`width(k)` to declare it instead, and set `constant_width = True` when it does not depend on
+`k`. There is no registry: a pooling is always passed as an object, never selected by name.
+
+`save_pretrained` writes the fitted classifier alone, so the pooling is not in the file:
+load it with `PoolingDetector.from_pretrained(path, pooling=median, k=15)`.
 
 Fitting one of these for a model with no published weights is {doc}`training`.

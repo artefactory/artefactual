@@ -127,9 +127,9 @@ def test_predict_token_proba_is_pinned(tmp_path, name, payload):
 @pytest.mark.parametrize(
     ("name", "wrong_features", "message"),
     [
-        ("epr", 2, r"takes 2 feature\(s\), but k=15 needs 1\. .*pass k=2,"),
-        ("wepr", 1, r"takes 1 feature\(s\), but k=15 needs 30\. .*pass k=0,"),
-        ("wepr", 20, r"takes 20 feature\(s\), but k=15 needs 30\. .*pass k=10,"),
+        ("epr", 2, r"takes 2 feature\(s\), but k=15 gives 1\. .*pass the k it was trained with"),
+        ("wepr", 1, r"takes 1 feature\(s\), but k=15 gives 30\. .*pass the k it was trained with"),
+        ("wepr", 20, r"takes 20 feature\(s\), but k=15 gives 30\. .*pass the k it was trained with"),
     ],
 )
 def test_a_width_that_does_not_match_k_is_refused(tmp_path, name, wrong_features, message):

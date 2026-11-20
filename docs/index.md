@@ -12,7 +12,7 @@ pip install artefactual
 from artefactual import WEPR
 
 # response is what any OpenAI-compatible client returns with logprobs=True, top_logprobs=15
-detector = WEPR.from_pretrained("artefactory/wepr-ministral")
+detector = WEPR.from_pretrained("artefactory/wepr-ministral", k=15)
 detector.predict_proba(response)[:, 1]  # P(hallucination) per sequence
 ```
 
@@ -35,7 +35,7 @@ and the published results. This site covers installing and using a detector in d
 - {doc}`install` — installing from PyPI or from source
 - {doc}`guide/scoring` — choosing a detector, thresholds, batches, Langfuse traces
 - {doc}`guide/training` — fitting one for a model with no published weights, in three notebooks
-- {doc}`guide/how-it-works` — the three pipeline stages and the two entropy reductions
+- {doc}`guide/how-it-works` — the three pipeline stages and the two entropy poolings
 - {doc}`guide/reference` — candidates and ranks, weight-file layout, accepted inputs
 - {doc}`guide/sklearn` — scikit-learn compatibility, model selection, feature names, persistence
 - {doc}`examples/index` — runnable notebooks: EPR and WEPR scoring, and Langfuse traces

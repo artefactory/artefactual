@@ -51,7 +51,7 @@ def fit_data(cls, width=6):
 
 @pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
 def test_a_default_detector_reports_no_estimator_and_clones(cls):
-    detector = cls()
+    detector = cls(k=15)
     assert detector.get_params()["estimator"] is None
     twin = clone(detector)
     assert twin.get_params(deep=False).keys() == detector.get_params(deep=False).keys()
@@ -62,7 +62,7 @@ def test_a_default_detector_reports_no_estimator_and_clones(cls):
 @pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
 def test_a_custom_estimator_is_reported_and_cloned(cls):
     custom = LogisticRegression(C=0.5)
-    detector = cls(estimator=custom)
+    detector = cls(estimator=custom, k=15)
     assert detector.get_params()["estimator"] is custom
     twin = clone(detector)
     assert twin.estimator.C == pytest.approx(0.5)
@@ -71,7 +71,7 @@ def test_a_custom_estimator_is_reported_and_cloned(cls):
 
 @pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
 def test_a_fitted_detector_clones_unfitted(cls):
-    detector = cls().fit(*fit_data(cls))
+    detector = cls(k=15).fit(*fit_data(cls))
     twin = clone(detector)
     assert not hasattr(twin.estimator, "coef_")
     assert not hasattr(twin, "n_features_in_")
@@ -79,7 +79,7 @@ def test_a_fitted_detector_clones_unfitted(cls):
 
 @pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
 def test_a_default_with_a_changed_nested_param_is_reported_as_itself(cls):
-    detector = cls().set_params(classifier__C=2.0)
+    detector = cls(k=15).set_params(classifier__C=2.0)
     assert detector.get_params()["estimator"] is detector.estimator
     assert clone(detector).estimator.C == pytest.approx(2.0)
 
@@ -87,7 +87,7 @@ def test_a_default_with_a_changed_nested_param_is_reported_as_itself(cls):
 @pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
 @pytest.mark.parametrize("name", ["estimator__C", "classifier__C"])
 def test_a_default_detector_takes_the_classifier_param_under_either_name(cls, name):
-    detector = cls().set_params(**{name: 1.0})
+    detector = cls(k=15).set_params(**{name: 1.0})
     assert detector.steps[-1][1].C == pytest.approx(1.0)
     assert clone(detector).steps[-1][1].C == pytest.approx(1.0)
 
@@ -107,7 +107,7 @@ def test_the_pipeline_surface_is_kept(cls):
 
 @pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
 def test_fit_keeps_the_steps_list_identity(cls):
-    detector = cls()
+    detector = cls(k=15)
     steps = detector.steps
     detector.fit(*fit_data(cls))
     assert detector.steps is steps
@@ -120,7 +120,7 @@ def test_fit_keeps_the_steps_list_identity(cls):
 @pytest.mark.parametrize("grid", [{"k": [2, 4]}, {"classifier__C": [0.1, 1.0]}])
 def test_grid_search_runs_over_numeric_data(cls, grid):
     x, y = table()
-    search = GridSearchCV(cls(), grid, cv=3).fit(x, y)
+    search = GridSearchCV(cls(k=15), grid, cv=3).fit(x, y)
     assert set(search.best_params_) == set(grid)
     assert search.best_estimator_.predict_proba(x).shape == (len(x), 2)
 
@@ -156,12 +156,12 @@ def test_a_table_narrower_than_k_round_trips_only_at_its_own_width(tmp_path):
     """A narrow table is accepted, and a file fit on one is loaded at the matching k.
 
     Rejecting narrow tables at fit would stop `check_estimator`, whose toy data has a
-    couple of columns against the default `k=15`, so the width is reported at load time
-    instead, where the existing error names the `k` to pass.
+    couple of columns against `k=15`, so the width is reported at load time
+    instead, where the error states the width the file takes.
     """
     x, y = table(width=5)
     path = WEPRClassifier(k=15).fit(x, y).save_pretrained(tmp_path / "model.skops")
-    with pytest.raises(ValueError, match=r"takes 10 feature\(s\), but k=15 needs 30.*pass k=5"):
+    with pytest.raises(ValueError, match=r"takes 10 feature\(s\), but k=15 gives 30"):
         WEPRClassifier.from_pretrained(path, k=15)
     assert WEPRClassifier.from_pretrained(path, k=5).predict_proba(x).shape == (len(x), 2)
 
@@ -184,7 +184,7 @@ def test_a_table_wider_than_k_is_cut_to_k(cls):
 )
 def test_non_binary_or_invalid_targets_are_rejected(cls, y):
     with pytest.raises(ValueError, match=r"binary|NaN|continuous|Unknown label|class"):
-        cls().fit(table()[0], y)
+        cls(k=15).fit(table()[0], y)
 
 
 # --- response path, by hand --------------------------------------------------------------
@@ -192,7 +192,7 @@ def test_non_binary_or_invalid_targets_are_rejected(cls, y):
 
 @pytest.mark.parametrize("cls", DETECTORS, ids=IDS)
 def test_response_input_still_fits_scores_and_pickles(cls):
-    detector = cls().fit(RESPONSES, LABELS)
+    detector = cls(k=15).fit(RESPONSES, LABELS)
     scores = detector.predict_proba(RESPONSES)
     assert scores.shape == (2, 2)
     restored = pickle.loads(pickle.dumps(detector))
@@ -212,8 +212,8 @@ def responses_as(container):
 @pytest.mark.parametrize("container", ["object array", "series"])
 def test_a_one_dimensional_container_of_responses_is_read_as_responses(cls, container):
     held = responses_as(container)
-    detector = cls().fit(held, LABELS)
-    from_list = cls().fit(RESPONSES, LABELS)
+    detector = cls(k=15).fit(held, LABELS)
+    from_list = cls(k=15).fit(RESPONSES, LABELS)
     np.testing.assert_array_equal(detector.predict_proba(held), from_list.predict_proba(RESPONSES))
     for held_scores, list_scores in zip(
         detector.predict_token_proba(held), from_list.predict_token_proba(RESPONSES), strict=True
@@ -224,13 +224,13 @@ def test_a_one_dimensional_container_of_responses_is_read_as_responses(cls, cont
 @pytest.mark.parametrize("cls", CLASSIFIERS, ids=CLASSIFIER_IDS)
 def test_a_two_dimensional_object_table_of_numbers_is_still_a_table(cls):
     x, y = table()
-    from_object = cls().fit(x.astype(object), y).predict_proba(x.astype(object))
-    np.testing.assert_allclose(from_object, cls().fit(x, y).predict_proba(x))
+    from_object = cls(k=15).fit(x.astype(object), y).predict_proba(x.astype(object))
+    np.testing.assert_allclose(from_object, cls(k=15).fit(x, y).predict_proba(x))
 
 
 @pytest.mark.parametrize("cls", DETECTORS, ids=IDS)
 def test_predict_leaves_the_response_untouched(cls):
-    detector = cls().fit(RESPONSES, LABELS)
+    detector = cls(k=15).fit(RESPONSES, LABELS)
     before = deepcopy(RESPONSES)
     detector.predict_proba(RESPONSES)
     detector.predict(RESPONSES)
@@ -240,7 +240,7 @@ def test_predict_leaves_the_response_untouched(cls):
 
 @pytest.mark.parametrize("cls", DETECTORS, ids=IDS)
 def test_a_clone_and_the_split_pipeline_score_like_the_detector(cls):
-    detector = cls().fit(RESPONSES, LABELS)
+    detector = cls(k=15).fit(RESPONSES, LABELS)
     expected = detector.predict_proba(RESPONSES)
     features = detector[:-1].transform(RESPONSES)
     np.testing.assert_allclose(detector.estimator.predict_proba(features), expected)
@@ -249,7 +249,7 @@ def test_a_clone_and_the_split_pipeline_score_like_the_detector(cls):
 
 @pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
 def test_construction_sets_only_the_declared_parameters(cls):
-    detector = cls()
+    detector = cls(k=15)
     assert set(vars(detector)) == {"steps", "memory", "transform_input", "verbose"}
 
 
@@ -259,7 +259,7 @@ def test_construction_sets_only_the_declared_parameters(cls):
 @pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
 @pytest.mark.parametrize("deep", [False, True])
 def test_set_params_of_get_params_keeps_a_working_classifier(cls, deep):
-    detector = cls()
+    detector = cls(k=15)
     detector.set_params(**detector.get_params(deep=deep))
     assert type(detector.steps[-1][1]) is LogisticRegression
     x, y = fit_data(cls)
@@ -268,7 +268,7 @@ def test_set_params_of_get_params_keeps_a_working_classifier(cls, deep):
 
 @pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
 def test_setting_the_estimator_to_none_restores_the_default(cls):
-    detector = cls(estimator=LogisticRegression(C=0.5)).set_params(estimator=None)
+    detector = cls(estimator=LogisticRegression(C=0.5), k=15).set_params(estimator=None)
     assert detector.estimator.get_params() == LogisticRegression(C=np.inf, max_iter=1000).get_params()
 
 
@@ -276,7 +276,7 @@ def test_setting_the_estimator_to_none_restores_the_default(cls):
 def test_grid_search_over_the_estimator_including_the_default(cls):
     x, y = table()
     grid = {"estimator": [None, LogisticRegression(C=1.0)]}
-    search = GridSearchCV(cls(), grid, cv=2).fit(x, y)
+    search = GridSearchCV(cls(k=15), grid, cv=2).fit(x, y)
     assert len(search.cv_results_["params"]) == 2
     assert not np.isnan(search.cv_results_["mean_test_score"]).any()
 
@@ -393,11 +393,13 @@ def test_the_parser_is_not_wrapped_into_a_frame():
 
 
 @pytest.mark.parametrize("cls", [EPR, EPRClassifier], ids=["EPR", "EPRClassifier"])
-def test_a_custom_reduction_has_no_feature_names(cls):
+def test_a_custom_pooling_names_its_features_after_itself(cls):
+    def mean_of_ranks(s, axis):
+        return np.nanmean(np.nanmean(s, axis=-1, keepdims=True), axis=axis)
+
     estimator = fitted(cls)
-    estimator.named_steps["entropy"].reduction = lambda s, axis: np.nanmean(s, axis=axis)
-    with pytest.raises(ValueError, match="custom reduction"):
-        estimator[:-1].get_feature_names_out()
+    estimator.named_steps["entropy"].pooling = mean_of_ranks
+    assert list(estimator[:-1].get_feature_names_out()) == ["mean_of_ranks"]
 
 
 @pytest.mark.parametrize("cls", [EPR, EPRClassifier], ids=["EPR", "EPRClassifier"])
@@ -465,7 +467,7 @@ def test_a_parser_level_k_that_disagrees_cannot_be_named_into_a_frame():
 def test_a_detector_refuses_a_table_and_names_the_classifiers(cls):
     x, y = table()
     with pytest.raises(TypeError, match="EPRClassifier or WEPRClassifier"):
-        cls().fit(x, y)
+        cls(k=15).fit(x, y)
     with pytest.raises(TypeError, match="EPRClassifier or WEPRClassifier"):
         fitted(cls).predict_proba(x)
 
@@ -474,7 +476,7 @@ def test_a_detector_refuses_a_table_and_names_the_classifiers(cls):
 def test_a_classifier_scores_a_padded_cube_and_locates_the_tokens(cls):
     cube = -np.random.RandomState(0).exponential(1.0, size=(6, 5, K))
     cube[:3, 3:] = np.nan
-    classifier = cls().fit(cube, np.arange(6) % 2)
+    classifier = cls(k=15).fit(cube, np.arange(6) % 2)
     assert classifier.predict_proba(cube).shape == (6, 2)
     per_token = classifier.predict_token_proba(cube)
     assert per_token.shape == (6, 5, 1)
@@ -487,13 +489,13 @@ def test_a_grid_search_over_k_and_the_estimator_runs_on_a_cube_wider_than_k(cls)
     cube = -np.random.RandomState(1).exponential(1.0, size=(30, 4, K))
     y = (cube[:, 0, 0] > np.median(cube[:, 0, 0])).astype(int)
     grid = {"k": [3, 8], "estimator__C": [0.1, 1.0]}
-    search = GridSearchCV(cls(estimator=LogisticRegression()), grid, cv=3).fit(cube, y)
+    search = GridSearchCV(cls(estimator=LogisticRegression(), k=15), grid, cv=3).fit(cube, y)
     assert set(search.best_params_) == set(grid)
     assert search.best_estimator_.predict_proba(cube).shape == (30, 2)
 
 
 def test_an_explicitly_default_estimator_is_reported_as_none_and_clones():
-    detector = EPR(estimator=LogisticRegression(C=np.inf, max_iter=1000))
+    detector = EPR(estimator=LogisticRegression(C=np.inf, max_iter=1000), k=15)
     assert detector.get_params()["estimator"] is None
     assert clone(detector).get_params()["estimator"] is None
 
@@ -501,8 +503,6 @@ def test_an_explicitly_default_estimator_is_reported_as_none_and_clones():
 def test_the_detectors_do_not_inherit_from_the_classifiers():
     for detector, classifier in zip(DETECTORS, CLASSIFIERS, strict=True):
         assert not issubclass(detector, classifier)
-        assert detector.n_features(K) == classifier.n_features(K)
-        assert detector.k_for(5) == classifier.k_for(5)
 
 
 # --- package root exports ----------------------------------------------------------------
@@ -525,12 +525,12 @@ def test_the_estimators_are_exported_from_the_package_root_and_from_scoring():
 @pytest.mark.parametrize("ind", [slice(None, None, 2), slice(None, None, -1)])
 def test_a_slice_with_a_step_is_refused_as_pipeline_refuses_it(cls, ind):
     with pytest.raises(ValueError, match="step of 1"):
-        cls()[ind]
+        cls(k=15)[ind]
 
 
 @pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
 def test_a_slice_is_a_plain_pipeline_over_the_same_steps(cls):
-    detector = cls()
+    detector = cls(k=15)
     front = detector[:-1]
     assert type(front) is Pipeline
     assert front.steps == detector.steps[:-1]
@@ -543,7 +543,7 @@ def test_a_slice_is_a_plain_pipeline_over_the_same_steps(cls):
 
 @pytest.mark.parametrize("cls", CLASSIFIERS, ids=CLASSIFIER_IDS)
 def test_n_features_in_is_the_width_of_the_fitted_table_and_absent_before(cls):
-    detector = cls()
+    detector = cls(k=15)
     with pytest.raises(AttributeError):
         detector.n_features_in_  # ruff: ignore[useless-expression]
     x, y = table(width=6)
@@ -557,7 +557,7 @@ def test_n_features_in_is_the_width_of_the_fitted_table_and_absent_before(cls):
 @pytest.mark.parametrize("k", [0, -2, 1.5, "3", None])
 def test_fit_rejects_an_invalid_k_before_doing_anything_else(cls, k):
     x, y = fit_data(cls)
-    detector = cls()
+    detector = cls(k=15)
     detector.k = k
     with pytest.raises(ValueError, match="'k'"):
         detector.fit(x, y)
@@ -569,7 +569,7 @@ def test_fit_rejects_an_estimator_without_predict_proba(cls):
     from sklearn.svm import LinearSVC
 
     with pytest.raises(ValueError, match="'estimator'"):
-        cls(estimator=LinearSVC()).fit(x, y)
+        cls(estimator=LinearSVC(), k=15).fit(x, y)
 
 
 # --- labels ------------------------------------------------------------------------------
@@ -578,9 +578,9 @@ def test_fit_rejects_an_estimator_without_predict_proba(cls):
 @pytest.mark.parametrize("cls", CLASSIFIERS, ids=CLASSIFIER_IDS)
 def test_any_two_labels_are_accepted_and_the_second_is_column_one(cls):
     x, y = table()
-    detector = cls().fit(x, y + 1)
+    detector = cls(k=15).fit(x, y + 1)
     assert list(detector.classes_) == [1, 2]
-    zero_one = cls().fit(x, y)
+    zero_one = cls(k=15).fit(x, y)
     assert np.array_equal(detector.predict_proba(x), zero_one.predict_proba(x))
 
 

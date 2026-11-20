@@ -27,7 +27,7 @@ MUST_RUN = {"check_classifiers_train", "check_estimators_pickle", "check_fit2d_1
 
 
 @parametrize_with_checks(
-    [EPRClassifier(), WEPRClassifier()],
+    [EPRClassifier(k=15), WEPRClassifier(k=15)],
     expected_failed_checks=lambda estimator: EXPECTED_FAILED_CHECKS,  # ruff: ignore[unused-lambda-argument]
     # Strict: if the declared failure ever passes, the suite goes red and the entry must go.
     xfail_strict=True,
@@ -36,7 +36,9 @@ def test_sklearn_compatible_estimator(estimator, check):
     check(estimator)
 
 
-@pytest.mark.parametrize("classifier", [EPRClassifier(), WEPRClassifier()], ids=["EPRClassifier", "WEPRClassifier"])
+@pytest.mark.parametrize(
+    "classifier", [EPRClassifier(k=15), WEPRClassifier(k=15)], ids=["EPRClassifier", "WEPRClassifier"]
+)
 def test_the_named_checks_ran_and_only_the_declared_one_failed(classifier):
     """The suite is not vacuous: the checks that matter ran, and passed."""
     results = check_estimator(classifier, on_fail=None, expected_failed_checks=None)

@@ -157,6 +157,16 @@ def test_a_response_without_logprobs_names_the_cause():
         LogProbParser(k=15).transform({"choices": [{"logprobs": None}]})
 
 
+@given(k=st.integers(min_value=2, max_value=20), data=st.data())
+def test_a_response_narrower_than_k_is_refused(k, data):
+    # zero-filling the unfetched ranks would understate the entropy, so the parser refuses
+    narrow = data.draw(st.integers(min_value=1, max_value=k - 1))
+    token = {"top_logprobs": [{"logprob": -0.1}] * narrow}
+    payload = {"choices": [{"logprobs": {"content": [token, token]}}]}
+    with pytest.raises(ValueError, match=f"carries {narrow} candidate\\(s\\) per token but k={k}"):
+        LogProbParser(k=k).transform(payload)
+
+
 def test_an_empty_parse_without_a_declared_k_is_still_an_empty_cube():
     # no rank count was declared, so there is no expectation for the empty parse to break
     assert LogProbParser().transform({"choices": [{"logprobs": None}]}).shape == (1, 0, 0)

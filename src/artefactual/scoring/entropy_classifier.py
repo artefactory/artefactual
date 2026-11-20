@@ -16,10 +16,16 @@ from sklearn.utils.multiclass import check_classification_targets, type_of_targe
 from sklearn.utils.validation import check_is_fitted, column_or_1d
 
 from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
-from artefactual.utils.io import PretrainedMixin, Reduction, SavePretrainedMixin
+from artefactual.scoring.entropy_methods.pooling import EPRPooling, Pooling, WEPRPooling, as_pooling
+from artefactual.utils.io import PretrainedMixin, SavePretrainedMixin
 
 # Every published detector was fit at 15 candidates per token.
 DEFAULT_K = 15
+
+
+def default_classifier() -> LogisticRegression:
+    """The unregularised logistic regression the published detectors were fit with."""
+    return LogisticRegression(C=np.inf, max_iter=1000)
 
 
 class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
@@ -28,9 +34,9 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
     A scikit-learn `Pipeline`, so `predict`, `predict_proba`, `fit`, `get_params` and
     `clone` behave as expected and the estimator composes into `GridSearchCV` and friends.
     It holds the logic every detector shares: the parameters, the target checks, the
-    persistence and the per-token scores. Abstract in the reduction: `EPRClassifier` and
-    `WEPRClassifier` are the classes to construct, and each fixes `reduction` and the
-    coefficient width that reduction implies.
+    persistence and the per-token scores. Abstract in the pooling: `EPRClassifier` and
+    `WEPRClassifier` are the classes to construct, and each fixes `pooling` and the
+    coefficient width that pooling implies.
 
     Class 1 is the hallucination class: `predict_proba(...)[:, 1]` is the score of
     interest, as long as the labels are `0`/`1`. Column order follows `classes_`.
@@ -92,8 +98,8 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
     WEPRClassifier : A mean and a max per rank.
     """
 
-    #: The entropy reduction this estimator scores with. Set by each subclass.
-    reduction: ClassVar[Reduction | None] = None
+    #: The pooling this estimator scores with. Set by each subclass.
+    pooling: ClassVar[Pooling | None] = None
 
     # `k` and `estimator` are properties over the steps, not stored attributes, but
     # `get_params` reports them, so they are validated like any other constructor parameter.
@@ -116,38 +122,27 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
         verbose=False,
     ) -> None:
         """Assemble an entropy -> classifier pipeline pinned to `k` candidates."""
-        if self.reduction is None:
+        self.assemble_steps(self.pooling, k, estimator, transform_input, memory, verbose)
+
+    # A method rather than `__init__` code so that a class taking the pooling as a
+    # constructor parameter can assemble the same pipeline: `__init__` signatures are the
+    # `get_params` surface and cannot be shared.
+    def assemble_steps(self, pooling, k, estimator, transform_input, memory, verbose) -> None:
+        """Build the steps around `pooling`, a `Pooling` or a function."""
+        if pooling is None:
             msg = (
-                f"{type(self).__name__} fixes no reduction. Construct an EPRClassifier or a WEPRClassifier, "
-                "or an EPR or WEPR detector."
+                f"{type(self).__name__} fixes no pooling. Construct an EPRClassifier or a WEPRClassifier, "
+                "or an EPR, a WEPR or a PoolingDetector."
             )
             raise TypeError(msg)
-        super().__init__(
-            steps=[("entropy", EntropyTransformer(reduction=self.reduction, k=k)), ("classifier", None)],
+        Pipeline.__init__(
+            self,
+            steps=[("entropy", EntropyTransformer(pooling=pooling, k=k)), ("classifier", None)],
             transform_input=transform_input,
             memory=memory,
             verbose=verbose,
         )
         self.estimator = estimator
-
-    @classmethod
-    def n_features(cls, k: int) -> int:
-        """Features this reduction produces at `k` candidates per token.
-
-        What a loaded estimator's coefficient vector is checked against: coefficients are
-        fixed at the width they were trained at. EPR pools every candidate into one
-        feature whatever `k` is, and WEPR has a mean and a max per rank.
-        """
-        return 1 if cls.reduction == "epr" else 2 * k
-
-    @classmethod
-    def k_for(cls, n_features: int) -> int:
-        """The candidates per token that `n_features` coefficients were trained at.
-
-        EPR's width does not depend on `k`, so none is implied: the width itself is
-        returned, as the `k` a table of that many columns would be read at.
-        """
-        return n_features if cls.reduction == "epr" else n_features // 2
 
     @property
     def k(self) -> int:
@@ -195,7 +190,7 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
         # `None` is what `get_params` reports for the default classifier, so setting it back
         # (`set_params(**get_params())`, a grid over `[None, ...]`) restores the default
         # rather than leaving the final step empty. This is the one place it is built.
-        self.steps[-1] = (self.steps[-1][0], LogisticRegression(C=np.inf, max_iter=1000) if value is None else value)
+        self.steps[-1] = (self.steps[-1][0], default_classifier() if value is None else value)
 
     @classmethod
     def from_estimator(cls, estimator: BaseEstimator, identifier: str | Path, **kwargs: Any) -> "BaseEntropyClassifier":
@@ -208,7 +203,8 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
         identifier : str or Path
             What named it, for the error below.
         **kwargs
-            `k`, and anything else `__init__` takes.
+            `k` (required), the candidates per token the estimator was trained at, and
+            anything else `__init__` takes.
 
         Returns
         -------
@@ -217,6 +213,8 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
 
         Raises
         ------
+        TypeError
+            If `k` is missing from `kwargs`.
         ValueError
             If the estimator is not a fitted classifier with exactly two classes, or does
             not cover exactly `k` candidates.
@@ -238,8 +236,10 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
                 "scores the probability of the second class of a binary classifier."
             )
             raise ValueError(msg)
-        k = kwargs.get("k", DEFAULT_K)
-        expected = cls.n_features(k)
+        detector = cls(estimator=estimator, **kwargs)
+        # The width the assembled pipeline hands its classifier, read from the pipeline's
+        # own feature names so that the user's `k` and pooling decide it, never the file.
+        expected = len(detector.named_steps["entropy"].get_feature_names_out())
         # `n_features_in_` is set by fit, so it is absent from the `BaseEstimator` interface
         # even though every estimator reaching here is fitted. Read it through `Any` rather
         # than suppressing per type-checker: the suppression is itself reported as unused by
@@ -248,12 +248,11 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
         if actual != expected:
             msg = (
                 f"The {cls.__name__} detector at '{identifier}' takes {actual} feature(s), "
-                f"but k={k} needs {expected}. Its coefficients are fixed at the width "
-                f"they were trained at; pass k={cls.k_for(actual)}, or use a detector "
-                f"trained at k={k}."
+                f"but k={detector.k} gives {expected}. Its coefficients are fixed at the width "
+                f"they were trained at; pass the k it was trained with."
             )
             raise ValueError(msg)
-        return cls(estimator=estimator, **kwargs)
+        return detector
 
     def __sklearn_tags__(self) -> Tags:
         """Declares a binary classifier over numeric 2-D tables, as the steps' tags cannot say."""
@@ -266,9 +265,10 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
         tags.requires_fit = True
         tags.input_tags.allow_nan = False  # NaN pads a cube; a table is validated
         tags.classifier_tags.multi_class = False
-        # EPR pools to one feature, which cannot separate classes that need more than
-        # a threshold, so its score on the checks' toy data is allowed to be poor.
-        tags.classifier_tags.poor_score = self.reduction == "epr"
+        # A pooling whose width does not depend on `k` (EPR's one feature) cannot separate
+        # classes that need more than a threshold, so its score on the checks' toy data is
+        # allowed to be poor.
+        tags.classifier_tags.poor_score = as_pooling(self.pooling).constant_width
         tags.input_tags.two_d_array = True
         tags.input_tags.three_d_array = False
         return tags
@@ -346,7 +346,7 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
         """
         params = super().get_params(deep=deep)
         step = self.steps[-1][1]
-        if type(step) is LogisticRegression and step.get_params() == type(self)().estimator.get_params():
+        if type(step) is LogisticRegression and step.get_params() == default_classifier().get_params():
             params["estimator"] = None
             # A `None` has no parameters to set; its default's are still reachable as
             # `classifier__*`, and `set_params` would otherwise route `estimator__*` to it.
@@ -448,7 +448,7 @@ class EPRClassifier(BaseEntropyClassifier):
     logprob array, or a numeric 2-D table read as one token per row. Targets are binary,
     1 marking hallucination.
 
-    Both reductions need weights fit on labelled data, so choosing this one saves no setup
+    Both poolings need weights fit on labelled data, so choosing this one saves no setup
     work over `WEPRClassifier` -- only parameters. Prefer `WEPRClassifier` unless there is
     too little labelled data to fit its larger coefficient vector. To score completion
     responses, use `EPR`.
@@ -482,15 +482,15 @@ class EPRClassifier(BaseEntropyClassifier):
     See Also
     --------
     WEPRClassifier : Reads each rank separately, at the cost of `2k` coefficients.
-    EPR : The same reduction over completion responses.
+    EPR : The same pooling over completion responses.
 
     Examples
     --------
-    >>> classifier = EPRClassifier().fit(logprobs, y)  # doctest: +SKIP
+    >>> classifier = EPRClassifier(k=15).fit(logprobs, y)  # doctest: +SKIP
     >>> classifier.predict_proba(logprobs)[:, 1]  # doctest: +SKIP
     """
 
-    reduction: ClassVar[Reduction | None] = "epr"
+    pooling: ClassVar[Pooling | None] = EPRPooling()
 
 
 class WEPRClassifier(BaseEntropyClassifier):
@@ -533,7 +533,7 @@ class WEPRClassifier(BaseEntropyClassifier):
     See Also
     --------
     EPRClassifier : One pooled feature, for scarce labelled data.
-    WEPR : The same reduction over completion responses.
+    WEPR : The same pooling over completion responses.
 
     Examples
     --------
@@ -541,4 +541,4 @@ class WEPRClassifier(BaseEntropyClassifier):
     >>> classifier.predict_proba(logprobs)[:, 1]  # doctest: +SKIP
     """
 
-    reduction: ClassVar[Reduction | None] = "wepr"
+    pooling: ClassVar[Pooling | None] = WEPRPooling()

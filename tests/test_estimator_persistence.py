@@ -140,7 +140,7 @@ def test_cache_dir_and_revision_reach_the_download(tmp_path):
 def test_from_pretrained_forwards_the_hub_options(tmp_path):
     cached_repo(tmp_path, "org/detector", "release", "b" * 40)
 
-    restored = EPR.from_pretrained("org/detector", revision="release", cache_dir=tmp_path)
+    restored = EPR.from_pretrained("org/detector", revision="release", cache_dir=tmp_path, k=15)
 
     assert restored.estimator.coef_.shape == (1, 1)
 
@@ -181,7 +181,7 @@ def test_a_detector_fit_at_another_rank_count_is_refused(tmp_path):
     detector = fitted_logistic(0.0, [1.0] * 20)  # 2k features, so k=10
     path = write_estimator(tmp_path, "model.skops", detector)
 
-    with pytest.raises(ValueError, match="pass k=10"):
+    with pytest.raises(ValueError, match=r"takes 20 feature\(s\), but k=15 gives 30"):
         WEPR.from_pretrained(str(path), k=15)
 
 
@@ -217,7 +217,7 @@ def test_saving_an_unfitted_detector_is_refused(tmp_path):
     attribute -- nowhere near the call that forgot to fit. Refusing here names it instead.
     """
     with pytest.raises(NotFittedError):
-        BaseDetector.trainable("wepr", k=15).save_pretrained(tmp_path / "unfitted.skops")
+        WEPR(k=15).save_pretrained(tmp_path / "unfitted.skops")
 
     assert not (tmp_path / "unfitted.skops").exists()
 

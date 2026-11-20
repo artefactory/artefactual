@@ -3,7 +3,11 @@ import pytest
 from conftest import chat_payloads_of_fixed_width, fitted_logistic, write_estimator
 from hypothesis import HealthCheck, given, settings
 
-from artefactual.scoring.base_detector import DEFAULT_K, EPR, WEPR, BaseDetector
+from artefactual.scoring.base_detector import EPR, WEPR, BaseDetector
+from artefactual.scoring.entropy_methods.pooling import EPRPooling, WEPRPooling
+
+# The published detectors were fit at 15 candidates per token.
+K = 15
 
 
 @pytest.fixture(scope="session")
@@ -18,48 +22,48 @@ def epr_estimator_path(tmp_path_factory):
 
 @pytest.fixture(scope="session")
 def wepr_estimator_path(tmp_path_factory):
-    """A `2 * DEFAULT_K` feature detector on disk, standing in for a published WEPR one."""
-    coefficients = [0.5 - 0.05 * index for index in range(2 * DEFAULT_K)]
+    """A `2 * K` feature detector on disk, standing in for a published WEPR one."""
+    coefficients = [0.5 - 0.05 * index for index in range(2 * K)]
     return str(write_estimator(tmp_path_factory.mktemp("wepr"), "model.skops", fitted_logistic(-3.4, coefficients)))
 
 
-# The estimators are fit at DEFAULT_K, and the parser refuses anything narrower,
+# The estimators are fit at K, and the parser refuses anything narrower,
 # so responses are drawn at or above that width rather than read from a fixed fixture.
-responses = chat_payloads_of_fixed_width(min_ranks=DEFAULT_K, max_ranks=20)
+responses = chat_payloads_of_fixed_width(min_ranks=K, max_ranks=20)
 drawn = settings(suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
 
 
 def test_epr_returns_base_detector(epr_estimator_path):
-    assert isinstance(EPR.from_pretrained(epr_estimator_path), BaseDetector)
+    assert isinstance(EPR.from_pretrained(epr_estimator_path, k=15), BaseDetector)
 
 
 def test_wepr_returns_base_detector(wepr_estimator_path):
-    assert isinstance(WEPR.from_pretrained(wepr_estimator_path), BaseDetector)
+    assert isinstance(WEPR.from_pretrained(wepr_estimator_path, k=15), BaseDetector)
 
 
 def test_epr_step_names(epr_estimator_path):
-    assert [name for name, _ in EPR.from_pretrained(epr_estimator_path).steps] == [
+    assert [name for name, _ in EPR.from_pretrained(epr_estimator_path, k=15).steps] == [
         "parser",
         "entropy",
         "classifier",
     ]
 
 
-def test_epr_entropy_reduction(epr_estimator_path):
-    assert EPR.from_pretrained(epr_estimator_path).named_steps["entropy"].reduction == "epr"
+def test_epr_entropy_pooling(epr_estimator_path):
+    assert EPR.from_pretrained(epr_estimator_path, k=15).named_steps["entropy"].pooling == EPRPooling()
 
 
-def test_wepr_entropy_reduction(wepr_estimator_path):
-    assert WEPR.from_pretrained(wepr_estimator_path).named_steps["entropy"].reduction == "wepr"
+def test_wepr_entropy_pooling(wepr_estimator_path):
+    assert WEPR.from_pretrained(wepr_estimator_path, k=15).named_steps["entropy"].pooling == WEPRPooling()
 
 
 def test_epr_with_pretrained_has_coef(epr_estimator_path):
-    clf = EPR.from_pretrained(epr_estimator_path).named_steps["classifier"]
+    clf = EPR.from_pretrained(epr_estimator_path, k=15).named_steps["classifier"]
     assert clf.coef_.shape == (1, 1)  # 1 class, 1 feature (mean_entropy)
 
 
 def test_from_pretrained_epr(epr_estimator_path):
-    detector = EPR.from_pretrained(epr_estimator_path)
+    detector = EPR.from_pretrained(epr_estimator_path, k=15)
     assert isinstance(detector, BaseDetector)
     assert detector.named_steps["classifier"].coef_ is not None
 
@@ -67,14 +71,14 @@ def test_from_pretrained_epr(epr_estimator_path):
 @drawn
 @given(response=responses)
 def test_predict_proba_output_shape(epr_estimator_path, response):
-    scores = EPR.from_pretrained(epr_estimator_path).predict_proba(response)
+    scores = EPR.from_pretrained(epr_estimator_path, k=15).predict_proba(response)
     assert scores.shape == (1, 2)  # 1 sequence, 2 classes
 
 
 @drawn
 @given(response=responses)
 def test_predict_proba_valid_probabilities(epr_estimator_path, response):
-    scores = EPR.from_pretrained(epr_estimator_path).predict_proba(response)
+    scores = EPR.from_pretrained(epr_estimator_path, k=15).predict_proba(response)
     assert np.all(scores >= 0) and np.all(scores <= 1)
     assert np.allclose(scores.sum(axis=1), 1.0)
 
@@ -82,7 +86,7 @@ def test_predict_proba_valid_probabilities(epr_estimator_path, response):
 @drawn
 @given(response=responses)
 def test_predict_token_proba_shape(epr_estimator_path, response):
-    token_scores = EPR.from_pretrained(epr_estimator_path).predict_token_proba(response)
+    token_scores = EPR.from_pretrained(epr_estimator_path, k=15).predict_token_proba(response)
     assert token_scores.shape[0] == 1  # 1 sequence
     assert token_scores.shape[2] == 1
 
@@ -90,7 +94,7 @@ def test_predict_token_proba_shape(epr_estimator_path, response):
 @drawn
 @given(response=responses)
 def test_predict_token_proba_valid_scores(epr_estimator_path, response):
-    token_scores = EPR.from_pretrained(epr_estimator_path).predict_token_proba(response)
+    token_scores = EPR.from_pretrained(epr_estimator_path, k=15).predict_token_proba(response)
     valid = token_scores[~np.isnan(token_scores)]
     assert len(valid) > 0
     assert np.all(valid >= 0) and np.all(valid <= 1)
@@ -117,7 +121,7 @@ def test_a_constructed_detector_is_unfitted():
 
 def test_a_detector_defaults_to_an_unregularised_regression():
     # matches how the shipped estimators were fit, so coefficients stay comparable
-    classifier = EPR().named_steps["classifier"]
+    classifier = EPR(k=15).named_steps["classifier"]
 
     assert classifier.C == np.inf
     assert classifier.max_iter == 1000
@@ -127,7 +131,7 @@ def test_a_detector_accepts_a_custom_estimator():
     from sklearn.ensemble import RandomForestClassifier
 
     forest = RandomForestClassifier(n_estimators=2)
-    assert EPR(estimator=forest).named_steps["classifier"] is forest
+    assert EPR(estimator=forest, k=15).named_steps["classifier"] is forest
 
 
 def test_a_detector_pins_the_rank_width():
@@ -149,8 +153,8 @@ def test_a_weights_identifier_is_not_accepted_as_a_rank_count(detector_class, ep
         detector.predict_proba([_chat([-0.1, -0.2, -0.3])])
 
 
-@pytest.mark.parametrize("reduction", ["epr", "wepr"])
-def test_a_trained_detector_scores_like_a_pretrained_one(reduction):
+@pytest.mark.parametrize("detector_class", [EPR, WEPR])
+def test_a_trained_detector_scores_like_a_pretrained_one(detector_class):
     """fit() then predict_proba() must work on raw responses, end to end."""
     k = 3
     confident = [_chat([-0.001, -8.0, -9.0]) for _ in range(4)]
@@ -158,7 +162,7 @@ def test_a_trained_detector_scores_like_a_pretrained_one(reduction):
     x = confident + uncertain
     y = np.array([0] * 4 + [1] * 4)
 
-    detector = BaseDetector.trainable(reduction, k=k).fit(x, y)
+    detector = detector_class(k=k).fit(x, y)
     scores = detector.predict_proba(x)
 
     assert scores.shape == (8, 2)
