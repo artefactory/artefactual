@@ -15,7 +15,7 @@ mystnb:
   execution_mode: 'off'
 ---
 
-# Build the training set from an endpoint, then train
+# Train a WEPR detector from an endpoint alone: generate, judge, fit
 
 You start with an endpoint and nothing else. This notebook builds the whole training set
 for the model that endpoint serves — it asks your questions, keeps the `top_logprobs`

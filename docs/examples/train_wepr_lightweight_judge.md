@@ -13,7 +13,7 @@ kernelspec:
   name: python3
 ---
 
-# Label a set of responses with a lightweight judge that runs on your own machine
+# Train a WEPR detector from unjudged answers, judged on your machine
 
 You start with answers the model under test generated, and nothing judged yet. The judge
 that grades them here **runs locally, on CPU, with no API key and no per-response cost** —
