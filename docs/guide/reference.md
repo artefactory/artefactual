@@ -108,6 +108,23 @@ with `rows`, so `zip(rows, verdicts)` joins on `custom_id`.
 2xx, a missing envelope or body -- and `completion` is `None` for every one of them, so a
 caller counts failures in one place instead of branching on which kind it got.
 
+The extraction is a method of the payload models. `ChatCompletion` and `ResponsesPayload`
+(in `artefactual.preprocessing.response_models`) share it through `LogprobsMixin`:
+
+```python
+from artefactual.preprocessing.response_models import LogprobsMixin
+
+payload = LogprobsMixin.parse(row.model_dump())  # a completion, a Responses payload or a batch line
+# ChatCompletion.parse and ResponsesPayload.parse accept their own format only
+payload.top_logprobs()      # per sequence: {token position: candidate logprobs, highest first}
+payload.sampled_logprobs()  # per sequence: the sampled tokens' logprobs, as a 1-D array
+```
+
+`parse_top_logprobs`, `parse_sampled_token_logprobs` and `LogProbParser` are these calls with
+the batching and padding around them, and raise the same errors. `parse` refuses a failed batch
+line with a `ValueError` naming its `custom_id`: skipping it would shift every later response
+against its label.
+
 A minimal Responses API payload looks like:
 
 ```python

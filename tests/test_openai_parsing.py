@@ -13,35 +13,36 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from artefactual.preprocessing.parser import LogProbParser, parse_sampled_token_logprobs, parse_top_logprobs
+from artefactual.preprocessing.response_models import LogprobsMixin
 
 
 @given(payload=chat_completions)
 def test_chat_completion_yields_one_sequence_per_choice(payload):
-    assert len(parse_top_logprobs(payload)) == len(payload.choices)
+    assert len(payload.top_logprobs()) == len(payload.choices)
 
 
 @given(payload=responses_api)
 def test_responses_api_yields_one_sequence_per_output_item(payload):
-    assert len(parse_top_logprobs(payload)) == len(payload.output)
+    assert len(payload.top_logprobs()) == len(payload.output)
 
 
 @given(payload=openai_payloads)
 def test_dict_and_object_payloads_parse_identically(payload):
     # the models normalise both representations, so callers can pass either
-    assert parse_top_logprobs(payload.model_dump()) == parse_top_logprobs(payload)
+    assert LogprobsMixin.parse(payload.model_dump()).top_logprobs() == payload.top_logprobs()
 
 
 @given(payload=openai_payloads)
 def test_logprobs_are_sorted_descending(payload):
     # the parser promises highest-probability rank first; entropy contributions depend on it
-    for sequence in parse_top_logprobs(payload):
+    for sequence in payload.top_logprobs():
         for ranks in sequence.values():
             assert ranks == sorted(ranks, reverse=True)
 
 
 @given(payload=openai_payloads)
 def test_parsed_logprobs_stay_non_positive_and_finite(payload):
-    for sequence in parse_top_logprobs(payload):
+    for sequence in payload.top_logprobs():
         for ranks in sequence.values():
             assert all(np.isfinite(value) and value <= 0 for value in ranks)
 
@@ -71,22 +72,30 @@ def test_transform_pads_ragged_batches_to_a_dense_cube(batch):
 
 @given(payload=openai_payloads)
 def test_sampled_logprobs_yield_one_array_per_sequence(payload):
-    sampled = parse_sampled_token_logprobs(payload)
+    sampled = payload.sampled_logprobs()
     assert len(sampled) == expected_sequence_count(payload)
     assert all(array.ndim == 1 for array in sampled)
 
 
 @given(payload=openai_payloads)
 def test_sampled_logprobs_stay_non_positive_and_finite(payload):
-    for array in parse_sampled_token_logprobs(payload):
+    for array in payload.sampled_logprobs():
         assert np.isfinite(array).all()
         assert (array <= 0).all()
 
 
 @given(payload=openai_payloads)
+def test_the_functional_forms_are_the_methods(payload):
+    assert parse_top_logprobs(payload) == payload.top_logprobs()
+    assert [a.tolist() for a in parse_sampled_token_logprobs(payload)] == [
+        a.tolist() for a in payload.sampled_logprobs()
+    ]
+
+
+@given(payload=openai_payloads)
 def test_sampled_logprobs_match_across_representations(payload):
-    from_object = parse_sampled_token_logprobs(payload)
-    from_mapping = parse_sampled_token_logprobs(payload.model_dump())
+    from_object = payload.sampled_logprobs()
+    from_mapping = LogprobsMixin.parse(payload.model_dump()).sampled_logprobs()
     assert [a.tolist() for a in from_object] == [a.tolist() for a in from_mapping]
 
 
