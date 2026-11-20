@@ -213,7 +213,7 @@ class _BrokenTokenMode:
     def transform(self, x):
         return np.nanmean(x, axis=1)
 
-    def transform_tokens(self, x):  # noqa: ARG002 — the bug is the raise, not the argument
+    def transform_tokens(self, x):  # ruff: ignore[unused-method-argument] — the bug is the raise, not the argument
         msg = "this step's own bug, not a missing method"
         raise AttributeError(msg)
 

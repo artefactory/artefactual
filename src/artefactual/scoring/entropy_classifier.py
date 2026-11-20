@@ -100,8 +100,8 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
     # `estimator=None` stands for the default classifier.
     # Declared as `Pipeline` declares it, a plain attribute read from the class, so a type
     # checker does not see a ClassVar overriding an instance variable.
-    _parameter_constraints: dict = {  # noqa: RUF012
-        **Pipeline._parameter_constraints,  # noqa: SLF001
+    _parameter_constraints: dict = {  # ruff: ignore[mutable-class-default]
+        **Pipeline._parameter_constraints,  # ruff: ignore[private-member-access]
         "k": [Interval(Integral, 1, None, closed="left")],
         "estimator": [HasMethods(["fit", "predict_proba"]), None],
     }
@@ -198,9 +198,7 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
         self.steps[-1] = (self.steps[-1][0], LogisticRegression(C=np.inf, max_iter=1000) if value is None else value)
 
     @classmethod
-    def from_estimator(
-        cls, estimator: BaseEstimator, identifier: str | Path, **kwargs: Any
-    ) -> "BaseEntropyClassifier":
+    def from_estimator(cls, estimator: BaseEstimator, identifier: str | Path, **kwargs: Any) -> "BaseEntropyClassifier":
         """An instance carrying `estimator` as its classifier, if the widths agree.
 
         Parameters
@@ -276,7 +274,7 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
         return tags
 
     @_fit_context(prefer_skip_nested_validation=False)  # the steps are validated by their own fit
-    def fit(self, X, y=None, **params) -> "BaseEntropyClassifier":  # noqa: N803
+    def fit(self, X, y=None, **params) -> "BaseEntropyClassifier":  # ruff: ignore[invalid-argument-name]
         """Fit the entropy and classifier steps; targets must be binary.
 
         Parameters
@@ -322,7 +320,7 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
             steps[:] = self.steps
             self.steps = steps
 
-    def get_params(self, deep: bool = True) -> dict[str, Any]:  # noqa: FBT001, FBT002
+    def get_params(self, deep: bool = True) -> dict[str, Any]:  # ruff: ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
         """`Pipeline.get_params`, reporting `estimator=None` for the untouched default.
 
         Parameters
@@ -385,7 +383,7 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
             return whole[ind]
         return super().__getitem__(ind)
 
-    def predict_token_proba(self, X) -> np.ndarray:  # noqa: N803
+    def predict_token_proba(self, X) -> np.ndarray:  # ruff: ignore[invalid-argument-name]
         """Per-token hallucination probabilities, for locating *where* a response drifts.
 
         Runs the transformer steps in token mode (`transform_tokens`, falling back to

@@ -135,7 +135,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         tags.input_tags.three_d_array = True
         return tags
 
-    def validate(self, X, *, reset: bool = False) -> np.ndarray:  # noqa: N803
+    def validate(self, X, *, reset: bool = False) -> np.ndarray:  # ruff: ignore[invalid-argument-name]
         """`X` as a float `(n, tokens, width)` array, cut to the first `k` ranks.
 
         A 3-D input is the parser's cube: NaN is the padding marker and passes, `inf` is no
@@ -205,7 +205,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         """
         if callable(self.reduction):
             msg = "Feature names are unknown for a custom reduction callable; only 'epr' and 'wepr' are named."
-            raise ValueError(msg)  # noqa: TRY004
+            raise ValueError(msg)  # ruff: ignore[type-check-without-type-error]
         if input_features is not None and self.k is not None and len(input_features) != self.k:
             msg = f"input_features has {len(input_features)} entries but the step reads k={self.k} candidates."
             raise ValueError(msg)
@@ -223,7 +223,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         return np.array([f"wepr_{branch}_{rank}" for branch in ("mean", "max") for rank in ranks], dtype=object)
 
     @_fit_context(prefer_skip_nested_validation=True)
-    def fit(self, X, y=None) -> "EntropyTransformer":  # noqa: ARG002, N803 — y unused but required by the sklearn fit signature
+    def fit(self, X, y=None) -> "EntropyTransformer":  # ruff: ignore[unused-method-argument, invalid-argument-name] — y unused but required by the sklearn fit signature
         """Learns nothing; a 2-D table is validated so its width and column names are recorded.
 
         Parameters
@@ -261,7 +261,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         msg = f"Invalid reduction: {self.reduction!r}. Expected 'epr', 'wepr', or a callable."
         raise ValueError(msg)
 
-    def transform(self, X: np.ndarray) -> np.ndarray:  # noqa: N803
+    def transform(self, X: np.ndarray) -> np.ndarray:  # ruff: ignore[invalid-argument-name]
         """Reduce each sequence to one feature row.
 
         A sequence with no tokens has no entropy to measure. Its features are set to zero,
@@ -302,7 +302,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         features[empty] = 0.0  # zero features → classifier returns baseline
         return features
 
-    def transform_tokens(self, X: np.ndarray) -> np.ndarray:  # noqa: N803
+    def transform_tokens(self, X: np.ndarray) -> np.ndarray:  # ruff: ignore[invalid-argument-name]
         """Reduce each token separately, keeping the token axis.
 
         Applies the same reduction over a one-token window per position, so token features

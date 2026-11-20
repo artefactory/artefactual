@@ -57,7 +57,7 @@ import numpy as np
 from artefactual import WEPR, WEPRClassifier
 
 rng = np.random.default_rng(0)
-logprobs = -rng.exponential(size=(40, 15)).cumsum(axis=1)   # 40 one-token rows, 15 ranks
+logprobs = -rng.exponential(size=(40, 15)).cumsum(axis=1)  # 40 one-token rows, 15 ranks
 y = rng.integers(0, 2, size=40)
 
 classifier = WEPRClassifier().fit(logprobs, y)
@@ -129,9 +129,7 @@ Sample weights reach the logistic regression through the pipeline's own prefix:
 weights = np.linspace(1.0, 2.0, len(labels))
 WEPR().fit(responses, labels, classifier__sample_weight=weights)
 
-GridSearchCV(WEPR(), {"classifier__C": [0.1, 1.0]}, cv=3).fit(
-    responses, labels, classifier__sample_weight=weights
-)
+GridSearchCV(WEPR(), {"classifier__C": [0.1, 1.0]}, cv=3).fit(responses, labels, classifier__sample_weight=weights)
 ```
 
 ## Feature names and DataFrame output

@@ -83,17 +83,17 @@ where their `custom_id` can still be reported.
 ```python
 from artefactual.preprocessing import Judgment, index_by_custom_id, read_batch, read_judgment, read_message
 
-rows = read_batch("responses.jsonl")     # validates each line; refuses a repeated custom_id
+rows = read_batch("responses.jsonl")  # validates each line; refuses a repeated custom_id
 for row in rows:
-    if row.failure:                      # why this line carries no completion, or None
+    if row.failure:  # why this line carries no completion, or None
         print(f"dropped {row.custom_id}: {row.failure}")
 
-responses = index_by_custom_id(rows)     # the lines that carry a completion, keyed to join on
-read_message(row.completion)             # what the model said, or None
-read_judgment(row.completion)            # a judge's True / False verdict, or None
-Judgment.from_completion(row.completion) # the verdict and the explanation, or None
-Judgment.from_text(reply)                # the same, from the reply text
-verdicts = Judgment.from_batch(rows)     # one per row, in row order, None where unreadable
+responses = index_by_custom_id(rows)  # the lines that carry a completion, keyed to join on
+read_message(row.completion)  # what the model said, or None
+read_judgment(row.completion)  # a judge's True / False verdict, or None
+Judgment.from_completion(row.completion)  # the verdict and the explanation, or None
+Judgment.from_text(reply)  # the same, from the reply text
+verdicts = Judgment.from_batch(rows)  # one per row, in row order, None where unreadable
 ```
 
 `Judgment` is also the schema the judge prompt asks for, `{"judgment": true|false,
@@ -116,7 +116,7 @@ from artefactual.preprocessing.response_models import LogprobsMixin
 
 payload = LogprobsMixin.parse(row.model_dump())  # a completion, a Responses payload or a batch line
 # ChatCompletion.parse and ResponsesPayload.parse accept their own format only
-payload.top_logprobs()      # per sequence: {token position: candidate logprobs, highest first}
+payload.top_logprobs()  # per sequence: {token position: candidate logprobs, highest first}
 payload.sampled_logprobs()  # per sequence: the sampled tokens' logprobs, as a 1-D array
 ```
 

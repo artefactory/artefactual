@@ -47,7 +47,7 @@ No network, no API key and no GPU: every cell runs on the committed fixtures.
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-import subprocess  # noqa: S404
+import subprocess  # ruff: ignore[suspicious-subprocess-import]
 import sys
 import urllib.request
 
@@ -68,9 +68,9 @@ FETCH = [
 ]
 
 if ON_COLAB:
-    subprocess.run([sys.executable, "-m", "pip", "install", "-q", *PACKAGES], check=True)  # noqa: S603
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", *PACKAGES], check=True)  # ruff: ignore[subprocess-without-shell-equals-true]
     for url in FETCH:
-        urllib.request.urlretrieve(url, url.rsplit("/", 1)[-1])  # noqa: S310
+        urllib.request.urlretrieve(url, url.rsplit("/", 1)[-1])  # ruff: ignore[suspicious-url-open-usage]
 
 try:
     from myst_nb import glue

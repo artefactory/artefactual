@@ -48,7 +48,7 @@ class LogProbParser(TransformerMixin, BaseEstimator, auto_wrap_output_keys=None)
     def __init__(self, k: int | None = None) -> None:
         self.k = k
 
-    def set_output(self, *, transform: str | None = None) -> "LogProbParser":  # noqa: ARG002 — accepted so `Pipeline.set_output` can reach the steps after it
+    def set_output(self, *, transform: str | None = None) -> "LogProbParser":  # ruff: ignore[unused-method-argument] — accepted so `Pipeline.set_output` can reach the steps after it
         """Accepted and ignored: the `(n, tokens, k)` cube has no table form to convert to.
 
         Output wrapping is off for this step. `Pipeline.set_output` calls every step, and the
@@ -91,7 +91,7 @@ class LogProbParser(TransformerMixin, BaseEstimator, auto_wrap_output_keys=None)
             raise ValueError(msg)
         return np.array([f"rank{i}" for i in range(self.k)], dtype=object)
 
-    def fit(self, X, y=None) -> "LogProbParser":  # noqa: ARG002, N803 — X / y unused but required by the sklearn fit signature
+    def fit(self, X, y=None) -> "LogProbParser":  # ruff: ignore[unused-method-argument, invalid-argument-name] — X / y unused but required by the sklearn fit signature
         """No-op, present so the step composes in a `Pipeline`.
 
         Parameters
@@ -107,7 +107,7 @@ class LogProbParser(TransformerMixin, BaseEstimator, auto_wrap_output_keys=None)
         """
         return self
 
-    def transform(self, X: list) -> np.ndarray:  # noqa: N803
+    def transform(self, X: list) -> np.ndarray:  # ruff: ignore[complex-structure, invalid-argument-name] — one pass of validation checks, kept in order
         """Parse responses into a NaN-padded logprob array.
 
         Parameters
