@@ -16,13 +16,13 @@ from sklearn.utils.multiclass import check_classification_targets, type_of_targe
 from sklearn.utils.validation import check_is_fitted, column_or_1d
 
 from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
-from artefactual.utils.io import EstimatorPersistenceMixin, Reduction
+from artefactual.utils.io import PretrainedMixin, Reduction, SavePretrainedMixin
 
 # Every published detector was fit at 15 candidates per token.
 DEFAULT_K = 15
 
 
-class BaseEntropyClassifier(Pipeline, EstimatorPersistenceMixin):
+class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
     """An `entropy -> classifier` pipeline returning P(hallucination) from logprobs.
 
     A scikit-learn `Pipeline`, so `predict`, `predict_proba`, `fit`, `get_params` and

@@ -164,7 +164,7 @@ def write_json(directory, name, payload):
 # --- estimators on disk --------------------------------------------------------------
 #
 # Detectors are built and written here rather than fetched, so every test names a path.
-# That is the whole reason these tests stay offline: `cached_file` returns a local
+# That is the whole reason these tests stay offline: `PretrainedMixin.cached_file` returns a local
 # file without consulting the Hub, so no test crosses the network seam and none has to be
 # skipped, mocked, or given credentials for a private repository.
 
@@ -189,6 +189,21 @@ def write_estimator(directory, name, estimator):
     path = Path(directory) / name
     sio.dump(estimator, path)
     return path
+
+
+def cached_repo(cache_dir, repo_id, revision, commit, estimator=None):
+    """A Hub cache holding `model.skops` for `revision`, laid out as the client writes it.
+
+    Read with the client switched to cache-only, this is a published repository the
+    loader resolves for real, without a network.
+    """
+    root = Path(cache_dir) / ("models--" + repo_id.replace("/", "--"))
+    snapshot = root / "snapshots" / commit
+    snapshot.mkdir(parents=True)
+    (root / "refs").mkdir()
+    (root / "refs" / revision).write_text(commit)
+    write_estimator(snapshot, "model.skops", fitted_logistic(0.0, [1.0]) if estimator is None else estimator)
+    return snapshot / "model.skops"
 
 
 @st.composite

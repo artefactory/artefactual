@@ -74,37 +74,27 @@ def test_the_notebook_parses(name):
 
 @pytest.fixture
 def _detectors_resolve_locally(monkeypatch, tmp_path):
-    """Resolve a published detector name to an estimator written here, not fetched.
+    """Publish the detectors the notebooks name into a Hub cache, and read it offline.
 
     The notebooks name a Hugging Face repository, which is what a reader should copy, so
     running them as written reaches the network -- and a runner blip then fails a build
-    that has nothing to do with the Hub. Only the resolution step is replaced: the
-    notebook's own code, `load_file`, and the whole pipeline still run for real.
+    that has nothing to do with the Hub. Each repository they name is written under
+    `tmp_path` as the Hub client lays out its cache, and the client is switched to
+    cache-only: the notebook's own code, the resolver, the reader and the whole pipeline
+    still run for real, on files that exist.
 
     The width follows the reduction the repository name starts with, because that is
     what the classifier is checked against: EPR pools to a single coefficient, WEPR
     keeps `2k`.
     """
-    import skops.io as sio
-    from conftest import fitted_logistic
+    from conftest import cached_repo, fitted_logistic
+    from huggingface_hub import constants
 
-    from artefactual.scoring.base_detector import BaseDetector
-
-    def resolve(identifier, *_args, **_kwargs):
-        # A local path resolves to itself. train_wepr saves weights and loads them straight
-        # back, and standing in for that too would have the notebook reload this stub
-        # instead of the file it just wrote -- so the one cell that claims saved weights
-        # reload like published ones would never test it.
-        if (local := BaseDetector.local_estimator(identifier)) is not None:
-            return local
-        reduction = PurePath(str(identifier)).name.split("-")[0]
-        n_features = 1 if reduction == "epr" else 2 * 15
-        path = tmp_path / f"{n_features}.skops"
-        if not path.exists():
-            sio.dump(fitted_logistic(-0.5, [0.1] * n_features), path)
-        return path
-
-    monkeypatch.setattr(BaseDetector, "cached_file", staticmethod(resolve))
+    for repo_id in ("artefactory/epr-ministral", "artefactory/wepr-falcon3"):
+        n_features = 1 if PurePath(repo_id).name.startswith("epr") else 2 * 15
+        cached_repo(tmp_path, repo_id, "main", "d" * 40, fitted_logistic(-0.5, [0.1] * n_features))
+    monkeypatch.setattr(constants, "HF_HUB_CACHE", str(tmp_path))
+    monkeypatch.setattr(constants, "HF_HUB_OFFLINE", True)
 
 
 @pytest.mark.parametrize("name", OFFLINE_NOTEBOOKS)
