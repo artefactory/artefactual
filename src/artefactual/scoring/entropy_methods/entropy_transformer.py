@@ -3,13 +3,14 @@
 import warnings
 from collections.abc import Callable
 from numbers import Integral
-from typing import ClassVar
+from typing import Any, ClassVar
 
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin, _fit_context
+from sklearn.exceptions import NotFittedError
 from sklearn.utils import Tags
 from sklearn.utils._param_validation import Interval
-from sklearn.utils.validation import _check_feature_names_in, check_array, validate_data
+from sklearn.utils.validation import _check_feature_names_in, check_array, check_is_fitted, validate_data
 
 from artefactual.exceptions import EmptySequenceWarning
 from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin
@@ -17,6 +18,15 @@ from artefactual.scoring.entropy_methods.pooling import Pooling, as_pooling, epr
 
 # The reductions live in `pooling`; they stay importable from here.
 __all__ = ["EntropyTransformer", "epr_reduction", "wepr_reduction"]
+
+
+def fitted_width(step: Any) -> int | None:  # Any: `n_features_in_` is set by fit, so no estimator type declares it
+    """The width `step` was fitted on, or `None` before it was fitted."""
+    try:
+        check_is_fitted(step, "n_features_in_")
+    except NotFittedError:
+        return None
+    return step.n_features_in_
 
 
 # Base order is significant. `__sklearn_tags__` resolves through `super()`, so
@@ -108,8 +118,8 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         X : array-like
             A 3-D cube or a 2-D table of per-rank logprobs.
         reset : bool, default=False
-            Record the width and column names of a 2-D table, as `fit` does, instead of
-            checking them against the recorded ones. Ignored for a cube.
+            Record the width (and, for a table, the column names), as `fit` does, instead of
+            checking them against the recorded ones.
 
         Returns
         -------
@@ -120,7 +130,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         ------
         ValueError
             If a cube holds infinity, or a table is not numeric 2-D or disagrees with the
-            fitted width or column names.
+            fitted width or column names, or a cube's last dimension differs from the fitted width.
         """
         if np.asarray(X).ndim == 3:  # not np.ndim: an array-like that only defines `__array__` is refused by it
             cube = check_array(
@@ -132,6 +142,12 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
                 ensure_min_samples=0,
                 ensure_min_features=0,
             )
+            if reset:
+                self.n_features_in_ = cube.shape[-1]  # the width a table records, so names read one attribute
+                vars(self).pop("feature_names_in_", None)  # a cube has no column names: drop an earlier table's
+            elif cube.size and (fitted := fitted_width(self)) is not None and cube.shape[-1] != fitted:
+                msg = f"X has {cube.shape[-1]} features, but {type(self).__name__} is expecting {fitted} features."
+                raise ValueError(msg)
         else:
             cube = validate_data(self, X, reset=reset, dtype=np.float64)[:, None, :]
         return cube if self.k is None else cube[..., : self.k]
@@ -142,10 +158,12 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         Parameters
         ----------
         input_features : array-like of str, default=None
-            Names of the rank columns the step reads, as the parser names them
-            (`rank0`, ...); its length must equal `k` when `k` is set, and it must equal
-            the column names the step was fitted on, if any. Without it the names are
-            the fitted table's columns (the first `k`), or come from `k`.
+            Names of the rank columns, as the parser names them (`rank0`, ...): one per
+            column the step was fitted on, of which the first `k` name the features, or `k`
+            of them before a fit when `k` is set. They must equal the column names the step
+            was fitted on, if any. Without it the names are the fitted table's columns (the
+            first `k`), or come from `k`, cut to the width of the table the step was fitted on
+            when that is narrower.
 
         Returns
         -------
@@ -159,22 +177,27 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         Raises
         ------
         ValueError
-            If `input_features` does not have `k`
-            entries or disagrees with the fitted column names; if the pooling's width
+            If `input_features` does not have one entry per column fitted on (`k` before a
+            fit) or disagrees with the fitted column names; if the pooling's width
             depends on `k` and none of `k`, `input_features` or fitted column names is
             available; or if its feature names do not match its width.
         TypeError
             If `pooling` is neither a `Pooling` nor callable.
         """
         pooling = self.applied_pooling()
-        if input_features is not None and self.k is not None and len(input_features) != self.k:
-            msg = f"input_features has {len(input_features)} entries but the step reads k={self.k} candidates."
+        fitted = fitted_width(self)
+        # A fitted step reads `k` ranks of the width it was fitted on (all of them when `k`
+        # is None), since narrower input is used as it is; an unfitted one reads `k`.
+        width = self.k if fitted is None else fitted if self.k is None else min(self.k, fitted)
+        # A fitted step's `input_features` are checked against the columns it was fitted on, just below.
+        if input_features is not None and fitted is None and width is not None and len(input_features) != width:
+            msg = f"input_features has {len(input_features)} entries but the step reads {width} candidates."
             raise ValueError(msg)
         names = _check_feature_names_in(self, input_features, generate_names=False)
         if names is not None:
-            ranks = [str(name) for name in names[: self.k]]
-        elif self.k is not None:
-            ranks = [f"rank{i}" for i in range(self.k)]
+            ranks = [str(name) for name in names[:width]]
+        elif width is not None:
+            ranks = [f"rank{i}" for i in range(width)]
         else:
             ranks = []
         if not ranks:
@@ -199,13 +222,13 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
 
     @_fit_context(prefer_skip_nested_validation=True)
     def fit(self, X, y=None) -> "EntropyTransformer":  # ruff: ignore[unused-method-argument, invalid-argument-name] — y unused but required by the sklearn fit signature
-        """Learns nothing; a 2-D table is validated so its width and column names are recorded.
+        """Learns nothing; the input is validated so its width and column names are recorded.
 
         Parameters
         ----------
-        X : array-like, default=None
-            A 3-D cube is only validated; a 2-D table sets `n_features_in_` and
-            `feature_names_in_`. `None` is accepted, and fits nothing.
+        X : array-like or None
+            A 3-D cube sets `n_features_in_`, its last dimension; a 2-D table sets it too,
+            and `feature_names_in_` when its columns are named. `None` fits nothing.
         y : array-like, default=None
             Ignored.
 

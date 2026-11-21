@@ -21,6 +21,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from artefactual.scoring import EPR, WEPR, EPRClassifier, WEPRClassifier
+from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
 from artefactual.scoring.entropy_methods.pooling import EPRPooling, WEPRPooling
 
 EXAMPLES = Path(__file__).parent.parent / "docs" / "examples"
@@ -358,6 +359,88 @@ def test_wepr_names_mean_then_max_per_rank(cls):
 
 def test_the_entropy_step_names_its_features_from_k_alone():
     assert len(entropy_slice(WEPR(k=K)).get_feature_names_out()) == 2 * K
+
+
+@pytest.mark.parametrize("pooling", [EPRPooling(), WEPRPooling()], ids=["EPR", "WEPR"])
+def test_the_names_of_a_narrow_table_match_the_columns_it_produces(pooling):
+    """Names follow the fitted width, not `k`, for a table narrower than `k`."""
+    step = EntropyTransformer(pooling=pooling, k=K).fit(table(n=6, width=3)[0])
+    features = step.transform(table(n=6, width=3)[0])
+    assert len(step.get_feature_names_out()) == features.shape[1]
+    assert len(step.set_output(transform="pandas").transform(table(n=6, width=3)[0]).columns) == features.shape[1]
+
+
+def test_the_names_of_a_narrow_wepr_table_are_those_of_its_own_ranks():
+    step = EntropyTransformer(pooling=WEPRPooling(), k=K).fit(table(n=6, width=3)[0])
+    expected = [f"wepr_{b}_rank{i}" for b in ("mean", "max") for i in range(3)]
+    assert list(step.get_feature_names_out()) == expected
+
+
+def test_a_refit_on_a_cube_names_the_cube_width_not_the_stale_table_width():
+    step = EntropyTransformer(pooling=WEPRPooling(), k=K).fit(table(n=6, width=3)[0])
+    assert len(step.get_feature_names_out()) == 6
+    step.fit(-np.ones((2, 4, K)))
+    assert len(step.get_feature_names_out()) == 2 * K
+
+
+def test_a_refit_on_a_cube_forgets_the_column_names_of_the_table():
+    frame = pd.DataFrame(table(n=6, width=3)[0], columns=list("abc"))
+    step = EntropyTransformer(pooling=WEPRPooling(), k=3).fit(frame).fit(-np.ones((2, 4, 3)))
+    assert not hasattr(step, "feature_names_in_")
+    assert list(step.get_feature_names_out()) == [f"wepr_{b}_rank{i}" for b in ("mean", "max") for i in range(3)]
+
+
+def test_input_features_of_a_table_wider_than_k_name_its_first_k_columns():
+    step = EntropyTransformer(pooling=WEPRPooling(), k=2).fit(table(n=6, width=4)[0])
+    assert step.get_feature_names_out(list("abcd")).tolist() == [f"wepr_{b}_{r}" for b in ("mean", "max") for r in "ab"]
+    with pytest.raises(ValueError, match="input_features"):
+        step.get_feature_names_out(list("ab"))
+
+
+def test_input_features_are_checked_against_the_fitted_width_when_narrower_than_k():
+    step = EntropyTransformer(pooling=WEPRPooling(), k=K).fit(table(n=6, width=3)[0])
+    assert step.get_feature_names_out(["a", "b", "c"]).tolist() == [
+        f"wepr_{b}_{r}" for b in ("mean", "max") for r in "abc"
+    ]
+    with pytest.raises(ValueError, match="input_features"):
+        step.get_feature_names_out([f"r{i}" for i in range(K)])
+
+
+def test_a_narrow_named_frame_names_the_columns_it_produces():
+    frame = pd.DataFrame(table(n=6, width=3)[0], columns=list("abc"))
+    step = EntropyTransformer(pooling=WEPRPooling(), k=K).fit(frame).set_output(transform="pandas")
+    assert list(step.transform(frame).columns) == list(step.get_feature_names_out())
+
+
+@pytest.mark.parametrize(("fitted", "given"), [(3, K), (K, 3)], ids=["wider", "narrower"])
+def test_a_cube_of_another_width_than_the_fit_is_refused_at_transform(fitted, given):
+    step = EntropyTransformer(pooling=WEPRPooling(), k=K).fit(-np.ones((2, 4, fitted)))
+    with pytest.raises(ValueError, match=rf"X has {given} features, but EntropyTransformer is expecting {fitted}"):
+        step.transform(-np.ones((2, 4, given)))
+
+
+def test_an_empty_cube_is_not_refused_by_a_fitted_width():
+    step = EntropyTransformer(pooling=WEPRPooling(), k=K).fit(-np.ones((2, 4, K)))
+    assert step.validate(np.empty((0, 0, 0))).shape == (0, 0, 0)
+
+
+def test_a_cube_fit_with_no_k_names_every_rank_it_was_fitted_on():
+    step = EntropyTransformer(pooling=WEPRPooling(), k=None).fit(-np.ones((2, 4, 3)))
+    assert len(step.get_feature_names_out()) == 6
+
+
+def test_the_names_agree_with_the_coefficients_a_classifier_of_that_k_holds():
+    """A pretrained file holds an unnamed `LogisticRegression`, so names are checked by count and order.
+
+    Columns reach the classifier in the order of the names, so a coefficient position
+    means the rank-wise feature named at that position.
+    """
+    x, y = table(width=5)
+    classifier = WEPRClassifier(k=5).fit(x, y)
+    names = classifier[:-1].get_feature_names_out()
+    assert len(names) == classifier[-1].coef_.shape[1]
+    features = classifier[:-1].set_output(transform="pandas").transform(x)
+    assert list(features.columns) == list(names)
 
 
 def test_input_features_must_match_k():
