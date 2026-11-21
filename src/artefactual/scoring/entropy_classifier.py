@@ -72,8 +72,8 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
         The class labels, sorted; column `i` of `predict_proba` is class `classes_[i]`.
         Available once fitted.
     n_features_in_ : int
-        Width of the table fitted on. Only set after fitting on a 2-D table; reading it
-        earlier, or after fitting on a 3-D array, raises `AttributeError`.
+        Width of the table, or last dimension of the 3-D array, fitted on. Reading it
+        before fitting raises `AttributeError`.
     feature_names_in_ : ndarray of str
         Column names of a table fitted on, when they are all strings.
     named_steps : Bunch
@@ -490,7 +490,7 @@ class EPRClassifier(BaseEntropyClassifier):
     classes_ : ndarray of shape (2,)
         The class labels, sorted. Available once fitted.
     n_features_in_ : int
-        Width of the table fitted on; only set after fitting on a 2-D table.
+        Width of the table, or last dimension of the 3-D array, fitted on.
     named_steps : Bunch
         The steps by name: `"entropy"` and `"classifier"`.
     steps : list of (str, estimator)
@@ -541,7 +541,7 @@ class WEPRClassifier(BaseEntropyClassifier):
     classes_ : ndarray of shape (2,)
         The class labels, sorted. Available once fitted.
     n_features_in_ : int
-        Width of the table fitted on; only set after fitting on a 2-D table.
+        Width of the table, or last dimension of the 3-D array, fitted on.
     named_steps : Bunch
         The steps by name: `"entropy"` and `"classifier"`.
     steps : list of (str, estimator)
