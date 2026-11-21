@@ -42,10 +42,7 @@ estimators without the parser.
 - **`classes_` is sorted.** `predict_proba` columns follow it, so column 1 is the
   hallucination class only for `0`/`1` labels; see
   [Which column is the hallucination class](#which-column-is-the-hallucination-class).
-- **One expected failure, `check_estimators_overwrite_params`.** A `Pipeline` fits its steps
-  in place, and the check reads that as the constructor parameters being overwritten. The
-  classifiers inherit this from `Pipeline`, which scikit-learn lists as an expected failure
-  too.
+- **Targets are binary.** A multi-class `y` raises `ValueError` at `fit`.
 
 ## Two kinds of input
 
@@ -59,12 +56,8 @@ The two pairs of estimators differ in what `fit`, `predict`, `predict_proba` and
 - **Logprob arrays**, for `EPRClassifier` and `WEPRClassifier`: a
   `(n_sequences, n_tokens, width)` array, `NaN`-padded, or a numeric 2-D table, in which
   each row is a one-token sequence and each column that token's logprob at one rank. Ranks
-  beyond `k` are dropped, the least likely candidates first, so one wide array serves a
-  search over `k`. A narrower input is used as it is. This is the form the estimator checks
-  use, and it lets the estimator sit behind tools that only know arrays. The array path
-  expects log-probabilities (at most 0) but does not check the sign, because
-  `check_estimator` feeds arbitrary floats; responses are validated, tables are not. A 2-D
-  object table is read as numbers.
+  beyond `k` are dropped, so one wide array serves a search over `k`. Responses are
+  validated; tables are not.
 
 ```python
 import json
@@ -129,16 +122,7 @@ search = GridSearchCV(
 search.best_params_
 ```
 
-`k` is the parameter to sweep: setting it reaches the parser and the entropy step. Setting
-`parser__k` alone leaves the entropy step at its old `k`, so the feature names no longer
-match the features. A `k` below the width of the responses (the candidates per token they carry) drops the
-surplus candidates. Above it, the parser refuses the responses, since the missing
-candidates were never fetched.
-
-Setting both the estimator and one of its parameters in one grid fails exactly as it does
-for scikit-learn's `Pipeline`: `set_params(estimator=None, estimator__C=...)` sets the
-parameter before the step exists. Use an estimator instance in grids that set both, for
-example `{"estimator": [LogisticRegression(C=1.0)], ...}`.
+`k` is the parameter to sweep: setting it reaches the parser and the entropy step.
 
 Sample weights reach the logistic regression through the pipeline's own prefix:
 
