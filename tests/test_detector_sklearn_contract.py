@@ -249,6 +249,16 @@ def test_fit_leaves_the_response_untouched(cls):
 
 
 @pytest.mark.parametrize("cls", DETECTORS, ids=IDS)
+def test_repeated_fit_and_predict_give_identical_results(cls):
+    detector = cls(k=15).fit(RESPONSES, LABELS)
+    first = detector.predict_proba(RESPONSES)
+    np.testing.assert_array_equal(detector.predict_proba(RESPONSES), first)
+    refitted = detector.fit(RESPONSES, LABELS)
+    np.testing.assert_array_equal(refitted.predict_proba(RESPONSES), first)
+    np.testing.assert_array_equal(cls(k=15).fit(RESPONSES, LABELS).predict_proba(RESPONSES), first)
+
+
+@pytest.mark.parametrize("cls", DETECTORS, ids=IDS)
 def test_a_clone_and_the_split_pipeline_score_like_the_detector(cls):
     detector = cls(k=15).fit(RESPONSES, LABELS)
     expected = detector.predict_proba(RESPONSES)
