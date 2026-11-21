@@ -417,7 +417,8 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
         Returns
         -------
         ndarray of shape (n_sequences, max_tokens, 1)
-            Probability of class 1 per token, NaN at padded positions.
+            Probability of class 1 per token, NaN at padded positions; all NaN, and
+            `(0, 0, 1)` for an empty batch, when no token is real.
 
         Raises
         ------
@@ -454,7 +455,8 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
 
         classifier = self.steps[-1][1]
         flat_scores = np.full(n_samples * max_tokens, np.nan)
-        flat_scores[non_padded] = classifier.predict_proba(flat_features[non_padded])[:, 1]
+        if non_padded.any():  # the classifier refuses zero rows, which an empty or fully padded batch gives
+            flat_scores[non_padded] = classifier.predict_proba(flat_features[non_padded])[:, 1]
 
         return flat_scores.reshape(n_samples, max_tokens, 1)
 
