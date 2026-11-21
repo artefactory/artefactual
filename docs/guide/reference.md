@@ -5,9 +5,8 @@ and the inputs the parser accepts.
 
 ## The `k` parameter
 
-`k` is how many **candidates** per token are read — the tokens the model considered at that
-position. A candidate's **rank** is its place in that list, counted from 0 for the most
-likely, so `k` is also the width of the rank axis. It has no default: pass the `k` the weights were
+`k` is how many candidates per token are read, so it is also the width of the rank axis
+(candidate and rank are defined in {doc}`how-it-works`). It has no default: pass the `k` the weights were
 trained at (**15** for every shipped file; the rule is in {doc}`scoring`).
 
 ```python

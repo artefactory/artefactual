@@ -1,7 +1,7 @@
 # How it works
 
-Each detector is a three-step scikit-learn pipeline, and a scikit-learn classifier that
-passes the library's own estimator checks ({doc}`sklearn`):
+A **detector** is a fitted `EPR` or `WEPR` estimator: a three-step scikit-learn pipeline, and
+a scikit-learn classifier that passes the library's own estimator checks ({doc}`sklearn`):
 
 ```{mermaid}
 flowchart LR
@@ -26,12 +26,11 @@ refused, since scoring logprobs you already hold is what `EPRClassifier` and
 reshaped to `(n, 1, width)`.
 
 Two words for that last axis, and they are not the same thing. At every token position the
-caller asks the endpoint for the `k` most likely **candidates** with `top_logprobs=k` — the
-tokens the model considered. A candidate's **rank** is its position in that list, counted
-from 0 as the code counts it: rank 0 is what the model was most sure of, rank 14 the least
-when `k` is 15. So a candidate is a token, a rank is a slot, and `k` is how many slots there
-are. EPR pools all of them into one number; WEPR fits
-one coefficient per rank, which is why it can weight the informative slots over the rest.
+caller asks the endpoint for the `k` most likely **candidates** with `top_logprobs=k`: a
+candidate is a token offered at that position. A candidate's **rank** is its place among
+those `k`, counted from 0 as the code counts it: rank 0 is the most likely, rank 14 the
+least when `k` is 15. EPR pools all the candidates into one number; WEPR fits one
+coefficient per rank, which is why it can weight the informative ranks over the rest.
 
 ## Measure
 

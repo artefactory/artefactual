@@ -101,9 +101,8 @@ if ON_COLAB:
 Every knob in one place. `MODEL` has no default: a model id only means something to the
 endpoint serving it, and a wrong one fails on every generation request rather than here.
 
-`K` is how many **candidates** per token the endpoint is asked for — the tokens the model
-considered at that position. A candidate's **rank** is its place in that list, most likely
-first. The rule for `K` is in {doc}`../guide/scoring`.
+`K` is how many candidates per token the endpoint is asked for (candidate and rank are
+defined in {doc}`../guide/how-it-works`). The rule for `K` is in {doc}`../guide/scoring`.
 
 ```{code-cell} ipython3
 import getpass

@@ -134,9 +134,8 @@ print(f"{len(generated)} responses, {len(labelled)} judged, {sum(labels)} halluc
 A detector is a scikit-learn `Pipeline`, and running its steps separately shows what each
 one contributes.
 
-The endpoint returns, at every token position, the `k` most likely **candidates** — the
-tokens the model considered. A candidate's **rank** is its place in that list, counted from 0 with
-the most likely first. So a candidate is a token and a rank is a slot, and `k` is how many slots there are.
+The endpoint returns, at every token position, the `k` most likely candidates, each with a
+rank (see {doc}`../guide/how-it-works`).
 
 `LogProbParser` turns the batch lines into `(responses, tokens, ranks)` — it opens the Batch
 envelope itself, so the lines go in as they were read. The array is NaN-padded, because
