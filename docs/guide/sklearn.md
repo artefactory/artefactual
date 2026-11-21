@@ -66,11 +66,13 @@ import numpy as np
 
 from artefactual import WEPR, WEPRClassifier
 
+K = 15  # the k the published detectors were trained with
+
 rng = np.random.default_rng(0)
 logprobs = -rng.exponential(size=(40, 15)).cumsum(axis=1)  # 40 one-token rows, 15 ranks
 y = rng.integers(0, 2, size=40)
 
-classifier = WEPRClassifier(k=15).fit(logprobs, y)
+classifier = WEPRClassifier(k=K).fit(logprobs, y)
 classifier.predict_proba(logprobs)[:3, 1]
 ```
 
@@ -87,7 +89,7 @@ RESPONSES = json.load(open(path))["responses"]
 responses = RESPONSES * 10
 labels = np.array([0, 1] * 10)
 
-detector = WEPR(k=15).fit(responses, labels)
+detector = WEPR(k=K).fit(responses, labels)
 detector.predict_proba(RESPONSES)[:, 1]
 ```
 
@@ -112,10 +114,10 @@ are named `parser`, `entropy` and `classifier`. A classifier has the last two:
 ```python
 from sklearn.model_selection import GridSearchCV, cross_val_score
 
-cross_val_score(WEPR(k=15), responses, labels, cv=3)
+cross_val_score(WEPR(k=K), responses, labels, cv=3)
 
 search = GridSearchCV(
-    WEPR(k=15),
+    WEPR(k=K),
     {"k": [5, 10, 15], "classifier__C": [0.1, 1.0, 10.0]},
     cv=3,
 ).fit(responses, labels)
@@ -128,9 +130,9 @@ Sample weights reach the logistic regression through the pipeline's own prefix:
 
 ```python
 weights = np.linspace(1.0, 2.0, len(labels))
-WEPR(k=15).fit(responses, labels, classifier__sample_weight=weights)
+WEPR(k=K).fit(responses, labels, classifier__sample_weight=weights)
 
-GridSearchCV(WEPR(k=15), {"classifier__C": [0.1, 1.0]}, cv=3).fit(responses, labels, classifier__sample_weight=weights)
+GridSearchCV(WEPR(k=K), {"classifier__C": [0.1, 1.0]}, cv=3).fit(responses, labels, classifier__sample_weight=weights)
 ```
 
 ## Feature names and DataFrame output
@@ -160,7 +162,7 @@ Hugging Face repository id ({doc}`reference` has the file layout):
 
 ```python
 saved = detector.save_pretrained("my_detector.skops")
-again = WEPR.from_pretrained(saved, k=15)
+again = WEPR.from_pretrained(saved, k=K)
 ```
 
 Dumping the whole detector with `skops.io.dump` also works, but loading it names the

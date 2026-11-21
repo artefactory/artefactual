@@ -50,7 +50,8 @@ reads them from the local cache afterwards:
 ```python
 from artefactual import WEPR
 
-detector = WEPR.from_pretrained("artefactory/wepr-ministral", k=15)
+K = 15  # the k the published detectors were trained with
+detector = WEPR.from_pretrained("artefactory/wepr-ministral", k=K)
 detector.k  # 15
 ```
 

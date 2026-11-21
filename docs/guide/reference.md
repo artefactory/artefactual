@@ -11,7 +11,9 @@ likely, so `k` is also the width of the rank axis. It has no default: pass the `
 trained at (**15** for every shipped file; the rule is in {doc}`scoring`).
 
 ```python
-detector = WEPR.from_pretrained("artefactory/wepr-phi4", k=15)
+K = 15  # the k the published detectors were trained with
+
+detector = WEPR.from_pretrained("artefactory/wepr-phi4", k=K)
 ```
 
 **Responses must carry `k` candidates per token.** This is an input requirement rather than
@@ -52,7 +54,9 @@ and a narrower one is used as it is; {doc}`sklearn` has the details.
 A locally trained detector is loaded by passing a path instead of a name:
 
 ```python
-detector = WEPR.from_pretrained("/path/to/my_detector.skops", k=15)
+K = 15  # the k the published detectors were trained with
+
+detector = WEPR.from_pretrained("/path/to/my_detector.skops", k=K)
 ```
 
 `save_pretrained` and `from_pretrained` are the entry points: the first writes the fitted
