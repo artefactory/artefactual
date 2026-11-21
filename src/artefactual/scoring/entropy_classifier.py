@@ -225,7 +225,8 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
             If `k` is missing from `kwargs`.
         ValueError
             If the estimator is not a fitted classifier with exactly two classes, or does
-            not cover exactly `k` candidates.
+            not cover exactly `k` candidates. The check compares feature widths, and `EPR`
+            has one feature at every `k`, so it cannot catch an `EPR` loaded with the wrong `k`.
         """
         try:
             check_is_fitted(estimator)
