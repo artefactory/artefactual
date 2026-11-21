@@ -44,7 +44,7 @@ and the published results. This site covers installing and using a detector in d
 - {doc}`examples/index` — runnable notebooks: EPR and WEPR scoring, and Langfuse traces
 - {doc}`api` — generated signatures
 - {doc}`changelog` — what changed in each release
-- {doc}`contributing`
+- {doc}`contributing` and {doc}`citation`
 
 ```{toctree}
 :maxdepth: 2
@@ -61,4 +61,5 @@ api
 presentations/index
 changelog
 contributing
+citation
 ```
