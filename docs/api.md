@@ -1,11 +1,12 @@
 # API reference
 
-The public surface of `artefactual`, grouped by what it is for. Detectors are built from
+The public surface of `artefactual`, grouped by role: estimators, transformers, parsing and
+utilities. Detectors are built from
 `artefactual.EPR` and `artefactual.WEPR`, which score responses, and `artefactual.EPRClassifier`
 and `artefactual.WEPRClassifier`, which score logprob arrays; `artefactual.PoolingDetector` takes any `Pooling` or pooling function; the other sections are the
 parts they are made of and the helpers around them.
 
-## Detectors
+## Estimators
 
 ```{eval-rst}
 .. currentmodule:: artefactual
@@ -20,11 +21,9 @@ parts they are made of and the helpers around them.
    EPRClassifier
    WEPRClassifier
    scoring.PoolingDetector
-   scoring.BaseDetector
-   scoring.BaseEntropyClassifier
 ```
 
-## Pipeline steps
+## Transformers
 
 ```{eval-rst}
 .. currentmodule:: artefactual
@@ -34,9 +33,7 @@ parts they are made of and the helpers around them.
    :template: autosummary/class.rst
    :nosignatures:
 
-   preprocessing.LogProbParser
    scoring.EntropyTransformer
-   scoring.EntropyContributionsMixin
 
 .. autosummary::
    :toctree: _autosummary
@@ -59,12 +56,19 @@ Subclass `scoring.Pooling` for a pooling of your own, or pass a plain function
 `f(x, axis)`; either goes to `scoring.EntropyTransformer` or `scoring.PoolingDetector`.
 ```
 
-## Reading responses
+## Parsing
 
-Readers and validated models for the response shapes the parser accepts.
+`LogProbParser`, readers and validated models for the response shapes it accepts.
 
 ```{eval-rst}
 .. currentmodule:: artefactual.preprocessing
+
+.. autosummary::
+   :toctree: _autosummary
+   :template: autosummary/class.rst
+   :nosignatures:
+
+   LogProbParser
 
 .. autosummary::
    :toctree: _autosummary
@@ -91,7 +95,24 @@ Readers and validated models for the response shapes the parser accepts.
    ResponsesPayload
 ```
 
-## Integrations
+## Utilities
+
+Base classes and mixins to build on, and the Langfuse integration.
+
+```{eval-rst}
+.. currentmodule:: artefactual
+
+.. autosummary::
+   :toctree: _autosummary
+   :template: autosummary/class.rst
+   :nosignatures:
+
+   scoring.BaseDetector
+   scoring.BaseEntropyClassifier
+   scoring.EntropyContributionsMixin
+```
+
+### Integrations
 
 Needs the `adapters` extra: `pip install "artefactual[adapters]"`.
 
@@ -106,7 +127,7 @@ Needs the `adapters` extra: `pip install "artefactual[adapters]"`.
    HallucinationEvaluator
 ```
 
-## Exceptions and warnings
+### Exceptions and warnings
 
 ```{eval-rst}
 .. currentmodule:: artefactual.exceptions
