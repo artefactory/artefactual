@@ -80,8 +80,9 @@ def median(x, axis):
     return np.nanmedian(per_token, axis=axis)
 
 
-EntropyTransformer(pooling=median, k=15)  # one feature, named "median"
-PoolingDetector(median, k=15).fit(responses, y)
+K = 15  # the k the published detectors were trained with
+EntropyTransformer(pooling=median, k=K)  # one feature, named "median"
+PoolingDetector(median, k=K).fit(responses, y)
 ```
 
 Subclass `Pooling` to name the features after the rank columns, to declare the width, or to
@@ -99,8 +100,8 @@ class RankMedian(Pooling):
         return [f"med_{r}" for r in ranks]
 
 
-EntropyTransformer(pooling=RankMedian(), k=15)
-PoolingDetector(RankMedian(), k=15)
+EntropyTransformer(pooling=RankMedian(), k=K)
+PoolingDetector(RankMedian(), k=K)
 ```
 
 Without `feature_names`, a pooling is named after itself for one feature and `name_0`,

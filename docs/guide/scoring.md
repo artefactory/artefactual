@@ -89,7 +89,9 @@ from langfuse import get_client
 from artefactual import WEPR
 from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator
 
-evaluator = HallucinationEvaluator("wepr", get_client(), WEPR.from_pretrained("artefactory/wepr-phi4", k=15))
+K = 15  # the k the published detectors were trained with
+
+evaluator = HallucinationEvaluator("wepr", get_client(), WEPR.from_pretrained("artefactory/wepr-phi4", k=K))
 evaluator.score_trace(trace_id)
 ```
 
@@ -128,7 +130,9 @@ work:
 ```python
 from sklearn.base import clone
 
-detector = WEPR.from_pretrained("artefactory/wepr-ministral", k=15)
+K = 15  # the k the published detectors were trained with
+
+detector = WEPR.from_pretrained("artefactory/wepr-ministral", k=K)
 detector.named_steps  # {'parser': ..., 'entropy': ..., 'classifier': ...}
 clone(detector)  # get_params / set_params round-trip
 ```
