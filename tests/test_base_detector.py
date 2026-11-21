@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
-from conftest import chat_payloads_of_fixed_width, fitted_logistic, write_estimator
+from conftest import chat_payloads_of_fixed_width, fitted_logistic, rank_vectors, write_estimator
 from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 
 from artefactual.scoring.base_detector import EPR, WEPR, BaseDetector
 from artefactual.scoring.entropy_methods.pooling import EPRPooling, WEPRPooling
@@ -266,3 +267,59 @@ class _ReducingTokenBlind:
 def test_a_step_that_reduces_the_token_axis_away_is_named():
     with pytest.raises(ValueError, match="declares no transform_tokens"):
         _detector(_ReducingTokenBlind()).predict_token_proba(TOKEN_FEATURES)
+
+
+# --- token padding ---------------------------------------------------------------------
+
+
+@st.composite
+def ragged_batches(draw, max_tokens=6):
+    """Payloads of `K` candidates per token whose token counts differ, from one token up."""
+    lengths = draw(st.lists(st.integers(1, max_tokens), min_size=1, max_size=4))
+    return [
+        {
+            "choices": [
+                {
+                    "logprobs": {
+                        "content": [
+                            {
+                                "top_logprobs": [
+                                    {"logprob": value} for value in draw(rank_vectors(min_ranks=K, max_ranks=K))
+                                ]
+                            }
+                            for _ in range(length)
+                        ]
+                    }
+                }
+            ]
+        }
+        for length in lengths
+    ], lengths
+
+
+@drawn
+@given(batch=ragged_batches())
+def test_token_scores_are_padded_to_the_longest_sequence_with_nan(epr_estimator_path, batch):
+    payloads, lengths = batch
+    scores = EPR.from_pretrained(epr_estimator_path, k=K).predict_token_proba(payloads)
+    assert scores.shape == (len(lengths), max(lengths), 1)
+    for row, length in zip(scores[..., 0], lengths, strict=True):
+        assert not np.isnan(row[:length]).any()
+        assert np.isnan(row[length:]).all()
+        assert np.all((row[:length] >= 0) & (row[:length] <= 1))
+
+
+@drawn
+@given(batch=ragged_batches())
+def test_padding_does_not_change_the_score_of_a_sequence(epr_estimator_path, batch):
+    """A sequence scores the same alone as inside a batch, whatever its neighbours' length."""
+    payloads, lengths = batch
+    detector = EPR.from_pretrained(epr_estimator_path, k=K)
+    together = detector.predict_token_proba(payloads)
+    for index, (payload, length) in enumerate(zip(payloads, lengths, strict=True)):
+        np.testing.assert_allclose(together[index, :length], detector.predict_token_proba(payload)[0], rtol=1e-6)
+
+
+def test_an_empty_batch_has_no_token_scores(epr_estimator_path):
+    scores = EPR.from_pretrained(epr_estimator_path, k=K).predict_token_proba([])
+    assert scores.shape[0] == 0
