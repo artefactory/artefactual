@@ -94,9 +94,14 @@ def test_transformer_declares_it_needs_no_fit():
     assert EntropyTransformer(pooling=EPRPooling(), k=None).__sklearn_tags__().requires_fit is False
 
 
-def test_transformer_declares_nan_support():
-    # it consumes the NaN padding LogProbParser emits; without this sklearn rejects the input
-    assert EntropyTransformer(pooling=EPRPooling(), k=None).__sklearn_tags__().input_tags.allow_nan is True
+def test_transformer_declares_a_table_that_refuses_nan():
+    # the tags describe the numeric table scikit-learn can synthesise; only a cube takes NaN padding
+    assert EntropyTransformer(pooling=EPRPooling(), k=None).__sklearn_tags__().input_tags.allow_nan is False
+
+
+def test_a_cube_still_takes_nan_padding_whatever_the_tags_say():
+    cube = np.array([[[-0.5, -1.5], [np.nan, np.nan]]])
+    assert EntropyTransformer(pooling=EPRPooling(), k=None).fit(cube).transform(cube).shape == (1, 1)
 
 
 def test_parser_opts_out_of_array_validation():
@@ -298,13 +303,11 @@ def test_the_transformer_tags_resolve(estimator):
     assert estimator.__sklearn_tags__().transformer_tags is not None
 
 
-def test_the_entropy_transformer_declares_three_dimensional_input():
-    # `transform` reduces the token axis and the reduction reduces the rank axis; below
-    # three dimensions the two coincide. The tag decides which arrays sklearn's own checks
-    # synthesise, and the only producer of this step's input, LogProbParser, emits
-    # (n_sequences, n_tokens, k).
+def test_the_entropy_transformer_declares_tables_and_cubes():
+    # The tags decide which arrays scikit-learn's own checks synthesise, and only a table can
+    # be fitted and scored by them; the cube `LogProbParser` emits is accepted regardless.
     tags = EntropyTransformer(pooling=EPRPooling(), k=None).__sklearn_tags__()
-    assert tags.input_tags.two_d_array is False
+    assert tags.input_tags.two_d_array is True
     assert tags.input_tags.three_d_array is True
 
 
