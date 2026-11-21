@@ -30,6 +30,8 @@ Four sections. The first costs no requests and is still the expensive one: a gol
 per question is written by someone. The two that do spend requests write their results to
 disk, so a refit never pays for them twice.
 
+**Needs / cost:** an endpoint that returns `top_logprobs` and its key (see Prerequisites); N generation requests and N judge requests, written to disk so a refit never pays twice. The fit itself takes seconds.
+
 | Section | What it does | Cost |
 |---|---|---|
 | Bring the questions | Your questions, each with a gold answer | the work: writing the gold answers |
