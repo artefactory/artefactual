@@ -2,6 +2,7 @@
 
 import warnings
 from collections.abc import Callable
+from copy import copy
 from numbers import Integral
 from typing import Any, ClassVar
 
@@ -236,9 +237,35 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         -------
         self : EntropyTransformer
         """
+        self.pooling_ = copy(self.applied_pooling())  # shallow: a wrapped callable stays the same object
         if X is not None:
             self.validate(X, reset=True)
         return self
+
+    def check_pooling_is_the_fitted_one(self) -> Pooling:
+        """The `Pooling` to apply, once it is the one the step was fitted with.
+
+        A downstream estimator is fitted on the features of the pooling in force at `fit`, and
+        `set_params` does not refit, so a swapped pooling would feed it features it was not
+        fitted on. A step that was never fitted has nothing to be held to.
+
+        Raises
+        ------
+        ValueError
+            If `pooling` differs from the one `fit` saw: refit.
+        """
+        pooling = self.applied_pooling()
+        try:
+            check_is_fitted(self, "pooling_")
+        except NotFittedError:
+            return pooling
+        if pooling != self.pooling_:
+            msg = (
+                f"EntropyTransformer was fitted with pooling={self.pooling_!r} but now has pooling={pooling!r}. "
+                "The estimators after it were fitted on the features of the former, so refit before transforming."
+            )
+            raise ValueError(msg)
+        return pooling
 
     def transform(self, X: np.ndarray) -> np.ndarray:  # ruff: ignore[invalid-argument-name]
         """Reduce each sequence to one feature row.
@@ -272,7 +299,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
             If any sequence carries no tokens.
         """
         s_kj = self.entropy_contributions(self.validate(X))
-        features = self.applied_pooling()(s_kj, 1)
+        features = self.check_pooling_is_the_fitted_one()(s_kj, 1)
         empty = np.isnan(features).all(axis=1)  # token-less sequences → all-NaN row
         if empty.any():
             warnings.warn(  # surface the degenerate input, don't pass silently
@@ -307,4 +334,4 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         """
         s_kj = self.entropy_contributions(self.validate(X))
         windows = np.expand_dims(s_kj, axis=2)  # (n, T, 1, k) — one 1-token window per token
-        return self.applied_pooling()(windows, 2)
+        return self.check_pooling_is_the_fitted_one()(windows, 2)
