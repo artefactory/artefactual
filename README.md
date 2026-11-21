@@ -28,6 +28,7 @@ from openai import OpenAI
 
 from artefactual import WEPR
 
+K = 15  # the k the published detectors were trained with: request this many top_logprobs
 MODEL = "mistralai/Ministral-8B-Instruct-2410"  # the model being scored
 DETECTOR = "artefactory/wepr-ministral"  # the detector trained for it
 
@@ -36,10 +37,10 @@ response = client.chat.completions.create(
     model=MODEL,
     messages=[{"role": "user", "content": "Who wrote the Rust book?"}],
     logprobs=True,
-    top_logprobs=15,
+    top_logprobs=K,
 )
 
-detector = WEPR.from_pretrained(DETECTOR, k=15)
+detector = WEPR.from_pretrained(DETECTOR, k=K)
 print(detector.predict_proba(response)[:, 1])  # P(hallucination) per sequence
 print(detector.predict_token_proba(response))  # ...and per token
 ```
@@ -62,12 +63,10 @@ Two conditions apply to whatever produced the response:
 
 1. **`logprobs` and `top_logprobs` are enabled.** Providers that do not expose them cannot
    be scored at all.
-2. **`top_logprobs` is at least `k`**, the width the detector's own weights were
-   trained at (candidates per token). The shipped files use `k = 15`.
+2. **`top_logprobs` equals the detector's `k`**, as set out in
+   [the k rule](https://artefactory.github.io/artefactual/guide/scoring.html#the-k-rule).
 
-Neither needs auditing in advance — a response that fails one is refused by name. Why a
-narrow response is refused rather than padded is in
-[the reference](https://artefactory.github.io/artefactual/guide/reference.html#the-k-parameter).
+Neither needs auditing in advance — a response that fails one is refused by name.
 
 ## Installation
 
@@ -109,16 +108,18 @@ arguments and return the same type. They score completion responses; `EPRClassif
 ```python
 from artefactual import EPR, WEPR, WEPRClassifier
 
+K = 15  # the k the published detectors were trained with
+
 # Unfitted, as a scikit-learn estimator is; y is 0/1 per sequence, 1 marking a hallucination
-WEPR(k=15).fit(responses, y)
+WEPR(k=K).fit(responses, y)
 
 # Published weights, or your own file, are loaded rather than fitted
-WEPR.from_pretrained("artefactory/wepr-phi4", k=15)
-WEPR.from_pretrained("/path/to/my_detector.skops", k=15)
-EPR.from_pretrained("artefactory/epr-phi4", k=15)  # the single-coefficient variant
+WEPR.from_pretrained("artefactory/wepr-phi4", k=K)
+WEPR.from_pretrained("/path/to/my_detector.skops", k=K)
+EPR.from_pretrained("artefactory/epr-phi4", k=K)  # the single-coefficient variant
 
 # Logprob arrays, shaped (n_sequences, n_tokens, k) or one token per row (n, k)
-WEPRClassifier(k=15).fit(logprobs, y)
+WEPRClassifier(k=K).fit(logprobs, y)
 ```
 
 Scoring a batch, reading per-token scores, scoring Langfuse traces, composing into

@@ -50,11 +50,7 @@ cells are the record of a session you run yourself.
 
     The endpoint must return `logprobs` with `top_logprobs`, otherwise there is nothing to score.
 
-    `TOP_LOGPROBS` is passed to the detectors as `k`. Every shipped WEPR weights file is
-    calibrated at 15 candidates per token, so raising it will make `WEPR(k=15)` raise — deliberately, since the
-    coefficient vector is fixed at its calibration width. Either leave it at 15 or
-    supply weights calibrated at the value you choose. `EPR(k=15)` is unaffected: an EPR
-    calibration is a single coefficient, and `k` only governs how the rank axis is aligned. The defaults below target the HuggingFace router, where `OPENAI_API_KEY` is a token from your HuggingFace account.
+    `TOP_LOGPROBS` is passed to the detectors as `k`; the rule for choosing it is in {doc}`../guide/scoring`. The defaults below target the HuggingFace router, where `OPENAI_API_KEY` is a token from your HuggingFace account.
 
 ```{code-cell} ipython3
 :tags: [hide-input]

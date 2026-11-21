@@ -101,8 +101,7 @@ endpoint serving it, and a wrong one fails on every generation request rather th
 
 `K` is how many **candidates** per token the endpoint is asked for — the tokens the model
 considered at that position. A candidate's **rank** is its place in that list, most likely
-first. `K` is part of the feature definition, not a batch size: WEPR fits one coefficient per
-rank, so the detector is only ever loaded at the value it was fitted at.
+first. The rule for `K` is in {doc}`../guide/scoring`.
 
 ```{code-cell} ipython3
 import json

@@ -7,9 +7,10 @@ or not. It takes answers that model generated and a verdict on each. The pipelin
 ```python
 from artefactual import WEPR
 
-# responses: what the model answered, generated with top_logprobs >= k
+K = 15  # the k the published detectors were trained with; see the scoring guide
+# responses: what the model answered, generated with top_logprobs=K
 # y:         one 0/1 label per answer, 1 marking a hallucination
-detector = WEPR(k=15).fit(responses, y)
+detector = WEPR(k=K).fit(responses, y)
 ```
 
 A fit needs two things, both in the OpenAI Batch output shape and joined on `custom_id`:

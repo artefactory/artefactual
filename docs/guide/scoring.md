@@ -4,6 +4,13 @@ A *response* is the result of a call to an OpenAI-compatible API (chat completio
 Responses API, or a batch output line) made with `logprobs=True` and `top_logprobs`. The
 examples below score one, called `response`.
 
+## The k rule
+
+`k` is the number of top logprobs the detector was trained with. Request that many
+`top_logprobs` when generating, and score with the same `k`. A response with fewer
+candidates per token is refused; why is in {doc}`reference`. The published detectors were
+all trained with `k = 15`.
+
 ## Choosing a detector
 
 `WEPR` is the more accurate of the two and the one the README uses. Both detectors are
@@ -91,13 +98,14 @@ A worked version is in the [example notebooks](../examples/index.md).
 ## Training a detector for another model
 
 Any model that returns `top_logprobs` can be scored, not only the published ones.
-`WEPR(k=15)` and `EPR(k=15)` return an unfitted detector, which is fitted on 0/1 labels where 1
+`WEPR(k=K)` and `EPR(k=K)` return an unfitted detector, which is fitted on 0/1 labels where 1
 marks a hallucination:
 
 ```python
-# responses: a list of completion responses, each generated with top_logprobs >= k
+K = 15  # the k the published detectors were trained with; request this many top_logprobs
+# responses: a list of completion responses generated with top_logprobs=K
 # y:         a matching list of 0/1 labels, 1 marking a hallucination
-detector = WEPR(k=15).fit(responses, y)
+detector = WEPR(k=K).fit(responses, y)
 coefficients = detector.named_steps["classifier"].coef_
 ```
 
