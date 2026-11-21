@@ -140,19 +140,8 @@ rules.
 
 ## When a response is refused
 
-Neither requirement needs auditing in advance: a response that fails one is refused by
-name, so running it through the detector is the check.
-
-A response whose provider did not return log-probabilities:
-
-```
-ValueError: None of the 1 response(s) carry any log-probabilities. The payload is a
-recognised completion format but its top_logprobs are absent or empty, which is what a
-provider returns when logprobs were not requested or are unsupported. Regenerate with
-logprobs=True and top_logprobs=15.
-```
-
-A response carrying fewer candidates per token than the detector was trained at:
+A response that is not scorable is refused by name, so running it through the detector is
+the check. For example, one with fewer candidates per token than the detector's `k`:
 
 ```
 ValueError: Response 0 carries 5 candidate(s) per token but k=15 was requested. The missing
@@ -161,5 +150,5 @@ drop their entropy contributions and score the response as more confident than i
 Regenerate with top_logprobs=15, or score at k=5 with a detector trained at that width.
 ```
 
-Why the second is refused rather than padded is in
+Why it is refused rather than padded is in
 [the reference](reference.md#the-k-parameter).
