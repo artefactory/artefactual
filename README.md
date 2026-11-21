@@ -13,6 +13,9 @@ Artefactual is a Python module that assigns a language model's answer a probabil
 being a hallucination. It reads the answer that has already been generated, together with
 the token probabilities returned alongside it, and needs nothing else from the model.
 
+A *response* is the result of a call to an OpenAI-compatible API (chat completions, Responses
+API or batch output) made with `logprobs=True` and `top_logprobs`.
+
 The classifiers and the entropy transformer are scikit-learn estimators, checked with
 `parametrize_with_checks`; the detectors, which read responses, are the same estimators with
 a parser in front. See the

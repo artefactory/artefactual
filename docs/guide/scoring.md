@@ -1,7 +1,8 @@
 # Using a detector
 
-The examples below assume a `response` generated with `logprobs=True` and
-`top_logprobs=15`, as in the README's quick start.
+A *response* is the result of a call to an OpenAI-compatible API (chat completions, the
+Responses API, or a batch output line) made with `logprobs=True` and `top_logprobs`. The
+examples below score one, called `response`.
 
 ## Choosing a detector
 
