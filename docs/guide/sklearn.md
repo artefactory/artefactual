@@ -40,8 +40,7 @@ estimators without the parser.
   width only, and an `EPR` used with a `k` other than the one it was trained at scores
   without an error and the scores are wrong. Pass the `k` the weights were trained at.
 - **`classes_` is sorted.** `predict_proba` columns follow it, so column 1 is the
-  hallucination class only for `0`/`1` labels; see
-  [Which column is the hallucination class](#which-column-is-the-hallucination-class).
+  hallucination class only for `0`/`1` labels.
 - **Targets are binary.** A multi-class `y` raises `ValueError` at `fit`.
 
 ## Two kinds of input
@@ -92,18 +91,6 @@ labels = np.array([0, 1] * 10)
 detector = WEPR(k=K).fit(responses, labels)
 detector.predict_proba(RESPONSES)[:, 1]
 ```
-
-## Which column is the hallucination class
-
-Columns of `predict_proba` follow `classes_`, sorted. With `0`/`1` labels, column 1 is the
-hallucination class. With any other labels, look the column up instead of assuming it:
-
-```python
-column = list(detector.classes_).index(1)
-detector.predict_proba(RESPONSES)[:, column]
-```
-
-See {doc}`scoring` for how the score is read.
 
 ## Model selection
 

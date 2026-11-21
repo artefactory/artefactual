@@ -45,9 +45,6 @@ Both detectors end in a logistic regression, so both `predict_proba` outputs lie
 `[0, 1]` and rank responses. How far an output can be read as an absolute probability
 depends on how representative the training sample was, not on the detector.
 
-Column order follows `detector.classes_`: with `0`/`1` labels, column 1 is the hallucination
-class. With other labels, look the column up; {doc}`sklearn` shows how.
-
 ## Scoring every token
 
 ```python
