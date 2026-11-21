@@ -11,7 +11,7 @@ pip install artefactual
 ```python
 from artefactual import WEPR
 
-# response is what any OpenAI-compatible client returns with logprobs=True, top_logprobs=15
+# response: the result of an OpenAI-compatible call made with logprobs=True and top_logprobs
 detector = WEPR.from_pretrained("artefactory/wepr-ministral", k=15)
 detector.predict_proba(response)[:, 1]  # P(hallucination) per sequence
 ```
@@ -28,6 +28,9 @@ Two answers from the same model, scored by the same detector:
 Neither answer was checked against anything. The second scores high because the model was
 uncertain while generating it. Both numbers are the ones {doc}`examples/wepr_usage_demo`
 prints, and it also marks which tokens drove them.
+
+A *response* here is the result of a call to an OpenAI-compatible API (chat completions,
+Responses API or batch output) made with `logprobs` and `top_logprobs`.
 
 The [project README](https://github.com/artefactory/artefactual) covers the requirements
 and the published results. This site covers installing and using a detector in depth.
