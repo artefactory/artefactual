@@ -427,11 +427,13 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
             dimensions.
         """
         raw_output = X
-        for _, transformer in self.steps[:-1]:
+        sequence_mode = []  # named in the error below, from the same probe that picks the method
+        for name, transformer in self.steps[:-1]:
             try:
                 step_transform = transformer.transform_tokens
             except AttributeError:
                 step_transform = transformer.transform
+                sequence_mode.append(name)
             raw_output = step_transform(raw_output)
 
         token_features = np.asarray(raw_output)
@@ -441,7 +443,7 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
         # sequence-level features. Unpacking that below fails on the arity alone, naming
         # neither the step nor the reason, so the shape is read first.
         if token_features.ndim != 3:
-            reduced = ", ".join(name for name, step in self.steps[:-1] if not hasattr(step, "transform_tokens"))
+            reduced = ", ".join(sequence_mode)
             msg = (
                 f"Token mode produced a {token_features.ndim}D array, expected 3D "
                 f"(n_sequences, max_tokens, n_features). A pipeline step reduced the token axis away: "
