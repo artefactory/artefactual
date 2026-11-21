@@ -94,12 +94,12 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         """Declares the transformer stateless and NaN-tolerant."""
         tags = super().__sklearn_tags__()
         tags.requires_fit = False  # stateless: fit learns nothing from data
-        tags.input_tags.allow_nan = True  # consumes NaN-padded input on purpose (else check_estimators_nan_inf fails)
-        # Input is three-dimensional: `transform` pools the token axis and the pooling
-        # reduces the rank axis, and the two coincide below three dimensions. The tags select
-        # which arrays scikit-learn's checks synthesise, and the only producer of this step's
-        # input, `LogProbParser`, emits `(n_sequences, n_tokens, k)`.
-        tags.input_tags.two_d_array = False
+        # The tags describe what scikit-learn's checks may synthesise, so they declare both
+        # the numeric table the checks can fit and score and the cube `LogProbParser` emits.
+        # A table refuses NaN (no rank is "padding" in it), whereas a cube takes NaN as
+        # padding inside `validate` whatever `allow_nan` says.
+        tags.input_tags.allow_nan = False
+        tags.input_tags.two_d_array = True
         tags.input_tags.three_d_array = True
         return tags
 
