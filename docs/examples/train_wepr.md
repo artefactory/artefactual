@@ -29,6 +29,8 @@ running the three pipeline steps by hand, fitting, cross-validating, and saving 
 The sample files are synthetic: real questions, with the responses and their
 log-probabilities generated rather than sampled from a model.
 
+**Needs / cost:** nothing external: no network, no API key, no GPU. Every cell runs on the committed fixtures in seconds.
+
 | Section | What it does | Cost |
 |---|---|---|
 | The inputs | Read the two batch files, pair them by `custom_id` | none, both files ship beside this notebook |
@@ -41,8 +43,6 @@ log-probabilities generated rather than sampled from a model.
 | Choosing the final estimator | Regularise, then tune the threshold | seconds |
 | Per-token scores | Score each token of a held-out answer | seconds |
 | Save it, and load it back | `.skops` out, `from_pretrained` in | seconds |
-
-No network, no API key and no GPU: every cell runs on the committed fixtures.
 
 ```{code-cell} ipython3
 :tags: [hide-input]

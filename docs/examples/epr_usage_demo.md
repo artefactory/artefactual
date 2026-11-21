@@ -15,32 +15,21 @@ kernelspec:
 
 # Score responses with EPR
 
-This notebook demonstrates the `artefactual` package for scoring LLM outputs, specifically focusing on hallucination detection using entropy-based methods. Here we will use EPR (Entropy Production Rate), which computes entropy at each token and averages it across the entire sequence.
+Score two committed responses, one certain and one hallucinated, with a published EPR detector, per answer and per token.
 
-We explore two examples:
-1.  **General Knowledge Question**:
+EPR (Entropy Production Rate) computes the entropy at each token and averages it over the sequence.
 
-    *"What is the capital city of France?"* → `"Paris."` (expected high certainty, low entropy expected)
+The two questions are *"What is the capital city of France?"*, answered with certainty, and
+*"Who is Charles Moslonka?"* (the first author of our paper), answered with a fabricated biography.
 
-2.  **Hallucination Trigger**: Asking about the first author of our paper (Charles Moslonka) to observe how the model hallucinates biographical details.
-
-    *"Who is Charles Moslonka?"* → a fabricated biography (expected high uncertainty, high entropy expected)
-
-We will use:
-* **JSON fixture (open_ai_responses_top15.json):** two mock OpenAI Responses API outputs, carrying the 15 most likely candidates per token -- the width the shipped calibrations were fit at.
-* **Published detector:** named by its own Hugging Face repository (`artefactory/epr-ministral`), fetched on first use and cached. A path to a local `.skops` file is accepted the same way.
-* **EPR:** scorer from the artefactual package via the scikit-learn pipeline API.
-* **Visualizations:** each token highlighted by its own score, so the uncertain stretches of an answer are visible rather than inferred.
+**Needs / cost:** no API key, no GPU; one detector download from the Hugging Face Hub (~KBs, cached), then seconds.
 
 | Section | What it does | Cost |
 |---|---|---|
-| Load Example Responses | Read the committed fixture | none |
-| Build the EPR Pipeline | Fetch the published detector's weights | one download, ~KBs, cached after the first run |
-| Sequence-Level Scoring | P(hallucination) per response | seconds |
-| Token-Level Scoring | P(hallucination) per token, highlighted | seconds |
-
-No API key and no GPU. Nothing is generated here — the responses are a fixture, and the only
-network call fetches the detector.
+| Load example responses | Read the committed fixture | none |
+| Build the EPR pipeline | Fetch the published detector's weights | one download, ~KBs, cached after the first run |
+| Sequence-level scoring | P(hallucination) per response | seconds |
+| Token-level scoring | P(hallucination) per token, highlighted | seconds |
 
 ```{code-cell} ipython3
 :tags: [hide-input]
@@ -189,8 +178,11 @@ for resp in responses:
     display(highlight(tokens, scores))
 ```
 
-## Your model is not one of the published detectors?
+## Where to go next
 
-A detector reads one model's confidence, so the four published ones only score the four
-models they were trained on. `EPR(k=15).fit(responses, y)` fits your own, on that
-model's answers and a verdict on each.
+- **Your model is not one of the published detectors?** A detector reads one model's
+  confidence, so a published one only scores the model it was trained on. Fit your own with
+  `EPR(k=15).fit(responses, y)`: see {doc}`train_wepr`.
+- **Score live traces.** {doc}`langfuse_integration_demo` attaches a detector's score to
+  Langfuse traces.
+- **The other detector.** {doc}`wepr_usage_demo` runs the same fixture through WEPR.
