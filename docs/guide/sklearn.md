@@ -33,6 +33,21 @@ parser refuses. The parser is why the checks that need no data are called by han
 the classifiers, which have an array entry point, stand for the detectors: they are the same
 estimators without the parser.
 
+## Known limitations
+
+- **`k` must be the trained `k`.** `WEPR` raises when it is loaded with another `k`.
+  `EPR` does not: it has one feature whatever `k` is, so `EPR.from_pretrained` checks the
+  width only, and an `EPR` used with a `k` other than the one it was trained at scores
+  without an error and the scores are wrong. Pass the `k` the weights were trained at, which
+  is 15 for the published detectors.
+- **`classes_` is sorted.** `predict_proba` columns follow it, so column 1 is the
+  hallucination class only for `0`/`1` labels; see
+  [Which column is the hallucination class](#which-column-is-the-hallucination-class).
+- **One expected failure, `check_estimators_overwrite_params`.** A `Pipeline` fits its steps
+  in place, and the check reads that as the constructor parameters being overwritten. The
+  classifiers inherit this from `Pipeline`, which scikit-learn lists as an expected failure
+  too.
+
 ## Two kinds of input
 
 The two pairs of estimators differ in what `fit`, `predict`, `predict_proba` and

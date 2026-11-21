@@ -103,6 +103,11 @@ class EPR(BaseDetector):
     Input is completion responses. Targets are binary, 1 marking hallucination. To score
     logprob arrays, use `EPRClassifier`.
 
+    `EPR` has one feature whatever `k` is, so a `k` other than the one the weights were
+    trained at is not detected: loading it, or fitting at one `k` and scoring at another,
+    gives wrong scores without an error. `WEPR` raises on a loaded width mismatch. Pass the
+    trained `k`.
+
     Both detectors need weights fit on labelled data, so choosing this one saves no setup
     work over `WEPR` -- only parameters. Prefer `WEPR` unless there is too little labelled
     data to fit its larger coefficient vector.
