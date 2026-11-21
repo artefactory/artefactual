@@ -106,6 +106,7 @@ considered at that position. A candidate's **rank** is its place in that list, m
 first. The rule for `K` is in {doc}`../guide/scoring`.
 
 ```{code-cell} ipython3
+import getpass
 import json
 import os
 from collections import Counter
@@ -117,6 +118,9 @@ from jinja2 import Template
 # No default: a model id only means something to the endpoint serving it, and a wrong one
 # fails on every generation request rather than here.
 MODEL = os.environ["OPENAI_MODEL"]
+# The OpenAI client reads its key from the environment.
+if not os.environ.get("OPENAI_API_KEY"):
+    os.environ["OPENAI_API_KEY"] = getpass.getpass("OPENAI_API_KEY: ")
 
 # The judge is a second model, and deliberately not this one. The verdict becomes the label
 # -- `y = int(not verdict)` -- so a model grading its own answers writes a label that agrees
@@ -129,7 +133,7 @@ MODEL = os.environ["OPENAI_MODEL"]
 # counterpart, so a single-endpoint run still works with nothing new set.
 JUDGE_MODEL = os.environ.get("JUDGE_MODEL", MODEL)
 JUDGE_BASE_URL = os.environ.get("JUDGE_BASE_URL", os.environ.get("OPENAI_BASE_URL"))
-JUDGE_API_KEY = os.environ.get("JUDGE_API_KEY", os.environ.get("OPENAI_API_KEY"))
+JUDGE_API_KEY = os.environ.get("JUDGE_API_KEY", os.environ["OPENAI_API_KEY"])
 
 # Candidates kept per token -- the tokens the model considered, most likely first, one per
 # rank. Part of the feature definition, not a batch size: WEPR fits one coefficient per

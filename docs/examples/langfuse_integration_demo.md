@@ -76,6 +76,7 @@ if ON_COLAB:
 ```{code-cell} ipython3
 :tags: [hide-input]
 
+import getpass
 import os
 import time
 
@@ -99,7 +100,10 @@ confidence and no other's. `TOP_LOGPROBS` must match the width (candidates per t
 ```{code-cell} ipython3
 OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://router.huggingface.co/v1")
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "Qwen/Qwen3-Coder-30B-A3B-Instruct")
-OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+# The OpenAI and Langfuse clients read their keys from the environment.
+for key in ("OPENAI_API_KEY", "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY"):
+    if not os.environ.get(key):
+        os.environ[key] = getpass.getpass(f"{key}: ")
 TOP_LOGPROBS = int(os.environ.get("TOP_LOGPROBS", "15"))
 
 EPR_DETECTOR = "artefactory/epr-ministral"
@@ -111,7 +115,7 @@ WEPR_DETECTOR = "artefactory/wepr-ministral"
 
 # `langfuse.openai.OpenAI` is the stock client with Langfuse's instrumentation wrapped
 # around it, so every call it makes becomes a trace without another line of code.
-client = OpenAI(base_url=OPENAI_BASE_URL, api_key=OPENAI_API_KEY)
+client = OpenAI(base_url=OPENAI_BASE_URL)
 ```
 
 `@observe()` is what puts the generation on a trace. `logprobs=True` and
