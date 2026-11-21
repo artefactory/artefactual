@@ -269,6 +269,19 @@ def test_a_step_that_reduces_the_token_axis_away_is_named():
         _detector(_ReducingTokenBlind()).predict_token_proba(TOKEN_FEATURES)
 
 
+def test_the_error_names_exactly_the_steps_the_dispatch_ran_in_sequence_mode():
+    """Dispatch and the error read one decision: a token-aware step is never named, the others always are."""
+    detector = EPR(k=1)
+    detector.steps = [
+        ("blind", _TokenBlind()),
+        ("aware", _TokenAware()),
+        ("reducing", _ReducingTokenBlind()),
+        ("classifier", fitted_logistic(-1.0, [1.0])),
+    ]
+    with pytest.raises(ValueError, match=r"blind, reducing declares no transform_tokens"):
+        detector.predict_token_proba(TOKEN_FEATURES)
+
+
 # --- token padding ---------------------------------------------------------------------
 
 
