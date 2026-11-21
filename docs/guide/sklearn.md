@@ -38,8 +38,7 @@ estimators without the parser.
 - **`k` must be the trained `k`.** `WEPR` raises when it is loaded with another `k`.
   `EPR` does not: it has one feature whatever `k` is, so `EPR.from_pretrained` checks the
   width only, and an `EPR` used with a `k` other than the one it was trained at scores
-  without an error and the scores are wrong. Pass the `k` the weights were trained at, which
-  is 15 for the published detectors.
+  without an error and the scores are wrong. Pass the `k` the weights were trained at.
 - **`classes_` is sorted.** `predict_proba` columns follow it, so column 1 is the
   hallucination class only for `0`/`1` labels; see
   [Which column is the hallucination class](#which-column-is-the-hallucination-class).
@@ -54,7 +53,7 @@ The two pairs of estimators differ in what `fit`, `predict`, `predict_proba` and
 `predict_token_proba` take:
 
 - **Responses**, for `EPR` and `WEPR`: a list of what an OpenAI-compatible client returns
-  with `logprobs=True` and `top_logprobs` of at least `k`. This is what you score in
+  with `logprobs=True` and `top_logprobs` set to `k` ({doc}`scoring`). This is what you score in
   practice. The accepted shapes are in {doc}`reference`. A 1-D array or Series of responses
   is read as responses. A numeric table raises `TypeError`, which names the classifiers.
 - **Logprob arrays**, for `EPRClassifier` and `WEPRClassifier`: a

@@ -7,16 +7,15 @@ and the inputs the parser accepts.
 
 `k` is how many **candidates** per token are read — the tokens the model considered at that
 position. A candidate's **rank** is its place in that list, counted from 0 for the most
-likely, so `k` is also the width of the rank axis. It has no default: pass the width the weights were
-trained at, which is **15** for every shipped file.
+likely, so `k` is also the width of the rank axis. It has no default: pass the `k` the weights were
+trained at (**15** for every shipped file; the rule is in {doc}`scoring`).
 
 ```python
 detector = WEPR.from_pretrained("artefactory/wepr-phi4", k=15)
 ```
 
-**Responses must carry at least `k` candidates per token.** This is an input requirement rather than
-something the pipeline reconciles: generation must set `top_logprobs` to `k` or higher. The
-two directions are not symmetric:
+**Responses must carry `k` candidates per token.** This is an input requirement rather than
+something the pipeline reconciles. The two directions are not symmetric:
 
 - **Wider than `k`** — surplus candidates are dropped. The detector never saw them, and a
   mean over `k` ranks is defined without them, so scoring is unaffected.
