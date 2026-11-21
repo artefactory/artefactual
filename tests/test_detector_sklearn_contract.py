@@ -8,6 +8,7 @@ detectors take responses and are exercised on the checked-in Responses payload, 
 import json
 import pickle
 from copy import deepcopy
+from functools import partial
 from pathlib import Path
 
 import numpy as np
@@ -20,7 +21,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-from artefactual.scoring import EPR, WEPR, EPRClassifier, WEPRClassifier
+from artefactual.scoring import EPR, WEPR, EPRClassifier, Pooling, PoolingDetector, WEPRClassifier
 from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
 from artefactual.scoring.entropy_methods.pooling import EPRPooling, WEPRPooling
 
@@ -731,3 +732,101 @@ def test_the_user_api_imports_from_the_package_root_and_the_mixin_does_not():
     }  # fmt: skip
     assert names <= set(artefactual.__all__)
     assert "LogprobsMixin" not in artefactual.__all__
+
+
+# --- a pooling swapped after the fit -------------------------------------------------------
+
+
+@pytest.mark.parametrize("method", ["predict_proba", "predict_token_proba"])
+def test_a_pooling_swapped_after_the_fit_is_refused_with_a_request_to_refit(method):
+    x, y = table(width=5)
+    classifier = EPRClassifier(k=5).fit(x, y)
+    classifier.set_params(entropy__pooling=WEPRPooling())
+    with pytest.raises(ValueError, match="refit"):
+        {"predict_proba": classifier.predict_proba, "predict_token_proba": classifier.predict_token_proba}[method](x)
+
+
+def test_set_params_alone_does_not_refit_or_raise():
+    x, y = table(width=5)
+    classifier = EPRClassifier(k=5).fit(x, y)
+    classifier.set_params(entropy__pooling=WEPRPooling())
+    assert classifier.get_params()["entropy__pooling"] == WEPRPooling()
+
+
+def test_a_step_never_fitted_transforms_with_any_pooling():
+    x, _ = table(width=5)
+    assert EntropyTransformer(pooling=WEPRPooling(), k=5).transform(x).shape == (len(x), 10)
+
+
+def test_a_pooling_mutated_after_the_fit_is_refused_too():
+    x, _ = table(width=5)
+    pooling = WEPRPooling()
+    step = EntropyTransformer(pooling=pooling, k=5).fit(x)
+    pooling.extra = 2  # any state a pooling carries is part of what was fitted
+    with pytest.raises(ValueError, match="refit"):
+        step.transform(x)
+
+
+class ScaledMean(Pooling):
+    """One mean per rank, scaled by an array."""
+
+    constant_width = False  # `scale` fits one `k`, so the count cannot be probed at others
+
+    def __init__(self, scale):
+        self.scale = scale
+
+    def __call__(self, X, axis):  # ruff: ignore[invalid-argument-name]
+        return np.nanmean(X * self.scale, axis=axis)
+
+    def mean(self, x, axis):
+        return np.nanmean(x, axis=axis)
+
+
+def rank_percentile(x, axis, q):
+    return np.nanpercentile(x, q, axis=axis)
+
+
+class MeanCallable:
+    """A callable object that defines no equality."""
+
+    def __call__(self, x, axis):
+        return np.nanmean(x, axis=axis)
+
+
+class ScaledBy(Pooling):
+    """Holds a callable as an attribute and applies it."""
+
+    def __init__(self, fn):
+        self.fn = fn
+
+    def __call__(self, X, axis):  # ruff: ignore[invalid-argument-name]
+        return self.fn(X, axis=axis)
+
+
+CUSTOM_POOLINGS = {
+    "partial": partial(rank_percentile, q=95),
+    "callable-object": MeanCallable(),
+    "bound-method": ScaledMean(1.0).mean,
+    "array-attribute": ScaledMean(np.ones(5)),
+    "callable-attribute": ScaledBy(partial(np.nanmean)),
+}
+
+
+@pytest.mark.parametrize(
+    "copied",
+    [lambda x: x, deepcopy, lambda x: pickle.loads(pickle.dumps(x))],
+    ids=["itself", "deepcopy", "pickle"],
+)
+@pytest.mark.parametrize("pooling", CUSTOM_POOLINGS.values(), ids=CUSTOM_POOLINGS.keys())
+def test_a_fitted_pooling_is_recognised_as_the_one_it_was_fitted_with(pooling, copied):
+    x, _ = table(width=5)
+    step = EntropyTransformer(pooling=pooling, k=5).fit(x)
+    np.testing.assert_array_equal(copied(step).transform(x), step.transform(x))
+
+
+@pytest.mark.parametrize("pooling", CUSTOM_POOLINGS.values(), ids=CUSTOM_POOLINGS.keys())
+def test_a_detector_over_any_pooling_fits_and_scores(pooling):
+    responses = RESPONSES * 4
+    y = np.arange(len(responses)) % 2
+    detector = PoolingDetector(pooling, k=5).fit(responses, y)
+    assert clone(detector).fit(responses, y).predict_proba(responses).shape == (len(responses), 2)
