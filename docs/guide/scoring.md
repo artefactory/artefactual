@@ -99,28 +99,7 @@ A worked version is in the [example notebooks](../examples/index.md).
 
 ## Training a detector for another model
 
-Any model that returns `top_logprobs` can be scored, not only the published ones.
-`WEPR(k=K)` and `EPR(k=K)` return an unfitted detector, which is fitted on 0/1 labels where 1
-marks a hallucination:
-
-```python
-K = 15  # the k the published detectors were trained with; request this many top_logprobs
-# responses: a list of completion responses generated with top_logprobs=K
-# y:         a matching list of 0/1 labels, 1 marking a hallucination
-detector = WEPR(k=K).fit(responses, y)
-coefficients = detector.named_steps["classifier"].coef_
-```
-
-One label per generated sequence, in the same order `predict_proba` returns rows. The
-labels must be binary; `classes_` is set from them at `fit`.
-
-A detector is unfitted until `fit`, as every scikit-learn estimator is. Published weights
-are never a constructor default — a detector's coefficients are model-specific, so there is
-nothing sensible to default to — and `EPR.from_pretrained` / `WEPR.from_pretrained` are
-what load them.
-
-Producing those answers and verdicts, the label polarity a judge's reply needs, and the
-three notebooks that do it end to end are in {doc}`training`.
+See {doc}`training`.
 
 ## Composing with scikit-learn
 
