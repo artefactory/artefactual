@@ -331,11 +331,13 @@ class BaseEntropyClassifier(Pipeline, EstimatorPersistenceMixin):
 
         `Pipeline.__getitem__` rebuilds `self.__class__` from a list of steps, which this
         constructor does not take: the estimator is the whole chain, and any slice of it is
-        something else. The slice is returned as the `Pipeline` it is, which is what makes
-        `estimator[:-1].transform(...)` -- the features without the classifier -- work.
+        something else. The slice is delegated to a `Pipeline` over the same steps, which is
+        what makes `estimator[:-1].transform(...)` -- the features without the classifier --
+        work, and applies `Pipeline`'s own slice rules (a step of 1 only).
         """
         if is_bearable(ind, slice):
-            return Pipeline(self.steps[ind], memory=self.memory, verbose=self.verbose)
+            whole = Pipeline(self.steps, memory=self.memory, verbose=self.verbose, transform_input=self.transform_input)
+            return whole[ind]
         return super().__getitem__(ind)
 
     def predict_token_proba(self, X) -> np.ndarray:  # noqa: N803

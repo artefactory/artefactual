@@ -508,6 +508,16 @@ def test_the_estimators_are_exported_from_the_package_root_and_from_scoring():
     assert {cls.__name__ for cls in ESTIMATORS} <= set(artefactual.__all__)
 
 
+# --- slicing -----------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
+@pytest.mark.parametrize("ind", [slice(None, None, 2), slice(None, None, -1)])
+def test_a_slice_with_a_step_is_refused_as_pipeline_refuses_it(cls, ind):
+    with pytest.raises(ValueError, match="step of 1"):
+        cls()[ind]
+
+
 @pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
 def test_a_slice_is_a_plain_pipeline_over_the_same_steps(cls):
     detector = cls()
