@@ -297,8 +297,18 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
         ------
         ValueError
             If a constructor parameter is invalid; if `y` is not 1-D-compatible, holds NaN or
-            infinity, is continuous, or does not have exactly two classes.
+            infinity, is continuous, or does not have exactly two classes; or if the entropy
+            step's `pooling` is not the one this class fixes.
         """
+        entropy = self.named_steps.get("entropy")
+        if is_bearable(entropy, EntropyTransformer) and entropy.pooling != self.pooling:
+            msg = (
+                f"{type(self).__name__} scores with pooling={self.pooling!r}, but its entropy step "
+                f"has pooling={entropy.pooling!r}, which would fit coefficients the class "
+                "cannot describe. Use the class built for that pooling, or a subclass that sets `pooling`; "
+                "for responses, a PoolingDetector takes any pooling."
+            )
+            raise ValueError(msg)
         if y is not None:
             y = column_or_1d(y, warn=True)
             # `check_classification_targets` accepts NaN in float labels as "unknown".
