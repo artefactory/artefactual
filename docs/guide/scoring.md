@@ -32,6 +32,8 @@ cost of a false flag. Choose it on a labelled sample of your own responses.
 to `[0, 1]` and can be shown to a user as a confidence. `epr` returns an unscaled entropy
 rate, which orders responses but carries no absolute meaning.
 
+Column order follows `detector.classes_`: with `0`/`1` labels, column 1 is the hallucination class. With other labels, pick the column with `list(detector.classes_).index(label)`.
+
 ## Scoring every token
 
 ```python
