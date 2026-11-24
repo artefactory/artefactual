@@ -57,7 +57,7 @@ A locally trained detector is loaded by passing a path instead of a name:
 detector = WEPR.from_pretrained("/path/to/my_detector.skops")
 ```
 
-`save_estimator` and `from_pretrained` are the entry points: the first writes the fitted
+`save_pretrained` and `from_pretrained` are the entry points: the first writes the fitted
 estimator alone, the second reads it back. A detector file is the skops dump of a fitted
 `LogisticRegression`, named `model.skops` when it sits in a directory; the coefficients are
 in `coef_` and `intercept_`, and nothing else is stored. It names only scikit-learn types, so

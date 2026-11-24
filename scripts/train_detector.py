@@ -205,7 +205,7 @@ def main(argv: list[str]) -> None:
     logging.info(f"intercept: {float(classifier.intercept_[0])}")
     logging.info(f"coefficients: {classifier.coef_[0].tolist()}")
     if FLAGS.output:
-        logging.info(f"wrote {detector.save_estimator(FLAGS.output)}")
+        logging.info(f"wrote {detector.save_pretrained(FLAGS.output)}")
 
     if y_test is None:
         return

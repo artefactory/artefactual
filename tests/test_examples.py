@@ -79,7 +79,7 @@ def _detectors_resolve_locally(monkeypatch, tmp_path):
     The notebooks name a Hugging Face repository, which is what a reader should copy, so
     running them as written reaches the network -- and a runner blip then fails a build
     that has nothing to do with the Hub. Only the resolution step is replaced: the
-    notebook's own code, `read_estimator`, and the whole pipeline still run for real.
+    notebook's own code, `load_file`, and the whole pipeline still run for real.
 
     The width follows the reduction the repository name starts with, because that is
     what the classifier is checked against: EPR pools to a single coefficient, WEPR
@@ -104,7 +104,7 @@ def _detectors_resolve_locally(monkeypatch, tmp_path):
             sio.dump(fitted_logistic(-0.5, [0.1] * n_features), path)
         return path
 
-    monkeypatch.setattr(BaseDetector, "resolve_estimator", staticmethod(resolve))
+    monkeypatch.setattr(BaseDetector, "cached_file", staticmethod(resolve))
 
 
 @pytest.mark.parametrize("name", OFFLINE_NOTEBOOKS)

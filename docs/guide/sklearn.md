@@ -154,13 +154,13 @@ callable has no feature names.
 
 ## Persistence
 
-`save_estimator` writes the fitted classifier alone to a `.skops` file, which names only
+`save_pretrained` writes the fitted classifier alone to a `.skops` file, which names only
 scikit-learn types and so loads under a different install of artefactual.
 `from_pretrained` reads one back from a path, a directory holding `model.skops`, or a
 Hugging Face repository id ({doc}`reference` has the file layout):
 
 ```python
-saved = detector.save_estimator("my_detector.skops")
+saved = detector.save_pretrained("my_detector.skops")
 again = WEPR.from_pretrained(saved)
 ```
 

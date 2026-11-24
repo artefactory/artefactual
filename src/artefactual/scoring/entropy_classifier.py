@@ -198,7 +198,7 @@ class BaseEntropyClassifier(Pipeline, EstimatorPersistenceMixin):
         self.steps[-1] = (self.steps[-1][0], LogisticRegression(C=np.inf, max_iter=1000) if value is None else value)
 
     @classmethod
-    def _from_estimator(
+    def from_estimator(
         cls, estimator: BaseEstimator, identifier: str | Path, **kwargs: Any
     ) -> "BaseEntropyClassifier":
         """An instance carrying `estimator` as its classifier, if the widths agree.

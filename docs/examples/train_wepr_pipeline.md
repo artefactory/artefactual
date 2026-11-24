@@ -608,7 +608,7 @@ count and mean nothing at another, so loading at a different `k` raises rather t
 mis-shaping the score.
 
 ```{code-cell} ipython3
-path = detector.save_estimator("wepr-generated.skops")
+path = detector.save_pretrained("wepr-generated.skops")
 reloaded = WEPR.from_pretrained(path, k=K)
 
 # Held-out responses: the rows the fit above never saw.
