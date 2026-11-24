@@ -1,15 +1,17 @@
 """The `entropy -> classifier` pipelines over logprob arrays, which every detector builds on."""
 
+from numbers import Integral
 from pathlib import Path
 from typing import Any, ClassVar
 
 import numpy as np
 from beartype.door import is_bearable
-from sklearn.base import BaseEstimator, is_classifier
+from sklearn.base import BaseEstimator, _fit_context, is_classifier
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.utils import Tags
+from sklearn.utils._param_validation import HasMethods, Interval
 from sklearn.utils.multiclass import check_classification_targets, type_of_target
 from sklearn.utils.validation import check_is_fitted, column_or_1d
 
@@ -92,6 +94,17 @@ class BaseEntropyClassifier(Pipeline, EstimatorPersistenceMixin):
 
     #: The entropy reduction this estimator scores with. Set by each subclass.
     reduction: ClassVar[Reduction | None] = None
+
+    # `k` and `estimator` are properties over the steps, not stored attributes, but
+    # `get_params` reports them, so they are validated like any other constructor parameter.
+    # `estimator=None` stands for the default classifier.
+    # Declared as `Pipeline` declares it, a plain attribute read from the class, so a type
+    # checker does not see a ClassVar overriding an instance variable.
+    _parameter_constraints: dict = {  # noqa: RUF012
+        **Pipeline._parameter_constraints,  # noqa: SLF001
+        "k": [Interval(Integral, 1, None, closed="left")],
+        "estimator": [HasMethods(["fit", "predict_proba"]), None],
+    }
 
     def __init__(
         self,
@@ -249,6 +262,7 @@ class BaseEntropyClassifier(Pipeline, EstimatorPersistenceMixin):
         tags.input_tags.three_d_array = False
         return tags
 
+    @_fit_context(prefer_skip_nested_validation=False)  # the steps are validated by their own fit
     def fit(self, X, y=None, **params) -> "BaseEntropyClassifier":  # noqa: N803
         """Fit the entropy and classifier steps; targets must be binary.
 
@@ -271,8 +285,8 @@ class BaseEntropyClassifier(Pipeline, EstimatorPersistenceMixin):
         Raises
         ------
         ValueError
-            If `y` is not 1-D-compatible, holds NaN or infinity, is continuous, or does not
-            have exactly two classes.
+            If a constructor parameter is invalid; if `y` is not 1-D-compatible, holds NaN or
+            infinity, is continuous, or does not have exactly two classes.
         """
         if y is not None:
             y = column_or_1d(y, warn=True)
