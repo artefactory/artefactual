@@ -136,3 +136,5 @@ Releases before the entries below are listed, with their notes, on the
 - A repository that cannot be found, a missing revision and a malformed repository id raise
   `ValueError`; connection and authentication errors now propagate as the
   `huggingface_hub` error they are, instead of being wrapped.
+- The `adapters` extra requires `langfuse<5`: 5.0 removed the trace calls
+  `HallucinationEvaluator` reads with.
