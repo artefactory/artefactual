@@ -44,11 +44,17 @@ Releases before the entries below are listed, with their notes, on the
   every rank. Pass the `k` the weights were trained at, which is 15 for the published detectors.
 - `get_feature_names_out` of a custom pooling function returns names (its own name, or
   `name_0`, ...) instead of raising `ValueError`.
+- A fitted `EntropyTransformer` refuses at `transform` a cube whose last dimension differs
+  from the width it was fitted on, with a `ValueError`, instead of scoring it silently. Fit
+  and transform on the same width.
+- `Pooling.__call__` takes `X`, as the estimator methods do, where it took `x`: an override
+  that renames the argument still works when it is called positionally, which
+  `EntropyTransformer` does.
 
 ### Added
 
 - `Pooling`, `EPRPooling`, `WEPRPooling` and `FunctionPooling`: subclass `Pooling`, implement
-  `__call__(x, axis)`, and pass an instance to `EntropyTransformer` or `PoolingDetector`.
+  `__call__(X, axis)`, and pass an instance to `EntropyTransformer` or `PoolingDetector`.
   Override `name`, `width(k)`, `constant_width` and `feature_names(ranks)` to name the
   features or declare the width; otherwise the width is probed and a one-feature pooling is
   named after the class. A bare function works too and is named after itself.
@@ -104,11 +110,18 @@ Releases before the entries below are listed, with their notes, on the
 
 ### Changed
 
+- `EntropyTransformer` names `min(k, n_features_in_)` features once fitted, which is the
+  width it hands on when the input is narrower than `k`.
+- `predict_token_proba` on an empty batch returns an array of shape `(0, 0, 1)`, and on a
+  batch whose tokens are all padding returns `NaN`, instead of raising.
+- `predict` after the pooling was swapped on a fitted detector raises a `ValueError` asking
+  for a refit, instead of scoring with coefficients fitted for the old pooling.
 - `predict_proba` columns follow `classes_`. With `0`/`1` labels column 1 is the
   hallucination class; with other labels use `list(detector.classes_).index(label)`.
 - `get_params` reports `estimator=None` while the final step is the untouched default, so
   `clone` rebuilds an equal detector.
-- The estimator tags declare a binary classifier. The classifiers declare 2-D input.
+- The estimator tags declare a binary classifier. The classifiers declare 2-D input, and
+  `EntropyTransformer`'s tags declare both 2-D and 3-D input.
 
 ### Fixed
 
