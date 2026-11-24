@@ -308,14 +308,14 @@ def test_the_entropy_transformer_declares_three_dimensional_input():
 
 
 def test_the_reductions_are_public_and_are_what_the_strategies_name():
-    from artefactual.scoring import EntropyTransformer, epr_reduction, wepr_reduction
+    from artefactual import EntropyTransformer, epr_reduction, wepr_reduction
 
     assert EntropyTransformer(reduction="epr").reduction_fn is epr_reduction
     assert EntropyTransformer(reduction="wepr").reduction_fn is wepr_reduction
 
 
 def test_validate_returns_a_float_cube_and_refuses_infinity():
-    from artefactual.scoring import EntropyTransformer
+    from artefactual import EntropyTransformer
 
     assert EntropyTransformer().validate(np.zeros((2, 3, 4))).shape == (2, 3, 4)
     assert EntropyTransformer().validate(np.zeros((2, 4)), reset=True).shape == (2, 1, 4)

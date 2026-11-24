@@ -57,15 +57,15 @@ Releases before the entries below are listed, with their notes, on the
   the mixin is registered as a format, so a new format is one class. `LogprobsMixin.parse`
   validates a completion, a Responses payload or a batch line into the model it is;
   `ChatCompletion.parse` and `ResponsesPayload.parse` accept their own format only.
-  `BatchRequestOutput.payload()` returns the body of a successful line. `ChatCompletion`,
-  `ResponsesPayload` and `BatchRequestOutput` import from `artefactual` directly;
-  `LogprobsMixin` stays in `artefactual.preprocessing.response_models`. `TokenLogprobs.candidates()`
+  `BatchRequestOutput.payload()` returns the body of a successful line. `TokenLogprobs.candidates()`
   gives a token's candidates, highest first. `parse_top_logprobs`, `parse_sampled_token_logprobs`
   and `LogProbParser` return the same results and raise the same errors as before.
 
 - `epr_reduction` and `wepr_reduction`, the two reductions behind the detectors, and
-  `EntropyTransformer.validate`, its input check, are public, and import from
-  `artefactual.scoring`.
+  `EntropyTransformer.validate`, its input check, are public. Together with `EPR`, `WEPR`,
+  `EPRClassifier`, `WEPRClassifier`, `EntropyTransformer`, `LogProbParser`, `Judgment`,
+  `ChatCompletion`, `ResponsesPayload`, `BatchRequestOutput` and `read_batch`, they import
+  from `artefactual` directly. `LogprobsMixin` stays in `artefactual.preprocessing.response_models`.
 
 ### Changed
 
