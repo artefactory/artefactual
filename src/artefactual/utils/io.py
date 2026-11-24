@@ -75,8 +75,10 @@ class EstimatorPersistenceMixin:
             cache, so a second call for the same revision does not download again.
 
         Raises:
-            ValueError: If *identifier* names no local file and no repository that could be
-                fetched.
+            ValueError: If *identifier* names no local file and no repository, revision or
+                file that the Hub knows (or, offline, none already in the cache).
+                Connection, authentication and rate-limit failures are not wrapped: they
+                propagate as the `huggingface_hub` error they are.
         """
         local = cls.local_estimator(identifier)
         if local is not None:
@@ -85,13 +87,19 @@ class EstimatorPersistenceMixin:
         # Imported here rather than at module scope: loading a local file never reaches the
         # Hub, so it does not pay the import cost. The dependency is required either way.
         from huggingface_hub import hf_hub_download
+        from huggingface_hub.errors import (
+            EntryNotFoundError,
+            HFValidationError,
+            RepositoryNotFoundError,
+            RevisionNotFoundError,
+        )
 
         repo_id = str(identifier)
         try:
             return Path(
                 hf_hub_download(repo_id, cls.MODEL_FILENAME, revision=revision, token=token, cache_dir=cache_dir)
             )
-        except Exception as error:
+        except (RepositoryNotFoundError, RevisionNotFoundError, EntryNotFoundError, HFValidationError) as error:
             msg = (
                 f"Could not load an estimator from '{identifier}'. Expected a path to a "
                 f".skops file, a directory holding {cls.MODEL_FILENAME}, or a Hugging Face "
@@ -122,6 +130,9 @@ class EstimatorPersistenceMixin:
             ValueError: If the file holds a type that is neither trusted by default nor
                 listed in *trusted*.
         """
+        # Checked here rather than left to `sio.load`: its refusal is a `TypeError` that
+        # lists the types but does not say how to accept them, and callers catch the
+        # `ValueError` this raises.
         unknown = [name for name in sio.get_untrusted_types(file=path) if name not in (trusted or [])]
         if unknown:
             msg = (

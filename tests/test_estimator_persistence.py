@@ -164,6 +164,25 @@ def test_from_pretrained_forwards_the_hub_options(tmp_path):
     assert restored.estimator.coef_.shape == (1, 1)
 
 
+@pytest.mark.usefixtures("offline_hub")
+def test_an_unknown_revision_is_a_value_error_naming_the_repository(tmp_path):
+    cached_repo(tmp_path, "org/detector", "release", "c" * 40)
+
+    with pytest.raises(ValueError, match="org/detector"):
+        BaseDetector.resolve_estimator("org/detector", revision="missing", cache_dir=tmp_path)
+
+
+@pytest.mark.usefixtures("offline_hub")
+def test_a_repository_that_is_not_cached_is_a_value_error_offline(tmp_path):
+    with pytest.raises(ValueError, match="Could not load an estimator"):
+        BaseDetector.resolve_estimator("org/never-published", cache_dir=tmp_path)
+
+
+def test_a_malformed_repository_id_is_a_value_error(tmp_path):
+    with pytest.raises(ValueError, match="Could not load an estimator"):
+        BaseDetector.resolve_estimator("not/a/valid/repo/id", cache_dir=tmp_path)
+
+
 # --- the estimators ---------------------------------------------------------------------
 
 

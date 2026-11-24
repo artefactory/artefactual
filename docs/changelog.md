@@ -62,3 +62,6 @@ Releases before the entries below are listed, with their notes, on the
   `ValueError` on infinite logprobs, rather than a `beartype` error or an infinite feature.
 - `from_pretrained` refuses an estimator that is not a fitted two-class classifier, with a
   `ValueError` naming the file.
+- A repository that cannot be found, a missing revision and a malformed repository id raise
+  `ValueError`; connection and authentication errors now propagate as the
+  `huggingface_hub` error they are, instead of being wrapped.
