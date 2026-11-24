@@ -164,7 +164,7 @@ def write_json(directory, name, payload):
 # --- estimators on disk --------------------------------------------------------------
 #
 # Detectors are built and written here rather than fetched, so every test names a path.
-# That is the whole reason these tests stay offline: `resolve_estimator` returns a local
+# That is the whole reason these tests stay offline: `cached_file` returns a local
 # file without consulting the Hub, so no test crosses the network seam and none has to be
 # skipped, mocked, or given credentials for a private repository.
 

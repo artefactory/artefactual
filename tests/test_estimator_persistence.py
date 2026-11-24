@@ -1,6 +1,6 @@
 """Persisting and reading estimators.
 
-Every test names a path. `resolve_estimator` returns a local file without consulting the
+Every test names a path. `cached_file` returns a local file without consulting the
 Hub, so the suite exercises the whole loading path without a network, credentials, or a
 stand-in for either. What is deliberately *not* covered here is the download itself: it is
 the one step that needs the Hub, and it is reached only after the pure decisions -- which
@@ -45,7 +45,7 @@ class AlwaysSure(ClassifierMixin, BaseEstimator):
 def test_a_detector_survives_a_round_trip(tmp_path_factory, detector):
     path = write_estimator(tmp_path_factory.mktemp("round-trip"), "model.skops", detector)
 
-    restored = BaseDetector.read_estimator(path)
+    restored = BaseDetector.load_file(path)
 
     x = np.linspace(-3, 3, 7 * detector.n_features_in_).reshape(-1, detector.n_features_in_)
     assert np.array_equal(restored.predict_proba(x), detector.predict_proba(x))
@@ -63,11 +63,11 @@ def test_a_published_detector_needs_nothing_trusted(tmp_path):
     """
     path = write_estimator(tmp_path, "model.skops", fitted_logistic(-2.91, [58.17]))
 
-    assert BaseDetector.read_estimator(path).classes_.tolist() == [0, 1]
+    assert BaseDetector.load_file(path).classes_.tolist() == [0, 1]
 
 
 def test_the_refusal_follows_skops_own_default_list(tmp_path):
-    """Whatever skops declines to trust is exactly what `read_estimator` demands be named.
+    """Whatever skops declines to trust is exactly what `load_file` demands be named.
 
     Asserted against `get_untrusted_types` rather than against a fixed type name, because
     that list is skops' to change and has changed: a `RandomForestClassifier` needed
@@ -81,9 +81,9 @@ def test_the_refusal_follows_skops_own_default_list(tmp_path):
     untrusted = sio.get_untrusted_types(file=path)
     if untrusted:
         with pytest.raises(ValueError, match="does not load by default"):
-            BaseDetector.read_estimator(path)
+            BaseDetector.load_file(path)
 
-    assert BaseDetector.read_estimator(path, trusted=untrusted).n_estimators == 2
+    assert BaseDetector.load_file(path, trusted=untrusted).n_estimators == 2
 
 
 def test_a_detector_holding_an_unasked_for_type_is_refused(tmp_path):
@@ -91,18 +91,18 @@ def test_a_detector_holding_an_unasked_for_type_is_refused(tmp_path):
     path = write_estimator(tmp_path, "model.skops", AlwaysSure().fit(np.zeros((2, 1)), [0, 1]))
 
     with pytest.raises(ValueError, match="does not load by default"):
-        BaseDetector.read_estimator(path)
+        BaseDetector.load_file(path)
 
 
 def test_naming_the_type_makes_it_readable(tmp_path):
     path = write_estimator(tmp_path, "model.skops", AlwaysSure().fit(np.zeros((2, 1)), [0, 1]))
 
     with pytest.raises(ValueError) as refusal:
-        BaseDetector.read_estimator(path)
+        BaseDetector.load_file(path)
     # the refusal names the type to pass, so reading the message is the whole fix
     assert AlwaysSure.__name__ in str(refusal.value)
 
-    restored = BaseDetector.read_estimator(path, trusted=[f"{AlwaysSure.__module__}.{AlwaysSure.__qualname__}"])
+    restored = BaseDetector.load_file(path, trusted=[f"{AlwaysSure.__module__}.{AlwaysSure.__qualname__}"])
     assert isinstance(restored, AlwaysSure)
 
 
@@ -112,14 +112,14 @@ def test_naming_the_type_makes_it_readable(tmp_path):
 def test_a_file_resolves_to_itself(tmp_path):
     path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
 
-    assert BaseDetector.resolve_estimator(path) == path
+    assert BaseDetector.cached_file(path) == path
 
 
 def test_a_directory_resolves_to_the_model_inside_it(tmp_path):
     # the layout a downloaded repository has, so a clone loads the same way a name does
     path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
 
-    assert BaseDetector.resolve_estimator(tmp_path) == path
+    assert BaseDetector.cached_file(tmp_path) == path
 
 
 # --- the Hub options, offline ----------------------------------------------------------
@@ -149,8 +149,8 @@ def test_cache_dir_and_revision_reach_the_download(tmp_path):
     commit = "a" * 40
     expected = cached_repo(tmp_path, "org/detector", "release", commit)
 
-    by_branch = BaseDetector.resolve_estimator("org/detector", revision="release", cache_dir=tmp_path, token="unused")
-    by_commit = BaseDetector.resolve_estimator("org/detector", revision=commit, cache_dir=tmp_path)
+    by_branch = BaseDetector.cached_file("org/detector", revision="release", cache_dir=tmp_path, token="unused")
+    by_commit = BaseDetector.cached_file("org/detector", revision=commit, cache_dir=tmp_path)
 
     assert by_branch == by_commit == expected
 
@@ -169,18 +169,18 @@ def test_an_unknown_revision_is_a_value_error_naming_the_repository(tmp_path):
     cached_repo(tmp_path, "org/detector", "release", "c" * 40)
 
     with pytest.raises(ValueError, match="org/detector"):
-        BaseDetector.resolve_estimator("org/detector", revision="missing", cache_dir=tmp_path)
+        BaseDetector.cached_file("org/detector", revision="missing", cache_dir=tmp_path)
 
 
 @pytest.mark.usefixtures("offline_hub")
 def test_a_repository_that_is_not_cached_is_a_value_error_offline(tmp_path):
     with pytest.raises(ValueError, match="Could not load an estimator"):
-        BaseDetector.resolve_estimator("org/never-published", cache_dir=tmp_path)
+        BaseDetector.cached_file("org/never-published", cache_dir=tmp_path)
 
 
 def test_a_malformed_repository_id_is_a_value_error(tmp_path):
     with pytest.raises(ValueError, match="Could not load an estimator"):
-        BaseDetector.resolve_estimator("not/a/valid/repo/id", cache_dir=tmp_path)
+        BaseDetector.cached_file("not/a/valid/repo/id", cache_dir=tmp_path)
 
 
 # --- the estimators ---------------------------------------------------------------------
@@ -221,7 +221,7 @@ def test_a_detector_saves_the_calibration_it_scores_with(tmp_path):
 
     destination = tmp_path / "saved"
     destination.mkdir()
-    written = detector.save_estimator(destination)
+    written = detector.save_pretrained(destination)
 
     reloaded = EPR.from_pretrained(str(written), k=15)
     x = np.linspace(-2, 2, 5).reshape(-1, 1)
@@ -238,7 +238,7 @@ def test_saving_an_unfitted_detector_is_refused(tmp_path):
     attribute -- nowhere near the call that forgot to fit. Refusing here names it instead.
     """
     with pytest.raises(NotFittedError):
-        BaseDetector.trainable("wepr", k=15).save_estimator(tmp_path / "unfitted.skops")
+        BaseDetector.trainable("wepr", k=15).save_pretrained(tmp_path / "unfitted.skops")
 
     assert not (tmp_path / "unfitted.skops").exists()
 
@@ -247,7 +247,7 @@ def test_saving_creates_the_parent_directory(tmp_path):
     # the tutorial writes into an output directory the caller has not necessarily made yet
     detector = EPR.from_pretrained(str(write_estimator(tmp_path, "model.skops", fitted_logistic(-0.5, [2.0]))), k=15)
 
-    written = detector.save_estimator(tmp_path / "new" / "nested" / "model.skops")
+    written = detector.save_pretrained(tmp_path / "new" / "nested" / "model.skops")
 
     assert written.is_file()
 
@@ -271,7 +271,7 @@ class Owner(EstimatorPersistenceMixin):
         return self._estimator
 
     @classmethod
-    def _from_estimator(cls, estimator, _identifier, **kwargs):
+    def from_estimator(cls, estimator, _identifier, **kwargs):
         return cls(estimator, **kwargs)
 
 
@@ -279,7 +279,7 @@ class PickyOwner(Owner):
     """An owner that rejects an estimator whose width it cannot score with."""
 
     @classmethod
-    def _from_estimator(cls, estimator, identifier, *, n_features, **kwargs):
+    def from_estimator(cls, estimator, identifier, *, n_features, **kwargs):
         if estimator.n_features_in_ != n_features:
             msg = f"'{identifier}' takes {estimator.n_features_in_} feature(s), not {n_features}."
             raise ValueError(msg)

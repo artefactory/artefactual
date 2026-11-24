@@ -375,7 +375,7 @@ mis-shaping the score.
 The rows scored below are held-out ones.
 
 ```{code-cell} ipython3
-path = detector.save_estimator("wepr-trained.skops")
+path = detector.save_pretrained("wepr-trained.skops")
 reloaded = WEPR.from_pretrained(path, k=K)
 print(f"{path}, reloaded at k={K}")
 

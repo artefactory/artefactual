@@ -6,7 +6,7 @@ Pins, for both detectors built with `from_pretrained` on a local skops file:
   (docs/examples/open_ai_responses_top15.json) and on three chat-completion bodies taken
   from docs/examples/responses_sample.jsonl;
 - the `ValueError` raised when the file's width does not match `k`;
-- that `save_estimator` -> `from_pretrained` reproduces the scores exactly.
+- that `save_pretrained` -> `from_pretrained` reproduces the scores exactly.
 
 The weights are fixed, hand-written logistic-regression coefficients at k=15 (1 feature
 for EPR, 30 for WEPR), so no download and no randomness is involved.
@@ -144,7 +144,7 @@ def test_a_width_that_does_not_match_k_is_refused(tmp_path, name, wrong_features
 @CASES
 def test_saving_and_reloading_keeps_the_scores(tmp_path, name, payload):
     detector = load(name, tmp_path)
-    written = detector.save_estimator(tmp_path / "saved" / "model.skops")
+    written = detector.save_pretrained(tmp_path / "saved" / "model.skops")
 
     restored = DETECTORS[name].from_pretrained(str(written), k=K)
 

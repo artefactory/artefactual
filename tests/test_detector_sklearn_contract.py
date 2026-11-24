@@ -128,7 +128,7 @@ def test_grid_search_runs_over_numeric_data(cls, grid):
 @pytest.mark.parametrize("cls", CLASSIFIERS, ids=CLASSIFIER_IDS)
 def test_from_pretrained_then_get_params_and_clone(cls, tmp_path):
     x, y = table(width=5)
-    path = cls(k=5, estimator=LogisticRegression(C=0.5)).fit(x, y).save_estimator(tmp_path / "model.skops")
+    path = cls(k=5, estimator=LogisticRegression(C=0.5)).fit(x, y).save_pretrained(tmp_path / "model.skops")
     loaded = cls.from_pretrained(path, k=5)
     assert loaded.get_params()["estimator"] is loaded.estimator
     twin = clone(loaded)
@@ -143,7 +143,7 @@ def test_from_pretrained_then_get_params_and_clone(cls, tmp_path):
 @pytest.mark.parametrize("cls", CLASSIFIERS, ids=CLASSIFIER_IDS)
 def test_from_pretrained_of_a_default_classifier_clones(cls, tmp_path):
     x, y = table(width=5)
-    path = cls(k=5).fit(x, y).save_estimator(tmp_path / "model.skops")
+    path = cls(k=5).fit(x, y).save_pretrained(tmp_path / "model.skops")
     loaded = cls.from_pretrained(path, k=5)
     assert loaded.get_params()["estimator"] is None
     assert clone(loaded).k == 5
@@ -160,7 +160,7 @@ def test_a_table_narrower_than_k_round_trips_only_at_its_own_width(tmp_path):
     instead, where the existing error names the `k` to pass.
     """
     x, y = table(width=5)
-    path = WEPRClassifier(k=15).fit(x, y).save_estimator(tmp_path / "model.skops")
+    path = WEPRClassifier(k=15).fit(x, y).save_pretrained(tmp_path / "model.skops")
     with pytest.raises(ValueError, match=r"takes 10 feature\(s\), but k=15 needs 30.*pass k=5"):
         WEPRClassifier.from_pretrained(path, k=15)
     assert WEPRClassifier.from_pretrained(path, k=5).predict_proba(x).shape == (len(x), 2)
@@ -590,7 +590,7 @@ def test_any_two_labels_are_accepted_and_the_second_is_column_one(cls):
 @pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
 def test_from_estimator_rejects_an_unfitted_estimator(cls):
     with pytest.raises(ValueError, match="not fitted"):
-        cls._from_estimator(LogisticRegression(), "somewhere.skops")
+        cls.from_estimator(LogisticRegression(), "somewhere.skops")
 
 
 @pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
@@ -599,7 +599,7 @@ def test_from_estimator_rejects_a_non_classifier(cls):
 
     x, y = table()
     with pytest.raises(ValueError, match="not a classifier"):
-        cls._from_estimator(LinearRegression().fit(x, y), "somewhere.skops")
+        cls.from_estimator(LinearRegression().fit(x, y), "somewhere.skops")
 
 
 @pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
@@ -607,7 +607,7 @@ def test_from_estimator_rejects_more_than_two_classes(cls):
     x, _ = table()
     three = LogisticRegression().fit(x, np.arange(len(x)) % 3)
     with pytest.raises(ValueError, match="3 class"):
-        cls._from_estimator(three, "somewhere.skops")
+        cls.from_estimator(three, "somewhere.skops")
 
 
 def test_the_user_api_imports_from_the_package_root_and_the_mixin_does_not():

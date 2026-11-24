@@ -46,7 +46,7 @@ class EstimatorPersistenceMixin:
         return None
 
     @classmethod
-    def resolve_estimator(
+    def cached_file(
         cls,
         identifier: str | Path,
         *,
@@ -108,7 +108,7 @@ class EstimatorPersistenceMixin:
             raise ValueError(msg) from error
 
     @classmethod
-    def read_estimator(cls, path: str | Path, trusted: list[str] | None = None) -> BaseEstimator:
+    def load_file(cls, path: str | Path, trusted: list[str] | None = None) -> BaseEstimator:
         """Read a fitted estimator from a `.skops` file, refusing types not asked for.
 
         Never loads with blanket trust. skops names every type in the file it does not
@@ -157,11 +157,11 @@ class EstimatorPersistenceMixin:
         """Resolve *identifier* and read the estimator it names.
 
         Args:
-            identifier: A repository id or path. See `resolve_estimator`.
+            identifier: A repository id or path. See `cached_file`.
             trusted: Type names to accept beyond skops' defaults.
-            revision: Repository revision to download. See `resolve_estimator`.
-            token: Hugging Face access token. See `resolve_estimator`.
-            cache_dir: Download cache directory. See `resolve_estimator`.
+            revision: Repository revision to download. See `cached_file`.
+            token: Hugging Face access token. See `cached_file`.
+            cache_dir: Download cache directory. See `cached_file`.
 
         Returns:
             The fitted estimator.
@@ -177,10 +177,10 @@ class EstimatorPersistenceMixin:
             for name, value in {"revision": revision, "token": token, "cache_dir": cache_dir}.items()
             if value is not None
         }
-        return cls.read_estimator(cls.resolve_estimator(identifier, **hub), trusted=trusted)
+        return cls.load_file(cls.cached_file(identifier, **hub), trusted=trusted)
 
     @classmethod
-    def _from_estimator(cls, estimator: BaseEstimator, identifier: str | Path, **kwargs: Any) -> Any:
+    def from_estimator(cls, estimator: BaseEstimator, identifier: str | Path, **kwargs: Any) -> Any:
         """Wrap a loaded estimator in the object that scores with it.
 
         The extension point of `from_pretrained`: this mixin knows how to fetch and read a
@@ -220,7 +220,7 @@ class EstimatorPersistenceMixin:
             A Hugging Face repository id, a `.skops` file, or a directory holding
             `model.skops`.
         trusted : list of str, default=None
-            Type names to accept beyond skops' defaults. See `read_estimator`.
+            Type names to accept beyond skops' defaults. See `load_file`.
         revision : str, default=None
             Branch, tag or commit of the Hugging Face repository to download; `None` takes
             the default branch. Pin a commit for a reproducible load. Ignored for a local
@@ -231,7 +231,7 @@ class EstimatorPersistenceMixin:
             Download cache directory; `None` uses the Hugging Face cache. Ignored for a
             local path.
         **kwargs
-            Passed to `_from_estimator`, which decides what the owner needs.
+            Passed to `from_estimator`, which decides what the owner needs.
 
         Returns
         -------
@@ -253,9 +253,9 @@ class EstimatorPersistenceMixin:
         ... )  # doctest: +SKIP
         """
         estimator = cls.load_estimator(identifier, trusted=trusted, revision=revision, token=token, cache_dir=cache_dir)
-        return cls._from_estimator(estimator, identifier, **kwargs)
+        return cls.from_estimator(estimator, identifier, **kwargs)
 
-    def save_estimator(self, path: str | Path) -> Path:
+    def save_pretrained(self, path: str | Path) -> Path:
         """Write this object's fitted estimator to a `.skops` file.
 
         Persists the estimator alone rather than the whole object, so the file stays
@@ -281,7 +281,7 @@ class EstimatorPersistenceMixin:
 
         Examples
         --------
-        >>> detector.save_estimator("my_detector.skops")  # doctest: +SKIP
+        >>> detector.save_pretrained("my_detector.skops")  # doctest: +SKIP
         >>> WEPR.from_pretrained("my_detector.skops")  # doctest: +SKIP
         """
         check_is_fitted(self.estimator)
