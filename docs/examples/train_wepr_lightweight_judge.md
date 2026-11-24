@@ -25,10 +25,12 @@ than another N requests.
 A detector is trained for one model, on answers that model produced plus a verdict on
 each. The wider context is in the guide's *Training a detector*.
 
-The checkpoint is `artefactory/BERTJudge`. Give it the question, the answer to grade and
-the gold answer; it returns P(correct). Its own package, `bert-judge`, wraps the loading
-and the scoring, so grading the whole file is one call; `THRESHOLD` turns each probability
-into the verdict written to the judgments file.
+The checkpoint is `artefactory/BERTJudge`. Give it the question, the answer to grade and the
+gold answer; its own output is P(correct), which this notebook turns into P(hallucination)
+once, at the call, so that every number on the page after it points the same way as the
+detector's. Its own package, `bert-judge`, wraps the loading and the scoring, so grading the
+whole file is one call; `THRESHOLD` turns each probability into the verdict written to the
+judgments file.
 
 The sample files are synthetic — real questions, but the responses and their
 log-probabilities were generated rather than sampled from a model. This notebook ships
@@ -95,7 +97,7 @@ JUDGMENTS = Path("judgments.jsonl")
 # The checkpoint the model card recommends: trained on unconstrained generations, and
 # reading question, candidate and reference.
 JUDGE_MODEL = "artefactory/BERTJudge"
-# P(correct) at or above which the response counts as correct.
+# P(hallucination) above which the response counts as a hallucination.
 THRESHOLD = 0.5
 # Sequences per forward pass. Raise it on a GPU.
 JUDGE_BATCH = 8
@@ -122,20 +124,27 @@ print(f"{len(generated)} responses, {len(graded)} with a reference to grade agai
 
 ## Judge the responses
 
-`BERTJudge.predict` takes the three fields as parallel lists and returns one P(correct) per
-response.
+`BERTJudge.predict` takes the three fields as parallel lists and returns one **P(correct)**
+per response — the one place on this page where a probability rises as the answer gets
+better. It is negated at the call, and everything downstream reads P(hallucination), the
+same direction as `predict_proba(...)[:, 1]`.
 
-`THRESHOLD` turns each probability into a verdict. `judgments.jsonl` gets one Batch line per
-response, carrying `{"judgment": ..., "explanation": ...}` as its message content:
+`THRESHOLD` is therefore a hallucination probability, and it turns each score into a
+verdict. `judgments.jsonl` gets one Batch line per response, carrying
+`{"judgment": ..., "explanation": ...}` as its message content:
 
 | `judgment` | Set when | Label |
 |---|---|---|
-| `true` | P(correct) >= `THRESHOLD` | 0, grounded |
-| `false` | P(correct) < `THRESHOLD` | 1, hallucination |
+| `true` | P(hallucination) <= `THRESHOLD` | 0, grounded |
+| `false` | P(hallucination) > `THRESHOLD` | 1, hallucination |
 | `null` | the response carried no text | none; the row is dropped |
 
-Those are the three values `read_judgment` returns, so `train_wepr.ipynb` and
-`scripts/train_detector.py` read this file as they read a generative judge's.
+`judgment` stays in the judge's own direction — `true` means the answer was correct —
+because that is what `read_judgment`, `train_wepr.ipynb` and `scripts/train_detector.py`
+read, and what a generative judge writes. It is the last value on the page in that
+direction; the label beside it is its negation.
+
+Those are the three values `read_judgment` returns.
 
 The sample responses are bare one-word strings, which this checkpoint judges erratically:
 some verbatim matches against the gold answer come back `false`.
@@ -146,22 +155,33 @@ from bert_judge.judges import BERTJudge
 # float32 on CPU; pass "bfloat16" on a GPU, which is the checkpoint's own dtype.
 judge = BERTJudge(model_path=JUDGE_MODEL, trust_remote_code=True, dtype="float32")
 
-scores = judge.predict(
+correct_scores = judge.predict(
     questions=[question["question"] for question, _, _ in graded],
     candidates=[response for _, _, response in graded],
     references=[question["short_answer"] for question, _, _ in graded],
     batch_size=JUDGE_BATCH,
 )
 
+# The judge answers P(correct); the detector, this notebook and every number below speak
+# P(hallucination). Negated here, once, so nothing downstream has to remember which way a
+# score points. A comprehension rather than `1 - scores`, because `predict` is documented
+# to return a sequence and not specifically an array.
+hallucination_scores = [1.0 - score for score in correct_scores]
+
 with JUDGMENTS.open("w", encoding="utf-8") as out:
-    for (question, _, response), score in zip(graded, scores, strict=True):
-        # `judgment` says the answer was CORRECT, the opposite of the class the detector
-        # predicts. `None` for a response with no text, which `read_judgment` reads as no
-        # verdict.
-        judgment = bool(score >= THRESHOLD) if response else None
+    for (question, _, response), score in zip(graded, hallucination_scores, strict=True):
+        # `judgment` says the answer was CORRECT, the opposite of the score above and of the
+        # class the detector predicts -- it is what `read_judgment` expects, and what a
+        # generative judge writes. `None` for a response with no text, which `read_judgment`
+        # reads as no verdict.
+        # `<=`, so a score of exactly THRESHOLD stays "correct", as it did when this compared P(correct).
+        judgment = bool(score <= THRESHOLD) if response else None
         verdict = {
             "judgment": judgment,
-            "explanation": f"BERTJudge, at THRESHOLD={THRESHOLD}, against {question['short_answer']!r}",
+            "explanation": (
+                f"BERTJudge, P(hallucination)={score:.3f} at THRESHOLD={THRESHOLD}, "
+                f"against {question['short_answer']!r}"
+            ),
         }
         # Built from the models `read_batch` validates with, so the writer and the reader
         # share one definition of the shape. They carry what the pipeline reads and no
@@ -183,7 +203,7 @@ with JUDGMENTS.open("w", encoding="utf-8") as out:
         # U+0085 -- characters JSON does not require escaping and a model can emit.
         out.write(json.dumps(line.model_dump(), ensure_ascii=True) + "\n")
 
-# Counted from the file, not from `scores`: what the run produced is what it wrote.
+# Counted from the file, not from `hallucination_scores`: what the run produced is what it wrote.
 verdicts = [read_judgment(row.completion) for row in read_batch(JUDGMENTS)]
 tally = Counter("Undefined" if verdict is None else str(verdict) for verdict in verdicts)
 print(f"wrote {JUDGMENTS}, {len(verdicts)} verdicts")
@@ -292,8 +312,8 @@ for row, label in list(zip(x_test, y_test, strict=True))[:5]:
 
 ## Where to go next
 
-- **Choose the threshold rather than accept it.** `THRESHOLD` is what turns a probability
-  into `True` or `False`, and it is the one knob that decided every label. Re-running the
+- **Choose the threshold rather than accept it.** `THRESHOLD` is what turns a
+  P(hallucination) into a verdict, and it is the one knob that decided every label. Re-running the
   judging cell at another value relabels the run in seconds — the download is already paid
   for.
 - **Compare against a generative judge.** Ask one for a verdict on the same responses and
