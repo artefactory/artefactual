@@ -14,9 +14,12 @@ are not tested.
 
 ## What is checked
 
-The classifiers run scikit-learn's own estimator checks (`parametrize_with_checks`) in
+`EPRClassifier`, `WEPRClassifier` and `EntropyTransformer` run scikit-learn's own estimator
+checks (`parametrize_with_checks`) in
 [`tests/test_common.py`](https://github.com/artefactory/artefactual/blob/main/tests/test_common.py).
-All pass but one, which is declared and enforced as a strict expected failure:
+`LogProbParser` runs the checks that need no data, called by hand. The transformer passes
+every check. The classifiers pass all but one, which is declared and enforced as a strict
+expected failure:
 
 - `check_estimators_overwrite_params`. A `Pipeline` fits its steps in place, which the
   check reads as the constructor parameters being overwritten. scikit-learn lists the
@@ -24,11 +27,11 @@ All pass but one, which is declared and enforced as a strict expected failure:
   limitation rather than add one. If a scikit-learn release fixes it, the strict marker
   turns the suite red and the entry is removed.
 
-`LogProbParser`, `EntropyTransformer`, `EPR` and `WEPR` are not in
-`parametrize_with_checks`. The parser and the detectors read responses, which are not an
-array, and the entropy step consumes a cube of three dimensions, so scikit-learn's checks,
-which feed 2-D arrays, do not apply to them. The classifiers, which have a 2-D entry point,
-are what is checked.
+`EPR` and `WEPR` are not in `parametrize_with_checks`. They and `LogProbParser` read
+responses, which are not an array, and every check that sends data feeds arrays, which the
+parser refuses. The parser is why the checks that need no data are called by hand on it, and
+the classifiers, which have an array entry point, stand for the detectors: they are the same
+estimators without the parser.
 
 ## Two kinds of input
 
