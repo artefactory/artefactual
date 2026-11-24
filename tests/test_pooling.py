@@ -340,7 +340,7 @@ def test_the_four_estimators_keep_their_constructor_surface(cls):
     signature = inspect.signature(cls)
 
     assert str(signature) == (
-        "(k: int = 15, estimator: sklearn.base.BaseEstimator | None = None, *, "
+        "(k: int, estimator: sklearn.base.BaseEstimator | None = None, *, "
         "transform_input=None, memory=None, verbose=False) -> None"
     )
     assert set(cls(k=15).get_params(deep=False)) == {"k", "estimator", "transform_input", "memory", "verbose"}

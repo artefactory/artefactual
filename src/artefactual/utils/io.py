@@ -27,6 +27,27 @@ share it, and the owner protocols below are meant to hold methods only.
 """
 
 
+def _require_k(kwargs: dict[str, Any]) -> None:
+    """Refuse constructor options that omit `k`, naming the remedy.
+
+    `k` is the candidates-per-token width the weights were trained at and no default is
+    safe, but it travels inside `**kwargs`, where its absence would surface as a bare
+    missing-argument error after a download.
+
+    Raises
+    ------
+    TypeError
+        If `"k"` is not a key of `kwargs`.
+    """
+    if "k" not in kwargs:
+        msg = (
+            "`k` is required: pass the k the model was trained with, as the weights are "
+            "fixed at that width (the published artefactory detectors use k=15; see the "
+            "README table)."
+        )
+        raise TypeError(msg)
+
+
 class EstimatorFactory(Protocol):
     """What `PretrainedMixin.from_pretrained` requires of its class: the three steps it takes.
 
@@ -40,6 +61,10 @@ class EstimatorFactory(Protocol):
     member (a property is one) cannot be checked with `issubclass`, which is how a class
     is checked.
     """
+
+    @classmethod
+    def check_options(cls, kwargs: dict[str, Any]) -> None:
+        """Refuse `from_pretrained`'s extra options before any file is looked up."""
 
     @classmethod
     def from_estimator(cls, estimator: BaseEstimator, identifier: str | Path, **kwargs: Any) -> Any:
@@ -205,6 +230,15 @@ class PretrainedMixin:
         return sio.load(path, trusted=trusted)
 
     @classmethod
+    def check_options(cls, kwargs: dict[str, Any]) -> None:
+        """Refuse `from_pretrained`'s extra options before any file is looked up.
+
+        Called with the keyword options destined for `from_estimator`, ahead of path
+        resolution and download, so a mistake costs no I/O. Accepts everything by default;
+        override to reject options the class cannot build from.
+        """
+
+    @classmethod
     @beartype
     def from_pretrained(
         cls: type[EstimatorFactory],
@@ -240,7 +274,8 @@ class PretrainedMixin:
             Download cache directory; `None` uses the Hugging Face cache. Ignored for a
             local path.
         **kwargs
-            Passed to `from_estimator`, which decides what the class needs.
+            Passed to `from_estimator`, which decides what the class needs. `k`, the
+            candidates per token the weights were trained at, is required.
 
         Returns
         -------
@@ -249,18 +284,22 @@ class PretrainedMixin:
 
         Raises
         ------
+        TypeError
+            If a class that requires an option (`k` for the detectors) was not given it;
+            checked before anything is resolved or fetched.
         ValueError
             If the identifier resolves to nothing, the file holds a type that was not
             asked for, or the estimator does not fit the class.
 
         Examples
         --------
-        >>> detector = WEPR.from_pretrained("artefactory/wepr-phi4")  # doctest: +SKIP
+        >>> detector = WEPR.from_pretrained("artefactory/wepr-phi4", k=15)  # doctest: +SKIP
         >>> detector = WEPR.from_pretrained("/path/to/model.skops", k=15)  # doctest: +SKIP
         >>> detector = WEPR.from_pretrained(
-        ...     "artefactory/wepr-phi4", revision="main"
+        ...     "artefactory/wepr-phi4", k=15, revision="main"
         ... )  # doctest: +SKIP
         """
+        cls.check_options(kwargs)
         path = cls.cached_file(identifier, revision=revision, token=token, cache_dir=cache_dir)
         return cls.from_estimator(cls.load_file(path, trusted=trusted), identifier, **kwargs)
 
@@ -302,7 +341,7 @@ class SavePretrainedMixin:
         Examples
         --------
         >>> detector.save_pretrained("my_detector.skops")  # doctest: +SKIP
-        >>> WEPR.from_pretrained("my_detector.skops")  # doctest: +SKIP
+        >>> WEPR.from_pretrained("my_detector.skops", k=15)  # doctest: +SKIP
         """
         check_is_fitted(self.estimator)
         path = Path(path)

@@ -17,10 +17,7 @@ from sklearn.utils.validation import check_is_fitted, column_or_1d
 
 from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
 from artefactual.scoring.entropy_methods.pooling import EPRPooling, Pooling, WEPRPooling, as_pooling
-from artefactual.utils.io import PretrainedMixin, SavePretrainedMixin
-
-# Every published detector was fit at 15 candidates per token.
-DEFAULT_K = 15
+from artefactual.utils.io import PretrainedMixin, SavePretrainedMixin, _require_k
 
 
 def default_classifier() -> LogisticRegression:
@@ -53,7 +50,7 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
 
     Parameters
     ----------
-    k : int, default=15
+    k : int
         Candidates per token. Written to every step before the classifier, so that
         `set_params(k=)`, which is how `GridSearchCV` sweeps it, reaches them all.
     estimator : estimator, default=None
@@ -114,7 +111,7 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
 
     def __init__(
         self,
-        k: int = DEFAULT_K,
+        k: int,
         estimator: BaseEstimator | None = None,
         *,
         transform_input=None,
@@ -193,6 +190,17 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
         self.steps[-1] = (self.steps[-1][0], default_classifier() if value is None else value)
 
     @classmethod
+    def check_options(cls, kwargs: dict[str, Any]) -> None:
+        """Refuse options that omit `k`, the width the weights were trained at.
+
+        Raises
+        ------
+        TypeError
+            If `"k"` is not a key of `kwargs`.
+        """
+        _require_k(kwargs)
+
+    @classmethod
     def from_estimator(cls, estimator: BaseEstimator, identifier: str | Path, **kwargs: Any) -> "BaseEntropyClassifier":
         """An instance carrying `estimator` as its classifier, if the widths agree.
 
@@ -236,6 +244,7 @@ class BaseEntropyClassifier(Pipeline, PretrainedMixin, SavePretrainedMixin):
                 "scores the probability of the second class of a binary classifier."
             )
             raise ValueError(msg)
+        cls.check_options(kwargs)
         detector = cls(estimator=estimator, **kwargs)
         # The width the assembled pipeline hands its classifier, read from the pipeline's
         # own feature names so that the user's `k` and pooling decide it, never the file.
@@ -465,7 +474,7 @@ class EPRClassifier(BaseEntropyClassifier):
 
     Parameters
     ----------
-    k : int, default=15
+    k : int
         Candidates per token read. See `BaseEntropyClassifier`.
     estimator : estimator, default=None
         Final estimator; the unregularised logistic regression by default.
@@ -516,7 +525,7 @@ class WEPRClassifier(BaseEntropyClassifier):
 
     Parameters
     ----------
-    k : int, default=15
+    k : int
         Candidates per token read. See `BaseEntropyClassifier`.
     estimator : estimator, default=None
         Final estimator; the unregularised logistic regression by default.

@@ -38,6 +38,10 @@ Releases before the entries below are listed, with their notes, on the
 - `EntropyTransformer(pooling)` and `PoolingDetector.from_pretrained(path, pooling=...)` require
   the pooling: nothing defaults to `EPRPooling()` and `pooling=None` is refused. `EPR`, `WEPR`
   and their classifiers still fix theirs.
+- `k` has no default. `EPR`, `WEPR`, `EPRClassifier`, `WEPRClassifier`, `PoolingDetector` and
+  `EntropyTransformer` require it, `artefactual.scoring.base_detector.DEFAULT_K` is removed, and
+  `scripts/train_detector.py` requires `--k`. `EntropyTransformer(pooling, k=None)` still keeps
+  every rank. Pass the `k` the weights were trained at, which is 15 for the published detectors.
 - `get_feature_names_out` of a custom pooling function returns names (its own name, or
   `name_0`, ...) instead of raising `ValueError`.
 

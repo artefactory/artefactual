@@ -7,8 +7,8 @@ and the inputs the parser accepts.
 
 `k` is how many **candidates** per token are read — the tokens the model considered at that
 position. A candidate's **rank** is its place in that list, counted from 0 for the most
-likely, so `k` is also the width of the rank axis. It defaults to **15**, the width every
-shipped file was trained at.
+likely, so `k` is also the width of the rank axis. It has no default: pass the width the weights were
+trained at, which is **15** for every shipped file.
 
 ```python
 detector = WEPR.from_pretrained("artefactory/wepr-phi4", k=15)
