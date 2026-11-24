@@ -5,12 +5,13 @@ from typing import Any, ClassVar
 
 import numpy as np
 from beartype.door import is_bearable
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, is_classifier
+from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.utils import Tags
 from sklearn.utils.multiclass import check_classification_targets, type_of_target
-from sklearn.utils.validation import column_or_1d
+from sklearn.utils.validation import check_is_fitted, column_or_1d
 
 from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
 from artefactual.utils.io import EstimatorPersistenceMixin, Reduction
@@ -193,15 +194,32 @@ class BaseEntropyClassifier(Pipeline, EstimatorPersistenceMixin):
         Raises
         ------
         ValueError
-            If the estimator does not cover exactly `k` candidates.
+            If the estimator is not a fitted classifier with exactly two classes, or does
+            not cover exactly `k` candidates.
         """
+        try:
+            check_is_fitted(estimator)
+        except NotFittedError as error:
+            msg = f"The estimator at '{identifier}' is not fitted, so it carries no weights to score with."
+            raise ValueError(msg) from error
+        if not is_classifier(estimator):
+            msg = f"The estimator at '{identifier}' is a {type(estimator).__name__}, not a classifier."
+            raise ValueError(msg)
+        # Read through `Any`: a fitted classifier has `classes_`, which `BaseEstimator` does not declare.
+        fitted: Any = estimator
+        n_classes = len(fitted.classes_)
+        if n_classes != 2:  # a detector scores P(class 1), which needs exactly two classes
+            msg = (
+                f"The estimator at '{identifier}' was fitted on {n_classes} class(es); a detector "
+                "scores the probability of the second class of a binary classifier."
+            )
+            raise ValueError(msg)
         k = kwargs.get("k", DEFAULT_K)
         expected = cls.n_features(k)
         # `n_features_in_` is set by fit, so it is absent from the `BaseEstimator` interface
         # even though every estimator reaching here is fitted. Read it through `Any` rather
         # than suppressing per type-checker: the suppression is itself reported as unused by
         # versions that do not raise, which fails the hook the other way round.
-        fitted: Any = estimator
         actual: int = fitted.n_features_in_
         if actual != expected:
             msg = (
