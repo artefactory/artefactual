@@ -65,8 +65,10 @@ Releases before the entries below are listed, with their notes, on the
   `(n_sequences, n_tokens, width)` array, or a numeric 2-D table read as one token per row.
   Targets must be binary. They pass scikit-learn's `check_estimator`, with one declared
   expected failure (`check_estimators_overwrite_params`, which scikit-learn lists for
-  `Pipeline` itself). `EPR` and `WEPR` are the same estimators with a `LogProbParser` in
-  front. See {doc}`guide/sklearn`.
+  `Pipeline` itself); `EntropyTransformer` passes it too, and the checks that need no data
+  are run by hand on `LogProbParser`. `EPR` and `WEPR` are the same estimators with a
+  `LogProbParser` in front, so they take responses and are not run through
+  `parametrize_with_checks`. See {doc}`guide/sklearn`.
 - `BaseEntropyClassifier`, the pipeline the four estimators share, and the class-level
   `pooling`.
 - `EntropyTransformer` keeps the first `k` ranks of input that is wider, which are the most
