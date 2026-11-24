@@ -42,7 +42,8 @@ Issues = "https://github.com/artefactory/artefactual/issues"
 
 [project.optional-dependencies]
 adapters = [
-    "langfuse>=4.8.1",
+    # 5.0 removed `api.trace.get`, which the evaluator reads traces with.
+    "langfuse>=4.8.1,<5",
     "openai>=2.41.1",
 ]
 docs = [

@@ -346,7 +346,7 @@ requires-dist = [
     { name = "beartype", specifier = ">=0.19.0" },
     { name = "huggingface-hub", specifier = ">=0.30.0" },
     { name = "jupytext", marker = "extra == 'docs'", specifier = ">=1.19.5" },
-    { name = "langfuse", marker = "extra == 'adapters'", specifier = ">=4.8.1" },
+    { name = "langfuse", marker = "extra == 'adapters'", specifier = ">=4.8.1,<5" },
     { name = "myst-nb", marker = "extra == 'docs'", specifier = ">=1.1" },
     { name = "numpy", specifier = ">=1.24.0" },
     { name = "openai", marker = "extra == 'adapters'", specifier = ">=2.41.1" },
@@ -2189,7 +2189,7 @@ wheels = [
 
 [[package]]
 name = "langfuse"
-version = "5.2.0"
+version = "4.18.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "backoff" },
@@ -2202,9 +2202,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/37/b3/65dbc94d809676053b65e89fda729ef7d8a1d13bbb89f2ab407639f631f2/langfuse-5.2.0.tar.gz", hash = "sha256:8cde9e91b44b53444906af9b37efa9c29c647a9f45f9f8435a638026cb3d4693", size = 383092, upload-time = "2026-11-05T09:53:48.439Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/78/32/cfa4cfa87a73d5e9bc527e568d9eaad171ad8d3ff3ec8a796247b4a577c4/langfuse-4.18.0.tar.gz", hash = "sha256:fd529365207ecdefd778ad1a35056a2acee032ff0d75e18368c106fbc3cd865c", size = 395814, upload-time = "2026-10-14T08:40:45.485Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f0/48/715e2b612d5d20989e4a338c27d78bef43de327f2192c9b20421f5648868/langfuse-5.2.0-py3-none-any.whl", hash = "sha256:4763cbad358960f1036078a4c6e9f86f04690ea566541709c2c40aa1998e2b0f", size = 660151, upload-time = "2026-11-05T09:53:49.817Z" },
+    { url = "https://files.pythonhosted.org/packages/49/49/2569267383ee0d0afeaab904aefaf77eb69fed023354e833fb49ebe7411e/langfuse-4.18.0-py3-none-any.whl", hash = "sha256:b0f14f30f9f147ca662eaa9998af374fc57b9e8a894f0ae86789cbbd96448289", size = 709950, upload-time = "2026-10-14T08:40:47.196Z" },
 ]
 
 [[package]]
