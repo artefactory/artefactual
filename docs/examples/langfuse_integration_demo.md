@@ -95,7 +95,7 @@ The detector ids name the detectors trained **for** `OPENAI_MODEL`, not the mode
 `EPR.from_pretrained` and `WEPR.from_pretrained` resolve a repository holding `model.skops`,
 and a generator's repository has none. The two reductions are published separately, so there
 are two ids. Swap both when you swap the model being scored — a detector reads one model's
-confidence and no other's. `TOP_LOGPROBS` must match the width (candidates per token) each was calibrated at.
+confidence and no other's. `TOP_LOGPROBS` must match the width (candidates per token) each was trained at.
 
 ```{code-cell} ipython3
 OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://router.huggingface.co/v1")

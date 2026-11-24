@@ -83,7 +83,7 @@ from artefactual import WEPR
 DETECTOR = "artefactory/wepr-falcon3"
 DATA_PATH = "open_ai_responses_top15.json"
 
-# Candidates per token the detector was calibrated at, which the fixture also carries. Passing a
+# Candidates per token the detector was trained at, which the fixture also carries. Passing a
 # different value raises rather than producing a mis-shaped score, and a response narrower
 # than K is refused rather than padded: the missing candidates are unfetched, not absent, so
 # filling them would understate the entropy.
