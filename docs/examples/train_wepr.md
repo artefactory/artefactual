@@ -36,7 +36,7 @@ log-probabilities generated rather than sampled from a model.
 | Fit | Fit on a stratified split, report ROC-AUC on the holdout | seconds |
 | What the fit weighs | The fitted coefficient per rank | seconds |
 | How well does this fit generalise? | Five folds over every response | seconds |
-| Which `k` should this be fitted at? | A grid over `parser__k` | seconds |
+| Which `k` should this be fitted at? | A grid over `k` | seconds |
 | Is it worth labelling more answers? | The learning curve | seconds |
 | Choosing the final estimator | Regularise, then tune the threshold | seconds |
 | Per-token scores | Score each token of a held-out answer | seconds |
@@ -244,8 +244,9 @@ print(f"5-fold ROC-AUC: {auc.mean():.2f} +/- {auc.std():.2f}   {np.round(auc, 2)
 
 ## Which `k` should this be fitted at?
 
-Every step's parameters are searchable, `parser__k` included, and the classifier is refitted
-at each width, so the comparison is legitimate. Read the scores across `k` before choosing: a
+Every step's parameters are searchable. The grid sweeps `k` rather than `parser__k`, because
+setting `k` reaches both the parser and the entropy step while `parser__k` leaves the entropy
+step at its old width. The classifier is refitted at each width, so the comparison is legitimate. Read the scores across `k` before choosing: a
 score that keeps rising with `k` says the signal lives in the deeper ranks, not just the top
 one, while one that flattens early says the extra ranks add little.
 
@@ -257,9 +258,9 @@ value forever after. Every published detector was fitted at 15.
 ```{code-cell} ipython3
 from sklearn.model_selection import GridSearchCV
 
-search = GridSearchCV(WEPR(), {"parser__k": [5, 10, 15]}, cv=folds, scoring="roc_auc")
+search = GridSearchCV(WEPR(), {"k": [5, 10, 15]}, cv=folds, scoring="roc_auc")
 search.fit(responses, y)
-for k, mean in zip(search.cv_results_["param_parser__k"], search.cv_results_["mean_test_score"], strict=True):
+for k, mean in zip(search.cv_results_["param_k"], search.cv_results_["mean_test_score"], strict=True):
     print(f"  k={k:>2}: {mean:.2f}")
 ```
 
