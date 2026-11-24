@@ -239,7 +239,9 @@ class BaseEntropyClassifier(Pipeline, EstimatorPersistenceMixin):
         X : ndarray of shape (n_samples, n_tokens, width) or (n_samples, width)
             Per-rank logprobs, NaN-padded in the 3-D form; a 2-D table is one token per row.
         y : array-like of shape (n_samples,), default=None
-            Binary labels, 1 marking the hallucination class.
+            Binary labels. Any two distinct labels are accepted, and the second in sorted
+            order, `classes_[1]`, is the class `predict_proba(...)[:, 1]` scores; use
+            `0`/`1` with 1 marking the hallucination class.
         **params
             Passed to `Pipeline.fit`.
 
