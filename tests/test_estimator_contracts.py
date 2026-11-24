@@ -305,3 +305,12 @@ def test_the_entropy_transformer_declares_three_dimensional_input():
     tags = EntropyTransformer().__sklearn_tags__()
     assert tags.input_tags.two_d_array is False
     assert tags.input_tags.three_d_array is True
+
+
+def test_validate_returns_a_float_cube_and_refuses_infinity():
+    from artefactual.scoring import EntropyTransformer
+
+    assert EntropyTransformer().validate(np.zeros((2, 3, 4))).shape == (2, 3, 4)
+    assert EntropyTransformer().validate(np.zeros((2, 4)), reset=True).shape == (2, 1, 4)
+    with pytest.raises(ValueError, match=r"(?i)inf"):
+        EntropyTransformer().validate(np.full((1, 1, 2), np.inf))
