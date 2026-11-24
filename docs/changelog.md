@@ -55,3 +55,5 @@ Releases before the entries below are listed, with their notes, on the
   an arbitrary subset of steps.
 - `EntropyTransformer.transform` and `transform_tokens` accept a nested list and raise
   `ValueError` on infinite logprobs, rather than a `beartype` error or an infinite feature.
+- `from_pretrained` refuses an estimator that is not a fitted two-class classifier, with a
+  `ValueError` naming the file.

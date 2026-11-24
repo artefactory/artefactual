@@ -550,3 +550,29 @@ def test_any_two_labels_are_accepted_and_the_second_is_column_one(cls):
     assert list(detector.classes_) == [1, 2]
     zero_one = cls().fit(x, y)
     assert np.array_equal(detector.predict_proba(x), zero_one.predict_proba(x))
+
+
+# --- loading a fitted estimator ----------------------------------------------------------
+
+
+@pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
+def test_from_estimator_rejects_an_unfitted_estimator(cls):
+    with pytest.raises(ValueError, match="not fitted"):
+        cls._from_estimator(LogisticRegression(), "somewhere.skops")
+
+
+@pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
+def test_from_estimator_rejects_a_non_classifier(cls):
+    from sklearn.linear_model import LinearRegression
+
+    x, y = table()
+    with pytest.raises(ValueError, match="not a classifier"):
+        cls._from_estimator(LinearRegression().fit(x, y), "somewhere.skops")
+
+
+@pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
+def test_from_estimator_rejects_more_than_two_classes(cls):
+    x, _ = table()
+    three = LogisticRegression().fit(x, np.arange(len(x)) % 3)
+    with pytest.raises(ValueError, match="3 class"):
+        cls._from_estimator(three, "somewhere.skops")
