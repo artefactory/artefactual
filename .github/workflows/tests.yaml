@@ -73,3 +73,10 @@ jobs:
         run: |
           echo "## Coverage Report (Python ${{ matrix.python-version }})" >> $GITHUB_STEP_SUMMARY
           uv run coverage report --format=markdown >> $GITHUB_STEP_SUMMARY || true
+
+      # scikit-learn reads the array API only when this is set, and then `check_estimator`
+      # exercises `check_array_api_input`, which the default run skips.
+      - name: Run the estimator checks with the array API enabled
+        env:
+          SCIPY_ARRAY_API: "1"
+        run: uv run --frozen pytest tests/test_common.py
