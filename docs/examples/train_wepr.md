@@ -348,7 +348,7 @@ print(classification_report(y_test, tuned.predict(x_test), target_names=["ground
 number, which locates *where* a response drifts. Padded positions stay NaN rather than being
 scored as real tokens.
 
-These sample responses are one or two tokens long, so there is little to see.
+These sample responses are at most four tokens long, so there is little to see.
 
 ```{code-cell} ipython3
 :tags: [hide-input]
