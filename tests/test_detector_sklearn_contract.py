@@ -608,3 +608,14 @@ def test_from_estimator_rejects_more_than_two_classes(cls):
     three = LogisticRegression().fit(x, np.arange(len(x)) % 3)
     with pytest.raises(ValueError, match="3 class"):
         cls._from_estimator(three, "somewhere.skops")
+
+
+def test_the_user_api_imports_from_the_package_root_and_the_mixin_does_not():
+    import artefactual
+
+    names = {
+        "EPR", "WEPR", "EPRClassifier", "WEPRClassifier", "Judgment", "LogProbParser", "EntropyTransformer",
+        "ChatCompletion", "ResponsesPayload", "BatchRequestOutput", "read_batch", "epr_reduction", "wepr_reduction",
+    }  # fmt: skip
+    assert names <= set(artefactual.__all__)
+    assert "LogprobsMixin" not in artefactual.__all__
