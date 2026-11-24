@@ -45,3 +45,26 @@ def test_reduction_parameter_is_not_mutated(logprobs):
     transformer.transform(logprobs)
     assert transformer.reduction == "wepr"
     assert transformer.get_params()["reduction"] == "wepr"
+
+
+# --- input validation --------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("reduction", ["epr", "wepr"])
+@given(logprobs=logprob_cubes())
+def test_a_nested_list_scores_like_the_array(reduction, logprobs):
+    transformer = EntropyTransformer(reduction=reduction)
+    assert np.array_equal(transformer.transform(logprobs.tolist()), transformer.transform(logprobs))
+    assert np.array_equal(transformer.transform_tokens(logprobs.tolist()), transformer.transform_tokens(logprobs))
+
+
+@pytest.mark.parametrize("method", ["transform", "transform_tokens"])
+def test_infinite_logprobs_are_refused(method):
+    cube = np.full((1, 2, 3), -0.5)
+    cube[0, 1, 2] = -np.inf
+    with pytest.raises(ValueError, match="infinity"):
+        getattr(EntropyTransformer(), method)(cube)
+
+
+def test_an_empty_batch_passes_validation():
+    assert EntropyTransformer().transform(np.empty((0, 0, 0))).shape[0] == 0
