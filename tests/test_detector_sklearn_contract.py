@@ -540,6 +540,28 @@ def test_n_features_in_is_the_width_of_the_fitted_table_and_absent_before(cls):
     assert detector.fit(x, y).n_features_in_ == 6
 
 
+# --- parameter validation ----------------------------------------------------------------
+
+
+@pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
+@pytest.mark.parametrize("k", [0, -2, 1.5, "3", None])
+def test_fit_rejects_an_invalid_k_before_doing_anything_else(cls, k):
+    x, y = fit_data(cls)
+    detector = cls()
+    detector.k = k
+    with pytest.raises(ValueError, match="'k'"):
+        detector.fit(x, y)
+
+
+@pytest.mark.parametrize("cls", ESTIMATORS, ids=ESTIMATOR_IDS)
+def test_fit_rejects_an_estimator_without_predict_proba(cls):
+    x, y = fit_data(cls)
+    from sklearn.svm import LinearSVC
+
+    with pytest.raises(ValueError, match="'estimator'"):
+        cls(estimator=LinearSVC()).fit(x, y)
+
+
 # --- labels ------------------------------------------------------------------------------
 
 

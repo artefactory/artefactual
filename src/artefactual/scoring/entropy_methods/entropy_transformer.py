@@ -2,10 +2,13 @@
 
 import warnings
 from collections.abc import Callable
+from numbers import Integral
+from typing import ClassVar
 
 import numpy as np
-from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.base import BaseEstimator, TransformerMixin, _fit_context
 from sklearn.utils import Tags
+from sklearn.utils._param_validation import Interval, StrOptions
 from sklearn.utils.validation import _check_feature_names_in, check_array, validate_data
 
 from artefactual.exceptions import EmptySequenceWarning
@@ -87,6 +90,11 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
     >>> features = EntropyTransformer("wepr").transform(logprobs)  # doctest: +SKIP
     >>> features.shape  # (n_sequences, 2 * k)  # doctest: +SKIP
     """
+
+    _parameter_constraints: ClassVar[dict] = {
+        "reduction": [StrOptions({"epr", "wepr"}), callable],
+        "k": [Interval(Integral, 1, None, closed="left"), None],
+    }
 
     def __init__(self, reduction: str | Callable = "epr", k: int | None = None) -> None:
         self.reduction = reduction  # "epr" | "wepr" | custom reduction(s_kj, axis)
@@ -192,6 +200,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         # `_wepr` concatenates the mean branch, then the max branch, on the last axis.
         return np.array([f"wepr_{branch}_{rank}" for branch in ("mean", "max") for rank in ranks], dtype=object)
 
+    @_fit_context(prefer_skip_nested_validation=True)
     def fit(self, X, y=None) -> "EntropyTransformer":  # noqa: ARG002, N803 — y unused but required by the sklearn fit signature
         """Learns nothing; a 2-D table is validated so its width and column names are recorded.
 

@@ -68,3 +68,21 @@ def test_infinite_logprobs_are_refused(method):
 
 def test_an_empty_batch_passes_validation():
     assert EntropyTransformer().transform(np.empty((0, 0, 0))).shape[0] == 0
+
+
+@pytest.mark.parametrize(
+    ("params", "name"),
+    [({"reduction": "bogus"}, "reduction"), ({"k": 0}, "k"), ({"k": 2.5}, "k"), ({"reduction": 3}, "reduction")],
+)
+def test_fit_rejects_invalid_parameters(params, name):
+    with pytest.raises(ValueError, match=f"'{name}'"):
+        EntropyTransformer(**params).fit(np.zeros((1, 1, 1)))
+
+
+def test_fit_accepts_a_callable_reduction_and_no_k():
+    assert EntropyTransformer(reduction=lambda x, axis: np.nanmean(x, axis=axis), k=None).fit(None)
+
+
+def test_fit_with_no_data_records_no_width():
+    transformer = EntropyTransformer().fit(None)
+    assert "n_features_in_" not in vars(transformer)
