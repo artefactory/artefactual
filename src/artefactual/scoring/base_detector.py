@@ -9,7 +9,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.utils import Tags
 
 from artefactual.preprocessing.parser import LogProbParser
-from artefactual.scoring.entropy_classifier import DEFAULT_K, BaseEntropyClassifier
+from artefactual.scoring.entropy_classifier import BaseEntropyClassifier
 from artefactual.scoring.entropy_methods.pooling import EPRPooling, Pooling, WEPRPooling, as_pooling
 
 
@@ -30,7 +30,7 @@ class BaseDetector(BaseEntropyClassifier):
 
     Parameters
     ----------
-    k : int, default=15
+    k : int
         Candidates per token the responses carry. Responses carrying fewer are rejected
         when parsed, rather than padded, since the missing candidates were never fetched.
         Written to the parser and the entropy step, and any loaded weights were checked
@@ -69,7 +69,7 @@ class BaseDetector(BaseEntropyClassifier):
 
     def __init__(
         self,
-        k: int = DEFAULT_K,
+        k: int,
         estimator: BaseEstimator | None = None,
         *,
         transform_input=None,
@@ -109,7 +109,7 @@ class EPR(BaseDetector):
 
     Parameters
     ----------
-    k : int, default=15
+    k : int
         Candidates per token the responses carry. See `BaseDetector`.
     estimator : estimator, default=None
         Final estimator; the unregularised logistic regression by default.
@@ -155,7 +155,7 @@ class WEPR(BaseDetector):
 
     Parameters
     ----------
-    k : int, default=15
+    k : int
         Candidates per token the responses carry. See `BaseDetector`.
     estimator : estimator, default=None
         Final estimator; the unregularised logistic regression by default.
@@ -202,7 +202,7 @@ class PoolingDetector(BaseDetector):
     pooling : Pooling or callable
         A `Pooling` instance, or a function `f(x, axis) -> (..., n_features)` pooling the
         token `axis` of NaN-padded entropy contributions whose last axis is the rank axis.
-    k : int, default=15
+    k : int
         Candidates per token the responses carry. See `BaseDetector`.
     estimator : estimator, default=None
         Final estimator; the unregularised logistic regression by default.
@@ -243,7 +243,7 @@ class PoolingDetector(BaseDetector):
     def __init__(
         self,
         pooling: Pooling | Callable,
-        k: int = DEFAULT_K,
+        k: int,
         estimator: BaseEstimator | None = None,
         *,
         transform_input=None,

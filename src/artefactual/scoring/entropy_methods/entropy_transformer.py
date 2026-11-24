@@ -31,7 +31,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
 
     Learns nothing, but `fit` records the width and column names of a 2-D table, as
     scikit-learn's validation does, so the features of a named table are named after its
-    columns. `k` is optional: the width
+    columns. `k` is required, and `k=None` is the explicit choice to keep every rank: the width
     of a parsed cube is already the calibrated `k`, since the parser sizes the rank axis.
     A given `k` keeps only the first `k` ranks of
     wider input, which are the `k` most likely candidates, and names a rank-wise pooling's
@@ -46,7 +46,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         pooling the token `axis` of the NaN-padded contributions `x`, whose last axis is the
         rank axis. Stored as given and wrapped when used, so a string raises `TypeError` from `transform` and
         `get_feature_names_out`.
-    k : int, default=None
+    k : int or None
         Candidates per token to keep, the first `k` ranks. `None` keeps every rank, and then a pooling whose
         width depends on `k` cannot name its features without `input_features` or a fitted table.
 
@@ -66,7 +66,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         "k": [Interval(Integral, 1, None, closed="left"), None],
     }
 
-    def __init__(self, pooling: Pooling | Callable, k: int | None = None) -> None:
+    def __init__(self, pooling: Pooling | Callable, k: int | None) -> None:
         self.pooling = pooling  # stored untouched: clone checks constructor params by identity; wrapped at use
         self.k = k
 

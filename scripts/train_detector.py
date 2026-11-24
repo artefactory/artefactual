@@ -3,7 +3,7 @@ Trains a hallucination detector and evaluates the model it produces.
 
 Usage:
     uv run scripts/train_detector.py \
-        --responses responses.jsonl --judgments judgments.jsonl --pooling wepr \
+        --responses responses.jsonl --judgments judgments.jsonl --pooling wepr --k 15 \
         --output wepr.skops --report wepr_evaluation.json
 
 Both inputs are `vllm run-batch` outputs: one line per request, carrying the `custom_id`
@@ -51,7 +51,6 @@ from sklearn.utils import resample
 
 from artefactual.preprocessing import index_by_custom_id, read_batch, read_judgment
 from artefactual.scoring import EPR, WEPR, BaseDetector, Pooling, PoolingDetector
-from artefactual.scoring.base_detector import DEFAULT_K
 
 SEED = 42
 REPETITIONS = 1000
@@ -63,14 +62,14 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string("responses", None, "vllm run-batch output with logprobs")
 flags.DEFINE_string("judgments", None, "vllm run-batch output with judge verdicts")
 flags.DEFINE_string("pooling", None, "epr, wepr, or an import path package.module:Attr to a Pooling or a function")
-flags.DEFINE_integer("k", DEFAULT_K, "top_logprobs the batch was generated with")
+flags.DEFINE_integer("k", None, "top_logprobs the batch was generated with")
 flags.DEFINE_string("output", None, "where to write the fitted detector (.skops)")
 flags.DEFINE_string("report", None, "where to write the evaluation as JSON")
 flags.DEFINE_float("test_size", TEST_SIZE, "held-out fraction; 0 fits on everything and skips evaluation")
 flags.DEFINE_integer("repetitions", REPETITIONS, "resamples used for the confidence intervals")
 flags.DEFINE_integer("seed", SEED, "seed for the split and the resampling")
 
-flags.mark_flags_as_required(["responses", "judgments", "pooling"])
+flags.mark_flags_as_required(["responses", "judgments", "pooling", "k"])
 
 
 # The two shipped poolings, by their detectors; any other pooling goes through an import path.
