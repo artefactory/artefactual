@@ -33,6 +33,8 @@ print(detector.predict_proba(response)[:, 1])   # P(hallucination) per sequence
 print(detector.predict_token_proba(response))   # ...and per token
 ```
 
+Column order follows `detector.classes_`: with `0`/`1` labels, column 1 is the hallucination class. With other labels, pick the column with `list(detector.classes_).index(label)`.
+
 A detector is trained for one model, so `DETECTOR` must be the one published for whatever
 produced the response — see [published detectors](#published-detectors) for the pairs. There is no default threshold; choosing one is covered in the
 [user guide](https://artefactory.github.io/artefactual/guide/scoring.html).

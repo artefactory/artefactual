@@ -16,6 +16,8 @@ detector = WEPR.from_pretrained("artefactory/wepr-ministral")
 detector.predict_proba(response)[:, 1]   # P(hallucination) per sequence
 ```
 
+Column order follows `detector.classes_`: with `0`/`1` labels, column 1 is the hallucination class. With other labels, pick the column with `list(detector.classes_).index(label)`.
+
 Two answers from the same model, scored by the same detector:
 
 | The model was asked | It answered | P(hallucination) |
