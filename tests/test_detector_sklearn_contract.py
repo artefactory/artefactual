@@ -528,3 +528,15 @@ def test_n_features_in_is_the_width_of_the_fitted_table_and_absent_before(cls):
         detector.n_features_in_  # noqa: B018
     x, y = table(width=6)
     assert detector.fit(x, y).n_features_in_ == 6
+
+
+# --- labels ------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("cls", CLASSIFIERS, ids=CLASSIFIER_IDS)
+def test_any_two_labels_are_accepted_and_the_second_is_column_one(cls):
+    x, y = table()
+    detector = cls().fit(x, y + 1)
+    assert list(detector.classes_) == [1, 2]
+    zero_one = cls().fit(x, y)
+    assert np.array_equal(detector.predict_proba(x), zero_one.predict_proba(x))
