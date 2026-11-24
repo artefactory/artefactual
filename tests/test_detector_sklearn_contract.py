@@ -242,6 +242,13 @@ def test_predict_leaves_the_response_untouched(cls):
 
 
 @pytest.mark.parametrize("cls", DETECTORS, ids=IDS)
+def test_fit_leaves_the_response_untouched(cls):
+    before = deepcopy(RESPONSES)
+    cls(k=15).fit(RESPONSES, LABELS)
+    assert RESPONSES == before
+
+
+@pytest.mark.parametrize("cls", DETECTORS, ids=IDS)
 def test_a_clone_and_the_split_pipeline_score_like_the_detector(cls):
     detector = cls(k=15).fit(RESPONSES, LABELS)
     expected = detector.predict_proba(RESPONSES)
