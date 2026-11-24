@@ -1,7 +1,19 @@
+import os
+import shutil
+import tempfile
+
+# huggingface_hub reads HF_HUB_CACHE and HF_HUB_OFFLINE once, when it imports `constants`, so
+# they are set before anything imports it. Assigned, never defaulted: a machine that already
+# points HF_HUB_CACHE at a shared cache would otherwise have the suite read and write it.
+HUB_CACHE = tempfile.mkdtemp(prefix="hf-hub-cache-")
+os.environ["HF_HUB_CACHE"] = HUB_CACHE
+os.environ["HF_HUB_OFFLINE"] = "1"
+
 import json
-from pathlib import Path
+from pathlib import Path, PurePath
 
 import numpy as np
+import pytest
 import skops.io as sio
 from beartype.door import is_bearable
 from hypothesis import strategies as st
@@ -159,6 +171,47 @@ def write_json(directory, name, payload):
     path = Path(directory) / name
     path.write_text(json.dumps(payload), encoding="utf-8")
     return path
+
+
+# --- the Hub cache -------------------------------------------------------------------
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _hub_is_offline_and_sandboxed():
+    """Fail the session if the Hub client did not pick up the cache-only environment.
+
+    The client reads its environment when first imported, so an import that beat the
+    assignment at the top of this file would leave it online and on the real cache. Reading
+    its constants here turns that into a failure instead of a silent network call.
+
+    Removes the session cache when the session ends.
+    """
+    from huggingface_hub import constants
+
+    assert constants.HF_HUB_OFFLINE, "huggingface_hub was imported before HF_HUB_OFFLINE was set"
+    assert constants.HF_HUB_CACHE == HUB_CACHE, "huggingface_hub was imported before HF_HUB_CACHE was set"
+    yield
+    shutil.rmtree(HUB_CACHE, ignore_errors=True)
+
+
+@pytest.fixture(scope="session")
+def published_detectors():
+    """Publish the detectors the notebooks name into the session's Hub cache.
+
+    The notebooks name a Hugging Face repository, which is what a reader should copy, so
+    running them as written reaches the network -- and a runner blip then fails a build
+    that has nothing to do with the Hub. Each repository they name is written under the
+    session cache as the Hub client lays out it, and the client reads it offline: the
+    notebook's own code, the resolver, the reader and the whole pipeline still run for
+    real, on files that exist.
+
+    The width follows the reduction the repository name starts with, because that is
+    what the classifier is checked against: EPR pools to a single coefficient, WEPR
+    keeps `2k`.
+    """
+    for repo_id in ("artefactory/epr-ministral", "artefactory/wepr-falcon3"):
+        n_features = 1 if PurePath(repo_id).name.startswith("epr") else 2 * 15
+        cached_repo(HUB_CACHE, repo_id, "main", "d" * 40, fitted_logistic(-0.5, [0.1] * n_features))
 
 
 # --- estimators on disk --------------------------------------------------------------

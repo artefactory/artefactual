@@ -325,6 +325,9 @@ max-args = 8
     "PLR0914",
     "A004",
 ]
+# The conftest sets the Hub environment before its first import: huggingface_hub reads it
+# once, when `constants` is imported, so every later import is by design after code.
+"tests/conftest.py" = ["E402"]
 "**/tests/**/*" = [
     "PLC1901",
     "PLR2004",

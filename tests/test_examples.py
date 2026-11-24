@@ -11,7 +11,7 @@ are defined -- rather than executed.
 """
 
 import json
-from pathlib import Path, PurePath
+from pathlib import Path
 
 import jupytext
 import pytest
@@ -72,33 +72,9 @@ def test_the_notebook_parses(name):
     compile(code_of(load(name)), name, "exec")
 
 
-@pytest.fixture
-def _detectors_resolve_locally(monkeypatch, tmp_path):
-    """Publish the detectors the notebooks name into a Hub cache, and read it offline.
-
-    The notebooks name a Hugging Face repository, which is what a reader should copy, so
-    running them as written reaches the network -- and a runner blip then fails a build
-    that has nothing to do with the Hub. Each repository they name is written under
-    `tmp_path` as the Hub client lays out its cache, and the client is switched to
-    cache-only: the notebook's own code, the resolver, the reader and the whole pipeline
-    still run for real, on files that exist.
-
-    The width follows the reduction the repository name starts with, because that is
-    what the classifier is checked against: EPR pools to a single coefficient, WEPR
-    keeps `2k`.
-    """
-    from conftest import cached_repo, fitted_logistic
-    from huggingface_hub import constants
-
-    for repo_id in ("artefactory/epr-ministral", "artefactory/wepr-falcon3"):
-        n_features = 1 if PurePath(repo_id).name.startswith("epr") else 2 * 15
-        cached_repo(tmp_path, repo_id, "main", "d" * 40, fitted_logistic(-0.5, [0.1] * n_features))
-    monkeypatch.setattr(constants, "HF_HUB_CACHE", str(tmp_path))
-    monkeypatch.setattr(constants, "HF_HUB_OFFLINE", True)
-
-
+@pytest.mark.usefixtures("published_detectors")
 @pytest.mark.parametrize("name", OFFLINE_NOTEBOOKS)
-def test_the_notebook_runs_against_the_current_source(name, monkeypatch, _detectors_resolve_locally):
+def test_the_notebook_runs_against_the_current_source(name, monkeypatch):
     """Execute every code cell in order, from the notebook's own directory.
 
     Run in-process rather than through nbconvert: the failure surfaces as an ordinary

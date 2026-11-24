@@ -124,18 +124,9 @@ def test_a_directory_resolves_to_the_model_inside_it(tmp_path):
     assert path.name == MODEL_FILENAME
 
 
-# --- the Hub options, offline ----------------------------------------------------------
+# --- the Hub options, offline (the whole session is cache-only; see conftest) ---
 
 
-@pytest.fixture
-def offline_hub(monkeypatch):
-    """Switch the Hub client to cache-only, so no test reaches the network."""
-    from huggingface_hub import constants
-
-    monkeypatch.setattr(constants, "HF_HUB_OFFLINE", True)
-
-
-@pytest.mark.usefixtures("offline_hub")
 def test_cache_dir_and_revision_reach_the_download(tmp_path):
     commit = "a" * 40
     expected = cached_repo(tmp_path, "org/detector", "release", commit)
@@ -146,7 +137,6 @@ def test_cache_dir_and_revision_reach_the_download(tmp_path):
     assert by_branch == by_commit == expected
 
 
-@pytest.mark.usefixtures("offline_hub")
 def test_from_pretrained_forwards_the_hub_options(tmp_path):
     cached_repo(tmp_path, "org/detector", "release", "b" * 40)
 
@@ -155,7 +145,6 @@ def test_from_pretrained_forwards_the_hub_options(tmp_path):
     assert restored.estimator.coef_.shape == (1, 1)
 
 
-@pytest.mark.usefixtures("offline_hub")
 def test_an_unknown_revision_is_a_value_error_naming_the_repository(tmp_path):
     cached_repo(tmp_path, "org/detector", "release", "c" * 40)
 
@@ -163,7 +152,6 @@ def test_an_unknown_revision_is_a_value_error_naming_the_repository(tmp_path):
         BaseDetector.cached_file("org/detector", revision="missing", cache_dir=tmp_path)
 
 
-@pytest.mark.usefixtures("offline_hub")
 def test_a_repository_that_is_not_cached_is_a_value_error_offline(tmp_path):
     with pytest.raises(ValueError, match="Could not load an estimator"):
         BaseDetector.cached_file("org/never-published", cache_dir=tmp_path)
