@@ -93,7 +93,7 @@ THRESHOLD_LOW = 0.35  # at or below -> green, the model was confident here
 THRESHOLD_HIGH = 0.70  # above -> red, it was not
 ```
 
-## Load Example Responses
+## Load example responses
 
 The fixture contains two responses, to illustrate the contrast between a certain and an
 uncertain answer.
@@ -106,7 +106,7 @@ responses = data["responses"]
 print(f"Loaded {len(responses)} responses")
 ```
 
-## Build the EPR Pipeline
+## Build the EPR pipeline
 
 The detector is fetched from the Hub on first use, then cached. `EPR.from_pretrained`
 always requires a repository id or a path. The raw OpenAI Responses API dicts go straight
@@ -116,7 +116,7 @@ to the pipeline; parsing is its first step.
 detector = EPR.from_pretrained(DETECTOR, k=K)
 ```
 
-## Sequence-Level Scoring
+## Sequence-level scoring
 
 `predict_proba(response)` returns an array of shape `(n_sequences, 2)`. Column 1 is the
 hallucination probability: higher means the model was more uncertain while generating the
@@ -134,7 +134,7 @@ for resp in responses:
     print()
 ```
 
-## Token-Level Scoring
+## Token-level scoring
 
 `predict_token_proba(response)` returns `(n_sequences, max_tokens, 1)`: the same
 probability, per token, which is what says *where* in the answer the model was uncertain.
