@@ -10,6 +10,9 @@ Releases before the entries below are listed, with their notes, on the
 - `predict_token_proba`, `EntropyTransformer.transform` and `transform_tokens` name their
   input `X` instead of `x`, as scikit-learn does. Positional calls are unaffected; a call
   that passes `x=` must pass `X=`.
+- `fit` raises `ValueError` when the entropy step's pooling differs from the one the class
+  fixes, for instance `EPRClassifier(k=15).set_params(entropy__pooling=WEPRPooling())`. Use
+  `WEPRClassifier` instead.
 - `EPR` and `WEPR` take responses only. A numeric table raises `TypeError` naming
   `EPRClassifier` and `WEPRClassifier`.
 - `artefactual.preprocessing.openai_parser` is removed: call `top_logprobs()` and

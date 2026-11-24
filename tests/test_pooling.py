@@ -415,6 +415,13 @@ def test_setting_the_pooling_of_a_detector_reaches_its_entropy_step():
     assert detector.fit(RESPONSES, LABELS).named_steps["classifier"].coef_.shape == (1, K)
 
 
+def test_a_detector_refuses_an_entropy_step_it_does_not_fix():
+    detector = artefactual.EPR(k=K).set_params(entropy__pooling=artefactual.WEPRPooling())
+
+    with pytest.raises(ValueError, match="EPR"):
+        detector.fit(RESPONSES, LABELS)
+
+
 def test_a_classifier_over_a_function_scores_arrays():
     x = np.array([[-0.001, -8.0, -9.0], [-1.0, -1.1, -1.2], [-0.01, -6.0, -7.0], [-0.9, -1.0, -1.4]])
     detector = artefactual.PoolingDetector(per_rank_median, k=K)

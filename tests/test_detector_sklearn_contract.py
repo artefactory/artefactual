@@ -21,6 +21,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from artefactual.scoring import EPR, WEPR, EPRClassifier, WEPRClassifier
+from artefactual.scoring.entropy_methods.pooling import EPRPooling, WEPRPooling
 
 EXAMPLES = Path(__file__).parent.parent / "docs" / "examples"
 RESPONSES = json.loads((EXAMPLES / "open_ai_responses_top15.json").read_text(encoding="utf-8"))["responses"]
@@ -281,6 +282,22 @@ def test_grid_search_over_the_estimator_including_the_default(cls):
     assert not np.isnan(search.cv_results_["mean_test_score"]).any()
 
 
+# --- the reduction is fixed by the class --------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("cls", "other"),
+    [(EPR, WEPRPooling()), (WEPR, EPRPooling()), (EPRClassifier, WEPRPooling()), (WEPRClassifier, EPRPooling())],
+    ids=ESTIMATOR_IDS,
+)
+def test_fit_rejects_an_entropy_pooling_the_class_does_not_fix(cls, other):
+    x, y = fit_data(cls)
+    detector = cls(k=15).set_params(entropy__pooling=other)
+    with pytest.raises(ValueError, match=cls.__name__) as err:
+        detector.fit(x, y)
+    assert f"pooling={other!r}" in str(err.value)
+
+
 @pytest.mark.parametrize("cls", [EPRClassifier, WEPRClassifier])
 @pytest.mark.parametrize("step", ["passthrough", StandardScaler()], ids=["passthrough", "no-k"])
 def test_fit_rejects_a_first_step_without_k(cls, step):
@@ -288,6 +305,18 @@ def test_fit_rejects_a_first_step_without_k(cls, step):
     classifier = cls(k=15).set_params(entropy=step)
     with pytest.raises(ValueError, match=r"'entropy' step .* has no `k`"):
         classifier.fit(x, y)
+
+
+@pytest.mark.parametrize(("cls", "other"), [(EPRClassifier, WEPRPooling()), (WEPRClassifier, EPRPooling())])
+def test_the_way_out_the_pooling_error_names_takes_arrays(cls, other):
+    x, y = table()
+    with pytest.raises(ValueError, match="a subclass that sets `pooling`"):
+        cls(k=15).set_params(entropy__pooling=other).fit(x, y)
+
+    class Other(cls):
+        pooling = other
+
+    assert Other(k=15).fit(x, y).predict_proba(x).shape == (len(x), 2)
 
 
 # --- feature names and set_output -------------------------------------------------------
