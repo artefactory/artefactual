@@ -48,3 +48,8 @@ Releases before the entries below are listed, with their notes, on the
 - `get_params` reports `estimator=None` while the final step is the untouched default, so
   `clone` rebuilds an equal detector.
 - The estimator tags declare a binary classifier. The classifiers declare 2-D input.
+
+### Fixed
+
+- `detector[::2]` raises `ValueError`, as `Pipeline` does, instead of returning a pipeline of
+  an arbitrary subset of steps.
