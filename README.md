@@ -1,6 +1,6 @@
 # Artefactual
 
-**Estimating how likely a language model answer is to be a hallucination.**
+**Detect hallucinations in language model answers, from their token probabilities.**
 
 [![Tests](https://github.com/artefactory/artefactual/actions/workflows/tests.yaml/badge.svg)](https://github.com/artefactory/artefactual/actions/workflows/tests.yaml)
 [![Docs](https://github.com/artefactory/artefactual/actions/workflows/docs.yml/badge.svg)](https://github.com/artefactory/artefactual/actions/workflows/docs.yml)
@@ -9,17 +9,36 @@
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org)
 [![Paper](https://img.shields.io/badge/arXiv-2509.04492-b31b1b.svg)](https://arxiv.org/abs/2509.04492)
 
-Artefactual is a Python module that assigns a language model's answer a probability of
-being a hallucination. It reads the answer that has already been generated, together with
-the token probabilities returned alongside it, and needs nothing else from the model.
+Artefactual is a Python library that estimates how likely a language model's answer is to be
+a hallucination. A model that makes something up tends to hesitate while writing it.
+Artefactual measures that hesitation in the token probabilities returned with the answer, and
+turns it into a probability, for the whole answer and for each token.
 
-A *response* is the result of a call to an OpenAI-compatible API (chat completions, Responses
-API or batch output) made with `logprobs=True` and `top_logprobs`.
+| The model was asked | It answered | P(hallucination) |
+|---|---|---|
+| What is the capital city of France? | Paris. | 0.08 |
+| Who is Charles Moslonka? Where was he born? | Charles Moslonka is a French singer born in Lyon in 1985. | 0.99 |
 
-The classifiers and the entropy transformer are scikit-learn estimators, checked with
-`parametrize_with_checks`; the detectors, which read responses, are the same estimators with
-a parser in front. See the
-[scikit-learn compatibility guide](https://artefactory.github.io/artefactual/stable/guide/sklearn.html).
+The second answer is invented: Charles Moslonka is the first author of the
+[paper](https://arxiv.org/abs/2509.04492) behind this library. The
+[example notebook](https://artefactory.github.io/artefactual/stable/examples/wepr_usage_demo.html)
+reproduces both scores.
+
+- **One answer is enough.** Scoring needs no second generation, no judge model and no
+  reference documents.
+- **It works through an API.** It reads the `logprobs` an OpenAI-compatible endpoint returns, not
+  the weights or hidden states of the model.
+- **Trained detectors are published** for [four open models](#published-detectors). You can
+  train one for another model on labelled answers.
+- **It is scikit-learn.** Detectors have `fit` and `predict_proba`, and fit into pipelines and
+  `GridSearchCV`.
+
+A score measures the model's uncertainty, not the truth of its answer: see the
+[limitations](#limitations).
+
+```bash
+pip install artefactual
+```
 
 ## Quick start
 
@@ -57,7 +76,8 @@ published weights is covered, with three more notebooks, in
 
 ## Requirements
 
-Two conditions apply to whatever produced the response:
+A *response* is the result of a call to an OpenAI-compatible API (chat completions, Responses
+API or batch output). Two conditions apply to the call that produced it:
 
 1. **`logprobs` and `top_logprobs` are enabled.** Providers that do not expose them cannot
    be scored at all.
@@ -102,6 +122,9 @@ Two detectors are provided. `WEPR` fits `2k` coefficients and is the more accura
 fits a single coefficient instead, for when labelled data is scarce. Both take the same
 arguments and return the same type. They score completion responses; `EPRClassifier` and
 `WEPRClassifier` are the same estimators over logprob arrays you already hold.
+`EPRClassifier` and `WEPRClassifier` run scikit-learn's own estimator checks, with one declared
+exception: see the
+[scikit-learn compatibility guide](https://artefactory.github.io/artefactual/stable/guide/sklearn.html).
 
 ```python
 from artefactual import EPR, WEPR, WEPRClassifier
