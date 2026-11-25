@@ -138,5 +138,7 @@ Releases before the entries below are listed, with their notes, on the
   `huggingface_hub` error they are, instead of being wrapped.
 - `Judgment.from_text` and `read_judgment` return `None` for a reply that is not JSON and
   carries both `"judgment": true` and `"judgment": false`, instead of reading it as correct.
+- A chat choice whose `logprobs.content` is null is read as a sequence without tokens, as one
+  whose `logprobs` is null is, instead of raising a `ValidationError`.
 - The `adapters` extra requires `langfuse<5`: 5.0 removed the trace calls
   `HallucinationEvaluator` reads with.
