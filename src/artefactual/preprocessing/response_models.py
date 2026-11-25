@@ -224,9 +224,12 @@ class LogprobsMixin:
 
 
 class ChatChoiceLogprobs(ResponseModel):
-    """The `logprobs` block of a chat choice, holding one entry per generated token."""
+    """The `logprobs` block of a chat choice, holding one entry per generated token.
 
-    content: list[TokenLogprobs] = []
+    `content` is null when the choice carries no message tokens.
+    """
+
+    content: list[TokenLogprobs] | None = []
 
 
 class ChatMessage(ResponseModel):
@@ -256,8 +259,8 @@ class ChatCompletion(LogprobsMixin, ResponseModel):
     choices: list[ChatChoice]
 
     def sequences(self) -> list[list[TokenLogprobs]]:
-        """One token list per choice; a choice without logprobs is `[]`."""
-        return [choice.logprobs.content if choice.logprobs is not None else [] for choice in self.choices]
+        """One token list per choice; a choice without logprobs, or whose content is null, is `[]`."""
+        return [(choice.logprobs.content or []) if choice.logprobs is not None else [] for choice in self.choices]
 
 
 class ResponseContentPart(ResponseModel):

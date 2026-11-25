@@ -80,6 +80,12 @@ def test_a_choice_with_empty_content_yields_an_empty_sequence():
     assert chat([]).top_logprobs() == [{}]
 
 
+def test_a_choice_with_null_content_yields_an_empty_sequence():
+    payload = ChatCompletion.model_validate({"choices": [{"logprobs": {"content": None}}]})
+    assert payload.top_logprobs() == [{}]
+    assert payload.sampled_logprobs()[0].tolist() == []
+
+
 def test_a_response_without_choices_yields_nothing():
     payload = ChatCompletion.model_validate({"choices": []})
     assert payload.top_logprobs() == []
