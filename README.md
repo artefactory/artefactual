@@ -19,7 +19,7 @@ API or batch output) made with `logprobs=True` and `top_logprobs`.
 The classifiers and the entropy transformer are scikit-learn estimators, checked with
 `parametrize_with_checks`; the detectors, which read responses, are the same estimators with
 a parser in front. See the
-[scikit-learn compatibility guide](https://artefactory.github.io/artefactual/guide/sklearn.html).
+[scikit-learn compatibility guide](https://artefactory.github.io/artefactual/stable/guide/sklearn.html).
 
 ## Quick start
 
@@ -47,13 +47,13 @@ print(detector.predict_token_proba(response))  # ...and per token
 
 A detector is trained for one model, so `DETECTOR` must be the one published for whatever
 produced the response — see [published detectors](#published-detectors) for the pairs. There is no default threshold; choosing one is covered in the
-[user guide](https://artefactory.github.io/artefactual/guide/scoring.html).
+[user guide](https://artefactory.github.io/artefactual/stable/guide/scoring.html).
 
 No endpoint is needed to try the library: two of the
-[example notebooks](https://artefactory.github.io/artefactual/examples/) run against
+[example notebooks](https://artefactory.github.io/artefactual/stable/examples/) run against
 checked-in fixtures and need no GPU and no API key. Training a detector for a model with no
 published weights is covered, with three more notebooks, in
-[training a detector](https://artefactory.github.io/artefactual/guide/training.html).
+[training a detector](https://artefactory.github.io/artefactual/stable/guide/training.html).
 
 ## Requirements
 
@@ -62,7 +62,7 @@ Two conditions apply to whatever produced the response:
 1. **`logprobs` and `top_logprobs` are enabled.** Providers that do not expose them cannot
    be scored at all.
 2. **`top_logprobs` equals the detector's `k`**, as set out in
-   [the k rule](https://artefactory.github.io/artefactual/guide/scoring.html#the-k-rule).
+   [the k rule](https://artefactory.github.io/artefactual/stable/guide/scoring.html#the-k-rule).
 
 Neither needs auditing in advance — a response that fails one is refused by name.
 
@@ -122,7 +122,7 @@ WEPRClassifier(k=K).fit(logprobs, y)
 
 Scoring a batch, reading per-token scores, scoring Langfuse traces, composing into
 `GridSearchCV` and training a detector for a model that is not shipped are covered in the
-[user guide](https://artefactory.github.io/artefactual/guide/scoring.html).
+[user guide](https://artefactory.github.io/artefactual/stable/guide/scoring.html).
 
 ## Published detectors
 
@@ -172,9 +172,9 @@ subdirectory.
 ## Documentation
 
 - Documentation and user guide: https://artefactory.github.io/artefactual/
-- Example notebooks: https://artefactory.github.io/artefactual/examples/
-- Training a detector: https://artefactory.github.io/artefactual/guide/training.html
-- How it works: https://artefactory.github.io/artefactual/guide/how-it-works.html
+- Example notebooks: https://artefactory.github.io/artefactual/stable/examples/
+- Training a detector: https://artefactory.github.io/artefactual/stable/guide/training.html
+- How it works: https://artefactory.github.io/artefactual/stable/guide/how-it-works.html
 
 ## Development
 
