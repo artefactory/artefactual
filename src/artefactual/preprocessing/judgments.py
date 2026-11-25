@@ -68,7 +68,7 @@ class Judgment(BaseModel):
            `"judgment": true` in the object from the same text quoted in prose;
         3. a scan, deliberately narrow: the key spelled as the prompt asks for it, or a
            reply that is nothing but `true` / `false`. Anything looser reads a verdict out
-           of a sentence that merely discusses one.
+           of a sentence that merely discusses one. A reply carrying both verdicts has none.
 
         A reply none of them can read returns `None` rather than a guess -- an unreadable
         verdict is a row to drop and count, and a guessed one is a mislabelled row that
@@ -102,10 +102,8 @@ class Judgment(BaseModel):
         lowered = reply.lower()
         with contextlib.suppress(ValidationError):
             return cls(judgment=BARE_VERDICT.validate_json(lowered.strip().removesuffix(".")))
-        for word, verdict in (("true", True), ("false", False)):
-            if f'"judgment": {word}' in lowered:
-                return cls(judgment=verdict)
-        return None
+        found = [verdict for word, verdict in (("true", True), ("false", False)) if f'"judgment": {word}' in lowered]
+        return cls(judgment=found[0]) if len(found) == 1 else None
 
     @classmethod
     def from_completion(cls, completion: Any) -> "Judgment | None":

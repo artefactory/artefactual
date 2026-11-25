@@ -82,6 +82,8 @@ def test_a_reply_that_ignored_the_format_is_still_read(reply, verdict):
         "[true]",
         '"judgment"',
         "```json\nnot json\n```",
+        'First "judgment": true, but on reflection "judgment": false',
+        '{"judgment": false} {"judgment": true}',
         "1",
         '"true"',
         "yes",

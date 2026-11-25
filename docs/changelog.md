@@ -136,5 +136,7 @@ Releases before the entries below are listed, with their notes, on the
 - A repository that cannot be found, a missing revision and a malformed repository id raise
   `ValueError`; connection and authentication errors now propagate as the
   `huggingface_hub` error they are, instead of being wrapped.
+- `Judgment.from_text` and `read_judgment` return `None` for a reply that is not JSON and
+  carries both `"judgment": true` and `"judgment": false`, instead of reading it as correct.
 - The `adapters` extra requires `langfuse<5`: 5.0 removed the trace calls
   `HallucinationEvaluator` reads with.
