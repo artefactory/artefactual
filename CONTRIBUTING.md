@@ -107,8 +107,8 @@ workflow run: chaining on the tag would leave the tag created and nothing built.
                           told the version the gate named, since the tag does not
                           exist yet
       -> tag              bump-my-version creates that same version as vYYYY.MM.PATCH
-      -> build            hatch-vcs derives the version from the tag; the distributions
-                          are checked and the wheel is smoke-tested
+      -> build            hatch-vcs derives the version from the tag; `uv build` succeeds and
+                          the metadata of the distributions is checked
       -> publish-testpypi uploaded, then checked against the metadata the index serves
       -> publish          PyPI, held for a required reviewer
       -> github-release   the Release, once PyPI has the version
