@@ -181,7 +181,7 @@ notebooks = [
     # it the load fails, on `torch_dtype=` below 4.57 and `KeyError: 'default'` at 5.x.
     "bert-judge @ git+https://github.com/artefactory/BERT-as-a-Judge.git",
     "torch>=2.0.0",
-    "transformers>=4.57,<5",
+    "transformers>=4.57,<6",
     "datasets>=3.2.0",
 ]
 
