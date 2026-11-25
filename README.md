@@ -92,18 +92,6 @@ Neither needs auditing in advance — a response that fails one is refused by na
 pip install artefactual
 ```
 
-### Dependencies
-
-Artefactual requires:
-
-- Python (>= 3.11)
-- NumPy
-- scikit-learn (>= 1.8)
-- pydantic
-- skops
-- huggingface-hub
-- beartype
-
 Two optional extras are available: `[adapters]` installs `langfuse` and `openai` for the
 integration examples, and `[docs]` installs Sphinx and the theme for building the
 documentation.
