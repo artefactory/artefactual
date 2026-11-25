@@ -26,23 +26,13 @@ jobs:
           version: "0.9.15"
           enable-cache: true
 
-      - name: Setup pre-commit cache
-        uses: actions/cache@v4.2.0
-        with:
-          path: ~/.cache/pre-commit
-          key: pre-commit-3-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
-          restore-keys: |
-            pre-commit-3-${{ runner.os }}-
-            pre-commit-3-
-
-      - name: Configure SKIP for pre-commit hooks
+      - name: Configure SKIP for the hooks
         run: echo "SKIP=no-commit-to-branch" >> "$GITHUB_ENV"
 
-      - name: Run pre-commit using uvx
-        # Both versions pinned: `uvx pre-commit` unpinned resolves the newest release on
-        # every run, so a new pre-commit or pre-commit-uv changes what this gate does with
-        # no commit in this repository. The hooks themselves are already pinned by `rev:`
-        # in .pre-commit-config.yaml; this is the same guarantee for the runner.
-        run: uvx --with pre-commit-uv==4.3.0 pre-commit@4.6.2 run --all-files
-        env:
-          SKIP: ${{ env.SKIP }}
+      # Version pinned: an unpinned prek changes what this gate does with no commit in this
+      # repository. The hooks themselves are pinned by `rev:` in .pre-commit-config.yaml,
+      # and prek caches the hook environments itself.
+      - name: Run the hooks
+        uses: j178/prek-action@7b101f8338a08d2bd6fdb3625e4e7692428763a3  # v3.1.1
+        with:
+          prek-version: 0.5.11
