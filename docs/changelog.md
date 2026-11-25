@@ -3,7 +3,7 @@
 Releases before the entries below are listed, with their notes, on the
 [GitHub releases page](https://github.com/artefactory/artefactual/releases).
 
-## Unreleased
+## 2026.11.0
 
 ### Breaking
 
