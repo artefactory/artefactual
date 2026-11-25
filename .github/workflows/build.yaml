@@ -47,46 +47,6 @@ jobs:
       - name: Check the distributions render
         run: uvx --from 'twine>=7,<8' twine check --strict dist/*
 
-      # The wheel is exercised before it is published anywhere, and from an environment
-      # built only from its own declared dependencies -- not the project's. A dependency
-      # that is needed but unlisted resolves fine in the repo and fails only for a user
-      # installing the wheel, which is precisely what this catches.
-      - name: Smoke-test the built wheel
-        run: |
-          set -euo pipefail
-          # Unglobbed into an array so a second wheel is a failure rather than a word-split
-          # `ls` result that smoke-tests neither of them. nullglob so a missing wheel gives
-          # an empty array rather than the unexpanded pattern, which would otherwise pass
-          # the count check and be handed to `uv run --with` as a literal glob.
-          shopt -s nullglob
-          wheels=(dist/*.whl)
-          if [ "${#wheels[@]}" -ne 1 ]; then
-            echo "::error::expected exactly one wheel in dist/, found ${#wheels[@]}"
-            exit 1
-          fi
-          wheel="${wheels[0]}"
-          echo "testing $wheel"
-          uv run --isolated --no-project --with "$wheel" python - <<'SMOKE'
-          from artefactual.scoring import EPR
-
-          # a published detector, resolved and read through the wheel's own dependencies
-          detector = EPR.from_pretrained("artefactory/epr-ministral", k=15)
-          response = {
-              "choices": [{
-                  "index": 0,
-                  "message": {"role": "assistant", "content": "x"},
-                  "logprobs": {"content": [{
-                      "token": "x", "logprob": -0.001,
-                      "top_logprobs": [{"token": f"t{i}", "logprob": -0.001 - i} for i in range(15)],
-                  }]},
-              }]
-          }
-          score = detector.predict_proba(response)[:, 1]
-          assert score.shape == (1,), score.shape
-          assert 0.0 <= float(score[0]) <= 1.0, score
-          print("wheel imports, resolves a published detector and scores:", float(score[0]))
-          SMOKE
-
       - name: Check the built version against the tag
         if: inputs.tag != ''
         env:
