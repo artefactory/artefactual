@@ -24,7 +24,10 @@ _is_development_build = ".dev" in release
 SITE_URL = "https://artefactory.github.io/artefactual"
 
 # The site is one directory per release, so a page has to say which release it belongs to.
-html_baseurl = f"{SITE_URL}/{release}/" if not _is_development_build else SITE_URL
+# A development build has no directory of its own and names `stable`. sphinx-llms-txt needs
+# this to emit absolute links: without it the entries in llms.txt are host-less paths like
+# `/_sources/index.md.txt`, which no consumer can fetch.
+html_baseurl = f"{SITE_URL}/{'stable' if _is_development_build else release}/"
 
 # Just the project. The version belongs in the switcher, which names it once and makes it
 # navigable; repeating it here would also put the full local version
@@ -285,10 +288,6 @@ llms_txt_code_files = [
 ]
 
 # HTML output
-# The published site, which is where the docs are deployed from .github/workflows/docs.yml.
-# sphinx-llms-txt needs it to emit absolute links: without it the entries in llms.txt are
-# host-less paths like `/_sources/index.md.txt`, which no consumer can fetch.
-html_baseurl = "https://artefactory.github.io/artefactual/"
 html_theme = "pydata_sphinx_theme"
 html_theme_options = {
     "github_url": "https://github.com/artefactory/artefactual",
