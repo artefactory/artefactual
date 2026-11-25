@@ -169,7 +169,7 @@ uv run jupytext --to ipynb docs/examples/train_wepr.md   # edit train_wepr.ipynb
 uv run jupytext --to md:myst docs/examples/train_wepr.ipynb
 ```
 
-Commit only the `.md`. Pre-commit pipes its code cells through the same `ruff` as the rest
+Commit only the `.md`. The hooks pipe their code cells through the same `ruff` as the rest
 of the repository, so formatting stays consistent without nbQA unpacking a notebook first.
 
 The release build runs every example and publishes what it got, so the pages carry real
