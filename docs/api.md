@@ -1,10 +1,9 @@
 # API reference
 
 The public surface of `artefactual`, grouped by role: estimators, transformers, parsing and
-utilities. Detectors are built from
-`artefactual.EPR` and `artefactual.WEPR`, which score responses, and `artefactual.EPRClassifier`
-and `artefactual.WEPRClassifier`, which score logprob arrays; `artefactual.PoolingDetector` takes any `Pooling` or pooling function; the other sections are the
-parts they are made of and the helpers around them.
+utilities. A detector is
+`artefactual.EPR` or `artefactual.WEPR`, which score the logprob arrays `artefactual.LogProbParser`
+turns responses into; `artefactual.make_detector(k=15)` chains the two. The other sections are the parts they are made of and the helpers around them.
 
 ## Estimators
 
@@ -18,9 +17,7 @@ parts they are made of and the helpers around them.
 
    EPR
    WEPR
-   EPRClassifier
-   WEPRClassifier
-   scoring.PoolingDetector
+   DetectorPipeline
 ```
 
 ## Transformers
@@ -53,7 +50,7 @@ parts they are made of and the helpers around them.
    scoring.FunctionPooling
 
 Subclass `scoring.Pooling` for a pooling of your own, or pass a plain function
-`f(x, axis)`; either goes to `scoring.EntropyTransformer` or `scoring.PoolingDetector`.
+`f(x, axis)`; either goes to `scoring.EntropyTransformer`.
 ```
 
 ## Parsing
@@ -97,7 +94,7 @@ Subclass `scoring.Pooling` for a pooling of your own, or pass a plain function
 
 ## Utilities
 
-Base classes and mixins to build on, and the Langfuse integration.
+Protocols, the per-token score walk and mixins to build on, and the Langfuse integration.
 
 ```{eval-rst}
 .. currentmodule:: artefactual
@@ -107,9 +104,16 @@ Base classes and mixins to build on, and the Langfuse integration.
    :template: autosummary/class.rst
    :nosignatures:
 
-   scoring.BaseDetector
-   scoring.BaseEntropyClassifier
+   scoring.TokenTransformer
+   scoring.TokenClassifier
+   scoring.TokenProbaMixin
    scoring.EntropyContributionsMixin
+
+.. autosummary::
+   :toctree: _autosummary
+   :nosignatures:
+
+   scoring.token_proba
 ```
 
 ### Integrations

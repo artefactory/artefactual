@@ -6,13 +6,13 @@ and the inputs the parser accepts.
 ## The `k` parameter
 
 `k` is how many candidates per token are read, so it is also the width of the rank axis
-(candidate and rank are defined in {doc}`how-it-works`). It has no default: pass the `k` the weights were
+(candidate and rank are defined in {doc}`how-it-works`). `LogProbParser` and `EPR` have no default: pass the `k` the weights were
 trained at (**15** for every shipped file; the rule is in {doc}`scoring`).
 
 ```python
 K = 15  # the k the published detectors were trained with
 
-detector = WEPR.from_pretrained("artefactory/wepr-phi4", k=K)
+detector = EPR.from_pretrained("artefactory/epr-phi4", k=K)  # pins the width; WEPR reads it from the weights
 ```
 
 **Responses must carry `k` candidates per token.** This is an input requirement rather than
@@ -36,17 +36,18 @@ something the pipeline reconciles. The two directions are not symmetric:
   Each response is checked individually, so a wide response cannot mask a narrow one in
   the same batch.
 
-`from_pretrained` also checks the weights against `k`, since a WEPR coefficient vector has
-two entries per rank:
+`LogProbParser(k=K)` extracts `K` candidates per token; the detector must be given the width it was
+trained at. `EPR(k=K)` pins that width and refuses another one, including a loaded or cloned
+`EPR`:
 
 ```
-ValueError: The WEPR detector at 'weights.skops' takes 30 feature(s), but k=20 gives 40. Its
-coefficients are fixed at the width they were trained at; pass the k it was trained with.
+ValueError: trained on 15 candidates per token, got 10: use LogProbParser(k=15)
 ```
 
-An EPR detector pools every candidate into one feature, so its file records no width and `k`
-only sizes the parser. A classifier given an array wider than `k` keeps the first `k` ranks,
-and a narrower one is used as it is; {doc}`sklearn` has the details.
+A `WEPR` has two coefficients per rank, so it reads its width from the data it was fitted on, and
+its entropy step or classifier refuses an array of another width: `X has 28 features, but
+LogisticRegression is expecting 30 features as input`. An `EPR` without `k` pools every candidate into one feature and accepts any
+width, so pass `k`: {doc}`sklearn` has the details.
 
 ## Detector files
 
@@ -55,7 +56,7 @@ A locally trained detector is loaded by passing a path instead of a name:
 ```python
 K = 15  # the k the published detectors were trained with
 
-detector = WEPR.from_pretrained("/path/to/my_detector.skops", k=K)
+detector = WEPR.from_pretrained("/path/to/my_detector.skops")
 ```
 
 `save_pretrained` and `from_pretrained` are the entry points: the first writes the fitted
@@ -74,7 +75,7 @@ listing the artefactual types it holds. Ask skops for that list with
 Three inputs are accepted, as SDK objects or plain mappings: a chat completion, a
 Responses API payload, and one line of an OpenAI Batch output file -- which is also what
 `vllm run-batch` writes, so a batch file is scored as it is read. Numeric arrays go to
-`EPRClassifier` and `WEPRClassifier`, described in {doc}`sklearn`. A batch line whose
+`EPR` and `WEPR`, described in {doc}`sklearn`. A batch line whose
 request failed is *refused*, not skipped: this step emits one row per line, and dropping
 one would shift every later response against its label. Filter the failed lines out first,
 where their `custom_id` can still be reported.

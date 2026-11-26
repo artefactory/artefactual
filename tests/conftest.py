@@ -22,7 +22,9 @@ import skops.io as sio
 from beartype.door import is_bearable
 from hypothesis import strategies as st
 from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
 
+from artefactual.preprocessing import LogProbParser
 from artefactual.preprocessing.response_models import (
     ChatChoice,
     ChatChoiceLogprobs,
@@ -33,6 +35,7 @@ from artefactual.preprocessing.response_models import (
     TokenLogprobs,
     TopLogprob,
 )
+from artefactual.scoring import EPR
 
 # Payloads are built from the response models themselves, so a change to the models
 # changes what the tests generate — the shapes cannot drift apart.
@@ -81,8 +84,7 @@ def expected_sequence_count(payload):
 
 # --- parsed logprobs -------------------------------------------------------------------
 # The shape the scorers consume: one dict per sequence, token position -> descending ranks.
-# Built directly rather than by round-tripping a payload so a parser bug cannot mask a
-# scorer bug (and vice versa).
+# Built directly, not parsed from a payload.
 
 
 @st.composite
@@ -113,9 +115,8 @@ def parsed_sequences(draw, min_sequences=1, max_sequences=4, min_ranks=1, max_ra
 def chat_payloads_of_fixed_width(draw, min_ranks=1, max_ranks=20):
     """A raw ChatCompletion mapping whose every token carries the same top-k width.
 
-    Emitted as a plain mapping rather than a model instance because that is what a caller
-    hands the pipeline, and the width is what these tests vary. Recover it with
-    `payload_width`.
+    Emitted as a plain mapping, as a caller hands it to the pipeline. Recover the width
+    with `payload_width`.
     """
     width = draw(st.integers(min_ranks, max_ranks))
     content = [
@@ -220,7 +221,7 @@ def published_detectors():
 
 # --- estimators on disk --------------------------------------------------------------
 #
-# Detectors are built and written here rather than fetched, so every test names a path.
+# Detectors are built and written locally, so every test names a path.
 # That is the whole reason these tests stay offline: `PretrainedMixin.cached_file` returns a local
 # file without consulting the Hub, so no test crosses the network seam and none has to be
 # skipped, mocked, or given credentials for a private repository.
@@ -274,3 +275,32 @@ def estimators(draw, n_features=None):
     """
     width = n_features if n_features is not None else draw(st.integers(1, 30))
     return fitted_logistic(draw(coefficient_values), [draw(coefficient_values) for _ in range(width)])
+
+
+# --- responses in, probabilities out ----------------------------------------------------
+# Scoring completion responses is a plain pipeline: the parser in front of an array
+# classifier. These helpers build it the way a caller would, so the tests exercise that
+# composition.
+
+
+def load_detector(cls, path, k=15, **options):
+    """`make_pipeline(LogProbParser(k), cls.from_pretrained(path))`: responses to probabilities.
+
+    `k` is passed to `from_pretrained` only by `EPR`, the one detector that pins a width.
+    """
+    pin = {"k": k} if cls is EPR else {}
+    return make_pipeline(LogProbParser(k=k), cls.from_pretrained(path, **pin, **options))
+
+
+def feature_steps(detector, sample):
+    """The parser and the entropy step of a loaded detector, ending before the final estimator.
+
+    `sample` is scored once because a loaded detector builds its `pipeline_` on first use.
+    """
+    detector.predict_proba(sample)
+    return make_pipeline(detector[0], detector[-1].pipeline_[0])
+
+
+def token_proba(detector, responses):
+    """Token-level scores of `responses`: the parser's output through the classifier's own method."""
+    return detector[-1].predict_token_proba(detector[0].transform(responses))

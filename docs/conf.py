@@ -10,17 +10,14 @@ project = "Artefactual"
 copyright = "2025, Artefact Research Center"  # ruff: ignore[builtin-variable-shadowing]
 author = "Hicham Randrianarivo, Gauthier Jeannin, Charles Moslonka"
 
-# Read from the installed package, which hatch-vcs derives from the git tag, so the site
-# names a version that exists rather than one restated here and left to drift. A build
-# from an untagged commit carries a `.dev` segment, which is what marks it unreleased.
+# Read from the installed package, which hatch-vcs derives from the git tag. A build
+# from an untagged commit carries a `.dev` segment, which marks it unreleased.
 release = artefactual.__version__
 version = ".".join(release.split(".")[:2])
 _is_development_build = ".dev" in release
 
-# Where the published site lives. Fixed rather than derived, because the version switcher
-# has to name one URL that every version of the site agrees on: each release ships a copy
-# of this file, and they must all point at the same switcher.json, or an old page cannot
-# offer the versions released after it.
+# Where the published site lives. Every release ships a copy of this file, and all of them
+# point at the same switcher.json.
 SITE_URL = "https://artefactory.github.io/artefactual"
 
 # The site is one directory per release, so a page has to say which release it belongs to.
@@ -29,13 +26,7 @@ SITE_URL = "https://artefactory.github.io/artefactual"
 # `/_sources/index.md.txt`, which no consumer can fetch.
 html_baseurl = f"{SITE_URL}/{'stable' if _is_development_build else release}/"
 
-# Just the project. The version belongs in the switcher, which names it once and makes it
-# navigable; repeating it here would also put the full local version
-# (2026.8.1.post1.dev36+j772a71f36.d20260911) in the site's most prominent label on every
-# build that is not a release.
-# Just the project name. This is the navbar's leftmost element and the switcher sits
-# beside it: "Artefactual documentation" is wide enough that the two cannot share a row,
-# and the theme wraps rather than shrinks, which costs a second navbar row on every page.
+# The project name, the navbar's leftmost element; the version is shown by the switcher.
 # The browser tab still reads "<page> - Artefactual" because the theme appends it.
 html_title = project
 
@@ -80,9 +71,8 @@ napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = True
 napoleon_include_private_with_doc = False
 napoleon_use_param = True
-# Attributes render as :ivar: fields, not `.. attribute::` directives: BaseDetector lists
-# `estimator` and `n_features_in_` there and defines them as properties, and the directive
-# would document each twice.
+# Attributes render as :ivar: fields, not `.. attribute::` directives: the classifiers list
+# `n_features_in_` there and define it as a property, and the directive would document it twice.
 napoleon_use_ivar = True
 napoleon_use_rtype = True
 
@@ -117,16 +107,13 @@ myst_enable_extensions = [
 # not the results it produced somewhere else.
 #
 # A notebook that cannot run unattended opts out in its own front matter
-# (`mystnb: {execution_mode: "off"}`), which is where the reason belongs: it travels with
-# the notebook rather than sitting in a list here that nobody updates.
+# (`mystnb: {execution_mode: "off"}`).
 nb_execution_mode = "force" if os.environ.get("ARTEFACTUAL_EXECUTE_NOTEBOOKS") else "off"
 
 # A notebook that reaches the Hub has to survive a slow answer; the default is 30 seconds.
 nb_execution_timeout = 600
 
-# A cell that raises stops the build with its traceback in the log. The default reports a
-# warning and renders the page with the failure inside it, which -W would turn into an
-# error too -- but with the traceback left in the page rather than in the CI output.
+# A cell that raises stops the build with its traceback in the log.
 nb_execution_raise_on_error = True
 nb_execution_show_tb = True
 
@@ -170,9 +157,7 @@ if not os.environ.get("ARTEFACTUAL_EXECUTE_NOTEBOOKS"):
 
 # Every notebook page carries its own two entry points in the article header: open the
 # notebook in Colab, or download the `.ipynb`. They live in a theme component
-# (`_templates/notebook-buttons.html`) filled in by the `html-page-context` handler below,
-# rather than in the notebook's own first cell, so they render as part of the page
-# furniture instead of as the first paragraph of its content.
+# (`_templates/notebook-buttons.html`) filled in by the `html-page-context` handler below.
 #
 # The `.ipynb` both point at does not exist in the repository: the source of an example is
 # its MyST Markdown, and the notebook is written here, into the site, beside the page it
@@ -195,10 +180,9 @@ def _is_example_notebook(docname: str) -> bool:
 # them, and fall back to this repository's own values for a local build. A fork's docs then
 # link into the fork.
 #
-# The branch is `gh-pages`, not the source branch: that branch is the published site, which
-# is where the generated notebooks live, and it keeps one directory per release -- so a
-# reader on the 2026.9.1 pages opens the 2026.9.1 notebook rather than whatever `main` has
-# become since. A development build has no directory of its own and points at `stable`.
+# The branch is `gh-pages`, the published site, which holds the generated notebooks and keeps
+# one directory per release. A development build has no directory of its own and points at
+# `stable`.
 _REPOSITORY = os.environ.get("GITHUB_REPOSITORY", "artefactory/artefactual")
 _ARCHIVE_DIR = "stable" if _is_development_build else release
 _COLAB = f"https://colab.research.google.com/github/{_REPOSITORY}/blob/gh-pages/{_ARCHIVE_DIR}/"
@@ -208,8 +192,7 @@ def _notebook_buttons(app, pagename: str, templatename: str, context: dict, doct
     """Give an example page the two values its header component renders, and others none.
 
     The download href is a bare filename, so it resolves whatever the depth of the page and
-    stays same-origin -- which is what makes the browser honour `download` rather than
-    navigating to a screenful of JSON. The theme's own "Show Source" link is not this; it
+    stays same-origin, so the browser honours `download`. The theme's own "Show Source" link is not this; it
     serves `_sources/<name>.md.txt`, which renders as text.
 
     Every page that is not an example leaves `notebook_filename` unset, and the component
@@ -262,26 +245,19 @@ def setup(app) -> None:
 # strictly more than autodoc would have rendered: the same docstrings, plus the code and
 # the comments explaining it.
 #
-# The notebooks are globbed rather than matched by name. `examples/*_demo` covered the three
-# that existed when this was written, and a notebook called anything else silently landed in
-# llms-full.txt as its own source -- one of them carrying a fixture of per-token logprob
-# arrays. Globbing the directory cannot go stale that way. `examples/index` is prose and
-# stays.
+# Every notebook in `examples/` is excluded; `examples/index` is prose and stays.
 _DOCS = Path(__file__).parent
 _NOTEBOOKS = [f"examples/{path.stem}" for path in sorted((_DOCS / "examples").glob("*.ipynb"))]
 llms_txt_exclude = ["_autosummary/*", *_NOTEBOOKS, "presentations/index"]
-# Each file is listed explicitly rather than globbed with `+:../src/artefactual/**/*.py`,
-# because the extension's `-:` exclusions do not work for paths outside the source
-# directory: it compares resolved include paths against unresolved exclude globs, so
-# `-:../src/**/__init__.py` never matches and every package `__init__.py` is pulled in. They
-# are dropped here instead, since eight sections all titled `__init__.py` help nobody.
+# Each file is listed explicitly: the extension's `-:` exclusions do not work for paths
+# outside the source directory (it compares resolved include paths against unresolved
+# exclude globs), so package `__init__.py` files are dropped here.
 #
 # Titles are bare filenames whatever `llms_txt_code_base_path` is set to -- the extension
 # derives them with `relative_to(srcdir)`, which raises for anything outside `docs/` and
 # falls back to the basename. Every remaining module basename is unique, so that is legible.
-# Located through the imported package rather than an assumed repo layout, so the list
-# follows the installed source wherever it lives. os.path.relpath rather than
-# Path.relative_to(walk_up=True): the latter is 3.12+, and the docs build runs on 3.11.
+# Located through the imported package. `os.path.relpath` is used because
+# `Path.relative_to(walk_up=True)` needs Python 3.12 and the docs build runs on 3.11.
 _PACKAGE = Path(artefactual.__file__).parent
 llms_txt_code_files = [
     f"+:{os.path.relpath(path, _DOCS)}" for path in sorted(_PACKAGE.rglob("*.py")) if path.name != "__init__.py"
@@ -291,12 +267,9 @@ llms_txt_code_files = [
 html_theme = "pydata_sphinx_theme"
 html_theme_options = {
     "github_url": "https://github.com/artefactory/artefactual",
-    # The switcher belongs with the other controls that change how you are reading rather
-    # than what you are reading. Beside the logo it competes with the project name for the
-    # same corner, and the theme wraps the navbar rather than shrink either of them.
+    # The switcher sits with the other reading controls at the right end of the navbar.
     "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],
-    # Against the title rather than centred in the remaining space: centring leaves the
-    # links floating between two unequal margins, and shifts them as the title changes.
+    # Links sit against the title.
     "navbar_align": "left",
     # The released versions, and which one you are reading. `version_match` is the release
     # string, matching the `version` key the deploy writes into switcher.json; on a
@@ -323,15 +296,11 @@ html_theme_options = {
     # rendered as a screenful of raw text. A page with no sections is then left with an
     # empty right-hand column, which the theme collapses so the content uses the width.
     "secondary_sidebar_items": ["page-toc"],
-    # Reading an archived release should say so on the page rather than only in the
-    # dropdown: the banner appears on every version that is not the preferred one, and
-    # links to the current release.
+    # The banner appears on every version that is not the preferred one, and links to the
+    # current release.
     #
-    # Off on a development build, which already carries the announcement below. The theme
-    # decides from `version_match`, which matches nothing on a `.dev` version, so both would
-    # fire and stack two banners saying the same thing -- and the announcement says it
-    # better, naming PyPI rather than offering to switch to a version this build has no
-    # entry for.
+    # Off on a development build, which carries the announcement below: the theme decides
+    # from `version_match`, which matches nothing on a `.dev` version.
     "show_version_warning_banner": not _is_development_build,
 }
 
@@ -346,8 +315,7 @@ if _is_development_build:
         '<a href="https://pypi.org/project/artefactual/">PyPI</a>.'
     )
 
-# Mermaid renders in the browser, so a diagram is live SVG rather than an image: it selects,
-# it scales, and with d3 zoom it pans like the ones GitHub renders. The palette it bakes in
+# Mermaid renders in the browser as live SVG; with d3 zoom it pans. The palette it bakes in
 # is light-only, which `_static/mermaid-theme.css` restates in the theme's own variables.
 mermaid_d3_zoom = True
 
@@ -365,7 +333,5 @@ exclude_patterns = [
 
 # Rendered decks, copied verbatim into the site root, produced by
 # `quarto render docs/presentations`. Listed only when that directory is present: a missing
-# extra path is a warning, and the build runs with -W, so naming it unconditionally would
-# fail any build that skipped Quarto. An empty directory warns about nothing either way,
-# so CI asserts the decks reached the site rather than relying on this entry.
+# extra path is a warning, and the build runs with -W.
 html_extra_path = ["_extra"] if (Path(__file__).parent / "_extra").is_dir() else []

@@ -53,9 +53,8 @@ class TokenLogprobs(ResponseModel):
         own sole candidate (empty if its logprob is null too). A token whose candidates
         are all null gets no fallback: it did carry a distribution.
 
-        Sorted here rather than left to the transformer because `LogProbParser` truncates
-        to the `k` most likely candidates, and truncating an unordered list would keep the
-        wrong ones. A candidate whose logprob is null is dropped rather than coerced.
+        Sorted by logprob, so `LogProbParser` truncating to `k` keeps the most likely
+        candidates. A candidate whose logprob is null is dropped.
         """
         if fallback_to_sampled and not self.top_logprobs:
             return [] if self.logprob is None else [self.logprob]
@@ -212,7 +211,7 @@ class LogprobsMixin:
                 raise
             msg = (
                 f"Unsupported output format: {type(outputs).__name__}. Expected a completion response carrying "
-                "logprobs. A numeric array of logprobs is scored by EPRClassifier or WEPRClassifier, not by "
+                "logprobs. A numeric array of logprobs is scored by EPR or WEPR, not by "
                 "this parser or the detectors."
             )
             raise TypeError(msg) from error
@@ -301,13 +300,11 @@ class BatchResponseData(ResponseModel):
     The spec fills a failed envelope two ways. Top-level `error` carries non-HTTP failures
     and leaves the envelope empty; a request the server *rejects* leaves top-level `error`
     null and puts an *error object* in `body` under a 4xx or 5xx `status_code`. A body is
-    therefore not evidence of a completion, which is why
-    `status_code` has to be read rather than merely modelled, and why it carries no
-    default: an absent status is not evidence of success either.
+    therefore not evidence of a completion: `status_code` is a required field with no
+    default, and an absent status is not evidence of success.
 
-    The completion is carried as it arrived rather than narrowed to `ChatCompletion`,
-    because a batch line can carry a `ResponsesPayload` just as well. Consumers validate the
-    payload for their own purpose; this envelope's job is the envelope.
+    The completion is carried as it arrived: a batch line can carry a `ChatCompletion` or a
+    `ResponsesPayload`. Consumers validate the payload themselves.
     """
 
     status_code: int
@@ -326,18 +323,15 @@ class BatchRequestOutput(ResponseModel):
     key every stage joins on.
 
     A failed line carries no usable completion, and `completion` reports that by
-    returning `None` rather than raising: reading a batch file is where failures are
-    counted, not where a run should abort. What a consumer does with one is its own
-    decision -- `LogProbParser` refuses it, because it emits one row per line and a
+    returning `None`. `LogProbParser` refuses such a line: it emits one row per line, and a
     dropped row would shift every later response against its label.
     """
 
     id: str | None = None
     custom_id: str = Field(min_length=1)
     # Required, with no default. Every writer emits both keys -- one of them null -- and a
-    # payload carrying neither is not a batch line. Requiring them is what says so for a
-    # mapping and an attribute-style object alike, rather than letting an unrecognised
-    # payload with a `custom_id` validate here and be reported as a request that failed.
+    # payload carrying neither is not a batch line, for a mapping and an attribute-style
+    # object alike.
     response: BatchResponseData | None
     error: Any
 
@@ -377,10 +371,8 @@ class BatchRequestOutput(ResponseModel):
         `kind` narrows the formats accepted: the default is every registered one, a format
         accepts its own only.
 
-        Refused rather than skipped for a line that carries none. A step that emits one row
-        per sampled sequence would shift every later response against its label by
-        dropping a failed line -- a silently mistrained detector rather than an error.
-        Filter the failed lines out before parsing, which is where their failure can still
+        Raises for a line that carries none: dropping a failed line would shift every later
+        response against its label. Filter the failed lines out before parsing, which is where their failure can still
         be reported against a `custom_id`.
 
         The body goes through the same formats as a bare completion, so a batch of

@@ -2,9 +2,8 @@
 
 Every test names a path. `PretrainedMixin.cached_file` returns a local file without consulting the
 Hub, so the suite exercises the whole loading path without a network, credentials, or a
-stand-in for either. What is deliberately *not* covered here is the download itself: it is
-the one step that needs the Hub, and it is reached only after the pure decisions -- which
-file, which repository -- have been made, each of which is tested below on its own.
+stand-in for either. The download itself, which needs the Hub, is not covered; the
+decisions before it -- which file, which repository -- are tested below.
 """
 
 import numpy as np
@@ -17,16 +16,17 @@ from hypothesis import strategies as st
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.exceptions import NotFittedError
+from sklearn.frozen import FrozenEstimator
+from sklearn.pipeline import make_pipeline
 
-from artefactual.scoring import EPR, WEPR, BaseDetector
+from artefactual.scoring import EPR, WEPR
 from artefactual.utils.io import MODEL_FILENAME, PretrainedMixin, SavePretrainedMixin
 
 
 class AlwaysSure(ClassifierMixin, BaseEstimator):
     """A caller-supplied classifier, of the kind `classifier=` accepts.
 
-    Defined here rather than imported so it is a type skops has no reason to trust, which
-    is the condition the refusal path exists for.
+    A type skops has no reason to trust.
     """
 
     def fit(self, x, y):
@@ -46,7 +46,7 @@ class AlwaysSure(ClassifierMixin, BaseEstimator):
 def test_a_detector_survives_a_round_trip(tmp_path_factory, detector):
     path = write_estimator(tmp_path_factory.mktemp("round-trip"), "model.skops", detector)
 
-    restored = BaseDetector.load_file(path)
+    restored = PretrainedMixin.load_file(path)
 
     x = np.linspace(-3, 3, 7 * detector.n_features_in_).reshape(-1, detector.n_features_in_)
     assert np.array_equal(restored.predict_proba(x), detector.predict_proba(x))
@@ -56,25 +56,20 @@ def test_a_detector_survives_a_round_trip(tmp_path_factory, detector):
 def test_a_published_detector_needs_nothing_trusted(tmp_path):
     """A plain `LogisticRegression` loads bare -- the shape every published detector has.
 
-    This is the property `from_pretrained` depends on, and the narrowest one that says so.
-    It used to be asserted through a `RandomForestClassifier`, on the premise that skops
-    trusts every scikit-learn type; skops 0.15 retired that premise by dropping
-    `sklearn.tree._tree.Tree` from its defaults, and the test failed for a reason that had
-    nothing to do with this package.
+    This is the property `from_pretrained` depends on.
     """
     path = write_estimator(tmp_path, "model.skops", fitted_logistic(-2.91, [58.17]))
 
-    assert BaseDetector.load_file(path).classes_.tolist() == [0, 1]
+    assert PretrainedMixin.load_file(path).classes_.tolist() == [0, 1]
 
 
 def test_the_refusal_follows_skops_own_default_list(tmp_path):
     """Whatever skops declines to trust is exactly what `load_file` demands be named.
 
-    Asserted against `get_untrusted_types` rather than against a fixed type name, because
-    that list is skops' to change and has changed: a `RandomForestClassifier` needed
-    nothing before 0.15 and names `sklearn.tree._tree.Tree` after it. The contract here --
-    refuse what skops does not trust, accept it once the caller asks for it by name -- is
-    what has to hold across either.
+    Asserted against `get_untrusted_types`: that list varies with the skops version (a
+    `RandomForestClassifier` needs nothing before 0.15 and names `sklearn.tree._tree.Tree`
+    after it). The contract -- refuse what skops does not trust, accept it once the caller
+    asks for it by name -- holds across versions.
     """
     forest = RandomForestClassifier(n_estimators=2).fit(np.zeros((4, 2)), [0, 1, 0, 1])
     path = write_estimator(tmp_path, "model.skops", forest)
@@ -82,9 +77,9 @@ def test_the_refusal_follows_skops_own_default_list(tmp_path):
     untrusted = sio.get_untrusted_types(file=path)
     if untrusted:
         with pytest.raises(ValueError, match="does not load by default"):
-            BaseDetector.load_file(path)
+            PretrainedMixin.load_file(path)
 
-    assert BaseDetector.load_file(path, trusted=untrusted).n_estimators == 2
+    assert PretrainedMixin.load_file(path, trusted=untrusted).n_estimators == 2
 
 
 def test_a_detector_holding_an_unasked_for_type_is_refused(tmp_path):
@@ -92,19 +87,19 @@ def test_a_detector_holding_an_unasked_for_type_is_refused(tmp_path):
     path = write_estimator(tmp_path, "model.skops", AlwaysSure().fit(np.zeros((2, 1)), [0, 1]))
 
     with pytest.raises(ValueError, match="does not load by default"):
-        BaseDetector.load_file(path)
+        PretrainedMixin.load_file(path)
 
 
 def test_naming_the_type_makes_it_readable(tmp_path):
     path = write_estimator(tmp_path, "model.skops", AlwaysSure().fit(np.zeros((2, 1)), [0, 1]))
 
     with pytest.raises(ValueError) as refusal:
-        BaseDetector.load_file(path)
+        PretrainedMixin.load_file(path)
     # the refusal names the type to pass, so reading the message is the whole fix
     assert AlwaysSure.__name__ in str(refusal.value)
 
-    restored = BaseDetector.load_file(path, trusted=[f"{AlwaysSure.__module__}.{AlwaysSure.__qualname__}"])
-    assert isinstance(restored, AlwaysSure)
+    restored = PretrainedMixin.load_file(path, trusted=[f"{AlwaysSure.__module__}.{AlwaysSure.__qualname__}"])
+    assert type(restored) is AlwaysSure
 
 
 # --- locating -------------------------------------------------------------------------
@@ -113,14 +108,14 @@ def test_naming_the_type_makes_it_readable(tmp_path):
 def test_a_local_file_is_returned_as_it_is(tmp_path):
     path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
 
-    assert BaseDetector.cached_file(path) == path
+    assert PretrainedMixin.cached_file(path) == path
 
 
 def test_a_directory_resolves_to_the_model_inside_it(tmp_path):
     # the layout a downloaded repository has, so a clone loads the same way a name does
     path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
 
-    assert BaseDetector.cached_file(tmp_path) == path
+    assert PretrainedMixin.cached_file(tmp_path) == path
     assert path.name == MODEL_FILENAME
 
 
@@ -131,8 +126,8 @@ def test_cache_dir_and_revision_reach_the_download(tmp_path):
     commit = "a" * 40
     expected = cached_repo(tmp_path, "org/detector", "release", commit)
 
-    by_branch = BaseDetector.cached_file("org/detector", revision="release", cache_dir=tmp_path, token="unused")
-    by_commit = BaseDetector.cached_file("org/detector", revision=commit, cache_dir=tmp_path)
+    by_branch = PretrainedMixin.cached_file("org/detector", revision="release", cache_dir=tmp_path, token="unused")
+    by_commit = PretrainedMixin.cached_file("org/detector", revision=commit, cache_dir=tmp_path)
 
     assert by_branch == by_commit == expected
 
@@ -149,17 +144,17 @@ def test_an_unknown_revision_is_a_value_error_naming_the_repository(tmp_path):
     cached_repo(tmp_path, "org/detector", "release", "c" * 40)
 
     with pytest.raises(ValueError, match="org/detector"):
-        BaseDetector.cached_file("org/detector", revision="missing", cache_dir=tmp_path)
+        PretrainedMixin.cached_file("org/detector", revision="missing", cache_dir=tmp_path)
 
 
 def test_a_repository_that_is_not_cached_is_a_value_error_offline(tmp_path):
     with pytest.raises(ValueError, match="Could not load an estimator"):
-        BaseDetector.cached_file("org/never-published", cache_dir=tmp_path)
+        PretrainedMixin.cached_file("org/never-published", cache_dir=tmp_path)
 
 
 def test_a_malformed_repository_id_is_a_value_error(tmp_path):
     with pytest.raises(ValueError, match="Could not load an estimator"):
-        BaseDetector.cached_file("not/a/valid/repo/id", cache_dir=tmp_path)
+        PretrainedMixin.cached_file("not/a/valid/repo/id", cache_dir=tmp_path)
 
 
 # --- the estimators ---------------------------------------------------------------------
@@ -171,26 +166,10 @@ def test_wepr_scores_with_the_model_it_was_given(tmp_path_factory, k, data):
     published = data.draw(estimators(n_features=2 * k))
     path = write_estimator(tmp_path_factory.mktemp("wepr"), "model.skops", published)
 
-    built = WEPR.from_pretrained(str(path), k=k)
+    built = WEPR.from_pretrained(str(path))
 
     assert built.estimator.n_features_in_ == 2 * k
     assert np.array_equal(built.estimator.coef_, published.coef_)
-
-
-def test_a_detector_fit_at_another_rank_count_is_refused(tmp_path):
-    detector = fitted_logistic(0.0, [1.0] * 20)  # 2k features, so k=10
-    path = write_estimator(tmp_path, "model.skops", detector)
-
-    with pytest.raises(ValueError, match=r"takes 20 feature\(s\), but k=15 gives 30"):
-        WEPR.from_pretrained(str(path), k=15)
-
-
-def test_an_epr_detector_in_a_wepr_detector_is_refused(tmp_path):
-    # the single pooled-entropy coefficient cannot feed a 2k-feature reduction
-    path = write_estimator(tmp_path, "model.skops", fitted_logistic(0.0, [1.0]))
-
-    with pytest.raises(ValueError, match="takes 1 feature"):
-        WEPR.from_pretrained(str(path), k=15)
 
 
 def test_a_detector_saves_the_calibration_it_scores_with(tmp_path):
@@ -217,7 +196,7 @@ def test_saving_an_unfitted_detector_is_refused(tmp_path):
     attribute -- nowhere near the call that forgot to fit. Refusing here names it instead.
     """
     with pytest.raises(NotFittedError):
-        WEPR(k=15).save_pretrained(tmp_path / "unfitted.skops")
+        WEPR().save_pretrained(tmp_path / "unfitted.skops")
 
     assert not (tmp_path / "unfitted.skops").exists()
 
@@ -234,24 +213,24 @@ def test_saving_creates_the_parent_directory(tmp_path):
 # --- building an owner from published weights -------------------------------------------
 
 
-class Owner(PretrainedMixin, SavePretrainedMixin):
+class Owner(PretrainedMixin, SavePretrainedMixin, BaseEstimator):
     """A minimal owner of an estimator, of the kind the mixin is written for.
 
-    Deliberately not a detector: the mixin resolves, reads and hands over a file, and the
-    tests below pin that it does so without knowing what the estimator is for.
+    Not a detector: the mixin resolves, reads and hands over a file without knowing what
+    the estimator is for.
     """
 
     def __init__(self, estimator, label="unlabelled"):
-        self._estimator = estimator
+        self.estimator = estimator
         self.label = label
 
-    @property
-    def estimator(self):
-        return self._estimator
+    def fit(self, X, y=None):  # ruff: ignore[invalid-argument-name, unused-method-argument]
+        """scikit-learn's `check_is_fitted` only accepts objects that have a `fit`."""
+        return self
 
     @classmethod
     def from_estimator(cls, estimator, _identifier, **kwargs):
-        return cls(estimator, **kwargs)
+        return cls(FrozenEstimator(estimator), **kwargs)
 
 
 class PickyOwner(Owner):
@@ -344,8 +323,16 @@ def test_a_local_path_is_loaded_without_the_hub_options(tmp_path):
 
 
 def test_save_pretrained_is_usable_without_from_pretrained(tmp_path):
-    class SaveOnly(SavePretrainedMixin):
-        estimator = fitted_logistic(0.0, [1.0])
+    class SaveOnly(SavePretrainedMixin, BaseEstimator):
+        def __init__(self):
+            self.pipeline_ = make_pipeline(fitted_logistic(0.0, [1.0]))
+
+        @property
+        def estimator(self):
+            return self.pipeline_[-1]
+
+        def fit(self, X, y=None):  # ruff: ignore[invalid-argument-name, unused-method-argument]
+            return self
 
     written = SaveOnly().save_pretrained(tmp_path)
 
@@ -364,7 +351,7 @@ def test_what_is_saved_is_what_from_pretrained_loads(tmp_path_factory, published
     if as_directory:
         target.mkdir()
 
-    written = Owner(published).save_pretrained(target)
+    written = Owner(FrozenEstimator(published)).save_pretrained(target)
     reloaded = Owner.from_pretrained(target)
 
     assert written == (target / MODEL_FILENAME if as_directory else target)

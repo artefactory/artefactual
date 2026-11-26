@@ -105,7 +105,7 @@ from artefactual.preprocessing import index_by_custom_id, read_batch, read_judgm
 RESPONSES = Path("responses_sample.jsonl")
 # A verdict on each of those responses, keyed by the same `custom_id`.
 JUDGMENTS = Path("judgments_sample.jsonl")
-K = 15  # candidates per token; a detector is loaded at the k it was fit at
+K = 15  # candidates per token; a detector scores the k it was fit at
 SEED = 42
 
 # `read_batch` validates each line into `BatchRequestOutput` and refuses a repeated
@@ -148,20 +148,19 @@ reduction keeps a mean and a max per rank, so `k=15` becomes **30** features per
 coefficient each for the classifier to weight.
 
 ```{code-cell} ipython3
-from artefactual import WEPR
-from artefactual.preprocessing.parser import LogProbParser
-from artefactual.scoring import BaseDetector, EntropyTransformer, WEPRPooling
+from artefactual import WEPR, LogProbParser, make_detector
+from artefactual.scoring import EntropyTransformer, WEPRPooling
 
 logprobs = LogProbParser(k=K).transform(responses)  # (responses, tokens, ranks), NaN-padded
 s_kj = EntropyTransformer.entropy_contributions(logprobs)  # -p*ln(p) per candidate, peaking at p=1/e
-features = EntropyTransformer(pooling=WEPRPooling(), k=15).transform(logprobs)
+features = EntropyTransformer(pooling=WEPRPooling()).transform(logprobs)
 
 logprobs.shape, s_kj.shape, features.shape
 ```
 
 ## Fit
 
-`WEPR(k=15)` returns the pipeline unfitted, so `fit` takes the batch lines directly and
+`make_detector(k=K)` is the pipeline unfitted, so `fit` takes the batch lines directly and
 there is no feature extraction to write. The split is stratified and happens first, so what
 is reported describes responses the detector never saw.
 
@@ -178,11 +177,10 @@ from sklearn.model_selection import train_test_split
 y = np.array(labels)
 x_train, x_test, y_train, y_test = train_test_split(responses, y, test_size=0.25, stratify=y, random_state=SEED)
 
-detector = WEPR(k=K).fit(x_train, y_train)
+detector = make_detector(k=K).fit(x_train, y_train)
 scores = detector.predict_proba(x_test)[:, 1]
 
-# Glued, so the paragraph below quotes this run rather than a number typed once and left to
-# drift. An `.md` carries no outputs, so a stale figure in the prose has nothing to contradict it.
+# Glued, so the paragraph below quotes this run's value.
 glue("auc", roc_auc_score(y_test, scores), display=False)
 glue("held_out", len(y_test), display=False)
 
@@ -197,10 +195,11 @@ workflow rather than as a result.
 
 ## What the fit weighs
 
-A fitted `Pipeline` slices. `detector[:-1]` is the parser and the transformer without the
-classifier, so it produces exactly the `features` the three steps above built by hand.
+A fitted `make_detector` pipeline slices. `detector[0]` is the parser and `detector[-1]` the `WEPR`
+classifier, whose `pipeline_` holds the entropy step and the logistic regression. The entropy
+step on the parser's output produces exactly the `features` the three steps above built by hand.
 
-`detector[-1]` is the classifier, and its 30 coefficients are `2k`: a weight per rank for
+`detector[-1].pipeline_[-1]` is the logistic regression, and its 30 coefficients are `2k`: a weight per rank for
 the mean of the entropy contributions, and a weight per rank for the max. Plotted against
 the rank, they say which part of the distribution this detector reads — weight lands across
 the whole axis rather than on rank 0. The magnitudes are large because the default
@@ -211,10 +210,10 @@ classifier is unregularised; *Choosing the final estimator* is about that.
 
 import matplotlib.pyplot as plt
 
-# The by-hand steps and the pipeline are the same computation, not a resemblance.
-assert np.allclose(detector[:-1].transform(responses), features, equal_nan=True)
+# The by-hand steps and the pipeline compute the same features.
+assert np.allclose(detector[-1].pipeline_[:-1].transform(detector[0].transform(responses)), features, equal_nan=True)
 
-mean_weights, max_weights = detector[-1].coef_[0].reshape(2, K)
+mean_weights, max_weights = detector[-1].pipeline_[-1].coef_[0].reshape(2, K)
 ranks = np.arange(K)
 
 axes = plt.subplot()
@@ -238,29 +237,36 @@ from sklearn.model_selection import StratifiedKFold, cross_val_score
 
 folds = StratifiedKFold(5, shuffle=True, random_state=SEED)
 
-auc = cross_val_score(WEPR(k=K), responses, y, cv=folds, scoring="roc_auc")
+auc = cross_val_score(make_detector(k=K), responses, y, cv=folds, scoring="roc_auc")
 print(f"5-fold ROC-AUC: {auc.mean():.2f} +/- {auc.std():.2f}   {np.round(auc, 2)}")
 ```
 
-## Which `k` should this be fitted at?
+## Which `k` should this be fitted at? (advanced)
 
-Every step's parameters are searchable. The grid sweeps `k` rather than `parser__k`, because
-setting `k` reaches both the parser and the entropy step while `parser__k` leaves the entropy
-step at its old width. The classifier is refitted at each width, so the comparison is legitimate. Read the scores across `k` before choosing: a
+Tuning needs a pipeline, so this section uses `make_pipeline`: `LogProbParser`'s `k` is searchable
+as `logprobparser__k`, and the pipeline is refitted at each width, so the comparison is legitimate.
+Tune a detector you train, never a published one: its weights are frozen. Read the scores across `k` before choosing: a
 score that keeps rising with `k` says the signal lives in the deeper ranks, not just the top
 one, while one that flattens early says the extra ranks add little.
 
 This search chooses the `k` to **fit** at. It is not a knob to turn afterwards: WEPR fits one
 coefficient per rank, so a detector's coefficients are the width it was trained at, and
-`from_pretrained` refuses any other. Search once, fit at the winner, and load at that same
+it refuses any other. Search once, fit at the winner, and load at that same
 value forever after. Every published detector was fitted at 15.
 
 ```{code-cell} ipython3
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import make_pipeline
 
-search = GridSearchCV(WEPR(k=15), {"k": [5, 10, 15]}, cv=folds, scoring="roc_auc")
+search = GridSearchCV(
+    make_pipeline(LogProbParser(), WEPR(estimator=LogisticRegression())),
+    {"logprobparser__k": [5, 10, 15]},
+    cv=folds,
+    scoring="roc_auc",
+)
 search.fit(responses, y)
-for k, mean in zip(search.cv_results_["param_k"], search.cv_results_["mean_test_score"], strict=True):
+for k, mean in zip(search.cv_results_["param_logprobparser__k"], search.cv_results_["mean_test_score"], strict=True):
     print(f"  k={k:>2}: {mean:.2f}")
 ```
 
@@ -276,7 +282,7 @@ buying; one that has flattened says the next hundred buy nothing.
 from sklearn.model_selection import LearningCurveDisplay
 
 learning_curve = LearningCurveDisplay.from_estimator(
-    WEPR(k=K),
+    make_detector(k=K),
     responses,
     y,
     cv=folds,
@@ -298,8 +304,7 @@ Regularising is one keyword, and it spreads the scores back out — same feature
 a curve you can actually pick an operating point from. `PrecisionRecallDisplay` draws both on
 one axes, where the saturation is the shape of the curve rather than a count of thresholds.
 
-Then pick the threshold with `TunedThresholdClassifierCV` rather than by reading a number
-off the curve: it cross-validates the cut on the training set alone, so the operating point
+Then pick the threshold with `TunedThresholdClassifierCV`: it cross-validates the cut on the training set alone, so the operating point
 is not chosen on the rows it is then reported against. It wraps the detector, so
 `predict` uses the tuned cut while `predict_proba` still returns the detector's own scores.
 The threshold is a number, not part of the `.skops` weights — it travels with the detector,
@@ -311,10 +316,13 @@ not inside it.
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import PrecisionRecallDisplay, precision_recall_curve
 
+parser = LogProbParser(k=K)
+train_logprobs, test_logprobs = parser.transform(x_train), parser.transform(x_test)
+
 curves = None
 for label, estimator in (("C=inf (default)", None), ("C=1.0", LogisticRegression(C=1.0, max_iter=1000))):
-    fitted = WEPR(k=K, estimator=estimator).fit(x_train, y_train)
-    probabilities = fitted.predict_proba(x_test)[:, 1]
+    fitted = WEPR(estimator=estimator).fit(train_logprobs, y_train)
+    probabilities = fitted.predict_proba(test_logprobs)[:, 1]
     decided = np.mean((probabilities < 0.01) | (probabilities > 0.99))
     thresholds = precision_recall_curve(y_test, probabilities)[2]
     print(
@@ -333,13 +341,17 @@ from sklearn.model_selection import TunedThresholdClassifierCV
 
 # Tuned on the training rows only, by cross-validation, and reported on the held-out ones.
 tuned = TunedThresholdClassifierCV(
-    WEPR(k=K, estimator=LogisticRegression(C=1.0, max_iter=1000)),
+    WEPR(estimator=LogisticRegression(C=1.0, max_iter=1000)),
     scoring="f1",
     cv=folds,
-).fit(x_train, y_train)
+).fit(train_logprobs, y_train)
 
 print(f"threshold {tuned.best_threshold_:.2f} rather than 0.5, {tuned.best_score_:.2f} F1 in cross-validation")
-print(classification_report(y_test, tuned.predict(x_test), target_names=["grounded", "hallucination"], zero_division=0))
+print(
+    classification_report(
+        y_test, tuned.predict(test_logprobs), target_names=["grounded", "hallucination"], zero_division=0
+    )
+)
 ```
 
 ## Per-token scores
@@ -353,7 +365,7 @@ These sample responses are at most four tokens long, so there is little to see.
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-per_token = detector.predict_token_proba(x_test[:3])  # (responses, tokens, 1)
+per_token = detector[-1].predict_token_proba(detector[0].transform(x_test[:3]))  # (responses, tokens, 1)
 
 for row, scores_per_token in zip(x_test[:3], per_token, strict=True):
     tokens = [t["token"] for t in row.completion["choices"][0]["logprobs"]["content"]]
@@ -367,27 +379,29 @@ for row, scores_per_token in zip(x_test[:3], per_token, strict=True):
 `model.skops`, or **a Hugging Face repository id** — the shipped detectors are loaded that
 way, and yours is too once you push its `model.skops` to a repository of your own.
 
-`k` is part of the weights, not a runtime option: the coefficients were fitted at one rank
-count and mean nothing at another, so loading at a different `k` raises rather than
+The width is part of the weights, not a runtime option: the coefficients were fitted at one rank
+count and mean nothing at another, so scoring arrays of a different `k` raises rather than
 mis-shaping the score.
 
 The rows scored below are held-out ones.
 
 ```{code-cell} ipython3
-path = detector.save_pretrained("wepr-trained.skops")
-reloaded = WEPR.from_pretrained(path, k=K)
-print(f"{path}, reloaded at k={K}")
+path = detector[-1].save_pretrained("wepr-trained.skops")
+reloaded = WEPR.from_pretrained(path)
+print(f"{path}, reloaded")
 
 # Held-out answers: the rows the fit never saw.
 for row, label in list(zip(x_test, y_test, strict=True))[:5]:
     said = (read_message(row.completion) or "").strip()
-    print(f"[{'hallucination' if label else 'grounded    '}] P={reloaded.predict_proba(row)[0, 1]:.3f}  {said[:40]!r}")
+    print(
+        f"[{'hallucination' if label else 'grounded    '}] P={reloaded.predict_proba(parser.transform(row))[0, 1]:.3f}  {said[:40]!r}"
+    )
 
 # The width is part of the weights, so a mismatch is refused rather than mis-shaped.
 try:
-    WEPR.from_pretrained(path, k=K - 1)
+    reloaded.predict_proba(LogProbParser(k=K - 1).transform(x_test[:1]))
 except ValueError as error:
-    print(f"\nfrom_pretrained(path, 'wepr', k={K - 1}) -> ValueError: {error}")
+    print(f"\nscoring at k={K - 1} -> ValueError: {error}")
 ```
 
 ## Where to go next

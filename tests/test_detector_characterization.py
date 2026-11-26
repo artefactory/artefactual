@@ -1,11 +1,11 @@
-"""Characterization of `EPR` / `WEPR` scores and load errors, pinned as literals.
+"""Characterization of the response pipelines' scores and load errors, pinned as literals.
 
-Pins, for both detectors built with `from_pretrained` on a local skops file:
+Pins, for both `make_pipeline(LogProbParser(k), Detector.from_pretrained(path))` detectors
+built on a local skops file:
 
 - `predict_proba(...)[:, 1]` and `predict_token_proba` on the checked-in Responses payload
   (docs/examples/open_ai_responses_top15.json) and on three chat-completion bodies taken
   from docs/examples/responses_sample.jsonl;
-- the `ValueError` raised when the file's width does not match `k`;
 - that `save_pretrained` -> `from_pretrained` reproduces the scores exactly.
 
 The weights are fixed, hand-written logistic-regression coefficients at k=15 (1 feature
@@ -22,7 +22,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from conftest import fitted_logistic, write_estimator
+from conftest import fitted_logistic, load_detector, token_proba, write_estimator
 
 from artefactual.scoring import EPR, WEPR
 
@@ -104,7 +104,7 @@ CASES = pytest.mark.parametrize(("name", "payload"), list(GOLDEN), ids=lambda va
 
 def load(name, directory):
     path = write_estimator(directory, f"{name}.skops", WEIGHTS[name]())
-    return DETECTORS[name].from_pretrained(str(path), k=K)
+    return load_detector(DETECTORS[name], str(path), k=K)
 
 
 @CASES
@@ -117,39 +117,20 @@ def test_predict_proba_is_pinned(tmp_path, name, payload):
 
 @CASES
 def test_predict_token_proba_is_pinned(tmp_path, name, payload):
-    scores = load(name, tmp_path).predict_token_proba(PAYLOADS[payload])
+    scores = token_proba(load(name, tmp_path), PAYLOADS[payload])
 
     expected = np.array(GOLDEN[name, payload][1])[..., None]
     assert scores.shape == expected.shape
     np.testing.assert_allclose(scores, expected, equal_nan=True, **TOLERANCE)
 
 
-@pytest.mark.parametrize(
-    ("name", "wrong_features", "message"),
-    [
-        ("epr", 2, r"takes 2 feature\(s\), but k=15 gives 1\. .*pass the k it was trained with"),
-        ("wepr", 1, r"takes 1 feature\(s\), but k=15 gives 30\. .*pass the k it was trained with"),
-        ("wepr", 20, r"takes 20 feature\(s\), but k=15 gives 30\. .*pass the k it was trained with"),
-    ],
-)
-def test_a_width_that_does_not_match_k_is_refused(tmp_path, name, wrong_features, message):
-    path = write_estimator(tmp_path, "wrong.skops", fitted_logistic(0.0, [1.0] * wrong_features))
-
-    with pytest.raises(ValueError, match=message) as refusal:
-        DETECTORS[name].from_pretrained(str(path), k=K)
-    assert DETECTORS[name].__name__ in str(refusal.value)
-    assert str(path) in str(refusal.value)
-
-
 @CASES
 def test_saving_and_reloading_keeps_the_scores(tmp_path, name, payload):
     detector = load(name, tmp_path)
-    written = detector.save_pretrained(tmp_path / "saved" / "model.skops")
+    written = detector[-1].save_pretrained(tmp_path / "saved" / "model.skops")
 
-    restored = DETECTORS[name].from_pretrained(str(written), k=K)
+    restored = load_detector(DETECTORS[name], str(written), k=K)
 
     assert np.array_equal(restored.predict_proba(PAYLOADS[payload]), detector.predict_proba(PAYLOADS[payload]))
     np.testing.assert_allclose(restored.predict_proba(PAYLOADS[payload])[:, 1], GOLDEN[name, payload][0], **TOLERANCE)
-    np.testing.assert_array_equal(
-        restored.predict_token_proba(PAYLOADS[payload]), detector.predict_token_proba(PAYLOADS[payload])
-    )
+    np.testing.assert_array_equal(token_proba(restored, PAYLOADS[payload]), token_proba(detector, PAYLOADS[payload]))

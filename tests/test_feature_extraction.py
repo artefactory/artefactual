@@ -6,8 +6,8 @@ downstream — every reduction returns a plausible float, and a constant scale e
 ranks correctly, so it survives every shape and ordering check in the rest of the suite.
 
 The oracle is `ecir2026_reference`, a frozen copy of the arithmetic from the tagged release
-that produced the paper's results. It is the authority rather than the paper's equations,
-because the published coefficients were trained against it, and the two differ: Eq. 1 and 3
+that produced the paper's results. The published coefficients were trained against it,
+and it differs from the paper's equations: Eq. 1 and 3
 are written in bits, while the release computes in nats — a factor of ln 2 that a fitted
 coefficient absorbs.
 
@@ -37,7 +37,7 @@ from artefactual.scoring.entropy_methods.pooling import EPRPooling, WEPRPooling
 
 @given(logprobs=logprob_cubes())
 def test_epr_matches_the_ecir2026_release(logprobs):
-    produced = EntropyTransformer(pooling=EPRPooling(), k=None).transform(logprobs)
+    produced = EntropyTransformer(pooling=EPRPooling()).transform(logprobs)
     k = logprobs.shape[-1]
 
     for index, sequence in enumerate(logprobs):
@@ -49,7 +49,7 @@ def test_the_contributions_match_the_release_rank_for_rank(logprobs):
     # the per-rank table both reductions are built from, before any pooling
     k = logprobs.shape[-1]
 
-    produced = EntropyTransformer(pooling=EPRPooling(), k=None).entropy_contributions(logprobs)
+    produced = EntropyTransformer(pooling=EPRPooling()).entropy_contributions(logprobs)
 
     for index, sequence in enumerate(logprobs):
         expected = compute_entropy_contributions(np.sort(sequence, axis=-1)[:, ::-1], k)
@@ -69,7 +69,7 @@ def test_a_uniform_distribution_gives_exactly_ln_k(k):
     """
     uniform = np.full((1, 1, k), np.log(1 / k))
 
-    epr = EntropyTransformer(pooling=EPRPooling(), k=None).transform(uniform)
+    epr = EntropyTransformer(pooling=EPRPooling()).transform(uniform)
 
     assert epr[0, 0] == pytest.approx(math.log(k), rel=1e-6)
 
@@ -78,16 +78,14 @@ def test_a_certain_token_has_zero_entropy():
     # p = 1 for the top rank, everything else vanishing: -1*ln(1) = 0
     certain = np.array([[[0.0, -50.0, -50.0]]])
 
-    assert EntropyTransformer(pooling=EPRPooling(), k=None).transform(certain)[0, 0] == pytest.approx(0.0, abs=1e-8)
+    assert EntropyTransformer(pooling=EPRPooling()).transform(certain)[0, 0] == pytest.approx(0.0, abs=1e-8)
 
 
 def test_a_fair_coin_matches_hand_arithmetic():
     # p = (0.5, 0.5): each rank contributes 0.5*ln2, so H = ln 2 nats
     coin = np.array([[[math.log(0.5), math.log(0.5)]]])
 
-    assert EntropyTransformer(pooling=EPRPooling(), k=None).transform(coin)[0, 0] == pytest.approx(
-        math.log(2), rel=1e-6
-    )
+    assert EntropyTransformer(pooling=EPRPooling()).transform(coin)[0, 0] == pytest.approx(math.log(2), rel=1e-6)
 
 
 def test_epr_is_a_rate_not_a_total():
@@ -95,7 +93,7 @@ def test_epr_is_a_rate_not_a_total():
     one = np.array([[[math.log(0.5), math.log(0.5)]]])
     three = np.repeat(one, 3, axis=1)
 
-    transformer = EntropyTransformer(pooling=EPRPooling(), k=None)
+    transformer = EntropyTransformer(pooling=EPRPooling())
 
     assert transformer.transform(three)[0, 0] == pytest.approx(transformer.transform(one)[0, 0], rel=1e-6)
 
@@ -111,7 +109,7 @@ def test_epr_is_bounded_by_its_rank_count_over_e(logprobs):
     """
     k = logprobs.shape[-1]
 
-    epr = EntropyTransformer(pooling=EPRPooling(), k=None).transform(logprobs)
+    epr = EntropyTransformer(pooling=EPRPooling()).transform(logprobs)
 
     assert (epr[:, 0] <= k / math.e + 1e-6).all()
     assert (epr[:, 0] >= -1e-9).all()
@@ -122,7 +120,7 @@ def test_the_bound_is_attained_by_ranks_at_the_peak():
     k = 5
     at_peak = np.full((1, 1, k), -1.0)  # ln(1/e) = -1
 
-    epr = EntropyTransformer(pooling=EPRPooling(), k=None).transform(at_peak)
+    epr = EntropyTransformer(pooling=EPRPooling()).transform(at_peak)
 
     assert epr[0, 0] == pytest.approx(k / math.e, rel=1e-6)
 
@@ -142,7 +140,7 @@ def test_the_wepr_features_reproduce_the_release_score(logprobs, seed):
     mean_weights, max_weights = rng.normal(size=k), rng.normal(size=k)
     intercept = float(rng.normal())
 
-    features = EntropyTransformer(pooling=WEPRPooling(), k=None).transform(logprobs)
+    features = EntropyTransformer(pooling=WEPRPooling()).transform(logprobs)
 
     for index, sequence in enumerate(logprobs):
         expected = sequence_wepr(sequence, k, mean_weights, max_weights, intercept)
@@ -154,7 +152,7 @@ def test_the_wepr_features_reproduce_the_release_score(logprobs, seed):
 @given(logprobs=logprob_cubes())
 def test_the_wepr_branches_are_the_per_rank_mean_and_max(logprobs):
     k = logprobs.shape[-1]
-    features = EntropyTransformer(pooling=WEPRPooling(), k=None).transform(logprobs)
+    features = EntropyTransformer(pooling=WEPRPooling()).transform(logprobs)
 
     for index, sequence in enumerate(logprobs):
         s_kj = compute_entropy_contributions(np.sort(sequence, axis=-1)[:, ::-1], k)
@@ -165,7 +163,7 @@ def test_the_wepr_branches_are_the_per_rank_mean_and_max(logprobs):
 @given(logprobs=logprob_cubes())
 def test_the_wepr_mean_branch_never_exceeds_the_max_branch(logprobs):
     # a per-rank mean over tokens cannot exceed that rank's maximum
-    features = EntropyTransformer(pooling=WEPRPooling(), k=None).transform(logprobs)
+    features = EntropyTransformer(pooling=WEPRPooling()).transform(logprobs)
     k = logprobs.shape[-1]
 
     assert (features[:, :k] <= features[:, k:] + 1e-9).all()
@@ -178,8 +176,8 @@ def test_wepr_reduces_to_epr_when_every_mean_coefficient_is_one():
     """
     logprobs = np.array([[[math.log(0.5), math.log(0.3), math.log(0.2)]] * 4])
 
-    epr = EntropyTransformer(pooling=EPRPooling(), k=None).transform(logprobs)[0, 0]
-    wepr = EntropyTransformer(pooling=WEPRPooling(), k=None).transform(logprobs)[0]
+    epr = EntropyTransformer(pooling=EPRPooling()).transform(logprobs)[0, 0]
+    wepr = EntropyTransformer(pooling=WEPRPooling()).transform(logprobs)[0]
 
     assert wepr[:3].sum() == pytest.approx(epr, rel=1e-6)
 
@@ -197,5 +195,5 @@ def test_padded_tokens_are_excluded_from_both_reductions():
     padded = np.array([[[math.log(0.5), math.log(0.5)], [np.nan, np.nan]]])
 
     for pooling in (EPRPooling(), WEPRPooling()):
-        transformer = EntropyTransformer(pooling=pooling, k=None)
+        transformer = EntropyTransformer(pooling=pooling)
         np.testing.assert_allclose(transformer.transform(padded), transformer.transform(real), rtol=1e-6)

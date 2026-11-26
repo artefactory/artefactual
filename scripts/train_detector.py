@@ -7,13 +7,10 @@ Usage:
         --output wepr.skops --report wepr_evaluation.json
 
 Both inputs are `vllm run-batch` outputs: one line per request, carrying the `custom_id`
-the generation request was built with. Rows are joined on that id rather than on position,
+the generation request was built with. Rows are joined on that id,
 so a reordered or partially failed batch cannot silently train on mismatched pairs.
 
-`--pooling` is `epr`, `wepr`, or an import path `package.module:Attr` to your own pooling:
-a `Pooling` subclass (instantiated without arguments), a `Pooling` instance, or a function
-`f(x, axis)`. The module must be importable: installed, or on `PYTHONPATH`
-(`PYTHONPATH=. uv run scripts/train_detector.py --pooling my_pooling:Median ...`).
+`--pooling` is `epr` or `wepr`; the detector is `make_pipeline(LogProbParser(k=k), <classifier>(k=k))`.
 
 `--responses` holds the generations, whose `logprobs`/`top_logprobs` the detector scores.
 `--judgments` holds the LLM-as-a-judge verdicts, as JSON `{"judgment": true|false}` in the
@@ -33,24 +30,23 @@ model's scores, which answers "how precisely do I know this model's ROC-AUC" rat
 "how much does the fitting procedure vary". The intervals are therefore narrower than
 Table 1's and not directly comparable to them.
 
-The fitted estimator is written to `--output` as a `.skops` file, the shape
+The fitted classifier (the pipeline's last step) is written to `--output` as a `.skops` file, the shape
 `EPR.from_pretrained` and `WEPR.from_pretrained` read back; the evaluation report goes to `--report` as JSON.
 """
 
 import json
-import pkgutil
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 from absl import app, flags, logging
-from beartype.door import is_bearable
 from sklearn.metrics import average_precision_score, classification_report, roc_auc_score
 from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.utils import resample
 
-from artefactual.preprocessing import index_by_custom_id, read_batch, read_judgment
-from artefactual.scoring import EPR, WEPR, BaseDetector, Pooling, PoolingDetector
+from artefactual.preprocessing import LogProbParser, index_by_custom_id, read_batch, read_judgment
+from artefactual.scoring import EPR, WEPR
 
 SEED = 42
 REPETITIONS = 1000
@@ -61,7 +57,7 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string("responses", None, "vllm run-batch output with logprobs")
 flags.DEFINE_string("judgments", None, "vllm run-batch output with judge verdicts")
-flags.DEFINE_string("pooling", None, "epr, wepr, or an import path package.module:Attr to a Pooling or a function")
+flags.DEFINE_string("pooling", None, "epr or wepr")
 flags.DEFINE_integer("k", None, "top_logprobs the batch was generated with")
 flags.DEFINE_string("output", None, "where to write the fitted detector (.skops)")
 flags.DEFINE_string("report", None, "where to write the evaluation as JSON")
@@ -72,33 +68,22 @@ flags.DEFINE_integer("seed", SEED, "seed for the split and the resampling")
 flags.mark_flags_as_required(["responses", "judgments", "pooling", "k"])
 
 
-# The two shipped poolings, by their detectors; any other pooling goes through an import path.
-SHIPPED_DETECTORS = {"epr": EPR, "wepr": WEPR}
+# The two shipped poolings, by their classifiers; `--pooling` takes nothing else.
+SHIPPED_CLASSIFIERS = {"epr": EPR, "wepr": WEPR}
 
 
-def build_detector(spec: str, k: int) -> BaseDetector:
-    """An unfitted detector for `--pooling`: `epr`, `wepr`, or `package.module:Attr`.
-
-    `Attr` is a `Pooling` subclass, which is instantiated without arguments, a `Pooling`
-    instance, or a function `f(x, axis)`.
+def build_detector(spec: str, k: int) -> Pipeline:
+    """An unfitted `LogProbParser -> classifier` pipeline for `--pooling`: `epr` or `wepr`.
 
     Raises
     ------
     ValueError
-        If `spec` is neither a shipped name nor an import path with a `:`, or `Attr` is none of those.
+        If `spec` is not a shipped pooling name.
     """
-    if spec in SHIPPED_DETECTORS:
-        return SHIPPED_DETECTORS[spec](k=k)
-    if ":" not in spec:
-        msg = f"--pooling {spec!r} is neither epr, wepr nor an import path package.module:Attr."
+    if spec not in SHIPPED_CLASSIFIERS:
+        msg = f"--pooling {spec!r} is neither epr nor wepr."
         raise ValueError(msg)
-    target = pkgutil.resolve_name(spec)
-    if is_bearable(target, type[Pooling]):
-        target = target()
-    if not (is_bearable(target, Pooling) or callable(target)):
-        msg = f"--pooling {spec!r} resolved to {target!r}: expected a Pooling, a Pooling subclass or a function."
-        raise ValueError(msg)
-    return PoolingDetector(target, k=k)
+    return make_pipeline(LogProbParser(k=k), SHIPPED_CLASSIFIERS[spec](**({"k": k} if spec == "epr" else {})))
 
 
 def read_responses(path: Path) -> dict[str, Any]:
@@ -152,8 +137,8 @@ def bootstrap_interval(y_true: np.ndarray, scores: np.ndarray, metric, n_repetit
     """Mean and 95% percentile interval for a ranking metric, by resampling the held-out set.
 
     The model is fixed; what is resampled is which held-out examples were drawn. That is the
-    question a shipped detector raises -- how precisely its score is known -- and it is why
-    the interval can be reported for the exact artefact written to `--output`.
+    question of how precisely a shipped detector's score is known, reported for the exact
+    artefact written to `--output`.
 
     Resamples that end up single-class are skipped: `roc_auc` is undefined on them. With a
     rare positive class that can be most of them, so the count of survivors is returned and
@@ -180,7 +165,7 @@ def bootstrap_interval(y_true: np.ndarray, scores: np.ndarray, metric, n_repetit
     }
 
 
-def evaluate(detector: BaseDetector, x_test, y_test: np.ndarray, n_repetitions: int, seed: int) -> dict:
+def evaluate(detector: Pipeline, x_test, y_test: np.ndarray, n_repetitions: int, seed: int) -> dict:
     """Score the fitted detector on the held-out set it has never seen."""
     scores = detector.predict_proba(x_test)[:, 1]
     predictions = (scores >= 0.5).astype(int)
@@ -200,8 +185,7 @@ def evaluate(detector: BaseDetector, x_test, y_test: np.ndarray, n_repetitions: 
 def split_labelled_set(x, y: np.ndarray, test_size: float, seed: int) -> tuple[list, list, np.ndarray, np.ndarray]:
     """Stratified holdout, refusing splits that cannot carry both classes.
 
-    Checked here rather than left to sklearn, which raises about `n_splits` and group counts
-    without saying which class is short or by how much.
+    Names the class that is short and by how much.
     """
     labels, counts = np.unique(y, return_counts=True)
     balance = dict(zip(labels.tolist(), counts.tolist(), strict=True))
@@ -235,11 +219,11 @@ def main(argv: list[str]) -> None:
 
     detector = build_detector(FLAGS.pooling, FLAGS.k).fit(x_train, y_train)
 
-    classifier = detector.named_steps["classifier"]
+    classifier = detector[-1].named_steps["classifier"]
     logging.info(f"intercept: {float(classifier.intercept_[0])}")
     logging.info(f"coefficients: {classifier.coef_[0].tolist()}")
     if FLAGS.output:
-        logging.info(f"wrote {detector.save_pretrained(FLAGS.output)}")
+        logging.info(f"wrote {detector[-1].save_pretrained(FLAGS.output)}")
 
     if y_test is None:
         return

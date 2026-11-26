@@ -4,6 +4,7 @@ from hypothesis import assume, given
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 from pydantic import ValidationError
+from sklearn.utils._param_validation import InvalidParameterError
 
 from artefactual.preprocessing.parser import (
     LogProbParser,
@@ -155,6 +156,24 @@ def test_a_response_without_logprobs_names_the_cause():
     # position carries ranks, and the reduction downstream would fail on a zero-size axis
     with pytest.raises(ValueError, match="carry any log-probabilities"):
         LogProbParser(k=15).transform({"choices": [{"logprobs": None}]})
+
+
+@pytest.mark.parametrize("k", [0, -3, "a", 1.5])
+def test_fit_refuses_an_invalid_k(k):
+    with pytest.raises(InvalidParameterError, match="'k'"):
+        LogProbParser(k=k).fit([])
+
+
+@given(k=st.integers(min_value=1, max_value=50))
+def test_fit_accepts_any_positive_k(k):
+    parser = LogProbParser(k=k)
+    assert parser.fit([]) is parser
+
+
+def test_a_valid_k_still_parses():
+    token = {"top_logprobs": [{"logprob": -0.1}, {"logprob": -0.5}]}
+    payload = {"choices": [{"logprobs": {"content": [token]}}]}
+    assert LogProbParser(k=2).fit([]).transform(payload).shape == (1, 1, 2)
 
 
 @given(k=st.integers(min_value=2, max_value=20), data=st.data())

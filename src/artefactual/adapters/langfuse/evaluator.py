@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from artefactual.scoring.base_detector import BaseDetector
+from sklearn.pipeline import Pipeline
 
 if TYPE_CHECKING:
     from langfuse import Langfuse
@@ -18,16 +18,17 @@ class HallucinationEvaluator:
     """Scores a Langfuse trace's output and writes the result back as a trace score.
 
     The trace `output` must be the completion response itself, carrying logprobs — the
-    same object `BaseDetector.predict_proba` accepts.
+    same object a `LogProbParser` pipeline's `predict_proba` accepts.
     """
 
-    def __init__(self, name: str, langfuse_client: Langfuse, detector: BaseDetector) -> None:
+    def __init__(self, name: str, langfuse_client: Langfuse, detector: Pipeline) -> None:
         """
         Args:
             name: Score name recorded in Langfuse, used as the metric label in its UI.
             langfuse_client: An authenticated `Langfuse` client.
-            detector: A fitted detector, e.g.
-                `EPR.from_pretrained("artefactory/epr-ministral", k=15)`.
+            detector: A fitted pipeline from completion responses to probabilities, e.g.
+                `make_pipeline(LogProbParser(k=15),
+                EPR.from_pretrained("artefactory/epr-ministral", k=15))`.
         """
         self.name = name
         self.langfuse = langfuse_client

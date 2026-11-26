@@ -9,13 +9,14 @@ pip install artefactual
 ```
 
 ```python
-from artefactual import WEPR
+from artefactual import WEPR, LogProbParser
 
 K = 15  # the k the published detectors were trained with
 
 # response: the result of an OpenAI-compatible call made with logprobs=True and top_logprobs
-detector = WEPR.from_pretrained("artefactory/wepr-ministral", k=K)
-detector.predict_proba(response)[:, 1]  # P(hallucination) per sequence
+logprobs = LogProbParser(k=K).transform(response)
+detector = WEPR.from_pretrained("artefactory/wepr-ministral")
+detector.predict_proba(logprobs)[:, 1]  # P(hallucination) per sequence
 ```
 
 Two answers from the same model, scored by the same detector:

@@ -3,14 +3,12 @@
 import warnings
 from collections.abc import Callable
 from copy import copy
-from numbers import Integral
 from typing import Any, ClassVar
 
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin, _fit_context
 from sklearn.exceptions import NotFittedError
 from sklearn.utils import Tags
-from sklearn.utils._param_validation import Interval
 from sklearn.utils.validation import _check_feature_names_in, check_array, check_is_fitted, validate_data
 
 from artefactual.exceptions import EmptySequenceWarning
@@ -35,19 +33,15 @@ def fitted_width(step: Any) -> int | None:  # Any: `n_features_in_` is set by fi
 class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMixin):
     """Reduce per-candidate entropy contributions to the features a calibration was fit on.
 
-    Input is the `(n_sequences, n_tokens, k)` array `LogProbParser` emits, NaN-padded on
+    Input is the `(n_sequences, n_tokens, width)` array `LogProbParser` emits, NaN-padded on
     both the token and rank axes, or a 2-D `(n_sequences, width)` table of per-rank
     logprobs, which is read as one token per row. Output is one feature row per sequence,
-    as wide as the pooling makes it: 1 column for `EPRPooling`, `2k` for `WEPRPooling`.
+    as wide as the pooling makes it: 1 column for `EPRPooling`, `2 * width` for `WEPRPooling`.
 
-    Learns nothing, but `fit` records the width and column names of a 2-D table, as
-    scikit-learn's validation does, so the features of a named table are named after its
-    columns. `k` is required, and `k=None` is the explicit choice to keep every rank: the width
-    of a parsed cube is already the calibrated `k`, since the parser sizes the rank axis.
-    A given `k` keeps only the first `k` ranks of
-    wider input, which are the `k` most likely candidates, and names a rank-wise pooling's
-    features without being shown any data, which is what scikit-learn's `set_output` needs to label
-    the columns of `transform`. Narrower input is used as it is.
+    Learns nothing, but `fit` records the width of the input and the column names of a 2-D
+    table, as scikit-learn's validation does, so the features of a named table are named
+    after its columns. A fitted step refuses input of another width: the estimators after it
+    were fitted on the features of that width.
 
     Parameters
     ----------
@@ -57,29 +51,22 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         pooling the token `axis` of the NaN-padded contributions `x`, whose last axis is the
         rank axis. Stored as given and wrapped when used, so a string raises `TypeError` from `transform` and
         `get_feature_names_out`.
-    k : int or None
-        Candidates per token to keep, the first `k` ranks. `None` keeps every rank, and then a pooling whose
-        width depends on `k` cannot name its features without `input_features` or a fitted table.
 
     Examples
     --------
-    >>> features = EntropyTransformer(WEPRPooling(), k=15).transform(
+    >>> features = EntropyTransformer(WEPRPooling()).transform(
     ...     logprobs
     ... )  # doctest: +SKIP
-    >>> features.shape  # (n_sequences, 2 * k)  # doctest: +SKIP
-    >>> EntropyTransformer(pooling=my_pooling, k=15).transform(
-    ...     logprobs
-    ... )  # doctest: +SKIP
+    >>> features.shape  # (n_sequences, 2 * width)  # doctest: +SKIP
+    >>> EntropyTransformer(pooling=my_pooling).transform(logprobs)  # doctest: +SKIP
     """
 
     _parameter_constraints: ClassVar[dict] = {
         "pooling": [Pooling, callable],
-        "k": [Interval(Integral, 1, None, closed="left"), None],
     }
 
-    def __init__(self, pooling: Pooling | Callable, k: int | None) -> None:
+    def __init__(self, pooling: Pooling | Callable) -> None:
         self.pooling = pooling  # stored untouched: clone checks constructor params by identity; wrapped at use
-        self.k = k
 
     def applied_pooling(self) -> Pooling:
         """The `Pooling` that `transform` applies: `pooling` itself, or a callable wrapped.
@@ -105,7 +92,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         return tags
 
     def validate(self, X, *, reset: bool = False) -> np.ndarray:  # ruff: ignore[invalid-argument-name]
-        """`X` as a float `(n, tokens, width)` array, cut to the first `k` ranks.
+        """`X` as a float `(n, tokens, width)` array.
 
         A 3-D input is the parser's cube: NaN is the padding marker and passes, `inf` is no
         logprob and would reduce to a meaningless feature, so it is refused. Anything else
@@ -125,7 +112,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         Returns
         -------
         ndarray of shape (n_sequences, n_tokens, width)
-            `width` is `k` when `k` is set and the input is at least that wide.
+            `width` is the input's last dimension.
 
         Raises
         ------
@@ -151,7 +138,7 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
                 raise ValueError(msg)
         else:
             cube = validate_data(self, X, reset=reset, dtype=np.float64)[:, None, :]
-        return cube if self.k is None else cube[..., : self.k]
+        return cube
 
     def get_feature_names_out(self, input_features=None) -> np.ndarray:
         """Names of the features `transform` returns.
@@ -160,11 +147,9 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         ----------
         input_features : array-like of str, default=None
             Names of the rank columns, as the parser names them (`rank0`, ...): one per
-            column the step was fitted on, of which the first `k` name the features, or `k`
-            of them before a fit when `k` is set. They must equal the column names the step
-            was fitted on, if any. Without it the names are the fitted table's columns (the
-            first `k`), or come from `k`, cut to the width of the table the step was fitted on
-            when that is narrower.
+            column the step was fitted on. They must equal the column names the step was
+            fitted on, if any. Without it the names are the fitted table's columns, or
+            `rank0`, ... for the width the step was fitted on.
 
         Returns
         -------
@@ -178,36 +163,29 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         Raises
         ------
         ValueError
-            If `input_features` does not have one entry per column fitted on (`k` before a
-            fit) or disagrees with the fitted column names; if the pooling's width
-            depends on `k` and none of `k`, `input_features` or fitted column names is
-            available; or if its feature names do not match its width.
+            If `input_features` does not have one entry per column fitted on or disagrees
+            with the fitted column names; if the pooling's width depends on the number of
+            ranks and neither `input_features`, a fit nor fitted column names give it; or
+            if its feature names do not match its width.
         TypeError
             If `pooling` is neither a `Pooling` nor callable.
         """
         pooling = self.applied_pooling()
         fitted = fitted_width(self)
-        # A fitted step reads `k` ranks of the width it was fitted on (all of them when `k`
-        # is None), since narrower input is used as it is; an unfitted one reads `k`.
-        width = self.k if fitted is None else fitted if self.k is None else min(self.k, fitted)
-        # A fitted step's `input_features` are checked against the columns it was fitted on, just below.
-        if input_features is not None and fitted is None and width is not None and len(input_features) != width:
-            msg = f"input_features has {len(input_features)} entries but the step reads {width} candidates."
-            raise ValueError(msg)
         names = _check_feature_names_in(self, input_features, generate_names=False)
         if names is not None:
-            ranks = [str(name) for name in names[:width]]
-        elif width is not None:
-            ranks = [f"rank{i}" for i in range(width)]
+            ranks = [str(name) for name in names]
+        elif fitted is not None:
+            ranks = [f"rank{i}" for i in range(fitted)]
         else:
             ranks = []
         if not ranks:
             # Nothing says how many ranks there are: only a pooling that does not depend on
-            # `k` can name its features, and a placeholder rank stands for the one it is given.
+            # the width can name its features, and a placeholder rank stands for the one it is given.
             if not pooling.constant_width:
                 msg = (
-                    f"Pooling {pooling.name!r} has a width that depends on k, which is unknown: "
-                    "set k or pass input_features to name its features."
+                    f"Pooling {pooling.name!r} has a width that depends on the number of ranks, which is "
+                    "unknown: fit the step or pass input_features to name its features."
                 )
                 raise ValueError(msg)
             ranks = ["rank0"]
@@ -276,14 +254,14 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
 
         Parameters
         ----------
-        X : array-like of shape (n_sequences, n_tokens, k) or (n_sequences, k)
+        X : array-like of shape (n_sequences, n_tokens, width) or (n_sequences, width)
             Logprobs, NaN-padded; a nested list is accepted. A 2-D table is one token per
-            row. Ranks beyond `k` are dropped.
+            row.
 
         Returns
         -------
         ndarray of shape (n_sequences, n_features)
-            1 column for `EPRPooling`, `2k` for `WEPRPooling`, the pooling's own width otherwise. After
+            1 column for `EPRPooling`, `2 * width` for `WEPRPooling`, the pooling's own width otherwise. After
             `set_output(transform="pandas")` or `"polars"`, a frame whose columns are `get_feature_names_out()`.
 
         Raises
@@ -314,18 +292,18 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
         """Reduce each token separately, keeping the token axis.
 
         Applies the same pooling over a one-token window per position, so token features
-        are computed exactly as sequence features are.
+        are computed exactly as sequence features are. A padding token (all values NaN) is
+        not passed to the pooling, so a pooling never sees a window the caller did not write.
 
         Parameters
         ----------
-        X : ndarray of shape (n_sequences, n_tokens, k) or (n_sequences, k)
-            Logprobs, NaN-padded. A 2-D table is one token per row. Ranks beyond `k` are
-            dropped.
+        X : ndarray of shape (n_sequences, n_tokens, width) or (n_sequences, width)
+            Logprobs, NaN-padded. A 2-D table is one token per row.
 
         Returns
         -------
         ndarray of shape (n_sequences, n_tokens, n_features)
-            Padded tokens are still NaN. Never wrapped by `set_output`.
+            Padded tokens are NaN rows. Never wrapped by `set_output`.
 
         Raises
         ------
@@ -333,5 +311,10 @@ class EntropyTransformer(TransformerMixin, BaseEstimator, EntropyContributionsMi
             If `X` holds infinity, or is a table that is not numeric 2-D.
         """
         s_kj = self.entropy_contributions(self.validate(X))
-        windows = np.expand_dims(s_kj, axis=2)  # (n, T, 1, k) — one 1-token window per token
-        return self.check_pooling_is_the_fitted_one()(windows, 2)
+        pooling = self.check_pooling_is_the_fitted_one()
+        real = ~np.isnan(s_kj).all(axis=-1)  # (n, T): False at padding tokens
+        windows = s_kj[real][:, None, :]  # (m, 1, width) — one 1-token window per real token
+        pooled = np.asarray(pooling(windows, 1))
+        out = np.full((*real.shape, pooled.shape[-1]), np.nan, dtype=pooled.dtype)
+        out[real] = pooled
+        return out

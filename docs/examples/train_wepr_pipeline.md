@@ -114,22 +114,17 @@ from pathlib import Path
 
 from jinja2 import Template
 
-# No default: a model id only means something to the endpoint serving it, and a wrong one
-# fails on every generation request rather than here.
+# No default: a model id only means something to the endpoint serving it.
 MODEL = os.environ["OPENAI_MODEL"]
 # The OpenAI client reads its key from the environment.
 if not os.environ.get("OPENAI_API_KEY"):
     os.environ["OPENAI_API_KEY"] = getpass.getpass("OPENAI_API_KEY: ")
 
-# The judge is a second model, and deliberately not this one. The verdict becomes the label
-# -- `y = int(not verdict)` -- so a model grading its own answers writes a label that agrees
-# with its own confidence, which is the signal the detector reads off the log-probabilities.
-# The two would then be correlated through the grader rather than through hallucination.
-#
-# There is a practical reason too: the generator has to serve `top_logprobs`, which in
-# practice means a self-hosted endpoint, while the judge only has to follow the reply format
-# and needs no log-probabilities at all. Each JUDGE_* falls back to its generator
-# counterpart, so a single-endpoint run still works with nothing new set.
+# The judge is a second model. The verdict becomes the label -- `y = int(not verdict)` --
+# and a model grading its own answers would correlate the label with its own confidence.
+# The generator has to serve `top_logprobs`; the judge needs no log-probabilities. Each
+# JUDGE_* falls back to its generator counterpart, so a single-endpoint run works with
+# nothing new set.
 JUDGE_MODEL = os.environ.get("JUDGE_MODEL", MODEL)
 JUDGE_BASE_URL = os.environ.get("JUDGE_BASE_URL", os.environ.get("OPENAI_BASE_URL"))
 JUDGE_API_KEY = os.environ.get("JUDGE_API_KEY", os.environ["OPENAI_API_KEY"])
@@ -160,9 +155,8 @@ rendered against a real answer, which is the form worth reading.
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-# The generation prompt, the paper's (4.1.2). Short answers on purpose: the detector reads
-# the token distribution behind the answer, so a model that pads with hedging spends its
-# tokens on text that carries nothing to score.
+# The generation prompt, the paper's (4.1.2). It asks for short answers: the detector
+# reads the token distribution behind the answer.
 GENERATE = Template("""You are a useful assistant that help finding short and precise answers for a given query or question.
             Please keep your output AS SHORT AND CONCISE AS POSSIBLE.
             Here is the query :
@@ -251,12 +245,10 @@ from openai import OpenAI, OpenAIError
 
 from artefactual.preprocessing import BatchRequestOutput, BatchResponseData
 
-# `max_retries` above the SDK's default of 2: this fires N requests at once, and a burst
-# of 429s that exhausts the retries becomes a thinner dataset rather than an error.
+# `max_retries` above the SDK's default of 2: a burst of 429s that exhausts the retries
+# becomes a thinner dataset, not an error.
 client = OpenAI(max_retries=6)  # reads OPENAI_BASE_URL and OPENAI_API_KEY
-# A separate client so the judge can live on another endpoint entirely. Passing the values
-# explicitly rather than reading the environment again keeps the fallback in one place --
-# the configuration cell -- instead of splitting it across two constructors.
+# A separate client, so the judge can live on another endpoint.
 judge_client = OpenAI(max_retries=6, base_url=JUDGE_BASE_URL, api_key=JUDGE_API_KEY)
 
 # Which endpoints these are actually talking to. Unset, OPENAI_BASE_URL silently means
@@ -307,9 +299,8 @@ def run(task, items, path):
                 # printed by the caller, where it stays in the session.
                 error={"message": type(reply).__name__} if failed else None,
             )
-            # `json.dumps` rather than `model_dump_json`, for `ensure_ascii`: every reader of
-            # these files splits them with `splitlines()`, which breaks on U+2028, U+2029 and
-            # U+0085 -- characters JSON does not require escaping and a model can emit.
+            # `ensure_ascii=True` escapes U+2028, U+2029 and U+0085, which `splitlines()`
+            # breaks on and JSON does not require escaping.
             out.write(json.dumps(line.model_dump(), ensure_ascii=True) + "\n")
     return replies
 ```
@@ -422,10 +413,8 @@ assert ok, (
     "`temperature` or `max_completion_tokens` fails every request the same way."
 )
 
-# The pipeline's own first step, run here rather than at fit time. It owns the rank axis, so
-# it is what refuses a response carrying no log-probabilities or fewer than K candidates on any
-# token -- and it says which, by name. Running it now costs one pass and saves N judge
-# requests spent on responses that cannot be trained on.
+# The pipeline's own first step. It owns the rank axis, so it refuses a response carrying no
+# log-probabilities or fewer than K candidates on any token, and says which, by name.
 logprobs = LogProbParser(k=K).transform([completion for _, completion in ok])
 
 logprobs.shape
@@ -517,7 +506,7 @@ This step reads the two files back rather than using what is still in memory, so
 another `k` costs no requests. `read_batch` is the reader, so a file written by anything
 else parses the same way.
 
-`WEPR(k=15)` returns the unfitted pipeline, which takes the batch lines directly: the
+`make_detector(k=K)` is the unfitted pipeline, which takes the batch lines directly: the
 parser opens the envelope itself, so there is no feature extraction to write.
 
 **ROC-AUC** scores the ranking — whether hallucinations sort above grounded responses —
@@ -531,12 +520,10 @@ import numpy as np
 from sklearn.metrics import classification_report, roc_auc_score
 from sklearn.model_selection import train_test_split
 
-from artefactual import WEPR
+from artefactual import WEPR, LogProbParser, make_detector
 from artefactual.preprocessing import index_by_custom_id, read_batch, read_judgment, read_message
-from artefactual.scoring import BaseDetector
 
-# Read back from disk rather than from the variables above: this is the path a fresh kernel
-# takes, and the one anything else reading these files takes too. `read_batch` validates
+# Read back from disk, as a fresh kernel would. `read_batch` validates
 # each line and refuses a repeated `custom_id`, which would pair a response with another
 # question's verdict.
 generated = index_by_custom_id(read_batch(RESPONSES))
@@ -551,7 +538,7 @@ y = np.array([label for _, label in labelled])
 print(f"read {len(responses)} labelled responses back from {RESPONSES.name} and {JUDGMENTS.name}")
 
 x_train, x_test, y_train, y_test = train_test_split(responses, y, test_size=0.25, stratify=y, random_state=SEED)
-detector = WEPR(k=K).fit(x_train, y_train)
+detector = make_detector(k=K).fit(x_train, y_train)
 print(f"fitted on {len(y_train)}, holding out {len(y_test)}")
 
 scores = detector.predict_proba(x_test)[:, 1]
@@ -585,7 +572,7 @@ explanations = {
 
 folds = StratifiedKFold(5, shuffle=True, random_state=SEED)
 # Out-of-fold: every score comes from a detector that never saw that response.
-out_of_fold = cross_val_predict(WEPR(k=K), responses, y, cv=folds, method="predict_proba")[:, 1]
+out_of_fold = cross_val_predict(make_detector(k=K), responses, y, cv=folds, method="predict_proba")[:, 1]
 
 scored = zip(out_of_fold, y, responses, strict=True)
 disagreements = sorted(scored, key=lambda row: abs(row[0] - row[1]), reverse=True)[:5]
@@ -607,18 +594,21 @@ for score, label, row in disagreements:
 `model.skops`, or **a Hugging Face repository id** — the shipped detectors are loaded that
 way, and yours is too once you push its `model.skops` to a repository of your own.
 
-`k` is part of the weights, not a runtime option: the coefficients were fitted at one rank
-count and mean nothing at another, so loading at a different `k` raises rather than
+The width is part of the weights, not a runtime option: the coefficients were fitted at one rank
+count and mean nothing at another, so scoring arrays of a different `k` raises rather than
 mis-shaping the score.
 
 ```{code-cell} ipython3
-path = detector.save_pretrained("wepr-generated.skops")
-reloaded = WEPR.from_pretrained(path, k=K)
+path = detector[-1].save_pretrained("wepr-generated.skops")
+reloaded = WEPR.from_pretrained(path)
+parser = LogProbParser(k=K)
 
 # Held-out responses: the rows the fit above never saw.
 for row, label in list(zip(x_test, y_test, strict=True))[:5]:
     said = (read_message(row.completion) or "")[:40]
-    print(f"[{'hallucination' if label else 'grounded    '}] P={reloaded.predict_proba(row)[0, 1]:.3f}  {said!r}")
+    print(
+        f"[{'hallucination' if label else 'grounded    '}] P={reloaded.predict_proba(parser.transform(row))[0, 1]:.3f}  {said!r}"
+    )
 ```
 
 ## Where to go next

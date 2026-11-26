@@ -1,20 +1,15 @@
 """Hallucination detectors and the pieces they are built from.
 
-`EPR` and `WEPR` score completion responses; `EPRClassifier` and `WEPRClassifier` score
-logprob arrays you already hold. Each is a scikit-learn `Pipeline` exposing the standard
-`fit`/`transform`/`predict_proba` surface plus `predict_token_proba` for token-level
-scores, and EPR and WEPR differ only in how much of the token distribution they read.
-`PoolingDetector` takes a `Pooling` subclass or a function of your own.
-Construct one to fit your own weights; call `from_pretrained` on it to score with
-published ones.
+`EPR` and `WEPR` score logprob arrays and are plain scikit-learn classifiers: `fit`,
+`predict_proba`, `clone` and `GridSearchCV` behave as expected, and `predict_token_proba`
+gives token-level scores. To score completion responses, put a
+`LogProbParser` in front:
 
-    detector = WEPR.from_pretrained("artefactory/wepr-phi4", k=15)
-    detector = WEPR(k=15).fit(responses, y)
-    classifier = WEPRClassifier(k=15).fit(logprobs, y)
+    detector = make_detector(k=15, classifier=WEPR.from_pretrained("artefactory/wepr-phi4"))
+    detector = make_detector(k=15).fit(responses, y)
 """
 
-from artefactual.scoring.base_detector import EPR, WEPR, BaseDetector, PoolingDetector
-from artefactual.scoring.entropy_classifier import BaseEntropyClassifier, EPRClassifier, WEPRClassifier
+from artefactual.scoring.entropy_classifier import EPR, WEPR
 from artefactual.scoring.entropy_methods.entropy_contributions import (
     EntropyContributionsMixin,
 )
@@ -27,21 +22,24 @@ from artefactual.scoring.entropy_methods.pooling import (
     epr_reduction,
     wepr_reduction,
 )
+from artefactual.scoring.make_detector import DetectorPipeline, make_detector
+from artefactual.scoring.tokens import TokenClassifier, TokenProbaMixin, TokenTransformer, token_proba
 
 __all__ = [
     "EPR",
     "WEPR",
-    "BaseDetector",
-    "BaseEntropyClassifier",
-    "EPRClassifier",
+    "DetectorPipeline",
     "EPRPooling",
     "EntropyContributionsMixin",
     "EntropyTransformer",
     "FunctionPooling",
     "Pooling",
-    "PoolingDetector",
-    "WEPRClassifier",
+    "TokenClassifier",
+    "TokenProbaMixin",
+    "TokenTransformer",
     "WEPRPooling",
     "epr_reduction",
+    "make_detector",
+    "token_proba",
     "wepr_reduction",
 ]

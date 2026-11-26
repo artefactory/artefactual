@@ -5,12 +5,12 @@ or not. It takes answers that model generated and a verdict on each. The pipelin
 {doc}`how-it-works` describes, unchanged — only the classifier's coefficients are new.
 
 ```python
-from artefactual import WEPR
+from artefactual import make_detector
 
 K = 15  # the k the published detectors were trained with; see the scoring guide
 # responses: what the model answered, generated with top_logprobs=K
 # y:         one 0/1 label per answer, 1 marking a hallucination
-detector = WEPR(k=K).fit(responses, y)
+detector = make_detector(k=K).fit(responses, y)
 ```
 
 A fit needs two things, both in the OpenAI Batch output shape and joined on `custom_id`:
@@ -41,9 +41,9 @@ than that.
 *How hard* the questions are matters as much as how many. A model that answers nearly all
 of them correctly produces almost no hallucinations to learn from, and a detector fitted
 there separates a problem that was already nearly separable — the ROC-AUC then describes
-the question set. TriviaQA on its own is that easy for a current model, which is why the
-shipped pack and `build_questions.sh mixed` draw half from SimpleQA, a set selected for
-questions strong models get wrong.
+the question set. TriviaQA on its own is that easy for a current model. The shipped pack and
+`build_questions.sh mixed` draw half from SimpleQA, a set selected for questions strong
+models get wrong.
 
 ## The label a judge's verdict becomes
 
@@ -59,8 +59,8 @@ conversion:
 
 ## Whether the fit worked
 
-Each notebook cross-validates the fit and reports a ROC-AUC with a per-class breakdown, so
-the answer is in the run itself rather than taken on trust. *What the fit weighs* in
+Each notebook cross-validates the fit and reports a ROC-AUC with a per-class breakdown.
+*What the fit weighs* in
 {doc}`../examples/train_wepr` plots the fitted coefficient per rank, and *Audit the labels
 the judge produced* in {doc}`../examples/train_wepr_lightweight_judge` lists, question by question,
 where the judge and the fitted detector disagree — the labels are the part worth doubting

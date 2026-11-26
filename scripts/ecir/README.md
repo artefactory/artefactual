@@ -338,9 +338,11 @@ cost; generating narrow can only be corrected with more GPU time.
 ### Step 7 — use the trained detector
 
 ```python
-from artefactual.scoring import BaseDetector
+from sklearn.pipeline import make_pipeline
 
-detector = WEPR.from_pretrained("out/wepr.skops", k=15)
+from artefactual import LogProbParser, WEPRClassifier
+
+detector = make_pipeline(LogProbParser(k=15), WEPRClassifier.from_pretrained("out/wepr.skops", k=15))
 detector.predict_proba(response)[:, 1]
 ```
 
@@ -370,8 +372,7 @@ the four methods on that row.
 | `Phi-4` (14.7B) | 65.0 | 65.2 | 66.3 | **66.6** |
 | `Ministral-8B-2410` | 66.2 | 65.4 | 71.6 | **72.6** |
 
-Two things worth reading off these: **WEPR beats EPR on every row**, which is why `wepr` is
-the default, and the absolute numbers drop by 10-20 points when the detector meets a dataset
+Two things worth reading off these: **WEPR beats EPR on every row**, and the absolute numbers drop by 10-20 points when the detector meets a dataset
 it was not trained on. Training data should resemble the traffic being scored.
 
 SelfCheckGPT needs 10 extra generations per answer for those numbers; EPR and WEPR need
@@ -519,8 +520,7 @@ negation: **1 marks a hallucination**.
 `train_detector.py` splits the labelled set once with `train_test_split`, stratified so the
 hallucination rate is the same on both sides, fits the detector on the training part, and
 scores it on the held-out part. **The evaluation is of the model that was written to
-`--output`** — the detector is fitted once and never refitted, so the numbers belong to the
-artefact being kept rather than to the procedure that produced it.
+`--output`** — the detector is fitted once and never refitted.
 
 `--test_size` (default 0.25) sets the holdout; `--seed` (default 42) fixes both the split
 and the resampling, so a rerun reproduces the run exactly. `--test_size 0` fits on
