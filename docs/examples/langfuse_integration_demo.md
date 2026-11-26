@@ -84,9 +84,8 @@ from langfuse import get_client, observe
 from langfuse.openai import OpenAI
 from openai.types.chat import ChatCompletion
 
-from artefactual import EPR, WEPR
+from artefactual import EPR, WEPR, make_detector
 from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator
-from artefactual.scoring import BaseDetector
 ```
 
 Every knob in one place. `OPENAI_API_KEY` has no default because it is a credential.
@@ -155,13 +154,13 @@ traces_to_evaluate = langfuse.api.trace.list(limit=1).data
 
 ## Score traces with EPR
 
-A detector always needs weights: `EPR.from_pretrained` and `WEPR.from_pretrained` take a path to a weights file or a Hugging Face repository id. Constructing `EPR(...)` or `WEPR(...)` gives an *unfitted* detector instead, for training one of your own.
+A detector always needs weights: `EPR.from_pretrained` and `WEPR.from_pretrained` take a path to a weights file or a Hugging Face repository id. Constructing `EPR(...)` or `WEPR(...)` gives an *unfitted* classifier instead, for training one of your own. `HallucinationEvaluator` takes a pipeline from responses to probabilities, so `make_detector(k=..., classifier=...)` puts a `LogProbParser` in front of each detector.
 
 ```{code-cell} ipython3
 evaluator = HallucinationEvaluator(
     name="EPR",
     langfuse_client=langfuse,
-    detector=EPR.from_pretrained(EPR_DETECTOR, k=TOP_LOGPROBS),
+    detector=make_detector(k=TOP_LOGPROBS, classifier=EPR.from_pretrained(EPR_DETECTOR, k=TOP_LOGPROBS)),
 )
 
 for trace in traces_to_evaluate:
@@ -177,7 +176,7 @@ langfuse.flush()
 evaluator = HallucinationEvaluator(
     name="WEPR",
     langfuse_client=langfuse,
-    detector=WEPR.from_pretrained(WEPR_DETECTOR, k=TOP_LOGPROBS),
+    detector=make_detector(k=TOP_LOGPROBS, classifier=WEPR.from_pretrained(WEPR_DETECTOR)),
 )
 
 for trace in traces_to_evaluate:

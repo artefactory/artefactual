@@ -28,7 +28,7 @@ The two questions are *"What is the capital city of France?"*, answered with cer
 | Section | What it does | Cost |
 |---|---|---|
 | Load example responses | Read the committed fixture | none |
-| Build the WEPR pipeline | Fetch the published detector's weights | one download, ~KBs, cached after the first run |
+| Build the WEPR detector | Fetch the published detector's weights | one download, ~KBs, cached after the first run |
 | Sequence-level scoring | P(hallucination) per response | seconds |
 | Token-level scoring | P(hallucination) per token, highlighted | seconds |
 
@@ -74,7 +74,7 @@ from sklearn.exceptions import InconsistentVersionWarning
 # reader loading it, and the estimator it produces is the same either way.
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 
-from artefactual import WEPR
+from artefactual import WEPR, make_detector
 ```
 
 ```{code-cell} ipython3
@@ -83,8 +83,8 @@ from artefactual import WEPR
 DETECTOR = "artefactory/wepr-falcon3"
 DATA_PATH = "open_ai_responses_top15.json"
 
-# Candidates per token the detector was trained at, which the fixture also carries. Passing a
-# different value raises rather than producing a mis-shaped score, and a response narrower
+# Candidates per token the detector was trained at, which the fixture also carries. A detector refuses
+# arrays of a different width rather than producing a mis-shaped score, and a response narrower
 # than K is refused rather than padded: the missing candidates are unfetched, not absent, so
 # filling them would understate the entropy.
 K = 15
@@ -107,14 +107,14 @@ responses = data["responses"]
 print(f"Loaded {len(responses)} responses")
 ```
 
-## Build the WEPR pipeline
+## Build the WEPR detector
 
 The detector is fetched from the Hub on first use, then cached. `WEPR.from_pretrained`
-always requires a repository id or a path. The raw OpenAI Responses API dicts go straight
-to the pipeline; parsing is its first step.
+always requires a repository id or a path. `make_detector` puts a `LogProbParser` in front: one pipeline from the raw OpenAI Responses API dicts
+to scores.
 
 ```{code-cell} ipython3
-detector = WEPR.from_pretrained(DETECTOR, k=K)
+detector = make_detector(k=K, classifier=WEPR.from_pretrained(DETECTOR))
 ```
 
 ## Sequence-level scoring
@@ -137,7 +137,7 @@ for resp in responses:
 
 ## Token-level scoring
 
-`predict_token_proba(response)` returns `(n_sequences, max_tokens, 1)`: the same
+`predict_token_proba` returns `(n_sequences, max_tokens, 1)`: the same
 probability, per token, which is what says *where* in the answer the model was uncertain.
 
 
@@ -183,7 +183,7 @@ for resp in responses:
 
 - **Your model is not one of the published detectors?** A detector reads one model's
   confidence, so a published one only scores the model it was trained on. Fit your own with
-  `WEPR(k=15).fit(responses, y)`: see {doc}`train_wepr`.
+  `make_detector(k=15).fit(responses, y)`: see {doc}`train_wepr`.
 - **Score live traces.** {doc}`langfuse_integration_demo` attaches a detector's score to
   Langfuse traces.
 - **The other detector.** {doc}`epr_usage_demo` runs the same fixture through EPR.

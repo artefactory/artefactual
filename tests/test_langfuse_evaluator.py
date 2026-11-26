@@ -3,16 +3,15 @@
 `langfuse` is an optional dependency and the evaluator only ever touches three things on
 the client — `api.trace.get`, `create_score` and the trace's `output`. Those are supplied
 here by small hand-written stubs that record what they were called with, so the test runs
-without the extra installed and asserts real behaviour rather than a mock's recollection.
+without the extra installed.
 
-Trace payloads and estimators are drawn rather than fixed: the evaluator must behave the
-same for any response the pipeline accepts, and a single hand-written payload only ever
-proves it for that one.
+Trace payloads and estimators are drawn: the evaluator behaves the same for any response
+the pipeline accepts.
 """
 
 import numpy as np
 import pytest
-from conftest import chat_payloads_of_fixed_width, estimators, write_estimator
+from conftest import chat_payloads_of_fixed_width, estimators, load_detector, write_estimator
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
@@ -52,7 +51,7 @@ class StubLangfuse:
 
 
 def build_detector(tmp_path, detector):
-    return EPR.from_pretrained(str(write_estimator(tmp_path, "cal.skops", detector)), k=15)
+    return load_detector(EPR, str(write_estimator(tmp_path, "cal.skops", detector)), k=15)
 
 
 @drawn
@@ -126,7 +125,7 @@ def test_the_score_id_survives_a_change_of_value(tmp_path, payload, first_calibr
     """
     client = StubLangfuse(Trace(payload))
     for index, detector in enumerate((first_calibration, second_calibration)):
-        detector = EPR.from_pretrained(str(write_estimator(tmp_path, f"cal-{index}.skops", detector)), k=15)
+        detector = load_detector(EPR, str(write_estimator(tmp_path, f"cal-{index}.skops", detector)), k=15)
         HallucinationEvaluator("epr", client, detector).score_trace("trace-1")
 
     first, second = client.scores

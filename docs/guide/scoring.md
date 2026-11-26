@@ -13,12 +13,13 @@ all trained with `k = 15`.
 
 ## Choosing a detector
 
-`WEPR` is the more accurate of the two and the one the README uses. Both detectors are
+`WEPR` is the more accurate of the two and the one the README uses. Both are
 trained the same way and on the same labelled data, so `EPR` saves no preparation work —
-only parameters. There is no default detector: you import the class you want.
+only parameters. You import the class you want and give it the arrays a `LogProbParser`
+makes from responses; `make_detector(k=15)` is the ready-made `LogProbParser` then `WEPR` pipeline.
 
 ```python
-from artefactual import EPR, WEPR
+from artefactual import EPR, WEPR, LogProbParser, make_detector
 ```
 
 | | `WEPR` | `EPR` |
@@ -48,7 +49,9 @@ depends on how representative the training sample was, not on the detector.
 ## Scoring every token
 
 ```python
-token_scores = detector.predict_token_proba(response)  # (n_sequences, max_tokens, 1)
+logprobs = LogProbParser(k=15).transform(response)
+detector = WEPR.from_pretrained("artefactory/wepr-phi4")
+token_scores = detector.predict_token_proba(logprobs)  # (n_sequences, max_tokens, 1)
 ```
 
 Sequences shorter than the longest in the batch are padded with `NaN`, so mask before
@@ -69,7 +72,8 @@ A list scores many responses in one call. They are parsed, padded to a common le
 scored together, one output row per generated sequence in input order:
 
 ```python
-scores = detector.predict_proba([response_a, response_b])  # (n_sequences, 2)
+logprobs = LogProbParser(k=15).transform([response_a, response_b])
+scores = detector.predict_proba(logprobs)  # (n_sequences, 2)
 ```
 
 Each response is validated on its own, so one malformed or too-narrow response is reported
@@ -83,12 +87,14 @@ score. Re-runs overwrite rather than duplicate, so the operation is safe to sche
 ```python
 from langfuse import get_client
 
-from artefactual import WEPR
+from artefactual import make_detector
 from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator
 
 K = 15  # the k the published detectors were trained with
 
-evaluator = HallucinationEvaluator("wepr", get_client(), WEPR.from_pretrained("artefactory/wepr-phi4", k=K))
+detector = make_detector(k=K)  # a Pipeline over responses; a Pipeline is what the evaluator takes
+# fit it on labelled responses first, or pass make_pipeline(LogProbParser(k=K), WEPR.from_pretrained(...))
+evaluator = HallucinationEvaluator("wepr", get_client(), detector)
 evaluator.score_trace(trace_id)
 ```
 
@@ -100,23 +106,19 @@ See {doc}`training`.
 
 ## Composing with scikit-learn
 
-Detectors are `sklearn.pipeline.Pipeline` subclasses, so introspection and composition
-work:
+`EPR` and `WEPR` are scikit-learn classifiers, and `make_detector(k=15)` is a plain
+`sklearn.pipeline.Pipeline`, so introspection and composition work:
 
 ```python
 from sklearn.base import clone
 
-K = 15  # the k the published detectors were trained with
-
-detector = WEPR.from_pretrained("artefactory/wepr-ministral", k=K)
-detector.named_steps  # {'parser': ..., 'entropy': ..., 'classifier': ...}
+detector = make_detector(k=15)
+detector.named_steps  # {'logprobparser': ..., 'wepr': ...}
 clone(detector)  # get_params / set_params round-trip
 ```
 
-A detector takes raw responses in `fit` and in the scikit-learn tools built on it, so
-`cross_val_score(WEPR(k=15), responses, y)` and `GridSearchCV` work without parsing first.
-{doc}`sklearn` has the model-selection recipes, the feature names and the persistence
-rules.
+{doc}`sklearn` has the advanced recipes: an end-to-end pipeline over responses, tuning `k` and the
+classifier with `GridSearchCV`, a custom detector, and the persistence rules.
 
 ## When a response is refused
 

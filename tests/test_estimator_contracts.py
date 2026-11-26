@@ -1,7 +1,7 @@
-"""scikit-learn contracts for the two transformers and the pretrained classifier.
+"""scikit-learn contracts for the the parser and the entropy transformer.
 
-`BaseDetector` is a `Pipeline`, so anything that breaks clone/get_params/tags breaks
-`GridSearchCV`, `cross_val_score` and `Pipeline` construction. These are the checks
+A broken clone/get_params/tags breaks `GridSearchCV`, `cross_val_score` and `Pipeline`
+construction. These are the checks
 sklearn itself would run, restricted to the ones that make sense for estimators that
 deliberately opt out of array validation.
 """
@@ -34,12 +34,12 @@ LOGPROBS = np.array([[[-0.1, -2.0, -3.0], [-0.5, -1.5, -4.0]]])
 
 @pytest.mark.parametrize("pooling", [EPRPooling(), WEPRPooling()], ids=["epr", "wepr"])
 def test_transformer_survives_a_clone(pooling):
-    original = EntropyTransformer(pooling=pooling, k=None)
+    original = EntropyTransformer(pooling=pooling)
     assert clone(original).get_params() == original.get_params()
 
 
 def test_clone_produces_an_independent_transformer():
-    original = EntropyTransformer(pooling=EPRPooling(), k=None)
+    original = EntropyTransformer(pooling=EPRPooling())
     copy = clone(original)
     copy.set_params(pooling=WEPRPooling())
 
@@ -50,7 +50,7 @@ def test_a_callable_pooling_survives_a_clone():
     def pooling_fn(x, axis):
         return np.nanmean(x, axis=axis)
 
-    assert clone(EntropyTransformer(pooling=pooling_fn, k=None)).pooling is pooling_fn
+    assert clone(EntropyTransformer(pooling=pooling_fn)).pooling is pooling_fn
 
 
 def test_the_parser_exposes_only_k():
@@ -60,7 +60,7 @@ def test_the_parser_exposes_only_k():
 # --- fit is stateless ------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("estimator", [EntropyTransformer(pooling=EPRPooling(), k=None), LogProbParser()])
+@pytest.mark.parametrize("estimator", [EntropyTransformer(pooling=EPRPooling()), LogProbParser()])
 @given(logprobs=cubes)
 def test_fit_returns_self(estimator, logprobs):
     assert estimator.fit(logprobs) is estimator
@@ -69,12 +69,12 @@ def test_fit_returns_self(estimator, logprobs):
 @given(logprobs=cubes)
 def test_transformer_fit_accepts_a_target(logprobs):
     # Pipeline.fit forwards y to every step
-    assert EntropyTransformer(pooling=EPRPooling(), k=None).fit(logprobs, np.ones(len(logprobs))) is not None
+    assert EntropyTransformer(pooling=EPRPooling()).fit(logprobs, np.ones(len(logprobs))) is not None
 
 
 @given(logprobs=cubes)
 def test_transform_without_fit_matches_transform_after_fit(logprobs):
-    transformer = EntropyTransformer(pooling=EPRPooling(), k=None)
+    transformer = EntropyTransformer(pooling=EPRPooling())
     before = transformer.transform(logprobs)
     after = transformer.fit(logprobs).transform(logprobs)
 
@@ -83,7 +83,7 @@ def test_transform_without_fit_matches_transform_after_fit(logprobs):
 
 @given(logprobs=cubes)
 def test_fit_transform_matches_transform(logprobs):
-    transformer = EntropyTransformer(pooling=WEPRPooling(), k=None)
+    transformer = EntropyTransformer(pooling=WEPRPooling())
     np.testing.assert_allclose(transformer.fit_transform(logprobs), transformer.transform(logprobs))
 
 
@@ -91,17 +91,17 @@ def test_fit_transform_matches_transform(logprobs):
 
 
 def test_transformer_declares_it_needs_no_fit():
-    assert EntropyTransformer(pooling=EPRPooling(), k=None).__sklearn_tags__().requires_fit is False
+    assert EntropyTransformer(pooling=EPRPooling()).__sklearn_tags__().requires_fit is False
 
 
 def test_transformer_declares_a_table_that_refuses_nan():
     # the tags describe the numeric table scikit-learn can synthesise; only a cube takes NaN padding
-    assert EntropyTransformer(pooling=EPRPooling(), k=None).__sklearn_tags__().input_tags.allow_nan is False
+    assert EntropyTransformer(pooling=EPRPooling()).__sklearn_tags__().input_tags.allow_nan is False
 
 
 def test_a_cube_still_takes_nan_padding_whatever_the_tags_say():
     cube = np.array([[[-0.5, -1.5], [np.nan, np.nan]]])
-    assert EntropyTransformer(pooling=EPRPooling(), k=None).fit(cube).transform(cube).shape == (1, 1)
+    assert EntropyTransformer(pooling=EPRPooling()).fit(cube).transform(cube).shape == (1, 1)
 
 
 def test_parser_opts_out_of_array_validation():
@@ -111,7 +111,7 @@ def test_parser_opts_out_of_array_validation():
     assert tags.input_tags.two_d_array is False
 
 
-@pytest.mark.parametrize("estimator", [EntropyTransformer(pooling=EPRPooling(), k=None), LogProbParser()])
+@pytest.mark.parametrize("estimator", [EntropyTransformer(pooling=EPRPooling()), LogProbParser()])
 def test_fit_names_its_two_arguments_x_and_y(estimator):
     # sklearn reads `fit`'s signature by name, not by position: `check_estimator` fails on
     # any other spelling before it runs a single behavioural check, and `Pipeline` passes
@@ -125,19 +125,19 @@ def test_fit_names_its_two_arguments_x_and_y(estimator):
 
 @given(logprobs=cubes)
 def test_epr_reduction_yields_one_feature(logprobs):
-    assert EntropyTransformer(pooling=EPRPooling(), k=None).transform(logprobs).shape == (len(logprobs), 1)
+    assert EntropyTransformer(pooling=EPRPooling()).transform(logprobs).shape == (len(logprobs), 1)
 
 
 @given(logprobs=cubes)
 def test_wepr_reduction_yields_two_features_per_rank(logprobs):
     # mean branch and max branch are concatenated, so 2k columns
-    features = EntropyTransformer(pooling=WEPRPooling(), k=None).transform(logprobs)
+    features = EntropyTransformer(pooling=WEPRPooling()).transform(logprobs)
     assert features.shape == (len(logprobs), 2 * logprobs.shape[2])
 
 
 @given(logprobs=cubes)
 def test_token_mode_keeps_the_token_axis(logprobs):
-    tokens = EntropyTransformer(pooling=EPRPooling(), k=None).transform_tokens(logprobs)
+    tokens = EntropyTransformer(pooling=EPRPooling()).transform_tokens(logprobs)
     assert tokens.shape[:2] == logprobs.shape[:2]
 
 
@@ -149,7 +149,7 @@ def test_a_fully_padded_sequence_warns_and_scores_at_baseline():
     padded = np.full((1, 2, 3), np.nan)
 
     with pytest.warns(EmptySequenceWarning, match="empty"):
-        features = EntropyTransformer(pooling=EPRPooling(), k=None).transform(padded)
+        features = EntropyTransformer(pooling=EPRPooling()).transform(padded)
 
     assert not features.any()
 
@@ -158,7 +158,7 @@ def test_the_warning_counts_the_empty_sequences():
     padded = np.full((2, 1, 2), np.nan)
 
     with pytest.warns(EmptySequenceWarning, match="2 empty"):
-        EntropyTransformer(pooling=EPRPooling(), k=None).transform(padded)
+        EntropyTransformer(pooling=EPRPooling()).transform(padded)
 
 
 def test_a_populated_sequence_does_not_warn():
@@ -166,7 +166,7 @@ def test_a_populated_sequence_does_not_warn():
 
     with warnings.catch_warnings():
         warnings.simplefilter("error", EmptySequenceWarning)
-        EntropyTransformer(pooling=EPRPooling(), k=None).transform(LOGPROBS)
+        EntropyTransformer(pooling=EPRPooling()).transform(LOGPROBS)
 
 
 @pytest.mark.parametrize("pooling", [EPRPooling(), WEPRPooling()], ids=["epr", "wepr"])
@@ -181,7 +181,7 @@ def test_padding_reports_once_not_twice(pooling):
 
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        EntropyTransformer(pooling=pooling, k=None).transform(padded)
+        EntropyTransformer(pooling=pooling).transform(padded)
 
     assert [w.category for w in caught] == [EmptySequenceWarning]
 
@@ -196,31 +196,21 @@ def test_padded_tokens_do_not_drag_the_epr_mean_down():
     padded = np.array([[[-0.5, -1.5], [np.nan, np.nan]]])
 
     np.testing.assert_allclose(
-        EntropyTransformer(pooling=EPRPooling(), k=None).transform(padded),
-        EntropyTransformer(pooling=EPRPooling(), k=None).transform(single),
+        EntropyTransformer(pooling=EPRPooling()).transform(padded),
+        EntropyTransformer(pooling=EPRPooling()).transform(single),
     )
 
 
-# --- the k parameter -------------------------------------------------------------------
+# --- the rank width -------------------------------------------------------------------
 #
-# The parser sizes the rank axis. The transformer's `k` is optional: unset, it reduces over
-# whatever width it is handed, because by then the parser has already guaranteed that width
-# is the calibrated one -- see test_rank_width.py for the contract itself.
+# The parser sizes the rank axis. The transformer reduces over whatever width it is handed,
+# because by then the parser has already guaranteed that width is the calibrated one (see test_rank_width.py).
 
 
 @given(logprobs=cubes)
-def test_the_transformer_reads_any_width_when_k_is_unset(logprobs):
-    assert EntropyTransformer(pooling=EPRPooling(), k=None).get_params()["k"] is None
-    features = EntropyTransformer(pooling=WEPRPooling(), k=None).transform(logprobs)
+def test_the_transformer_reads_the_width_it_is_handed(logprobs):
+    features = EntropyTransformer(pooling=WEPRPooling()).transform(logprobs)
     assert features.shape == (len(logprobs), 2 * logprobs.shape[2])
-
-
-@given(logprobs=cubes)
-def test_the_transformer_keeps_the_first_ranks_of_a_cube_wider_than_its_k(logprobs):
-    k = logprobs.shape[2] - 1
-    narrower = EntropyTransformer(pooling=WEPRPooling(), k=k)
-    np.testing.assert_array_equal(narrower.transform(logprobs), narrower.transform(logprobs[..., :k]))
-    np.testing.assert_array_equal(narrower.transform_tokens(logprobs), narrower.transform_tokens(logprobs[..., :k]))
 
 
 @pytest.mark.parametrize("k", [1, 3, 8])
@@ -244,16 +234,15 @@ def test_k_is_not_mutated_by_transform(payload):
 
 
 def test_zero_filling_understates_the_epr_feature():
-    """Why the parser refuses a narrow response instead of zero-filling it.
+    """Zero-filling a narrow response understates the EPR feature.
 
     EPR sums the rank axis, so ranks the caller never fetched contribute nothing and the
     sum stops short of the entropy the distribution actually carries. Padding a 3-rank
     response out to 10 therefore reproduces its 3-rank score, not the score a genuine
-    10-rank response would have earned -- the two are not comparable, which is why the
-    rank count is the parser's to enforce.
+    10-rank response would have earned.
     """
-    narrow = EntropyTransformer(pooling=EPRPooling(), k=None).transform(LOGPROBS[:, :, :3])
-    padded = EntropyTransformer(pooling=EPRPooling(), k=None).transform(
+    narrow = EntropyTransformer(pooling=EPRPooling()).transform(LOGPROBS[:, :, :3])
+    padded = EntropyTransformer(pooling=EPRPooling()).transform(
         np.pad(LOGPROBS[:, :, :3], ((0, 0), (0, 0), (0, 7)), constant_values=np.nan)
     )
 
@@ -269,14 +258,14 @@ def test_the_epr_feature_is_the_truncated_entropy():
     catches the reduction and the log base at once. See test_feature_extraction.py for the
     comparison against the released implementation.
     """
-    contributions = EntropyTransformer(pooling=EPRPooling(), k=None).entropy_contributions(LOGPROBS)
-    feature = EntropyTransformer(pooling=EPRPooling(), k=None).transform(LOGPROBS)
+    contributions = EntropyTransformer(pooling=EPRPooling()).entropy_contributions(LOGPROBS)
+    feature = EntropyTransformer(pooling=EPRPooling()).transform(LOGPROBS)
 
     np.testing.assert_allclose(feature[:, 0], contributions.sum(axis=-1).mean(axis=-1), rtol=1e-6)
 
     for k in (2, 8, 15):
         uniform = np.full((1, 1, k), np.log(1 / k))
-        epr = EntropyTransformer(pooling=EPRPooling(), k=None).transform(uniform)
+        epr = EntropyTransformer(pooling=EPRPooling()).transform(uniform)
         np.testing.assert_allclose(epr[0, 0], np.log(k), rtol=1e-6)
 
 
@@ -285,7 +274,7 @@ def test_padded_sequences_still_warn():
     padded = np.full((1, 2, 3), np.nan)
 
     with pytest.warns(EmptySequenceWarning):
-        features = EntropyTransformer(pooling=EPRPooling(), k=None).transform(padded)
+        features = EntropyTransformer(pooling=EPRPooling()).transform(padded)
 
     assert not features.any()
 
@@ -293,7 +282,7 @@ def test_padded_sequences_still_warn():
 # --- sklearn tags ----------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("estimator", [EntropyTransformer(pooling=EPRPooling(), k=None), LogProbParser()])
+@pytest.mark.parametrize("estimator", [EntropyTransformer(pooling=EPRPooling()), LogProbParser()])
 def test_the_transformer_tags_resolve(estimator):
     # `__sklearn_tags__` walks the MRO through `super()`, so `TransformerMixin` has to come
     # before `BaseEstimator` for its override to run at all. In the other order the chain
@@ -306,7 +295,7 @@ def test_the_transformer_tags_resolve(estimator):
 def test_the_entropy_transformer_declares_tables_and_cubes():
     # The tags decide which arrays scikit-learn's own checks synthesise, and only a table can
     # be fitted and scored by them; the cube `LogProbParser` emits is accepted regardless.
-    tags = EntropyTransformer(pooling=EPRPooling(), k=None).__sklearn_tags__()
+    tags = EntropyTransformer(pooling=EPRPooling()).__sklearn_tags__()
     assert tags.input_tags.two_d_array is True
     assert tags.input_tags.three_d_array is True
 
@@ -324,7 +313,7 @@ def test_the_reductions_are_public_and_are_what_the_shipped_poolings_apply():
 def test_validate_returns_a_float_cube_and_refuses_infinity():
     from artefactual import EntropyTransformer
 
-    assert EntropyTransformer(pooling=EPRPooling(), k=None).validate(np.zeros((2, 3, 4))).shape == (2, 3, 4)
-    assert EntropyTransformer(pooling=EPRPooling(), k=None).validate(np.zeros((2, 4)), reset=True).shape == (2, 1, 4)
+    assert EntropyTransformer(pooling=EPRPooling()).validate(np.zeros((2, 3, 4))).shape == (2, 3, 4)
+    assert EntropyTransformer(pooling=EPRPooling()).validate(np.zeros((2, 4)), reset=True).shape == (2, 1, 4)
     with pytest.raises(ValueError, match=r"(?i)inf"):
-        EntropyTransformer(pooling=EPRPooling(), k=None).validate(np.full((1, 1, 2), np.inf))
+        EntropyTransformer(pooling=EPRPooling()).validate(np.full((1, 1, 2), np.inf))

@@ -4,14 +4,16 @@ Real arrays and real fits throughout; there is no registry, so no state is share
 """
 
 import copy
+import dataclasses
 import functools
 import inspect
+from typing import Any, ClassVar
 
 import numpy as np
 import pytest
+import sklearn.base
 from conftest import logprob_cubes
 from hypothesis import given
-from sklearn.base import clone
 
 import artefactual
 from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin
@@ -48,20 +50,21 @@ def per_rank_median(x, axis):
     return np.nanmedian(x, axis=axis)
 
 
+@dataclasses.dataclass(frozen=True)
 class Median(artefactual.Pooling):
     """One feature: the median over tokens of the entropy summed over ranks."""
 
-    constant_width = True
+    constant_width: ClassVar[bool] = True
 
     def __call__(self, X, axis):  # ruff: ignore[invalid-argument-name]
         return module_median(X, axis)
 
 
+@dataclasses.dataclass(frozen=True)
 class RankMedian(artefactual.Pooling):
     """One median per rank, named after the rank columns, with a parameter."""
 
-    def __init__(self, scale=1.0):
-        self.scale = scale
+    scale: Any = 1.0
 
     @property
     def name(self):
@@ -83,7 +86,7 @@ def _expected_median(cube):
 
 
 def test_a_function_pools_and_is_named_after_itself():
-    transformer = artefactual.EntropyTransformer(pooling=module_median, k=K)
+    transformer = artefactual.EntropyTransformer(pooling=module_median)
 
     assert list(transformer.get_feature_names_out()) == ["module_median"]
     assert transformer.transform(CUBE).shape == (2, 1)
@@ -91,55 +94,63 @@ def test_a_function_pools_and_is_named_after_itself():
 
 @given(cube=logprob_cubes())
 def test_a_function_pooling_equals_applying_it_to_the_contributions(cube):
-    features = artefactual.EntropyTransformer(pooling=module_median, k=None).transform(cube)
+    features = artefactual.EntropyTransformer(pooling=module_median).transform(cube)
 
     np.testing.assert_array_equal(features, _expected_median(cube))
 
 
 def test_a_function_pooling_has_a_token_mode():
-    tokens = artefactual.EntropyTransformer(pooling=per_rank_median, k=K).transform_tokens(CUBE)
+    tokens = artefactual.EntropyTransformer(pooling=per_rank_median).transform_tokens(CUBE)
 
     assert tokens.shape == (2, 3, K)
 
 
+def test_a_function_pooling_is_never_given_a_padding_token():
+    tokens = artefactual.EntropyTransformer(pooling=per_rank_median).transform_tokens(CUBE)
+
+    assert np.isnan(tokens[0, 2]).all()
+    assert not np.isnan(tokens[:, :2]).any()
+    assert not np.isnan(tokens[1]).any()
+
+
+def test_a_function_pooling_has_a_token_mode_without_any_real_token():
+    tokens = artefactual.EntropyTransformer(pooling=per_rank_median).transform_tokens(np.full((2, 3, K), np.nan))
+
+    assert np.isnan(tokens).all()
+
+
 def test_a_wide_function_names_its_features_by_position():
-    names = artefactual.EntropyTransformer(pooling=per_rank_median, k=K).get_feature_names_out()
+    names = artefactual.EntropyTransformer(pooling=per_rank_median).fit(CUBE).get_feature_names_out()
 
     assert list(names) == ["per_rank_median_0", "per_rank_median_1", "per_rank_median_2"]
 
 
-def test_an_unnamed_width_is_refused_when_k_is_unknown():
-    with pytest.raises(ValueError, match="k"):
-        artefactual.EntropyTransformer(pooling=per_rank_median, k=None).get_feature_names_out()
+def test_an_unnamed_width_is_refused_until_the_step_is_fitted():
+    with pytest.raises(ValueError, match="unknown"):
+        artefactual.EntropyTransformer(pooling=per_rank_median).get_feature_names_out()
 
 
-def test_a_function_trains_a_detector():
-    detector = artefactual.PoolingDetector(module_median, k=K).fit(RESPONSES, LABELS)
-
-    assert detector.predict_proba(RESPONSES).shape == (4, 2)
-    assert detector.named_steps["classifier"].coef_.shape == (1, 1)
-
-
-def test_a_lambda_is_named_pooling_and_a_function_pooling_takes_a_name():
+def test_a_lambda_or_partial_function_pooling_is_named_pooling():
     pooled = functools.partial(np.nanmean, keepdims=False)
 
     assert artefactual.FunctionPooling(lambda x, axis: np.nanmean(x, axis=axis)).name == "pooling"
     assert artefactual.FunctionPooling(pooled).name == "pooling"
-    assert artefactual.FunctionPooling(pooled, name="mean").name == "mean"
 
 
-def test_a_string_pooling_is_refused_by_the_detector():
-    detector = artefactual.PoolingDetector("epr", k=K)  # ty: ignore[invalid-argument-type]
+def test_a_pooling_subclass_that_is_not_a_dataclass_is_refused():
+    class Plain(artefactual.Pooling):
+        def __call__(self, X, axis):  # ruff: ignore[invalid-argument-name]
+            return np.nanmean(X, axis=axis)
 
-    with pytest.raises(ValueError, match="pooling"):
-        detector.fit(RESPONSES, LABELS)
+    with pytest.raises(TypeError, match=r"Plain.*@dataclasses\.dataclass\(frozen=True\)"):
+        Plain()
 
 
 def test_a_pooling_of_the_wrong_type_is_refused():
     with pytest.raises(ValueError, match="pooling"):
-        artefactual.EntropyTransformer(pooling=3, k=None).fit(CUBE)  # ty: ignore[invalid-argument-type]
+        artefactual.EntropyTransformer(pooling=3).fit(CUBE)  # ty: ignore[invalid-argument-type]
     with pytest.raises(TypeError, match="Pooling instance"):
-        artefactual.EntropyTransformer(pooling=3, k=None).transform(CUBE)  # ty: ignore[invalid-argument-type]
+        artefactual.EntropyTransformer(pooling=3).transform(CUBE)  # ty: ignore[invalid-argument-type]
 
 
 # --- a Pooling subclass -------------------------------------------------------------------
@@ -155,6 +166,7 @@ def test_a_subclass_is_named_after_its_class_and_declares_nothing_it_does_not_ne
 
 
 def test_the_default_width_is_probed_and_names_follow_it():
+    @dataclasses.dataclass(frozen=True)
     class Mean(artefactual.Pooling):
         def __call__(self, X, axis):  # ruff: ignore[invalid-argument-name]
             return np.nanmean(X, axis=axis)
@@ -167,6 +179,7 @@ def test_the_default_width_is_probed_and_names_follow_it():
 
 
 def test_a_probe_that_fails_is_reported_with_the_way_out():
+    @dataclasses.dataclass(frozen=True)
     class Fussy(artefactual.Pooling):
         def __call__(self, _x, _axis):
             msg = "no zeros please"
@@ -177,6 +190,7 @@ def test_a_probe_that_fails_is_reported_with_the_way_out():
 
 
 def test_a_pooling_that_declares_its_width_is_never_probed():
+    @dataclasses.dataclass(frozen=True)
     class Declared(artefactual.Pooling):
         def __call__(self, _x, _axis):
             msg = "must not be called"
@@ -185,34 +199,32 @@ def test_a_pooling_that_declares_its_width_is_never_probed():
         def width(self, _k):
             return 2
 
-        constant_width = True
+        constant_width: ClassVar[bool] = True
 
     assert Declared().feature_names(["a"]) == ["declared_0", "declared_1"]
-    assert list(artefactual.EntropyTransformer(pooling=Declared(), k=None).get_feature_names_out()) == [
+    assert list(artefactual.EntropyTransformer(pooling=Declared()).get_feature_names_out()) == [
         "declared_0",
         "declared_1",
     ]
 
 
-def test_a_subclass_pools_and_trains_a_detector():
-    detector = artefactual.PoolingDetector(Median(), k=K).fit(RESPONSES, LABELS)
-
+def test_a_subclass_pools_like_the_function_it_wraps():
     np.testing.assert_array_equal(
-        artefactual.EntropyTransformer(pooling=Median(), k=K).transform(CUBE),
-        artefactual.EntropyTransformer(pooling=module_median, k=K).transform(CUBE),
+        artefactual.EntropyTransformer(pooling=Median()).transform(CUBE),
+        artefactual.EntropyTransformer(pooling=module_median).transform(CUBE),
     )
-    assert detector.named_steps["classifier"].coef_.shape == (1, 1)
-    assert list(detector[:-1].get_feature_names_out()) == ["median"]
+    assert list(artefactual.EntropyTransformer(pooling=Median()).get_feature_names_out()) == ["median"]
 
 
 def test_a_subclass_names_its_features_after_the_rank_columns():
-    transformer = artefactual.EntropyTransformer(pooling=RankMedian(), k=K)
+    transformer = artefactual.EntropyTransformer(pooling=RankMedian()).fit(CUBE)
 
     assert list(transformer.get_feature_names_out()) == ["med_rank0", "med_rank1", "med_rank2"]
     assert list(transformer.get_feature_names_out(["a", "b", "c"])) == ["med_a", "med_b", "med_c"]
 
 
 def test_feature_names_must_match_the_width():
+    @dataclasses.dataclass(frozen=True)
     class Bad(artefactual.Pooling):
         def __call__(self, X, axis):  # ruff: ignore[invalid-argument-name]
             return np.nanmedian(X, axis=axis)
@@ -221,7 +233,7 @@ def test_feature_names_must_match_the_width():
             return ["only_one"]
 
     with pytest.raises(ValueError, match="bad"):
-        artefactual.EntropyTransformer(pooling=Bad(), k=K).get_feature_names_out()
+        artefactual.EntropyTransformer(pooling=Bad()).fit(CUBE).get_feature_names_out()
 
 
 def test_the_base_pooling_is_abstract():
@@ -235,7 +247,7 @@ def test_the_base_pooling_is_abstract():
 def test_the_repr_shows_the_class_and_its_parameters():
     assert repr(Median()) == "Median()"
     assert repr(RankMedian(scale=2.0)) == "RankMedian(scale=2.0)"
-    assert repr(artefactual.FunctionPooling(module_median)) == "FunctionPooling(module_median)"
+    assert repr(artefactual.FunctionPooling(module_median)) == (f"FunctionPooling(fn={module_median!r})")
     assert repr(artefactual.EPRPooling()) == "EPRPooling()"
 
 
@@ -245,51 +257,59 @@ def test_equal_poolings_have_the_same_type_and_parameters():
     assert Median() != RankMedian()
     assert artefactual.FunctionPooling(module_median) == artefactual.FunctionPooling(module_median)
     assert artefactual.FunctionPooling(module_median) != artefactual.FunctionPooling(per_rank_median)
+    assert hash(artefactual.FunctionPooling(module_median)) == hash(artefactual.FunctionPooling(module_median))
     assert hash(RankMedian(2.0)) == hash(RankMedian(2.0))
 
 
+def test_an_array_field_declared_compare_false_is_left_out_of_equality_and_hash():
+    @dataclasses.dataclass(frozen=True)
+    class Plain(artefactual.Pooling):
+        weights: Any = dataclasses.field(compare=False)
+        tag: str
+
+        def __call__(self, X, axis):  # ruff: ignore[invalid-argument-name]
+            return np.nanmedian(X, axis=axis)
+
+    first, second = Plain(np.ones(2), "a"), Plain(np.zeros(2), "a")
+    assert first == second
+    assert hash(first) == hash(second)
+    assert first != Plain(np.ones(2), "b")
+    assert "tag='a'" in repr(second)
+
+
 @pytest.mark.parametrize(
-    ("make", "other"),
-    [
-        pytest.param(lambda: np.array([1.0, np.nan]), lambda: np.array([2.0, np.nan]), id="array"),
-        pytest.param(lambda: np.array(["a", "b"]), lambda: np.array(["a", "c"]), id="text-array"),
-        pytest.param(lambda: [np.ones(2)], lambda: [np.zeros(2)], id="list-of-arrays"),
-        pytest.param(lambda: {"w": np.ones(2)}, lambda: {"w": np.zeros(2)}, id="dict-of-arrays"),
-        pytest.param(lambda: np.ones(2), lambda: np.ones(3), id="shape"),
-        pytest.param(lambda: float("nan"), lambda: 1.0, id="nan"),
-    ],
+    "pooling",
+    [artefactual.EPRPooling(), artefactual.WEPRPooling(), artefactual.FunctionPooling(module_median), RankMedian(2.0)],
+    ids=["epr", "wepr", "function", "user"],
 )
-def test_poolings_holding_arrays_are_compared_by_value(make, other):
-    assert RankMedian(make()) == RankMedian(make())
-    assert RankMedian(make()) != RankMedian(other())
+def test_a_transformer_holding_a_pooling_can_be_cloned(pooling):
+    transformer = artefactual.EntropyTransformer(pooling=pooling)
+    cloned = sklearn.base.clone(transformer)
+
+    assert cloned is not transformer
+    assert cloned.pooling is not pooling
+    assert cloned.pooling == pooling
+    assert np.array_equal(cloned.fit(CUBE).transform(CUBE), transformer.fit(CUBE).transform(CUBE), equal_nan=True)
 
 
 # --- the shipped poolings are unchanged -------------------------------------------------
 
 
 def test_the_shipped_feature_names_are_unchanged():
-    epr = artefactual.EntropyTransformer(pooling=artefactual.EPRPooling(), k=K).get_feature_names_out()
-    wepr = artefactual.EntropyTransformer(pooling=artefactual.WEPRPooling(), k=K).get_feature_names_out()
+    epr = artefactual.EntropyTransformer(pooling=artefactual.EPRPooling()).fit(CUBE).get_feature_names_out()
+    wepr = artefactual.EntropyTransformer(pooling=artefactual.WEPRPooling()).fit(CUBE).get_feature_names_out()
 
     assert list(epr) == ["epr"]
     assert list(wepr) == [f"wepr_{b}_rank{i}" for b in ("mean", "max") for i in range(K)]
 
 
-def test_epr_names_need_no_k():
-    assert list(artefactual.EntropyTransformer(pooling=artefactual.EPRPooling(), k=None).get_feature_names_out()) == [
-        "epr"
-    ]
+def test_epr_names_need_no_fit():
+    assert list(artefactual.EntropyTransformer(pooling=artefactual.EPRPooling()).get_feature_names_out()) == ["epr"]
 
 
 def test_a_transformer_without_a_pooling_is_refused():
     with pytest.raises(TypeError, match="pooling"):
-        artefactual.EntropyTransformer(k=None)  # ty: ignore[missing-argument]
-
-
-def test_loading_a_pooling_detector_needs_the_pooling(tmp_path):
-    path = tmp_path / "missing.skops"  # refused before the file is looked up
-    with pytest.raises(TypeError, match="pooling"):
-        artefactual.PoolingDetector.from_pretrained(str(path))  # ty: ignore[missing-argument]
+        artefactual.EntropyTransformer()  # ty: ignore[missing-argument]
 
 
 @given(cube=logprob_cubes())
@@ -297,11 +317,11 @@ def test_the_shipped_poolings_apply_the_published_reductions(cube):
     contributions = EntropyContributionsMixin().entropy_contributions(cube)
 
     np.testing.assert_array_equal(
-        artefactual.EntropyTransformer(pooling=artefactual.EPRPooling(), k=None).transform(cube),
+        artefactual.EntropyTransformer(pooling=artefactual.EPRPooling()).transform(cube),
         artefactual.epr_reduction(contributions, axis=1),
     )
     np.testing.assert_array_equal(
-        artefactual.EntropyTransformer(pooling=artefactual.WEPRPooling(), k=None).transform(cube),
+        artefactual.EntropyTransformer(pooling=artefactual.WEPRPooling()).transform(cube),
         artefactual.wepr_reduction(contributions, axis=1),
     )
 
@@ -326,25 +346,18 @@ def test_the_old_vocabulary_is_gone():
 
     assert "STRATEGIES" not in dir(module)
     assert "Reduction" not in dir(io)
-    assert "reduction" not in artefactual.EntropyTransformer(pooling=artefactual.EPRPooling(), k=None).get_params()
-    assert "pooling" in artefactual.EntropyTransformer(pooling=artefactual.EPRPooling(), k=None).get_params()
+    assert "reduction" not in artefactual.EntropyTransformer(pooling=artefactual.EPRPooling()).get_params()
+    assert "pooling" in artefactual.EntropyTransformer(pooling=artefactual.EPRPooling()).get_params()
 
 
 # --- estimators -------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize(
-    "cls", [artefactual.EPR, artefactual.WEPR, artefactual.EPRClassifier, artefactual.WEPRClassifier]
-)
-def test_the_four_estimators_keep_their_constructor_surface(cls):
-    signature = inspect.signature(cls)
-
-    assert str(signature) == (
-        "(k: int, estimator: sklearn.base.BaseEstimator | None = None, *, "
-        "transform_input=None, memory=None, verbose=False) -> None"
-    )
-    assert set(cls(k=15).get_params(deep=False)) == {"k", "estimator", "transform_input", "memory", "verbose"}
-    assert "pooling" not in cls(k=15).get_params()
+@pytest.mark.parametrize(("cls", "params"), [(artefactual.EPR, {"estimator", "k"}), (artefactual.WEPR, {"estimator"})])
+def test_the_classifiers_keep_their_constructor_surface(cls, params):
+    assert list(inspect.signature(cls).parameters) == sorted(params, key=["estimator", "k"].index)
+    assert set(cls().get_params(deep=False)) == params
+    assert "pooling" not in cls().get_params()
 
 
 @pytest.mark.parametrize(
@@ -352,54 +365,16 @@ def test_the_four_estimators_keep_their_constructor_surface(cls):
     [
         (artefactual.EPR, artefactual.EPRPooling()),
         (artefactual.WEPR, artefactual.WEPRPooling()),
-        (artefactual.EPRClassifier, artefactual.EPRPooling()),
-        (artefactual.WEPRClassifier, artefactual.WEPRPooling()),
     ],
 )
-def test_the_shipped_estimators_fix_their_pooling(cls, pooling):
-    assert cls.pooling == pooling
-    assert cls(k=K).named_steps["entropy"].pooling == pooling
-
-
-def test_a_detector_subclass_fixes_its_pooling_with_a_class_attribute():
-    class Declared(artefactual.BaseDetector):
-        pooling = Median()
-
-    detector = Declared(k=K).fit(RESPONSES, LABELS)
-
-    assert detector.named_steps["classifier"].coef_.shape == (1, 1)
-
-
-def test_a_base_classifier_still_fixes_no_pooling():
-    with pytest.raises(TypeError):
-        artefactual.BaseEntropyClassifier()
-
-
-def test_the_pooling_detector_is_a_cloneable_estimator():
-    detector = artefactual.PoolingDetector(module_median, k=K)
-    cloned = clone(detector)
-
-    assert cloned.get_params(deep=False)["pooling"] is module_median
-    assert cloned.k == K
-    assert [name for name, _ in cloned.steps] == ["parser", "entropy", "classifier"]
-
-
-def test_a_detector_holding_a_pooling_instance_clones_and_scores_alike():
-    detector = artefactual.PoolingDetector(RankMedian(scale=2.0), k=K)
-    cloned = clone(detector)
-
-    assert cloned.get_params(deep=False)["pooling"] == RankMedian(scale=2.0)
-    assert cloned.get_params(deep=False) == detector.get_params(deep=False)
-    np.testing.assert_array_equal(
-        cloned.fit(RESPONSES, LABELS).predict_proba(RESPONSES),
-        detector.fit(RESPONSES, LABELS).predict_proba(RESPONSES),
-    )
+def test_the_shipped_classifiers_fix_their_pooling(cls, pooling):
+    assert cls().fit(CUBE, Y).pipeline_[0].pooling == pooling
 
 
 def test_a_transformer_stores_its_pooling_untouched():
     pooling = RankMedian()
-    by_instance = artefactual.EntropyTransformer(pooling=pooling, k=None)
-    by_function = artefactual.EntropyTransformer(pooling=module_median, k=None)
+    by_instance = artefactual.EntropyTransformer(pooling=pooling)
+    by_function = artefactual.EntropyTransformer(pooling=module_median)
     by_instance.transform(CUBE)
     by_function.transform(CUBE)
 
@@ -408,87 +383,26 @@ def test_a_transformer_stores_its_pooling_untouched():
     assert copy.deepcopy(by_instance).pooling == pooling
 
 
-def test_setting_the_pooling_of_a_detector_reaches_its_entropy_step():
-    detector = artefactual.PoolingDetector(module_median, k=K).set_params(pooling=per_rank_median)
-
-    assert detector.named_steps["entropy"].pooling is per_rank_median
-    assert detector.fit(RESPONSES, LABELS).named_steps["classifier"].coef_.shape == (1, K)
-
-
-def test_a_detector_refuses_an_entropy_step_it_does_not_fix():
-    detector = artefactual.EPR(k=K).set_params(entropy__pooling=artefactual.WEPRPooling())
-
-    with pytest.raises(ValueError, match="EPR"):
-        detector.fit(RESPONSES, LABELS)
-
-
-def test_a_classifier_over_a_function_scores_arrays():
-    x = np.array([[-0.001, -8.0, -9.0], [-1.0, -1.1, -1.2], [-0.01, -6.0, -7.0], [-0.9, -1.0, -1.4]])
-    detector = artefactual.PoolingDetector(per_rank_median, k=K)
-    transformed = detector.named_steps["entropy"].fit(x).transform(x)
-
-    assert transformed.shape == (4, K)
-
-
 # --- widths -----------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
     ("cls", "k", "width"),
     [
-        (artefactual.EPRClassifier, 15, 1),
-        (artefactual.WEPRClassifier, 15, 30),
-        (artefactual.WEPRClassifier, 4, 8),
+        (artefactual.EPR, 15, 1),
+        (artefactual.WEPR, 15, 30),
+        (artefactual.WEPR, 4, 8),
     ],
 )
-def test_the_pipeline_width_follows_the_pooling_and_k(cls, k, width):
-    assert len(cls(k=k).named_steps["entropy"].get_feature_names_out()) == width
+def test_the_pipeline_width_follows_the_pooling_and_the_fitted_k(cls, k, width):
+    cube = -np.random.RandomState(0).exponential(1.0, size=(4, 2, k))
 
+    fitted = cls().fit(cube, LABELS)
 
-def test_width_mismatch_is_reported_against_the_pooling_of_the_class(tmp_path):
-    fitted = artefactual.WEPR(k=K).fit(RESPONSES, LABELS)
-    path = fitted.save_pretrained(tmp_path / "wepr.skops")
-
-    with pytest.raises(ValueError, match="k=3"):
-        artefactual.EPR.from_pretrained(path, k=K)
-    with pytest.raises(ValueError, match=r"but k=4 gives 8"):
-        artefactual.WEPR.from_pretrained(path, k=4)
+    assert len(fitted.get_feature_names_out()) == width
 
 
 # --- persistence ------------------------------------------------------------------------
-
-
-def test_the_saved_file_holds_the_classifier_alone(tmp_path):
-    import skops.io as sio
-
-    detector = artefactual.PoolingDetector(module_median, k=K).fit(RESPONSES, LABELS)
-    path = detector.save_pretrained(tmp_path)
-
-    assert sio.get_untrusted_types(file=path) == []
-
-
-@pytest.mark.parametrize("pooling", [module_median, Median()], ids=["function", "subclass"])
-def test_a_pooling_round_trips_when_supplied_at_load(tmp_path, pooling):
-    detector = artefactual.PoolingDetector(pooling, k=K).fit(RESPONSES, LABELS)
-    path = detector.save_pretrained(tmp_path / "median.skops")
-
-    loaded = artefactual.PoolingDetector.from_pretrained(path, pooling=pooling, k=K)
-
-    np.testing.assert_array_equal(loaded.predict_proba(RESPONSES), detector.predict_proba(RESPONSES))
-
-
-def test_loading_without_a_pooling_names_what_is_missing(tmp_path):
-    path = artefactual.PoolingDetector(module_median, k=K).fit(RESPONSES, LABELS).save_pretrained(tmp_path)
-
-    with pytest.raises(TypeError, match="pooling"):
-        artefactual.PoolingDetector.from_pretrained(path, k=K)
-
-
-def test_loading_at_the_wrong_width_names_the_pooling(tmp_path):
-    path = artefactual.PoolingDetector(module_median, k=K).fit(RESPONSES, LABELS).save_pretrained(tmp_path)
-
-    with pytest.raises(ValueError, match="feature"):
-        artefactual.PoolingDetector.from_pretrained(path, pooling=per_rank_median, k=K)
 
 
 def renamed_median(values, dim):
@@ -496,8 +410,9 @@ def renamed_median(values, dim):
     return np.nanmedian(np.nansum(values, axis=-1, keepdims=True), axis=dim)
 
 
+@dataclasses.dataclass(frozen=True)
 class RenamedMedian(artefactual.Pooling):
-    constant_width = True
+    constant_width: ClassVar[bool] = True
 
     def __call__(self, values, dim):
         return renamed_median(values, dim)
@@ -505,9 +420,9 @@ class RenamedMedian(artefactual.Pooling):
 
 @pytest.mark.parametrize("pooling", [renamed_median, RenamedMedian()], ids=["function", "subclass"])
 def test_a_pooling_is_called_positionally_whatever_its_axis_parameter_is_named(pooling):
-    expected = artefactual.EntropyTransformer(pooling=module_median, k=K).transform(CUBE)
+    expected = artefactual.EntropyTransformer(pooling=module_median).transform(CUBE)
 
-    features = artefactual.EntropyTransformer(pooling=pooling, k=K).transform(CUBE)
+    features = artefactual.EntropyTransformer(pooling=pooling).transform(CUBE)
 
     np.testing.assert_array_equal(features, expected)
     assert features.shape == (len(CUBE), 1)

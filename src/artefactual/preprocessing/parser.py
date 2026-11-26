@@ -1,17 +1,18 @@
 """Extraction of top-k logprobs from completion responses into a dense array.
 
 Responses are validated against the models in `response_models`, which carry the
-extraction themselves, so a new provider format is a new model there rather than an edit
-to the entry points here.
+extraction themselves.
 """
 
 from collections.abc import Collection, Mapping
-from typing import Any
+from numbers import Integral
+from typing import Any, ClassVar
 
 import numpy as np
 from beartype.door import is_bearable
-from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.base import BaseEstimator, TransformerMixin, _fit_context
 from sklearn.utils import Tags
+from sklearn.utils._param_validation import Interval
 
 from artefactual.preprocessing.response_models import LogprobsMixin
 
@@ -24,7 +25,7 @@ class LogProbParser(TransformerMixin, BaseEstimator, auto_wrap_output_keys=None)
     """First pipeline step: completion responses in, a dense logprob array out.
 
     Accepts raw responses rather than arrays, so it opts out of scikit-learn's input
-    validation. Cross-validation over a `BaseDetector` therefore has to start from data
+    validation. Cross-validation over a pipeline starting with this parser therefore has to start from data
     this step has already parsed, since sklearn cannot index a response object by row.
     A numeric array is refused with a `TypeError`.
 
@@ -44,6 +45,10 @@ class LogProbParser(TransformerMixin, BaseEstimator, auto_wrap_output_keys=None)
     >>> cube = LogProbParser(k=15).transform(responses)  # doctest: +SKIP
     >>> cube.shape  # (n_sequences, max_tokens, 15)  # doctest: +SKIP
     """
+
+    _parameter_constraints: ClassVar[dict] = {
+        "k": [Interval(Integral, 1, None, closed="left"), None],
+    }
 
     def __init__(self, k: int | None = None) -> None:
         self.k = k
@@ -91,8 +96,9 @@ class LogProbParser(TransformerMixin, BaseEstimator, auto_wrap_output_keys=None)
             raise ValueError(msg)
         return np.array([f"rank{i}" for i in range(self.k)], dtype=object)
 
+    @_fit_context(prefer_skip_nested_validation=True)
     def fit(self, X, y=None) -> "LogProbParser":  # ruff: ignore[unused-method-argument, invalid-argument-name] — X / y unused but required by the sklearn fit signature
-        """No-op, present so the step composes in a `Pipeline`.
+        """Validate `k`; learns nothing, and lets the step compose in a `Pipeline`.
 
         Parameters
         ----------
@@ -104,6 +110,11 @@ class LogProbParser(TransformerMixin, BaseEstimator, auto_wrap_output_keys=None)
         Returns
         -------
         self : LogProbParser
+
+        Raises
+        ------
+        sklearn.utils._param_validation.InvalidParameterError
+            If `k` is neither `None` nor an integer of at least 1.
         """
         return self
 
@@ -189,7 +200,7 @@ class LogProbParser(TransformerMixin, BaseEstimator, auto_wrap_output_keys=None)
         # them keeps a fitted detector and a pretrained one on one dtype, and keeps the dot
         # product from upcasting on every call.
         #
-        # Surplus candidates are dropped rather than kept: a calibration fit at k has no
+        # Surplus candidates are dropped: a calibration fit at k has no
         # coefficient for rank k (0-based), and EPR's mean is defined over exactly k ranks.
         width = self.k if self.k is not None else max((len(v) for d in parsed for v in d.values()), default=0)
 

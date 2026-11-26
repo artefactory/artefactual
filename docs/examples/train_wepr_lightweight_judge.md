@@ -131,7 +131,7 @@ JUDGE_MODEL = "artefactory/BERTJudge"
 THRESHOLD = 0.5
 # Sequences per forward pass. Raise it on a GPU.
 JUDGE_BATCH = 8
-K = 15  # candidates per token; a detector is loaded at the k it was fit at
+K = 15  # candidates per token; a detector scores the k it was fit at
 SEED = 42
 
 lines = read_batch(RESPONSES)
@@ -194,9 +194,8 @@ correct_scores = judge.predict(
 )
 
 # The judge answers P(correct); the detector, this notebook and every number below speak
-# P(hallucination). Negated here, once, so nothing downstream has to remember which way a
-# score points. A comprehension rather than `1 - scores`, because `predict` is documented
-# to return a sequence and not specifically an array.
+# P(hallucination). Negated here, once. `predict` returns a sequence, not specifically an
+# array, so the negation is a comprehension.
 hallucination_scores = [1.0 - score for score in correct_scores]
 
 with JUDGMENTS.open("w", encoding="utf-8") as out:
@@ -229,9 +228,8 @@ with JUDGMENTS.open("w", encoding="utf-8") as out:
             ),
             error=None,
         )
-        # `json.dumps` rather than `model_dump_json`, for `ensure_ascii`: every reader of
-        # these files splits them with `splitlines()`, which breaks on U+2028, U+2029 and
-        # U+0085 -- characters JSON does not require escaping and a model can emit.
+        # `ensure_ascii=True` escapes U+2028, U+2029 and U+0085, which `splitlines()` breaks
+        # on and JSON does not require escaping.
         out.write(json.dumps(line.model_dump(), ensure_ascii=True) + "\n")
 
 # Counted from the file, not from `hallucination_scores`: what the run produced is what it wrote.
@@ -248,7 +246,7 @@ for (question, _, response), verdict in list(zip(graded, verdicts, strict=True))
 
 This step reads both files back rather than using what is still in memory, which is what
 makes it true that you can come back tomorrow, change `k`, and refit without scoring
-anything again. `WEPR(k=15)` returns the pipeline unfitted, so `fit` takes the batch
+anything again. `make_detector(k=K)` is the pipeline unfitted, so `fit` takes the batch
 lines directly and there is no feature extraction to write: `wepr`'s own parser opens the
 Batch envelope and reads the `top_logprobs`. The split is stratified and happens first, so what is reported
 describes responses the detector never saw.
@@ -264,11 +262,9 @@ import numpy as np
 from sklearn.metrics import classification_report, roc_auc_score
 from sklearn.model_selection import train_test_split
 
-from artefactual import WEPR
-from artefactual.scoring import BaseDetector
+from artefactual import WEPR, LogProbParser, make_detector
 
-# Read back from disk rather than from the variables above: this is the path a fresh kernel
-# takes, and the one anything else reading these files takes too. `read_judgment` answers
+# Read back from disk, as a fresh kernel would. `read_judgment` answers
 # True when the judge said the response was CORRECT, so the label is its negation; an
 # Undefined verdict answers None, and the row is left out.
 labelled = [
@@ -283,7 +279,7 @@ print(f"read {len(responses)} responses with a True or False verdict back from {
 print(f"{y.sum()} hallucinations ({y.mean():.0%})")
 
 x_train, x_test, y_train, y_test = train_test_split(responses, y, test_size=0.25, stratify=y, random_state=SEED)
-detector = WEPR(k=K).fit(x_train, y_train)
+detector = make_detector(k=K).fit(x_train, y_train)
 predicted = detector.predict_proba(x_test)[:, 1]
 
 print(f"fitted on {len(y_train)}, holding out {len(y_test)}")
@@ -307,7 +303,7 @@ from sklearn.model_selection import StratifiedKFold, cross_val_predict
 
 folds = StratifiedKFold(5, shuffle=True, random_state=SEED)
 # Out-of-fold: every score comes from a detector that never saw that response.
-out_of_fold = cross_val_predict(WEPR(k=K), responses, y, cv=folds, method="predict_proba")[:, 1]
+out_of_fold = cross_val_predict(make_detector(k=K), responses, y, cv=folds, method="predict_proba")[:, 1]
 
 scored = zip(out_of_fold, y, responses, strict=True)
 disagreements = sorted(scored, key=lambda row: abs(row[0] - row[1]), reverse=True)[:5]
@@ -328,18 +324,21 @@ for score, label, row in disagreements:
 `model.skops`, or **a Hugging Face repository id** — the shipped detectors are loaded that
 way, and yours is too once you push its `model.skops` to a repository of your own.
 
-`k` is part of the weights, not a runtime option: the coefficients were fitted at one rank
-count and mean nothing at another, so loading at a different `k` raises rather than
+The width is part of the weights, not a runtime option: the coefficients were fitted at one rank
+count and mean nothing at another, so scoring arrays of a different `k` raises rather than
 mis-shaping the score.
 
 ```{code-cell} ipython3
-path = detector.save_pretrained("wepr-lightweight-judge.skops")
-reloaded = WEPR.from_pretrained(path, k=K)
+path = detector[-1].save_pretrained("wepr-lightweight-judge.skops")
+reloaded = WEPR.from_pretrained(path)
+parser = LogProbParser(k=K)
 
 # Held-out responses: the rows the fit above never saw.
 for row, label in list(zip(x_test, y_test, strict=True))[:5]:
     said = (read_message(row.completion) or "")[:40]
-    print(f"[{'hallucination' if label else 'grounded    '}] P={reloaded.predict_proba(row)[0, 1]:.3f}  {said!r}")
+    print(
+        f"[{'hallucination' if label else 'grounded    '}] P={reloaded.predict_proba(parser.transform(row))[0, 1]:.3f}  {said!r}"
+    )
 ```
 
 ## Where to go next

@@ -3,6 +3,65 @@
 Releases before the entries below are listed, with their notes, on the
 [GitHub releases page](https://github.com/artefactory/artefactual/releases).
 
+## Unreleased
+
+Changes against 2026.11.1.
+
+### Breaking
+
+- `EPRClassifier` is now `EPR` and `WEPRClassifier` is now `WEPR`. The 2026.11.1 `EPR` and
+  `WEPR`, which took responses, `PoolingDetector`, `BaseDetector` and `BaseEntropyClassifier` are
+  removed.
+- `EPR` and `WEPR` take logprob arrays. Passing responses raises a `TypeError` naming
+  `is_logprob_array`: parse first with `LogProbParser(k=15).transform(responses)`, or use
+  `make_detector(k=15)`.
+- A `Pooling` subclass must be a `@dataclasses.dataclass(frozen=True)` with its parameters as
+  fields; an undecorated subclass raises `TypeError` when instantiated. An array field is
+  declared `dataclasses.field(compare=False)`. A pooling cannot be mutated after construction.
+- `FunctionPooling` takes no `name=`: it is named after the function, and a lambda or a
+  `partial` is named `pooling`. Define a named function to name it.
+- `EntropyTransformer` has no `k`: it reads the width from the data, and a fitted one refuses
+  another width.
+- `WEPR` has no `k`, and `WEPR.from_pretrained(repo)` takes none.
+- `EPR(k)` pins the input width. An array of another width is refused with
+  `trained on 15 candidates per token, got 10: use LogProbParser(k=15)`, for a loaded or cloned
+  `EPR` too. `EPR.from_pretrained(repo, k=15)` still requires `k`.
+- `scripts/train_detector.py --pooling` takes `epr` or `wepr` only.
+
+### Added
+
+- `make_detector(*, k, classifier=None)` returns a `DetectorPipeline` (`LogProbParser(k=k)` then
+  `classifier`, `WEPR()` by default): a `Pipeline` with `predict_token_proba`, from
+  responses to scores.
+- `token_proba(steps, X)`: per-token probabilities through a list of pipeline steps. Each step
+  runs `transform_tokens` when it has one, else `transform`, and the last step's
+  `predict_proba` scores each token, with `NaN` at padding. `DetectorPipeline`
+  uses it for `predict_token_proba`.
+- `TokenProbaMixin`: `predict_token_proba` for a classifier that builds a fitted `pipeline_`,
+  through `token_proba`. `EPR`, `WEPR` and a detector of your own use it.
+- The runtime-checkable protocols `TokenTransformer` and `TokenClassifier`.
+  `make_detector` refuses a `classifier` without `predict_token_proba`, and `DetectorPipeline`
+  refuses at `fit` a layout with no per-token step, with a `TypeError`.
+- `k` is searchable through the parser: `{"logprobparser__k": [5, 10, 15]}`.
+- The scikit-learn guide shows how to write your own detector and the advanced `make_pipeline`
+  recipes (end to end on responses, `GridSearchCV`, `FeatureUnion`).
+
+### Changed
+
+- `from_pretrained` returns a detector backed by a `FrozenEstimator`. It predicts, also after
+  `clone`, and a `fit` keeps the loaded weights.
+- `check_estimator` runs on `EPR`, `WEPR`, `EntropyTransformer` and a custom detector with no
+  expected failure.
+- `EntropyTransformer.transform_tokens` calls the pooling on real tokens only, and returns
+  `NaN` rows at padding tokens, so a pooling built on `np.nanmedian` or `np.nanmean` no longer
+  warns about all-`NaN` padding windows.
+- The docs and the example notebooks use `EPR`, `WEPR` and `make_detector` for basic usage, and
+  `make_pipeline` only in the advanced section.
+
+### Fixed
+
+- `LogProbParser` validates `k` at `fit` with scikit-learn's `InvalidParameterError`.
+
 ## 2026.11.0
 
 ### Breaking

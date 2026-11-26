@@ -7,9 +7,10 @@ width or carry parameters; pass a bare function when its name and a probed width
 There is no registry: a pooling is always passed as an object.
 """
 
+import dataclasses
 import warnings
 from collections.abc import Callable, Sequence
-from typing import Any
+from typing import Any, ClassVar, Self
 
 import numpy as np
 from beartype.door import is_bearable
@@ -81,23 +82,7 @@ def wepr_reduction(x: np.ndarray, axis: int) -> np.ndarray:
     return np.concatenate([mean_branch, max_branch], axis=-1)
 
 
-# A module-level helper, not a method: it recurses into values that are not poolings.
-def _same_value(a: Any, b: Any) -> bool:
-    """Whether two attribute values are the same object or hold the same value, arrays included."""
-    if a is b:
-        return True
-    if is_bearable(a, np.ndarray) and is_bearable(b, np.ndarray):
-        return a.dtype == b.dtype and np.array_equal(a, b, equal_nan=a.dtype.kind in "fc")
-    if type(a) is type(b) and type(a) in {list, tuple}:
-        return len(a) == len(b) and all(map(_same_value, a, b))
-    if type(a) is type(b) and type(a) is dict:
-        return a.keys() == b.keys() and all(_same_value(a[key], b[key]) for key in a)
-    try:
-        return bool(a == b) or bool(a != a and b != b)  # NaN is not equal to itself
-    except (TypeError, ValueError):  # an `==` with no single truth value, as a DataFrame's
-        return False
-
-
+@dataclasses.dataclass(frozen=True)
 class Pooling:
     """Pools the token axis of NaN-padded entropy contributions; the last axis is ranks.
 
@@ -107,18 +92,30 @@ class Pooling:
     columns, `width` to declare the feature count instead of probing it, and set
     `constant_width = True` when the count does not depend on `k`.
 
-    Instances compare equal when they have the same type and the same attributes, so a
-    `sklearn.base.clone` of an estimator holding one compares equal to the original. Arrays,
-    alone or inside a list, a tuple or a dict, are compared by value, NaN equal to NaN; any
-    other attribute has to be the same object or equal under `==`.
+    Subclasses are `@dataclasses.dataclass(frozen=True)` classes whose fields are the
+    parameters, so instances compare equal when they have the same type and the same fields,
+    and a `sklearn.base.clone` of an estimator holding one compares equal to the original.
+    A field holding an array is declared `dataclasses.field(compare=False)`: it is then left
+    out of the comparison and the hash.
 
     Examples
     --------
-    >>> class Median(Pooling):
+    >>> @dataclasses.dataclass(frozen=True)
+    ... class Median(Pooling):
     ...     def __call__(self, X, axis):
     ...         return np.nanmedian(np.nansum(X, axis=-1, keepdims=True), axis=axis)
-    >>> PoolingDetector(Median(), k=15)  # doctest: +SKIP
+    >>> EntropyTransformer(Median())  # doctest: +SKIP
     """
+
+    def __new__(cls, *args: Any, **kwargs: Any) -> Self:  # ruff: ignore[unused-static-method-argument]
+        """Refuse an instance of a subclass that is not decorated with `@dataclasses.dataclass(frozen=True)`."""
+        if "__dataclass_fields__" not in cls.__dict__:
+            msg = (
+                f"{cls.__name__} subclasses Pooling but is not a dataclass: "
+                "decorate it with `@dataclasses.dataclass(frozen=True)`."
+            )
+            raise TypeError(msg)
+        return super().__new__(cls)
 
     @property
     def name(self) -> str:
@@ -191,48 +188,32 @@ class Pooling:
         width = self.width(len(ranks))
         return [self.name] if width == 1 else [f"{self.name}_{i}" for i in range(width)]
 
-    def __eq__(self, other: Any) -> bool:
-        return type(self) is type(other) and _same_value(vars(self), vars(other))
 
-    def __hash__(self) -> int:
-        return hash(type(self))
-
-    def __repr__(self) -> str:
-        arguments = ", ".join(f"{key}={value!r}" for key, value in vars(self).items())
-        return f"{type(self).__name__}({arguments})"
-
-
+@dataclasses.dataclass(frozen=True)
 class FunctionPooling(Pooling):
     """A plain function `f(x, axis)` as a `Pooling`, named after the function.
 
-    A lambda or a `functools.partial` has no name: pass `name=`.
+    A lambda or a `functools.partial` is named `"pooling"`; define the function with `def` to name it.
 
     Parameters
     ----------
     fn : callable
         `fn(x, axis)` pooling the `axis` of `x`, whose last axis is the rank axis, to
         `(..., n_features)`.
-    name : str, default=None
-        The pooling's name. Defaults to `fn.__name__`, else `"pooling"`.
     """
 
-    def __init__(self, fn: Callable, name: str | None = None) -> None:
-        self.fn = fn
-        self.label = name if name is not None else _name_of(fn)
+    fn: Callable
 
     @property
     def name(self) -> str:
-        return self.label
+        """`fn.__name__`, or `"pooling"` for a lambda or a `functools.partial`."""
+        return _name_of(self.fn)
 
     def __call__(self, X: np.ndarray, axis: int) -> np.ndarray:  # ruff: ignore[invalid-argument-name]
         """Pool `X` over `axis` with the wrapped function."""
         return self.fn(X, axis)
 
-    def __repr__(self) -> str:
-        return f"FunctionPooling({self.label})"
 
-
-# A module-level helper, not a method: only `FunctionPooling.__init__` needs it.
 def _name_of(fn: Callable) -> str:
     """The `__name__` of `fn` when it identifies it, `"pooling"` for a lambda or a `partial`."""
     try:
@@ -242,10 +223,11 @@ def _name_of(fn: Callable) -> str:
     return "pooling" if name == "<lambda>" else name
 
 
+@dataclasses.dataclass(frozen=True)
 class EPRPooling(Pooling):
     """The Entropy Production Rate: one feature, `epr_reduction`."""
 
-    constant_width = True
+    constant_width: ClassVar[bool] = True
 
     @property
     def name(self) -> str:
@@ -264,10 +246,11 @@ class EPRPooling(Pooling):
         return ["epr"]
 
 
+@dataclasses.dataclass(frozen=True)
 class WEPRPooling(Pooling):
     """The Weighted EPR: a mean and a max per rank, `wepr_reduction`."""
 
-    constant_width = False
+    constant_width: ClassVar[bool] = False
 
     @property
     def name(self) -> str:

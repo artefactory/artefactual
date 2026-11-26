@@ -35,8 +35,7 @@ QUESTIONS = [
     {"question": 'Capital? A\\B & C "quoted"', "question_id": "q-2", "short_answer": "Paris", "answer_aliases": []},
     {"question": "One alias?", "question_id": "q-3", "short_answer": "X", "answer_aliases": ["Y"]},
     # Step 1 draws from TriviaQA, whose questions carry a median of 8 aliases and a long
-    # tail -- 158 at the widest, measured over a 500-row sample. The rendering was only ever
-    # held to 0, 1 and 2, which is no longer the shape it runs on.
+    # tail -- 158 at the widest, measured over a 500-row sample.
     {
         "question": "Many aliases?",
         "question_id": "q-4",
@@ -323,8 +322,7 @@ def test_training_refuses_a_file_that_repeats_a_custom_id(pack, tmp_path):
     """A repeat would replace the first line and leave the pair count looking right.
 
     The id is what pairs a generation with its verdict, so two lines claiming the same one
-    make the join ambiguous -- and the ambiguity resolves silently, which is why it raises
-    here rather than being logged.
+    make the join ambiguous -- and the ambiguity resolves silently, so the script raises.
     """
     import sys
 
@@ -359,45 +357,20 @@ def test_training_refuses_a_repeat_whose_first_line_failed(pack, tmp_path):
         tc.read_responses(doubled)
 
 
-@pytest.fixture
-def my_pooling_module(tmp_path):
-    """An importable `my_pooling` module defining a pooling class, an instance and a function.
+def test_the_pooling_flag_takes_the_shipped_names():
+    from sklearn.pipeline import Pipeline
 
-    Its directory is on `sys.path` for the test only; the path entry and the imported module
-    are removed after, so no other test can import it.
-    """
-    (tmp_path / "my_pooling.py").write_text(
-        "import numpy as np\n"
-        "from artefactual import Pooling\n\n"
-        "class Median(Pooling):\n"
-        "    def __call__(self, X, axis):\n"
-        "        return np.nanmedian(np.nansum(X, axis=-1, keepdims=True), axis=axis)\n\n"
-        "INSTANCE = Median()\n\n"
-        "def function(x, axis):\n"
-        "    return np.nanmean(x, axis=axis)\n",
-        encoding="utf-8",
-    )
-    sys.path.insert(0, str(tmp_path))
-    yield
-    sys.path.remove(str(tmp_path))
-    sys.modules.pop("my_pooling", None)
-
-
-@pytest.mark.usefixtures("my_pooling_module")
-def test_the_pooling_flag_takes_the_shipped_names_and_an_import_path():
-    from artefactual import EPR, WEPR, PoolingDetector
+    from artefactual import EPR, WEPR, LogProbParser
 
     sys.path.insert(0, str(TRAIN.parent))
     import train_detector as tc
 
-    assert type(tc.build_detector("epr", 3)) is EPR
-    assert type(tc.build_detector("wepr", 3)) is WEPR
-    from_class = tc.build_detector("my_pooling:Median", 3)
-    assert type(from_class) is PoolingDetector
-    assert from_class.pooling.name == "median"
-    assert tc.build_detector("my_pooling:INSTANCE", 3).pooling.name == "median"
-    assert tc.build_detector("my_pooling:function", 3).pooling.__name__ == "function"
-    with pytest.raises(ValueError, match="import path"):
+    for name, classifier in {"epr": EPR, "wepr": WEPR}.items():
+        detector = tc.build_detector(name, 3)
+        assert type(detector) is Pipeline
+        assert type(detector[0]) is LogProbParser
+        assert type(detector[-1]) is classifier
+        assert detector[0].k == 3
+    assert tc.build_detector("epr", 3)[-1].k == 3  # only EPR pins the width
+    with pytest.raises(ValueError, match="neither epr nor wepr"):
         tc.build_detector("median", 3)
-    with pytest.raises(ValueError, match="expected a Pooling"):
-        tc.build_detector("my_pooling:__name__", 3)

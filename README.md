@@ -45,7 +45,7 @@ pip install artefactual
 ```python
 from openai import OpenAI
 
-from artefactual import WEPR
+from artefactual import EPR, WEPR, LogProbParser
 
 K = 15  # the k the published detectors were trained with: request this many top_logprobs
 MODEL = "mistralai/Ministral-8B-Instruct-2410"  # the model being scored
@@ -59,9 +59,10 @@ response = client.chat.completions.create(
     top_logprobs=K,
 )
 
-detector = WEPR.from_pretrained(DETECTOR, k=K)
-print(detector.predict_proba(response)[:, 1])  # P(hallucination) per sequence
-print(detector.predict_token_proba(response))  # ...and per token
+logprobs = LogProbParser(k=K).transform(response)  # the response as a logprob array
+detector = WEPR.from_pretrained(DETECTOR)
+print(detector.predict_proba(logprobs)[:, 1])  # P(hallucination) per sequence
+print(detector.predict_token_proba(logprobs))  # ...and per token
 ```
 
 A detector is trained for one model, so `DETECTOR` must be the one published for whatever
@@ -106,32 +107,46 @@ uv sync
 
 ## Usage
 
-Two detectors are provided. `WEPR` fits `2k` coefficients and is the more accurate; `EPR`
-fits a single coefficient instead, for when labelled data is scarce. Both take the same
-arguments and return the same type. They score completion responses; `EPRClassifier` and
-`WEPRClassifier` are the same estimators over logprob arrays you already hold.
-`EPRClassifier` and `WEPRClassifier` run scikit-learn's own estimator checks, with one declared
-exception: see the
+Two classifiers are provided. `WEPR` fits `2k` coefficients and is the more accurate; `EPR`
+fits a single coefficient instead, for when labelled data is scarce. They score logprob arrays,
+which `LogProbParser(k=K).transform(responses)` makes from completion responses. `EPR(k=K)` pins
+the width it accepts and refuses an array of another `k`; `WEPR` reads its width from the data.
+`EPR`, `WEPR` and `EntropyTransformer` run scikit-learn's own estimator checks with no expected
+failure: see the
 [scikit-learn compatibility guide](https://artefactory.github.io/artefactual/stable/guide/sklearn.html).
 
 ```python
-from artefactual import EPR, WEPR, WEPRClassifier
+from sklearn.ensemble import RandomForestClassifier
+
+from artefactual import EPR, WEPR, LogProbParser, make_detector
 
 K = 15  # the k the published detectors were trained with
 
-# Unfitted, as a scikit-learn estimator is; y is 0/1 per sequence, 1 marking a hallucination
-WEPR(k=K).fit(responses, y)
+X = LogProbParser(k=K).transform(responses)  # logprob arrays, shaped (n_sequences, n_tokens, K)
 
-# Published weights, or your own file, are loaded rather than fitted
-WEPR.from_pretrained("artefactory/wepr-phi4", k=K)
-WEPR.from_pretrained("/path/to/my_detector.skops", k=K)
-EPR.from_pretrained("artefactory/epr-phi4", k=K)  # the single-coefficient variant
+# Published weights, end to end: responses in, scores out
+detector = make_detector(k=K, classifier=WEPR.from_pretrained("artefactory/wepr-phi4"))
+detector.predict_proba(responses)[:, 1]
+detector.predict_token_proba(responses)  # per-token scores
 
-# Logprob arrays, shaped (n_sequences, n_tokens, k) or one token per row (n, k)
-WEPRClassifier(k=K).fit(logprobs, y)
+# Published weights, or your own file, are loaded rather than fitted: they predict, they do not tune
+WEPR.from_pretrained("artefactory/wepr-phi4").predict_proba(X)[:, 1]
+EPR.from_pretrained("artefactory/epr-phi4", k=K).predict_proba(X)[:, 1]  # the single-coefficient variant
+WEPR.from_pretrained("/path/to/my_detector.skops").predict_proba(X)[:, 1]
+
+# Train one; y is 0/1 per sequence, 1 marking a hallucination
+epr = EPR(k=K, estimator=RandomForestClassifier()).fit(X, y)
+epr.predict_token_proba(X)  # per-token scores
+epr.save_pretrained("my_detector.skops")
+
+# Train the default pipeline, from responses to scores
+make_detector(k=K).fit(responses, y)
 ```
 
-Scoring a batch, reading per-token scores, scoring Langfuse traces, composing into
+`make_pipeline` (for other steps), `GridSearchCV` and custom detectors are the
+[advanced usage](https://artefactory.github.io/artefactual/stable/guide/sklearn.html#advanced-usage).
+
+Scoring a batch, reading per-token scores, scoring Langfuse traces, tuning with
 `GridSearchCV` and training a detector for a model that is not shipped are covered in the
 [user guide](https://artefactory.github.io/artefactual/stable/guide/scoring.html).
 
