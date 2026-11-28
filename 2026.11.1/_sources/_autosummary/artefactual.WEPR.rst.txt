@@ -1,0 +1,42 @@
+﻿artefactual.WEPR
+================
+
+.. currentmodule:: artefactual
+
+.. autoclass:: WEPR
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~WEPR.assemble_steps
+      ~WEPR.cached_file
+      ~WEPR.check_options
+      ~WEPR.decision_function
+      ~WEPR.fit
+      ~WEPR.fit_predict
+      ~WEPR.fit_transform
+      ~WEPR.from_estimator
+      ~WEPR.from_pretrained
+      ~WEPR.get_feature_names_out
+      ~WEPR.get_metadata_routing
+      ~WEPR.get_params
+      ~WEPR.inverse_transform
+      ~WEPR.load_file
+      ~WEPR.predict
+      ~WEPR.predict_log_proba
+      ~WEPR.predict_proba
+      ~WEPR.predict_token_proba
+      ~WEPR.save_pretrained
+      ~WEPR.score
+      ~WEPR.score_samples
+      ~WEPR.set_callbacks
+      ~WEPR.set_output
+      ~WEPR.set_params
+      ~WEPR.set_score_request
+      ~WEPR.transform
+   
+   

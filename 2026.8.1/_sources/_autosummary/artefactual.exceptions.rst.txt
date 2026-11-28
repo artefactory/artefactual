@@ -1,0 +1,15 @@
+artefactual.exceptions
+======================
+
+.. automodule:: artefactual.exceptions
+
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      ArtefactualError
+      ArtefactualWarning
+      EmptySequenceWarning
+      UncalibratedModelError
+   

@@ -1,0 +1,42 @@
+﻿artefactual.scoring.PoolingDetector
+===================================
+
+.. currentmodule:: artefactual.scoring
+
+.. autoclass:: PoolingDetector
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~PoolingDetector.assemble_steps
+      ~PoolingDetector.cached_file
+      ~PoolingDetector.check_options
+      ~PoolingDetector.decision_function
+      ~PoolingDetector.fit
+      ~PoolingDetector.fit_predict
+      ~PoolingDetector.fit_transform
+      ~PoolingDetector.from_estimator
+      ~PoolingDetector.from_pretrained
+      ~PoolingDetector.get_feature_names_out
+      ~PoolingDetector.get_metadata_routing
+      ~PoolingDetector.get_params
+      ~PoolingDetector.inverse_transform
+      ~PoolingDetector.load_file
+      ~PoolingDetector.predict
+      ~PoolingDetector.predict_log_proba
+      ~PoolingDetector.predict_proba
+      ~PoolingDetector.predict_token_proba
+      ~PoolingDetector.save_pretrained
+      ~PoolingDetector.score
+      ~PoolingDetector.score_samples
+      ~PoolingDetector.set_callbacks
+      ~PoolingDetector.set_output
+      ~PoolingDetector.set_params
+      ~PoolingDetector.set_score_request
+      ~PoolingDetector.transform
+   
+   

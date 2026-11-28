@@ -1,0 +1,17 @@
+﻿artefactual.scoring.TokenProbaMixin
+===================================
+
+.. currentmodule:: artefactual.scoring
+
+.. autoclass:: TokenProbaMixin
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~TokenProbaMixin.predict_token_proba
+   
+   

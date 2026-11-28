@@ -1,0 +1,18 @@
+﻿artefactual.scoring.EPRPooling
+==============================
+
+.. currentmodule:: artefactual.scoring
+
+.. autoclass:: EPRPooling
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~EPRPooling.feature_names
+      ~EPRPooling.width
+   
+   

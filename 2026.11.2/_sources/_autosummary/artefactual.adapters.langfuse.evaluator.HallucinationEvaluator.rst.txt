@@ -1,0 +1,17 @@
+﻿artefactual.adapters.langfuse.evaluator.HallucinationEvaluator
+==============================================================
+
+.. currentmodule:: artefactual.adapters.langfuse.evaluator
+
+.. autoclass:: HallucinationEvaluator
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~HallucinationEvaluator.score_trace
+   
+   

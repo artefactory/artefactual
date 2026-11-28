@@ -1,0 +1,14 @@
+artefactual.scoring.base\_detector
+==================================
+
+.. automodule:: artefactual.scoring.base_detector
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      BaseDetector
+      EPR
+      WEPR
+   

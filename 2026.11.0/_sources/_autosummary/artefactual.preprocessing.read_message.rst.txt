@@ -1,0 +1,6 @@
+﻿artefactual.preprocessing.read\_message
+=======================================
+
+.. currentmodule:: artefactual.preprocessing
+
+.. autofunction:: read_message

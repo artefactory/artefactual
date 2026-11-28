@@ -1,0 +1,36 @@
+/* The Colab badge and the download link in a notebook page's article header.
+
+   Bootstrap's `.btn` sets a hardcoded near-black `color`, which the theme's light/dark
+   toggle does not touch -- on the dark theme the download link was black on black. These
+   rules take the theme's own link colour instead, so the control follows the toggle the
+   way every other link on the page does. */
+
+.notebook-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.notebook-buttons a.notebook-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--pst-color-border);
+  border-radius: 0.25rem;
+  color: var(--pst-color-link);
+  font-size: 0.875rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.notebook-buttons a.notebook-download:hover {
+  border-color: var(--pst-color-link);
+  color: var(--pst-color-link-hover);
+  text-decoration: none;
+}
+
+.notebook-buttons a.notebook-colab {
+  display: inline-flex;
+  align-items: center;
+}

@@ -1,0 +1,10 @@
+﻿artefactual.exceptions.ArtefactualWarning
+=========================================
+
+.. currentmodule:: artefactual.exceptions
+
+.. autoclass:: ArtefactualWarning
+
+   
+   
+   

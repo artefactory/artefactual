@@ -1,0 +1,15 @@
+artefactual.preprocessing
+=========================
+
+.. automodule:: artefactual.preprocessing
+
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   openai_parser
+   parser
+   response_models

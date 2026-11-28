@@ -1,0 +1,12 @@
+artefactual.scoring.entropy\_methods.entropy\_transformer
+=========================================================
+
+.. automodule:: artefactual.scoring.entropy_methods.entropy_transformer
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      EntropyTransformer
+   

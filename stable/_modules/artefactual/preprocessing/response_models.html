@@ -1,0 +1,1101 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>artefactual.preprocessing.response_models &#8212; Artefactual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mermaid-theme.css?v=60300dae" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/notebook-buttons.css?v=9438e366" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=23e26dd1"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";
+const load = async () => {
+    await mermaid.run();
+    const all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+    if(mermaids_to_add_zoom > 0) {
+        var svgs = d3.selectAll(".mermaid svg");
+        if(all_mermaids.length !== mermaids_processed.length) {
+            // try again in a sec, wait for mermaids to load
+            setTimeout(load, 200);
+            return;
+        } else if(svgs.size() !== mermaids_to_add_zoom) {
+            // try again in a sec, wait for mermaids to load
+            setTimeout(load, 200);
+            return;
+        } else {
+            svgs.each(function() {
+                var svg = d3.select(this);
+                svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                var inner = svg.select("g");
+                var zoom = d3.zoom().on("zoom", function(event) {
+                    inner.attr("transform", event.transform);
+                });
+                svg.call(zoom);
+            });
+        }
+    }
+};
+
+window.addEventListener("load", load);
+</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/artefactual/preprocessing/response_models';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://artefactory.github.io/artefactual/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2026.11.2';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <link rel="canonical" href="https://artefactory.github.io/artefactual/2026.11.2/_modules/artefactual/preprocessing/response_models.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2026.11" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Artefactual</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/reference.html">
+    Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../guide/sklearn.html">
+    scikit-learn compatibility
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../contributing.html">
+    Contributing to Artefactual
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../citation.html">
+    Citation
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../guide/sklearn.html">
+    scikit-learn compatibility
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../contributing.html">
+    Contributing to Artefactual
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../citation.html">
+    Citation
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">artefactual.preprocessing.response_models</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for artefactual.preprocessing.response_models</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Typed models for the completion formats the parsers consume, and the readers over them.</span>
+
+<span class="sd">The logprob path and the generated text are modelled; `extra="ignore"` drops the rest of</span>
+<span class="sd">the payload. `from_attributes=True` accepts both a raw mapping and an attribute-style</span>
+<span class="sd">object.</span>
+
+<span class="sd">`read_message` is the way to the generated text: every caller that wants what the model</span>
+<span class="sd">said goes through the validated envelope rather than indexing a raw payload.</span>
+
+<span class="sd">The two completion formats carry the logprob extraction themselves, through `LogprobsMixin`:</span>
+<span class="sd">a format supplies its token `sequences()` and inherits `top_logprobs()` and</span>
+<span class="sd">`sampled_logprobs()`. `LogprobsMixin.parse` turns whatever a caller holds into the format it</span>
+<span class="sd">is, and `ChatCompletion.parse` or `ResponsesPayload.parse` accepts that format only. A new</span>
+<span class="sd">format is one more model implementing the mixin: it registers itself, so no dispatch table</span>
+<span class="sd">is edited.</span>
+<span class="sd">"""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">operator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">http</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTTPStatus</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ClassVar</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ResponseModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Base of every payload model: accepts a mapping or an attribute-style object, and</span>
+<span class="sd">    ignores the keys it does not model."""</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TopLogprob</span><span class="p">(</span><span class="n">ResponseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""One candidate of the top-k distribution for a single token.</span>
+
+<span class="sd">    Its rank is its position in that distribution, counting from the most likely.</span>
+<span class="sd">    """</span>
+
+    <span class="n">logprob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TokenLogprobs</span><span class="p">(</span><span class="n">ResponseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""One generated token, with the top-k alternatives considered at that position."""</span>
+
+    <span class="n">logprob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">top_logprobs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">TopLogprob</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">candidates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">fallback_to_sampled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The token's top-k logprobs, highest first; empty if the position carried none.</span>
+
+<span class="sd">        With `fallback_to_sampled`, a token whose `top_logprobs` is an empty list is its</span>
+<span class="sd">        own sole candidate (empty if its logprob is null too). A token whose candidates</span>
+<span class="sd">        are all null gets no fallback: it did carry a distribution.</span>
+
+<span class="sd">        Sorted by logprob, so `LogProbParser` truncating to `k` keeps the most likely</span>
+<span class="sd">        candidates. A candidate whose logprob is null is dropped.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">fallback_to_sampled</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">top_logprobs</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">logprob</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">logprob</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">logprob</span> <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">top_logprobs</span> <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">logprob</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">LogprobsMixin</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Logprob extraction for a completion format that supplies its token `sequences()`.</span>
+
+<span class="sd">    Mixed into `ChatCompletion` and `ResponsesPayload`; it holds no state and has no</span>
+<span class="sd">    `__init__`. Everything it offers is written once over `sequences()`, so the formats</span>
+<span class="sd">    differ only in where they keep their tokens. A pydantic model that inherits it is</span>
+<span class="sd">    registered in `formats`, which `LogprobsMixin.parse` matches a payload against.</span>
+
+<span class="sd">    `parse` is the way in from raw input: on the mixin it accepts a chat completion, a</span>
+<span class="sd">    Responses payload or one line of a Batch output file, as a mapping or an</span>
+<span class="sd">    attribute-style object; on a format it accepts that format only.</span>
+<span class="sd">    """</span>
+
+    <span class="c1"># Every pydantic model that inherits the mixin directly, in definition order, which is</span>
+    <span class="c1"># the order union matching tries them in.</span>
+    <span class="n">formats</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">type</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Whether a token carrying no `top_logprobs` is its own sole candidate. A Responses token</span>
+    <span class="c1"># may carry only the sampled logprob; a chat token never does.</span>
+    <span class="n">sampled_fallback</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Validators by (class, with a batch line admitted), built on first use because the</span>
+    <span class="c1"># models they name are not all defined when the mixin is, and dropped when a format</span>
+    <span class="c1"># registers.</span>
+    <span class="n">adapters</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">,</span> <span class="nb">bool</span><span class="p">],</span> <span class="n">TypeAdapter</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__init_subclass__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Register a direct implementer as a format.</span>
+
+<span class="sd">        Only a direct one: a subclass of a format is that format, and listing both would make</span>
+<span class="sd">        union matching ambiguous.</span>
+<span class="sd">        """</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init_subclass__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">LogprobsMixin</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__bases__</span><span class="p">:</span>
+            <span class="n">LogprobsMixin</span><span class="o">.</span><span class="n">formats</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+            <span class="n">LogprobsMixin</span><span class="o">.</span><span class="n">adapters</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">sequences</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"list[list[TokenLogprobs]]"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The generated tokens of every sampled sequence, one list per sequence.</span>
+
+<span class="sd">        A sequence without logprobs is `[]`. A token position is its index in the list, so</span>
+<span class="sd">        a token carrying no candidates still takes its place.</span>
+<span class="sd">        """</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">top_logprobs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]:</span>
+<span class="w">        </span><span class="sd">"""Each token's top-k logprobs, one dict per sampled sequence.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list of dict</span>
+<span class="sd">            Maps token position to that token's candidate log-probabilities, most likely</span>
+<span class="sd">            first. Positions whose `top_logprobs` was empty are omitted, and the index is</span>
+<span class="sd">            still counted so positions track the generated text. When `sampled_fallback`</span>
+<span class="sd">            is set, such a position holds its sampled logprob alone instead.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="n">position</span><span class="p">:</span> <span class="n">candidates</span>
+                <span class="k">for</span> <span class="n">position</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">candidates</span> <span class="o">:=</span> <span class="n">token</span><span class="o">.</span><span class="n">candidates</span><span class="p">(</span><span class="n">fallback_to_sampled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sampled_fallback</span><span class="p">))</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">tokens</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequences</span><span class="p">()</span>
+        <span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">sampled_logprobs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The logprob of each sampled token, ignoring the alternatives.</span>
+
+<span class="sd">        Neither EPR nor WEPR uses this; it is for callers measuring sequence likelihood.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list of ndarray</span>
+<span class="sd">            One 1-D array per sampled sequence, holding the sampled token logprobs in</span>
+<span class="sd">            order. A token whose logprob is null is skipped.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">token</span><span class="o">.</span><span class="n">logprob</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span> <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">logprob</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">])</span> <span class="k">for</span> <span class="n">tokens</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequences</span><span class="p">()</span>
+        <span class="p">]</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">adapter</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TypeAdapter</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The validator for the formats `cls` stands for: every registered one on the</span>
+<span class="sd">        mixin, `cls` alone on a format.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        batch : bool, default=True</span>
+<span class="sd">            Also accept a `BatchRequestOutput`, which `parse` then opens. A batch line's own</span>
+<span class="sd">            body is validated without it: a body is a completion, and admitting a line</span>
+<span class="sd">            would let a body with a `custom_id` validate as an envelope and be unwrapped</span>
+<span class="sd">            again.</span>
+<span class="sd">        """</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">LogprobsMixin</span><span class="o">.</span><span class="n">adapters</span><span class="p">:</span>
+            <span class="n">members</span> <span class="o">=</span> <span class="n">LogprobsMixin</span><span class="o">.</span><span class="n">formats</span> <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="n">LogprobsMixin</span> <span class="k">else</span> <span class="p">[</span><span class="bp">cls</span><span class="p">]</span>
+            <span class="n">union</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">or_</span><span class="p">,</span> <span class="p">[</span><span class="o">*</span><span class="n">members</span><span class="p">,</span> <span class="n">BatchRequestOutput</span><span class="p">]</span> <span class="k">if</span> <span class="n">batch</span> <span class="k">else</span> <span class="n">members</span><span class="p">)</span>
+            <span class="n">LogprobsMixin</span><span class="o">.</span><span class="n">adapters</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">union</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">LogprobsMixin</span><span class="o">.</span><span class="n">adapters</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">outputs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"ChatCompletion | ResponsesPayload"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Validate a payload against the completion formats, telling the two failures apart.</span>
+
+<span class="sd">        Called on `LogprobsMixin` it matches every registered format; called on a format it</span>
+<span class="sd">        matches that one, so `ChatCompletion.parse` refuses a Responses payload.</span>
+
+<span class="sd">        A payload that matches no format is not a completion response, which is a</span>
+<span class="sd">        `TypeError` about the input's kind. A payload that *is* recognisably one but</span>
+<span class="sd">        carries bad data is a validation failure, and pydantic's own report names the</span>
+<span class="sd">        offending field; flattening it into "unsupported format" would send the reader</span>
+<span class="sd">        looking for an unsupported provider instead.</span>
+
+<span class="sd">        A union member counts as recognised only once it reaches *inside* the structure a</span>
+<span class="sd">        format describes. A top-level key that is absent, or present carrying the wrong</span>
+<span class="sd">        kind of value, says nothing about the payload's intent -- an arbitrary mapping that</span>
+<span class="sd">        happens to hold a key named `output` is not a Responses payload with one bad field.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        outputs : Any</span>
+<span class="sd">            A single completion response, as a mapping or an object; a batch line is opened</span>
+<span class="sd">            and its body returned.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ChatCompletion or ResponsesPayload</span>
+<span class="sd">            The format the payload is; with `cls` a format, an instance of `cls`.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            If the payload matches no format `cls` stands for, including a batch line whose</span>
+<span class="sd">            body matches none.</span>
+<span class="sd">        ValidationError</span>
+<span class="sd">            If it matches one and a field inside it is invalid.</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If a batch line carries no completion, because its request failed.</span>
+<span class="sd">        """</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">adapter</span><span class="p">()</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="c1"># Errors are located as `(member, field, ...)`. Depth one is the member refusing</span>
+            <span class="c1"># the input's type outright; depth two is a top-level key absent or holding the</span>
+            <span class="c1"># wrong kind of value, which any unrelated mapping can produce by coincidence.</span>
+            <span class="c1"># Only a failure below that names a payload a member walked into and objected to.</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">"loc"</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">error</span><span class="o">.</span><span class="n">errors</span><span class="p">()):</span>
+                <span class="k">raise</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Unsupported output format: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">outputs</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">. Expected a completion response carrying "</span>
+                <span class="s2">"logprobs. A numeric array of logprobs is scored by EPR or WEPR, not by "</span>
+                <span class="s2">"this parser or the detectors."</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+        <span class="k">match</span> <span class="n">response</span><span class="p">:</span>
+            <span class="k">case</span> <span class="n">BatchRequestOutput</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">payload</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+            <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">response</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ChatChoiceLogprobs</span><span class="p">(</span><span class="n">ResponseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The `logprobs` block of a chat choice, holding one entry per generated token.</span>
+
+<span class="sd">    `content` is null when the choice carries no message tokens.</span>
+<span class="sd">    """</span>
+
+    <span class="n">content</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">TokenLogprobs</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+<div class="viewcode-block" id="ChatMessage">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.preprocessing.ChatMessage.html#artefactual.preprocessing.ChatMessage">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ChatMessage</span><span class="p">(</span><span class="n">ResponseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The assistant message a chat choice carries."""</span>
+
+    <span class="n">content</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="ChatChoice">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.preprocessing.ChatChoice.html#artefactual.preprocessing.ChatChoice">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ChatChoice</span><span class="p">(</span><span class="n">ResponseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""One sampled sequence of a chat completion."""</span>
+
+    <span class="n">logprobs</span><span class="p">:</span> <span class="n">ChatChoiceLogprobs</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># The generated text. Nothing in the scoring path reads it -- a detector scores the</span>
+    <span class="c1"># distribution, not the words -- but the same file is what a caller labels from, and</span>
+    <span class="c1"># digging the text back out with `["choices"][0]["message"]["content"]` after the</span>
+    <span class="c1"># envelope has already been validated is the one step that would stay untyped.</span>
+    <span class="n">message</span><span class="p">:</span> <span class="n">ChatMessage</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="ChatCompletion">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.preprocessing.ChatCompletion.html#artefactual.preprocessing.ChatCompletion">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ChatCompletion</span><span class="p">(</span><span class="n">LogprobsMixin</span><span class="p">,</span> <span class="n">ResponseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""`client.chat.completions.create(...)` — one `choice` per sampled sequence.</span>
+
+<span class="sd">    Extraction comes from `LogprobsMixin`: `top_logprobs()`, `sampled_logprobs()` and the</span>
+<span class="sd">    classmethod `parse`, which accepts this format, bare or in a batch line, only.</span>
+<span class="sd">    """</span>
+
+    <span class="n">choices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ChatChoice</span><span class="p">]</span>
+
+<div class="viewcode-block" id="ChatCompletion.sequences">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.preprocessing.ChatCompletion.html#artefactual.preprocessing.ChatCompletion.sequences">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sequences</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">TokenLogprobs</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""One token list per choice; a choice without logprobs, or whose content is null, is `[]`."""</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="n">choice</span><span class="o">.</span><span class="n">logprobs</span><span class="o">.</span><span class="n">content</span> <span class="ow">or</span> <span class="p">[])</span> <span class="k">if</span> <span class="n">choice</span><span class="o">.</span><span class="n">logprobs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">choices</span><span class="p">]</span></div>
+</div>
+
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ResponseContentPart</span><span class="p">(</span><span class="n">ResponseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""One content part of an output item, holding its per-token logprobs."""</span>
+
+    <span class="n">logprobs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">TokenLogprobs</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ResponseOutputItem</span><span class="p">(</span><span class="n">ResponseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""One sampled sequence of a Responses API payload."""</span>
+
+    <span class="n">content</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResponseContentPart</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+<div class="viewcode-block" id="ResponsesPayload">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.preprocessing.ResponsesPayload.html#artefactual.preprocessing.ResponsesPayload">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ResponsesPayload</span><span class="p">(</span><span class="n">LogprobsMixin</span><span class="p">,</span> <span class="n">ResponseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""`client.responses.create(...)` — one `output` item per sampled sequence.</span>
+
+<span class="sd">    Extraction comes from `LogprobsMixin`: `top_logprobs()`, `sampled_logprobs()` and the</span>
+<span class="sd">    classmethod `parse`, which accepts this format, bare or in a batch line, only.</span>
+<span class="sd">    """</span>
+
+    <span class="n">sampled_fallback</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">output</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResponseOutputItem</span><span class="p">]</span>
+
+<div class="viewcode-block" id="ResponsesPayload.sequences">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.preprocessing.ResponsesPayload.html#artefactual.preprocessing.ResponsesPayload.sequences">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sequences</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">TokenLogprobs</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""One token list per output item, its content parts concatenated in order.</span>
+
+<span class="sd">        The tokens are the validated ones. A Responses token may carry only the sampled</span>
+<span class="sd">        logprob, which `sampled_fallback` makes its own sole candidate.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="p">[[</span><span class="n">token</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">content</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">part</span><span class="o">.</span><span class="n">logprobs</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">]</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="BatchResponseData">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.preprocessing.BatchResponseData.html#artefactual.preprocessing.BatchResponseData">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BatchResponseData</span><span class="p">(</span><span class="n">ResponseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The `response` envelope of one Batch output line.</span>
+
+<span class="sd">    The spec fills a failed envelope two ways. Top-level `error` carries non-HTTP failures</span>
+<span class="sd">    and leaves the envelope empty; a request the server *rejects* leaves top-level `error`</span>
+<span class="sd">    null and puts an *error object* in `body` under a 4xx or 5xx `status_code`. A body is</span>
+<span class="sd">    therefore not evidence of a completion: `status_code` is a required field with no</span>
+<span class="sd">    default, and an absent status is not evidence of success.</span>
+
+<span class="sd">    The completion is carried as it arrived: a batch line can carry a `ChatCompletion` or a</span>
+<span class="sd">    `ResponsesPayload`. Consumers validate the payload themselves.</span>
+<span class="sd">    """</span>
+
+    <span class="n">status_code</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">request_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">body</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="BatchRequestOutput">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.preprocessing.BatchRequestOutput.html#artefactual.preprocessing.BatchRequestOutput">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BatchRequestOutput</span><span class="p">(</span><span class="n">ResponseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""One line of an OpenAI Batch output file.</span>
+
+<span class="sd">    The Batch API returns JSONL -- one of these per line -- and any OpenAI-compatible</span>
+<span class="sd">    server writes the same shape. The completion is always nested under `response.body`.</span>
+
+<span class="sd">    `custom_id` is the only id that identifies the request: `id` is assigned by the</span>
+<span class="sd">    provider, as is `response.request_id`, and so is the completion's own `id`. It is the</span>
+<span class="sd">    key every stage joins on.</span>
+
+<span class="sd">    A failed line carries no usable completion, and `completion` reports that by</span>
+<span class="sd">    returning `None`. `LogProbParser` refuses such a line: it emits one row per line, and a</span>
+<span class="sd">    dropped row would shift every later response against its label.</span>
+<span class="sd">    """</span>
+
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">custom_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">min_length</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Required, with no default. Every writer emits both keys -- one of them null -- and a</span>
+    <span class="c1"># payload carrying neither is not a batch line, for a mapping and an attribute-style</span>
+    <span class="c1"># object alike.</span>
+    <span class="n">response</span><span class="p">:</span> <span class="n">BatchResponseData</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">error</span><span class="p">:</span> <span class="n">Any</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">failure</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Why this line carries no completion, phrased for an error message.</span>
+
+<span class="sd">        `None` when it carries one. The `error` repr is truncated because it is provider</span>
+<span class="sd">        text of no fixed length, and this ends up inside exception messages.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">"error </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="si">!r:</span><span class="s2">.200</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">response</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">"no response envelope"</span>
+        <span class="c1"># The 2xx band: the only question asked of a batch line's status is whether it succeeded.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">HTTPStatus</span><span class="o">.</span><span class="n">OK</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">&lt;</span> <span class="n">HTTPStatus</span><span class="o">.</span><span class="n">MULTIPLE_CHOICES</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">"HTTP </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">body</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">"an empty response body"</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">completion</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The completion payload this line carries, or `None` if it carries none.</span>
+
+<span class="sd">        `None` covers every way a line can fail, which `failure` names: a non-HTTP error,</span>
+<span class="sd">        an HTTP status outside 2xx -- where the body is an error object rather than a</span>
+<span class="sd">        completion -- and a missing envelope or body.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">failure</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">response</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">body</span>
+
+<div class="viewcode-block" id="BatchRequestOutput.payload">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.preprocessing.BatchRequestOutput.html#artefactual.preprocessing.BatchRequestOutput.payload">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">payload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">LogprobsMixin</span><span class="p">]</span> <span class="o">=</span> <span class="n">LogprobsMixin</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ChatCompletion</span> <span class="o">|</span> <span class="n">ResponsesPayload</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The completion this line carries, validated as the format it is.</span>
+
+<span class="sd">        `kind` narrows the formats accepted: the default is every registered one, a format</span>
+<span class="sd">        accepts its own only.</span>
+
+<span class="sd">        Raises for a line that carries none: dropping a failed line would shift every later</span>
+<span class="sd">        response against its label. Filter the failed lines out before parsing, which is where their failure can still</span>
+<span class="sd">        be reported against a `custom_id`.</span>
+
+<span class="sd">        The body goes through the same formats as a bare completion, so a batch of</span>
+<span class="sd">        Responses-API calls parses like any other.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the line failed, naming its `custom_id` and `failure`.</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            If the body is neither a chat completion nor a Responses payload.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">completion</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Batch line </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">custom_id</span><span class="si">!r}</span><span class="s2"> carries no completion: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">failure</span><span class="si">}</span><span class="s2">. "</span>
+                <span class="sa">f</span><span class="s2">"Drop failed lines before parsing -- keeping them would pair every later "</span>
+                <span class="sa">f</span><span class="s2">"response with the wrong label."</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">kind</span><span class="o">.</span><span class="n">adapter</span><span class="p">(</span><span class="n">batch</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">completion</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="n">what</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">"neither a chat completion nor a Responses payload"</span>
+                <span class="k">if</span> <span class="n">kind</span> <span class="ow">is</span> <span class="n">LogprobsMixin</span>
+                <span class="k">else</span> <span class="sa">f</span><span class="s2">"not a </span><span class="si">{</span><span class="n">kind</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Batch line </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">custom_id</span><span class="si">!r}</span><span class="s2"> carries a body that is </span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2">."</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="read_message">
+<a class="viewcode-back" href="../../../_autosummary/artefactual.preprocessing.read_message.html#artefactual.preprocessing.read_message">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_message</span><span class="p">(</span><span class="n">completion</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""What the model said, or `None` if the payload carries no text.</span>
+
+<span class="sd">    The single reading of `choices[0].message.content`, so no caller has to index a raw</span>
+<span class="sd">    payload and none has to decide what an unusable one means. `None` covers every way the</span>
+<span class="sd">    text can be absent -- no completion at all, as a failed batch line yields; an error</span>
+<span class="sd">    object where the completion belongs; a completion with no choices; a choice whose</span>
+<span class="sd">    message or content is null.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        completion: A chat completion, as a mapping or an attribute-style object. A batch</span>
+<span class="sd">            line's `completion` is exactly this.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The assistant's text, unmodified, or `None`.</span>
+<span class="sd">    """</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">choices</span> <span class="o">=</span> <span class="n">ChatCompletion</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">completion</span><span class="p">)</span><span class="o">.</span><span class="n">choices</span>
+    <span class="k">except</span> <span class="n">ValidationError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">choices</span> <span class="ow">or</span> <span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Artefact Research Center.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

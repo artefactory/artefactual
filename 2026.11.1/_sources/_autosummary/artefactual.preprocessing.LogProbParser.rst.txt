@@ -1,0 +1,24 @@
+﻿artefactual.preprocessing.LogProbParser
+=======================================
+
+.. currentmodule:: artefactual.preprocessing
+
+.. autoclass:: LogProbParser
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~LogProbParser.fit
+      ~LogProbParser.fit_transform
+      ~LogProbParser.get_feature_names_out
+      ~LogProbParser.get_metadata_routing
+      ~LogProbParser.get_params
+      ~LogProbParser.set_output
+      ~LogProbParser.set_params
+      ~LogProbParser.transform
+   
+   

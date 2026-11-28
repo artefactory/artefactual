@@ -1,0 +1,18 @@
+﻿artefactual.scoring.TokenClassifier
+===================================
+
+.. currentmodule:: artefactual.scoring
+
+.. autoclass:: TokenClassifier
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~TokenClassifier.predict_proba
+      ~TokenClassifier.predict_token_proba
+   
+   

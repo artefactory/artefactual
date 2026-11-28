@@ -1,0 +1,809 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Changelog &#8212; Artefactual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="_static/mermaid-theme.css?v=60300dae" />
+    <link rel="stylesheet" type="text/css" href="_static/notebook-buttons.css?v=9438e366" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=141ae7bb"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'changelog';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://artefactory.github.io/artefactual/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2026.11.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <link rel="canonical" href="https://artefactory.github.io/artefactual/2026.11.1/changelog.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Contributing to Artefactual" href="contributing.html" />
+    <link rel="prev" title="Presentations" href="presentations/index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2026.11" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Artefactual</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="install.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/reference.html">
+    Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="guide/sklearn.html">
+    scikit-learn compatibility
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="contributing.html">
+    Contributing to Artefactual
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="citation.html">
+    Citation
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="install.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/sklearn.html">
+    scikit-learn compatibility
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="contributing.html">
+    Contributing to Artefactual
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="citation.html">
+    Citation
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Changelog</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="changelog">
+<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">#</a></h1>
+<p>Releases before the entries below are listed, with their notes, on the
+<a class="reference external" href="https://github.com/artefactory/artefactual/releases">GitHub releases page</a>.</p>
+<section id="id1">
+<span id="2026110"></span><h2>2026.11.0<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
+<section id="breaking">
+<h3>Breaking<a class="headerlink" href="#breaking" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">predict_token_proba</span></code>, <code class="docutils literal notranslate"><span class="pre">EntropyTransformer.transform</span></code> and <code class="docutils literal notranslate"><span class="pre">transform_tokens</span></code> name their
+input <code class="docutils literal notranslate"><span class="pre">X</span></code> instead of <code class="docutils literal notranslate"><span class="pre">x</span></code>, as scikit-learn does. Positional calls are unaffected; a call
+that passes <code class="docutils literal notranslate"><span class="pre">x=</span></code> must pass <code class="docutils literal notranslate"><span class="pre">X=</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fit</span></code> raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> when the entropy step’s pooling differs from the one the class
+fixes, for instance <code class="docutils literal notranslate"><span class="pre">EPRClassifier(k=15).set_params(entropy__pooling=WEPRPooling())</span></code>. Use
+<code class="docutils literal notranslate"><span class="pre">WEPRClassifier</span></code> instead.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EPR</span></code> and <code class="docutils literal notranslate"><span class="pre">WEPR</span></code> take responses only. A numeric table raises <code class="docutils literal notranslate"><span class="pre">TypeError</span></code> naming
+<code class="docutils literal notranslate"><span class="pre">EPRClassifier</span></code> and <code class="docutils literal notranslate"><span class="pre">WEPRClassifier</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">artefactual.preprocessing.openai_parser</span></code> is removed: call <code class="docutils literal notranslate"><span class="pre">top_logprobs()</span></code> and
+<code class="docutils literal notranslate"><span class="pre">sampled_logprobs()</span></code> on <code class="docutils literal notranslate"><span class="pre">ChatCompletion</span></code> or <code class="docutils literal notranslate"><span class="pre">ResponsesPayload</span></code>.</p></li>
+<li><p>Estimator persistence is split into <code class="docutils literal notranslate"><span class="pre">PretrainedMixin</span></code> (<code class="docutils literal notranslate"><span class="pre">from_pretrained</span></code>, with the public
+override points <code class="docutils literal notranslate"><span class="pre">cached_file</span></code> and <code class="docutils literal notranslate"><span class="pre">load_file</span></code>) and <code class="docutils literal notranslate"><span class="pre">SavePretrainedMixin</span></code> (<code class="docutils literal notranslate"><span class="pre">save_pretrained</span></code>),
+importable from <code class="docutils literal notranslate"><span class="pre">artefactual.utils.io</span></code> only. Renamed:
+<code class="docutils literal notranslate"><span class="pre">EstimatorPersistenceMixin</span></code> to <code class="docutils literal notranslate"><span class="pre">PretrainedMixin</span></code> and <code class="docutils literal notranslate"><span class="pre">SavePretrainedMixin</span></code>;
+<code class="docutils literal notranslate"><span class="pre">save_estimator</span></code> to <code class="docutils literal notranslate"><span class="pre">save_pretrained</span></code>; <code class="docutils literal notranslate"><span class="pre">resolve_estimator</span></code> and <code class="docutils literal notranslate"><span class="pre">local_estimator</span></code> to
+<code class="docutils literal notranslate"><span class="pre">cached_file</span></code>; <code class="docutils literal notranslate"><span class="pre">read_estimator</span></code> to <code class="docutils literal notranslate"><span class="pre">load_file</span></code>; <code class="docutils literal notranslate"><span class="pre">_from_estimator</span></code> to <code class="docutils literal notranslate"><span class="pre">from_estimator</span></code>.
+<code class="docutils literal notranslate"><span class="pre">load_estimator</span></code> is removed: call <code class="docutils literal notranslate"><span class="pre">from_pretrained</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EntropyTransformer(reduction=...)</span></code> is now <code class="docutils literal notranslate"><span class="pre">EntropyTransformer(pooling=...)</span></code>, and the entropy
+step’s parameter is <code class="docutils literal notranslate"><span class="pre">entropy__pooling</span></code>. A pooling is a <code class="docutils literal notranslate"><span class="pre">Pooling</span></code> instance (<code class="docutils literal notranslate"><span class="pre">EPRPooling()</span></code>,
+<code class="docutils literal notranslate"><span class="pre">WEPRPooling()</span></code>, or a subclass of <code class="docutils literal notranslate"><span class="pre">Pooling</span></code> of your own) or a plain function
+<code class="docutils literal notranslate"><span class="pre">f(x,</span> <span class="pre">axis)</span></code>; a string is refused with a <code class="docutils literal notranslate"><span class="pre">TypeError</span></code>. There is no name registry: nothing
+is selected by name, and no global state holds a pooling. <code class="docutils literal notranslate"><span class="pre">STRATEGIES</span></code> and
+<code class="docutils literal notranslate"><span class="pre">artefactual.utils.io.Reduction</span></code> are removed, and so is <code class="docutils literal notranslate"><span class="pre">BaseDetector.trainable</span></code>: construct
+<code class="docutils literal notranslate"><span class="pre">EPR</span></code>, <code class="docutils literal notranslate"><span class="pre">WEPR</span></code> or <code class="docutils literal notranslate"><span class="pre">PoolingDetector(pooling)</span></code>. The class attribute <code class="docutils literal notranslate"><span class="pre">reduction</span></code> of the
+estimators is now <code class="docutils literal notranslate"><span class="pre">pooling</span></code>, a <code class="docutils literal notranslate"><span class="pre">Pooling</span></code> instance, and <code class="docutils literal notranslate"><span class="pre">EntropyTransformer.reduction_fn</span></code> is
+gone: call <code class="docutils literal notranslate"><span class="pre">transformer.applied_pooling()</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">scripts/train_detector.py</span> <span class="pre">--reduction</span></code> is now <code class="docutils literal notranslate"><span class="pre">--pooling</span></code>: <code class="docutils literal notranslate"><span class="pre">epr</span></code>, <code class="docutils literal notranslate"><span class="pre">wepr</span></code>, or an import path
+<code class="docutils literal notranslate"><span class="pre">package.module:Attr</span></code> to a <code class="docutils literal notranslate"><span class="pre">Pooling</span></code> subclass, a <code class="docutils literal notranslate"><span class="pre">Pooling</span></code> instance or a function.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EntropyTransformer(pooling)</span></code> and <code class="docutils literal notranslate"><span class="pre">PoolingDetector.from_pretrained(path,</span> <span class="pre">pooling=...)</span></code> require
+the pooling: nothing defaults to <code class="docutils literal notranslate"><span class="pre">EPRPooling()</span></code> and <code class="docutils literal notranslate"><span class="pre">pooling=None</span></code> is refused. <code class="docutils literal notranslate"><span class="pre">EPR</span></code>, <code class="docutils literal notranslate"><span class="pre">WEPR</span></code>
+and their classifiers still fix theirs.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">k</span></code> has no default. <code class="docutils literal notranslate"><span class="pre">EPR</span></code>, <code class="docutils literal notranslate"><span class="pre">WEPR</span></code>, <code class="docutils literal notranslate"><span class="pre">EPRClassifier</span></code>, <code class="docutils literal notranslate"><span class="pre">WEPRClassifier</span></code>, <code class="docutils literal notranslate"><span class="pre">PoolingDetector</span></code> and
+<code class="docutils literal notranslate"><span class="pre">EntropyTransformer</span></code> require it, <code class="docutils literal notranslate"><span class="pre">artefactual.scoring.base_detector.DEFAULT_K</span></code> is removed, and
+<code class="docutils literal notranslate"><span class="pre">scripts/train_detector.py</span></code> requires <code class="docutils literal notranslate"><span class="pre">--k</span></code>. <code class="docutils literal notranslate"><span class="pre">EntropyTransformer(pooling,</span> <span class="pre">k=None)</span></code> still keeps
+every rank. Pass the <code class="docutils literal notranslate"><span class="pre">k</span></code> the weights were trained at, which is 15 for the published detectors.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">get_feature_names_out</span></code> of a custom pooling function returns names (its own name, or
+<code class="docutils literal notranslate"><span class="pre">name_0</span></code>, …) instead of raising <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>.</p></li>
+<li><p>A fitted <code class="docutils literal notranslate"><span class="pre">EntropyTransformer</span></code> refuses at <code class="docutils literal notranslate"><span class="pre">transform</span></code> a cube whose last dimension differs
+from the width it was fitted on, with a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>, instead of scoring it silently. Fit
+and transform on the same width.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Pooling.__call__</span></code> takes <code class="docutils literal notranslate"><span class="pre">X</span></code>, as the estimator methods do, where it took <code class="docutils literal notranslate"><span class="pre">x</span></code>: an override
+that renames the argument still works when it is called positionally, which
+<code class="docutils literal notranslate"><span class="pre">EntropyTransformer</span></code> does.</p></li>
+</ul>
+</section>
+<section id="added">
+<h3>Added<a class="headerlink" href="#added" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Pooling</span></code>, <code class="docutils literal notranslate"><span class="pre">EPRPooling</span></code>, <code class="docutils literal notranslate"><span class="pre">WEPRPooling</span></code> and <code class="docutils literal notranslate"><span class="pre">FunctionPooling</span></code>: subclass <code class="docutils literal notranslate"><span class="pre">Pooling</span></code>, implement
+<code class="docutils literal notranslate"><span class="pre">__call__(X,</span> <span class="pre">axis)</span></code>, and pass an instance to <code class="docutils literal notranslate"><span class="pre">EntropyTransformer</span></code> or <code class="docutils literal notranslate"><span class="pre">PoolingDetector</span></code>.
+Override <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">width(k)</span></code>, <code class="docutils literal notranslate"><span class="pre">constant_width</span></code> and <code class="docutils literal notranslate"><span class="pre">feature_names(ranks)</span></code> to name the
+features or declare the width; otherwise the width is probed and a one-feature pooling is
+named after the class. A bare function works too and is named after itself.
+<code class="docutils literal notranslate"><span class="pre">PoolingDetector(pooling,</span> <span class="pre">k,</span> <span class="pre">estimator)</span></code> is the detector over any pooling; its file holds the
+classifier alone, so <code class="docutils literal notranslate"><span class="pre">PoolingDetector.from_pretrained</span></code> takes <code class="docutils literal notranslate"><span class="pre">pooling=</span></code>.
+<code class="docutils literal notranslate"><span class="pre">BaseDetector</span></code> and <code class="docutils literal notranslate"><span class="pre">BaseEntropyClassifier</span></code> are importable from the package root.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EPRClassifier</span></code> and <code class="docutils literal notranslate"><span class="pre">WEPRClassifier</span></code> score logprob arrays you already hold: a
+<code class="docutils literal notranslate"><span class="pre">(n_sequences,</span> <span class="pre">n_tokens,</span> <span class="pre">width)</span></code> array, or a numeric 2-D table read as one token per row.
+Targets must be binary. They pass scikit-learn’s <code class="docutils literal notranslate"><span class="pre">check_estimator</span></code>, with one declared
+expected failure (<code class="docutils literal notranslate"><span class="pre">check_estimators_overwrite_params</span></code>, which scikit-learn lists for
+<code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> itself); <code class="docutils literal notranslate"><span class="pre">EntropyTransformer</span></code> passes it too, and the checks that need no data
+are run by hand on <code class="docutils literal notranslate"><span class="pre">LogProbParser</span></code>. <code class="docutils literal notranslate"><span class="pre">EPR</span></code> and <code class="docutils literal notranslate"><span class="pre">WEPR</span></code> are the same estimators with a
+<code class="docutils literal notranslate"><span class="pre">LogProbParser</span></code> in front, so they take responses and are not run through
+<code class="docutils literal notranslate"><span class="pre">parametrize_with_checks</span></code>. See <a class="reference internal" href="guide/sklearn.html"><span class="doc">scikit-learn compatibility</span></a>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BaseEntropyClassifier</span></code>, the pipeline the four estimators share, and the class-level
+<code class="docutils literal notranslate"><span class="pre">pooling</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EntropyTransformer</span></code> keeps the first <code class="docutils literal notranslate"><span class="pre">k</span></code> ranks of input that is wider, which are the most
+likely candidates, so a <code class="docutils literal notranslate"><span class="pre">GridSearchCV</span></code> over <code class="docutils literal notranslate"><span class="pre">k</span></code> works on one wide array. Input narrower
+than <code class="docutils literal notranslate"><span class="pre">k</span></code> is used as it is.</p></li>
+<li><p>Feature names: <code class="docutils literal notranslate"><span class="pre">get_feature_names_out</span></code> works through the pipeline, and scikit-learn’s
+<code class="docutils literal notranslate"><span class="pre">set_output</span></code> (<code class="docutils literal notranslate"><span class="pre">&quot;pandas&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;polars&quot;</span></code>) gives named DataFrames on slices such as
+<code class="docutils literal notranslate"><span class="pre">detector[:-1]</span></code>. <code class="docutils literal notranslate"><span class="pre">EntropyTransformer</span></code> takes an optional <code class="docutils literal notranslate"><span class="pre">k</span></code>, which the estimators set on it.
+Rank columns are <code class="docutils literal notranslate"><span class="pre">rank0</span></code>..<code class="docutils literal notranslate"><span class="pre">rank{k-1}</span></code>; <code class="docutils literal notranslate"><span class="pre">EPR</span></code> and <code class="docutils literal notranslate"><span class="pre">EPRClassifier</span></code> have one feature, <code class="docutils literal notranslate"><span class="pre">epr</span></code>;
+<code class="docutils literal notranslate"><span class="pre">WEPR</span></code> and <code class="docutils literal notranslate"><span class="pre">WEPRClassifier</span></code> have <code class="docutils literal notranslate"><span class="pre">wepr_mean_rank*</span></code> then <code class="docutils literal notranslate"><span class="pre">wepr_max_rank*</span></code>. A classifier
+fitted on a table with column names uses them in place of <code class="docutils literal notranslate"><span class="pre">rank*</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">from_pretrained</span></code> takes keyword-only <code class="docutils literal notranslate"><span class="pre">revision</span></code>, <code class="docutils literal notranslate"><span class="pre">token</span></code> and <code class="docutils literal notranslate"><span class="pre">cache_dir</span></code>, forwarded to the
+Hugging Face download, so a published detector can be pinned to a commit.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EntropyTransformer</span></code> validates its <code class="docutils literal notranslate"><span class="pre">pooling</span></code> and <code class="docutils literal notranslate"><span class="pre">k</span></code> at <code class="docutils literal notranslate"><span class="pre">fit</span></code>, and a detector validates <code class="docutils literal notranslate"><span class="pre">k</span></code>
+and <code class="docutils literal notranslate"><span class="pre">estimator</span></code>, with scikit-learn’s <code class="docutils literal notranslate"><span class="pre">InvalidParameterError</span></code> (a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">artefactual</span> <span class="pre">import</span> <span class="pre">EPR,</span> <span class="pre">WEPR,</span> <span class="pre">EPRClassifier,</span> <span class="pre">WEPRClassifier</span></code>: the four estimators are
+exported from the package root.</p></li>
+<li><p>numpydoc docstrings on the estimators, documenting the fitted attributes (<code class="docutils literal notranslate"><span class="pre">classes_</span></code>,
+<code class="docutils literal notranslate"><span class="pre">n_features_in_</span></code>, <code class="docutils literal notranslate"><span class="pre">named_steps</span></code>, <code class="docutils literal notranslate"><span class="pre">steps</span></code>, <code class="docutils literal notranslate"><span class="pre">estimator</span></code>).</p></li>
+<li><p>Guide pages: <a class="reference internal" href="install.html"><span class="doc">Installation</span></a>, <a class="reference internal" href="guide/sklearn.html"><span class="doc">scikit-learn compatibility</span></a>, this changelog, and a curated
+<a class="reference internal" href="api.html"><span class="doc">API reference</span></a> reference. <code class="docutils literal notranslate"><span class="pre">CITATION.cff</span></code> at the repository root.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Judgment</span></code>, the schema of a judge’s reply (<code class="docutils literal notranslate"><span class="pre">judgment</span></code>, <code class="docutils literal notranslate"><span class="pre">explanation</span></code>), usable as a
+structured-output <code class="docutils literal notranslate"><span class="pre">response_format</span></code>. <code class="docutils literal notranslate"><span class="pre">Judgment.from_text</span></code>, <code class="docutils literal notranslate"><span class="pre">from_completion</span></code> and
+<code class="docutils literal notranslate"><span class="pre">from_batch</span></code> read a reply, a completion or a whole batch of verdicts, keeping the
+explanation; <code class="docutils literal notranslate"><span class="pre">read_judgment</span></code> keeps working and returns the same verdicts.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ChatCompletion.top_logprobs()</span></code> and <code class="docutils literal notranslate"><span class="pre">sampled_logprobs()</span></code>, and the same two on the Responses
+payload model, share one implementation through <code class="docutils literal notranslate"><span class="pre">LogprobsMixin</span></code>. A class that implements
+the mixin is registered as a format, so a new format is one class. <code class="docutils literal notranslate"><span class="pre">LogprobsMixin.parse</span></code>
+validates a completion, a Responses payload or a batch line into the model it is;
+<code class="docutils literal notranslate"><span class="pre">ChatCompletion.parse</span></code> and <code class="docutils literal notranslate"><span class="pre">ResponsesPayload.parse</span></code> accept their own format only.
+<code class="docutils literal notranslate"><span class="pre">BatchRequestOutput.payload()</span></code> returns the body of a successful line. <code class="docutils literal notranslate"><span class="pre">TokenLogprobs.candidates()</span></code>
+gives a token’s candidates, highest first. <code class="docutils literal notranslate"><span class="pre">parse_top_logprobs</span></code>, <code class="docutils literal notranslate"><span class="pre">parse_sampled_token_logprobs</span></code>
+and <code class="docutils literal notranslate"><span class="pre">LogProbParser</span></code> return the same results and raise the same errors as before.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">epr_reduction</span></code> and <code class="docutils literal notranslate"><span class="pre">wepr_reduction</span></code>, the two reductions behind the detectors, and
+<code class="docutils literal notranslate"><span class="pre">EntropyTransformer.validate</span></code>, its input check, are public. Together with <code class="docutils literal notranslate"><span class="pre">EPR</span></code>, <code class="docutils literal notranslate"><span class="pre">WEPR</span></code>,
+<code class="docutils literal notranslate"><span class="pre">EPRClassifier</span></code>, <code class="docutils literal notranslate"><span class="pre">WEPRClassifier</span></code>, <code class="docutils literal notranslate"><span class="pre">EntropyTransformer</span></code>, <code class="docutils literal notranslate"><span class="pre">LogProbParser</span></code>, <code class="docutils literal notranslate"><span class="pre">Judgment</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ChatCompletion</span></code>, <code class="docutils literal notranslate"><span class="pre">ResponsesPayload</span></code>, <code class="docutils literal notranslate"><span class="pre">BatchRequestOutput</span></code> and <code class="docutils literal notranslate"><span class="pre">read_batch</span></code>, they import
+from <code class="docutils literal notranslate"><span class="pre">artefactual</span></code> directly. <code class="docutils literal notranslate"><span class="pre">LogprobsMixin</span></code> stays in <code class="docutils literal notranslate"><span class="pre">artefactual.preprocessing.response_models</span></code>.</p></li>
+</ul>
+</section>
+<section id="changed">
+<h3>Changed<a class="headerlink" href="#changed" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">EntropyTransformer</span></code> names <code class="docutils literal notranslate"><span class="pre">min(k,</span> <span class="pre">n_features_in_)</span></code> features once fitted, which is the
+width it hands on when the input is narrower than <code class="docutils literal notranslate"><span class="pre">k</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">predict_token_proba</span></code> on an empty batch returns an array of shape <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">0,</span> <span class="pre">1)</span></code>, and on a
+batch whose tokens are all padding returns <code class="docutils literal notranslate"><span class="pre">NaN</span></code>, instead of raising.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">predict</span></code> after the pooling was swapped on a fitted detector raises a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> asking
+for a refit, instead of scoring with coefficients fitted for the old pooling.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">predict_proba</span></code> columns follow <code class="docutils literal notranslate"><span class="pre">classes_</span></code>. With <code class="docutils literal notranslate"><span class="pre">0</span></code>/<code class="docutils literal notranslate"><span class="pre">1</span></code> labels column 1 is the
+hallucination class; with other labels use <code class="docutils literal notranslate"><span class="pre">list(detector.classes_).index(label)</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">get_params</span></code> reports <code class="docutils literal notranslate"><span class="pre">estimator=None</span></code> while the final step is the untouched default, so
+<code class="docutils literal notranslate"><span class="pre">clone</span></code> rebuilds an equal detector.</p></li>
+<li><p>The estimator tags declare a binary classifier. The classifiers declare 2-D input, and
+<code class="docutils literal notranslate"><span class="pre">EntropyTransformer</span></code>’s tags declare both 2-D and 3-D input.</p></li>
+</ul>
+</section>
+<section id="fixed">
+<h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">detector[::2]</span></code> raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>, as <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> does, instead of returning a pipeline of
+an arbitrary subset of steps.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EntropyTransformer.transform</span></code> and <code class="docutils literal notranslate"><span class="pre">transform_tokens</span></code> accept a nested list and raise
+<code class="docutils literal notranslate"><span class="pre">ValueError</span></code> on infinite logprobs, rather than a <code class="docutils literal notranslate"><span class="pre">beartype</span></code> error or an infinite feature.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">from_pretrained</span></code> refuses an estimator that is not a fitted two-class classifier, with a
+<code class="docutils literal notranslate"><span class="pre">ValueError</span></code> naming the file.</p></li>
+<li><p>A repository that cannot be found, a missing revision and a malformed repository id raise
+<code class="docutils literal notranslate"><span class="pre">ValueError</span></code>; connection and authentication errors now propagate as the
+<code class="docutils literal notranslate"><span class="pre">huggingface_hub</span></code> error they are, instead of being wrapped.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Judgment.from_text</span></code> and <code class="docutils literal notranslate"><span class="pre">read_judgment</span></code> return <code class="docutils literal notranslate"><span class="pre">None</span></code> for a reply that is not JSON and
+carries both <code class="docutils literal notranslate"><span class="pre">&quot;judgment&quot;:</span> <span class="pre">true</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;judgment&quot;:</span> <span class="pre">false</span></code>, instead of reading it as correct.</p></li>
+<li><p>A chat choice whose <code class="docutils literal notranslate"><span class="pre">logprobs.content</span></code> is null is read as a sequence without tokens, as one
+whose <code class="docutils literal notranslate"><span class="pre">logprobs</span></code> is null is, instead of raising a <code class="docutils literal notranslate"><span class="pre">ValidationError</span></code>.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">adapters</span></code> extra requires <code class="docutils literal notranslate"><span class="pre">langfuse&lt;5</span></code>: 5.0 removed the trace calls
+<code class="docutils literal notranslate"><span class="pre">HallucinationEvaluator</span></code> reads with.</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="presentations/index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Presentations</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="contributing.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Contributing to Artefactual</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">2026.11.0</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#breaking">Breaking</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#added">Added</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#changed">Changed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fixed">Fixed</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Artefact Research Center.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

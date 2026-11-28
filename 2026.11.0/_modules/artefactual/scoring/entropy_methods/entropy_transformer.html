@@ -1,0 +1,1003 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>artefactual.scoring.entropy_methods.entropy_transformer &#8212; Artefactual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/mermaid-theme.css?v=60300dae" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/notebook-buttons.css?v=9438e366" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../../_static/documentation_options.js?v=b06263a2"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";
+const load = async () => {
+    await mermaid.run();
+    const all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+    if(mermaids_to_add_zoom > 0) {
+        var svgs = d3.selectAll(".mermaid svg");
+        if(all_mermaids.length !== mermaids_processed.length) {
+            // try again in a sec, wait for mermaids to load
+            setTimeout(load, 200);
+            return;
+        } else if(svgs.size() !== mermaids_to_add_zoom) {
+            // try again in a sec, wait for mermaids to load
+            setTimeout(load, 200);
+            return;
+        } else {
+            svgs.each(function() {
+                var svg = d3.select(this);
+                svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                var inner = svg.select("g");
+                var zoom = d3.zoom().on("zoom", function(event) {
+                    inner.attr("transform", event.transform);
+                });
+                svg.call(zoom);
+            });
+        }
+    }
+};
+
+window.addEventListener("load", load);
+</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/artefactual/scoring/entropy_methods/entropy_transformer';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://artefactory.github.io/artefactual/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2026.11.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <link rel="canonical" href="https://artefactory.github.io/artefactual/_modules/artefactual/scoring/entropy_methods/entropy_transformer.html" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2026.11" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Artefactual</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../install.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../guide/reference.html">
+    Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../guide/sklearn.html">
+    scikit-learn compatibility
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../contributing.html">
+    Contributing to Artefactual
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../citation.html">
+    Citation
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../install.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../guide/reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../guide/sklearn.html">
+    scikit-learn compatibility
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../contributing.html">
+    Contributing to Artefactual
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../citation.html">
+    Citation
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">artefactual.scoring.entropy_methods.entropy_transformer</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for artefactual.scoring.entropy_methods.entropy_transformer</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Pooling of entropy contributions into the feature vector a calibration consumes."""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">copy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Integral</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ClassVar</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">TransformerMixin</span><span class="p">,</span> <span class="n">_fit_context</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">NotFittedError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tags</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.utils._param_validation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Interval</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.utils.validation</span><span class="w"> </span><span class="kn">import</span> <span class="n">_check_feature_names_in</span><span class="p">,</span> <span class="n">check_array</span><span class="p">,</span> <span class="n">check_is_fitted</span><span class="p">,</span> <span class="n">validate_data</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">artefactual.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">EmptySequenceWarning</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">artefactual.scoring.entropy_methods.entropy_contributions</span><span class="w"> </span><span class="kn">import</span> <span class="n">EntropyContributionsMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">artefactual.scoring.entropy_methods.pooling</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pooling</span><span class="p">,</span> <span class="n">as_pooling</span><span class="p">,</span> <span class="n">epr_reduction</span><span class="p">,</span> <span class="n">wepr_reduction</span>
+
+<span class="c1"># The reductions live in `pooling`; they stay importable from here.</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"EntropyTransformer"</span><span class="p">,</span> <span class="s2">"epr_reduction"</span><span class="p">,</span> <span class="s2">"wepr_reduction"</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">fitted_width</span><span class="p">(</span><span class="n">step</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># Any: `n_features_in_` is set by fit, so no estimator type declares it</span>
+<span class="w">    </span><span class="sd">"""The width `step` was fitted on, or `None` before it was fitted."""</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">check_is_fitted</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="s2">"n_features_in_"</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">NotFittedError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">step</span><span class="o">.</span><span class="n">n_features_in_</span>
+
+
+<span class="c1"># Base order is significant. `__sklearn_tags__` resolves through `super()`, so</span>
+<span class="c1"># `TransformerMixin` must precede `BaseEstimator` for `transformer_tags` to be set.</span>
+<div class="viewcode-block" id="EntropyTransformer">
+<a class="viewcode-back" href="../../../../_autosummary/artefactual.scoring.EntropyTransformer.html#artefactual.scoring.EntropyTransformer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EntropyTransformer</span><span class="p">(</span><span class="n">TransformerMixin</span><span class="p">,</span> <span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">EntropyContributionsMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Reduce per-candidate entropy contributions to the features a calibration was fit on.</span>
+
+<span class="sd">    Input is the `(n_sequences, n_tokens, k)` array `LogProbParser` emits, NaN-padded on</span>
+<span class="sd">    both the token and rank axes, or a 2-D `(n_sequences, width)` table of per-rank</span>
+<span class="sd">    logprobs, which is read as one token per row. Output is one feature row per sequence,</span>
+<span class="sd">    as wide as the pooling makes it: 1 column for `EPRPooling`, `2k` for `WEPRPooling`.</span>
+
+<span class="sd">    Learns nothing, but `fit` records the width and column names of a 2-D table, as</span>
+<span class="sd">    scikit-learn's validation does, so the features of a named table are named after its</span>
+<span class="sd">    columns. `k` is required, and `k=None` is the explicit choice to keep every rank: the width</span>
+<span class="sd">    of a parsed cube is already the calibrated `k`, since the parser sizes the rank axis.</span>
+<span class="sd">    A given `k` keeps only the first `k` ranks of</span>
+<span class="sd">    wider input, which are the `k` most likely candidates, and names a rank-wise pooling's</span>
+<span class="sd">    features without being shown any data, which is what scikit-learn's `set_output` needs to label</span>
+<span class="sd">    the columns of `transform`. Narrower input is used as it is.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pooling : Pooling or callable</span>
+<span class="sd">        Required: no pooling is chosen for you. A `Pooling` instance (`EPRPooling()`,</span>
+<span class="sd">        `WEPRPooling()`, or a subclass of your own), or a callable `f(x, axis) -&gt; (..., n_features)`</span>
+<span class="sd">        pooling the token `axis` of the NaN-padded contributions `x`, whose last axis is the</span>
+<span class="sd">        rank axis. Stored as given and wrapped when used, so a string raises `TypeError` from `transform` and</span>
+<span class="sd">        `get_feature_names_out`.</span>
+<span class="sd">    k : int or None</span>
+<span class="sd">        Candidates per token to keep, the first `k` ranks. `None` keeps every rank, and then a pooling whose</span>
+<span class="sd">        width depends on `k` cannot name its features without `input_features` or a fitted table.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; features = EntropyTransformer(WEPRPooling(), k=15).transform(</span>
+<span class="sd">    ...     logprobs</span>
+<span class="sd">    ... )  # doctest: +SKIP</span>
+<span class="sd">    &gt;&gt;&gt; features.shape  # (n_sequences, 2 * k)  # doctest: +SKIP</span>
+<span class="sd">    &gt;&gt;&gt; EntropyTransformer(pooling=my_pooling, k=15).transform(</span>
+<span class="sd">    ...     logprobs</span>
+<span class="sd">    ... )  # doctest: +SKIP</span>
+<span class="sd">    """</span>
+
+    <span class="n">_parameter_constraints</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"pooling"</span><span class="p">:</span> <span class="p">[</span><span class="n">Pooling</span><span class="p">,</span> <span class="nb">callable</span><span class="p">],</span>
+        <span class="s2">"k"</span><span class="p">:</span> <span class="p">[</span><span class="n">Interval</span><span class="p">(</span><span class="n">Integral</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">closed</span><span class="o">=</span><span class="s2">"left"</span><span class="p">),</span> <span class="kc">None</span><span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pooling</span><span class="p">:</span> <span class="n">Pooling</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pooling</span> <span class="o">=</span> <span class="n">pooling</span>  <span class="c1"># stored untouched: clone checks constructor params by identity; wrapped at use</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">k</span>
+
+<div class="viewcode-block" id="EntropyTransformer.applied_pooling">
+<a class="viewcode-back" href="../../../../_autosummary/artefactual.scoring.EntropyTransformer.html#artefactual.scoring.EntropyTransformer.applied_pooling">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">applied_pooling</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Pooling</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The `Pooling` that `transform` applies: `pooling` itself, or a callable wrapped.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            If `pooling` is neither a `Pooling` nor callable.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">as_pooling</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pooling</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__sklearn_tags__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tags</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Declares the transformer stateless and NaN-tolerant."""</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__sklearn_tags__</span><span class="p">()</span>
+        <span class="n">tags</span><span class="o">.</span><span class="n">requires_fit</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># stateless: fit learns nothing from data</span>
+        <span class="c1"># The tags describe what scikit-learn's checks may synthesise, so they declare both</span>
+        <span class="c1"># the numeric table the checks can fit and score and the cube `LogProbParser` emits.</span>
+        <span class="c1"># A table refuses NaN (no rank is "padding" in it), whereas a cube takes NaN as</span>
+        <span class="c1"># padding inside `validate` whatever `allow_nan` says.</span>
+        <span class="n">tags</span><span class="o">.</span><span class="n">input_tags</span><span class="o">.</span><span class="n">allow_nan</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">tags</span><span class="o">.</span><span class="n">input_tags</span><span class="o">.</span><span class="n">two_d_array</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">tags</span><span class="o">.</span><span class="n">input_tags</span><span class="o">.</span><span class="n">three_d_array</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">tags</span>
+
+<div class="viewcode-block" id="EntropyTransformer.validate">
+<a class="viewcode-back" href="../../../../_autosummary/artefactual.scoring.EntropyTransformer.html#artefactual.scoring.EntropyTransformer.validate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">reset</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>  <span class="c1"># ruff: ignore[invalid-argument-name]</span>
+<span class="w">        </span><span class="sd">"""`X` as a float `(n, tokens, width)` array, cut to the first `k` ranks.</span>
+
+<span class="sd">        A 3-D input is the parser's cube: NaN is the padding marker and passes, `inf` is no</span>
+<span class="sd">        logprob and would reduce to a meaningless feature, so it is refused. Anything else</span>
+<span class="sd">        is validated as a numeric 2-D table, which records (`reset=True`) or checks</span>
+<span class="sd">        (`reset=False`) `n_features_in_` and the column names, and is read as one token</span>
+<span class="sd">        per row. A list converts, so the step takes what `np.asarray` would. Empty batches</span>
+<span class="sd">        pass: the parser returns an empty cube for them.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : array-like</span>
+<span class="sd">            A 3-D cube or a 2-D table of per-rank logprobs.</span>
+<span class="sd">        reset : bool, default=False</span>
+<span class="sd">            Record the width (and, for a table, the column names), as `fit` does, instead of</span>
+<span class="sd">            checking them against the recorded ones.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ndarray of shape (n_sequences, n_tokens, width)</span>
+<span class="sd">            `width` is `k` when `k` is set and the input is at least that wide.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If a cube holds infinity, or a table is not numeric 2-D or disagrees with the</span>
+<span class="sd">            fitted width or column names, or a cube's last dimension differs from the fitted width.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>  <span class="c1"># not np.ndim: an array-like that only defines `__array__` is refused by it</span>
+            <span class="n">cube</span> <span class="o">=</span> <span class="n">check_array</span><span class="p">(</span>
+                <span class="n">X</span><span class="p">,</span>
+                <span class="n">ensure_2d</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">allow_nd</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">ensure_all_finite</span><span class="o">=</span><span class="s2">"allow-nan"</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span>
+                <span class="n">ensure_min_samples</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">ensure_min_features</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">reset</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">n_features_in_</span> <span class="o">=</span> <span class="n">cube</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># the width a table records, so names read one attribute</span>
+                <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"feature_names_in_"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># a cube has no column names: drop an earlier table's</span>
+            <span class="k">elif</span> <span class="n">cube</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="p">(</span><span class="n">fitted</span> <span class="o">:=</span> <span class="n">fitted_width</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">cube</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">fitted</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"X has </span><span class="si">{</span><span class="n">cube</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> features, but </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> is expecting </span><span class="si">{</span><span class="n">fitted</span><span class="si">}</span><span class="s2"> features."</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cube</span> <span class="o">=</span> <span class="n">validate_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">reset</span><span class="o">=</span><span class="n">reset</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="k">return</span> <span class="n">cube</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">cube</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="EntropyTransformer.get_feature_names_out">
+<a class="viewcode-back" href="../../../../_autosummary/artefactual.scoring.EntropyTransformer.html#artefactual.scoring.EntropyTransformer.get_feature_names_out">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_feature_names_out</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_features</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Names of the features `transform` returns.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        input_features : array-like of str, default=None</span>
+<span class="sd">            Names of the rank columns, as the parser names them (`rank0`, ...): one per</span>
+<span class="sd">            column the step was fitted on, of which the first `k` name the features, or `k`</span>
+<span class="sd">            of them before a fit when `k` is set. They must equal the column names the step</span>
+<span class="sd">            was fitted on, if any. Without it the names are the fitted table's columns (the</span>
+<span class="sd">            first `k`), or come from `k`, cut to the width of the table the step was fitted on</span>
+<span class="sd">            when that is narrower.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ndarray of str</span>
+<span class="sd">            What the pooling's `feature_names` gives: `["epr"]` for `EPRPooling`;</span>
+<span class="sd">            `wepr_mean_&lt;rank&gt;` for each rank followed by `wepr_max_&lt;rank&gt;` for each rank for</span>
+<span class="sd">            `WEPRPooling`; by default the pooling's name for one feature and `name_0`,</span>
+<span class="sd">            `name_1`, ... for more. A rank is named by the column it was read from when the</span>
+<span class="sd">            step was fitted on a named table.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If `input_features` does not have one entry per column fitted on (`k` before a</span>
+<span class="sd">            fit) or disagrees with the fitted column names; if the pooling's width</span>
+<span class="sd">            depends on `k` and none of `k`, `input_features` or fitted column names is</span>
+<span class="sd">            available; or if its feature names do not match its width.</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            If `pooling` is neither a `Pooling` nor callable.</span>
+<span class="sd">        """</span>
+        <span class="n">pooling</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">applied_pooling</span><span class="p">()</span>
+        <span class="n">fitted</span> <span class="o">=</span> <span class="n">fitted_width</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># A fitted step reads `k` ranks of the width it was fitted on (all of them when `k`</span>
+        <span class="c1"># is None), since narrower input is used as it is; an unfitted one reads `k`.</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="k">if</span> <span class="n">fitted</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">fitted</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="n">fitted</span><span class="p">)</span>
+        <span class="c1"># A fitted step's `input_features` are checked against the columns it was fitted on, just below.</span>
+        <span class="k">if</span> <span class="n">input_features</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">fitted</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">width</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_features</span><span class="p">)</span> <span class="o">!=</span> <span class="n">width</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"input_features has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">input_features</span><span class="p">)</span><span class="si">}</span><span class="s2"> entries but the step reads </span><span class="si">{</span><span class="n">width</span><span class="si">}</span><span class="s2"> candidates."</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="n">_check_feature_names_in</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_features</span><span class="p">,</span> <span class="n">generate_names</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ranks</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">[:</span><span class="n">width</span><span class="p">]]</span>
+        <span class="k">elif</span> <span class="n">width</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ranks</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"rank</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">width</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ranks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ranks</span><span class="p">:</span>
+            <span class="c1"># Nothing says how many ranks there are: only a pooling that does not depend on</span>
+            <span class="c1"># `k` can name its features, and a placeholder rank stands for the one it is given.</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">pooling</span><span class="o">.</span><span class="n">constant_width</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"Pooling </span><span class="si">{</span><span class="n">pooling</span><span class="o">.</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> has a width that depends on k, which is unknown: "</span>
+                    <span class="s2">"set k or pass input_features to name its features."</span>
+                <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="n">ranks</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"rank0"</span><span class="p">]</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">pooling</span><span class="o">.</span><span class="n">feature_names</span><span class="p">(</span><span class="n">ranks</span><span class="p">)]</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="n">pooling</span><span class="o">.</span><span class="n">width</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ranks</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">features</span><span class="p">)</span> <span class="o">!=</span> <span class="n">width</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Pooling </span><span class="si">{</span><span class="n">pooling</span><span class="o">.</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> returns </span><span class="si">{</span><span class="n">width</span><span class="si">}</span><span class="s2"> feature(s) for </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ranks</span><span class="p">)</span><span class="si">}</span><span class="s2"> rank(s), "</span>
+                <span class="sa">f</span><span class="s2">"but its feature_names gave </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">features</span><span class="si">}</span><span class="s2">."</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EntropyTransformer.fit">
+<a class="viewcode-back" href="../../../../_autosummary/artefactual.scoring.EntropyTransformer.html#artefactual.scoring.EntropyTransformer.fit">[docs]</a>
+    <span class="nd">@_fit_context</span><span class="p">(</span><span class="n">prefer_skip_nested_validation</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"EntropyTransformer"</span><span class="p">:</span>  <span class="c1"># ruff: ignore[unused-method-argument, invalid-argument-name] — y unused but required by the sklearn fit signature</span>
+<span class="w">        </span><span class="sd">"""Learns nothing; the input is validated so its width and column names are recorded.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : array-like or None</span>
+<span class="sd">            A 3-D cube sets `n_features_in_`, its last dimension; a 2-D table sets it too,</span>
+<span class="sd">            and `feature_names_in_` when its columns are named. `None` fits nothing.</span>
+<span class="sd">        y : array-like, default=None</span>
+<span class="sd">            Ignored.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self : EntropyTransformer</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pooling_</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">applied_pooling</span><span class="p">())</span>  <span class="c1"># shallow: a wrapped callable stays the same object</span>
+        <span class="k">if</span> <span class="n">X</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">reset</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="EntropyTransformer.check_pooling_is_the_fitted_one">
+<a class="viewcode-back" href="../../../../_autosummary/artefactual.scoring.EntropyTransformer.html#artefactual.scoring.EntropyTransformer.check_pooling_is_the_fitted_one">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_pooling_is_the_fitted_one</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Pooling</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The `Pooling` to apply, once it is the one the step was fitted with.</span>
+
+<span class="sd">        A downstream estimator is fitted on the features of the pooling in force at `fit`, and</span>
+<span class="sd">        `set_params` does not refit, so a swapped pooling would feed it features it was not</span>
+<span class="sd">        fitted on. A step that was never fitted has nothing to be held to.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If `pooling` differs from the one `fit` saw: refit.</span>
+<span class="sd">        """</span>
+        <span class="n">pooling</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">applied_pooling</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">check_is_fitted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"pooling_"</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">NotFittedError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pooling</span>
+        <span class="k">if</span> <span class="n">pooling</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pooling_</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"EntropyTransformer was fitted with pooling=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pooling_</span><span class="si">!r}</span><span class="s2"> but now has pooling=</span><span class="si">{</span><span class="n">pooling</span><span class="si">!r}</span><span class="s2">. "</span>
+                <span class="s2">"The estimators after it were fitted on the features of the former, so refit before transforming."</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pooling</span></div>
+
+
+<div class="viewcode-block" id="EntropyTransformer.transform">
+<a class="viewcode-back" href="../../../../_autosummary/artefactual.scoring.EntropyTransformer.html#artefactual.scoring.EntropyTransformer.transform">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>  <span class="c1"># ruff: ignore[invalid-argument-name]</span>
+<span class="w">        </span><span class="sd">"""Reduce each sequence to one feature row.</span>
+
+<span class="sd">        A sequence with no tokens has no entropy to measure. Its features are set to zero,</span>
+<span class="sd">        which makes the downstream classifier return `sigmoid(intercept_)`, its base rate,</span>
+<span class="sd">        and a warning is raised rather than letting the degenerate input pass unremarked.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : array-like of shape (n_sequences, n_tokens, k) or (n_sequences, k)</span>
+<span class="sd">            Logprobs, NaN-padded; a nested list is accepted. A 2-D table is one token per</span>
+<span class="sd">            row. Ranks beyond `k` are dropped.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ndarray of shape (n_sequences, n_features)</span>
+<span class="sd">            1 column for `EPRPooling`, `2k` for `WEPRPooling`, the pooling's own width otherwise. After</span>
+<span class="sd">            `set_output(transform="pandas")` or `"polars"`, a frame whose columns are `get_feature_names_out()`.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If `X` holds infinity, or is a table that is not numeric 2-D.</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            If `pooling` is neither a `Pooling` nor callable.</span>
+
+<span class="sd">        Warns</span>
+<span class="sd">        -----</span>
+<span class="sd">        EmptySequenceWarning</span>
+<span class="sd">            If any sequence carries no tokens.</span>
+<span class="sd">        """</span>
+        <span class="n">s_kj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entropy_contributions</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_pooling_is_the_fitted_one</span><span class="p">()(</span><span class="n">s_kj</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">empty</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># token-less sequences → all-NaN row</span>
+        <span class="k">if</span> <span class="n">empty</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>  <span class="c1"># surface the degenerate input, don't pass silently</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">empty</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span><span class="si">}</span><span class="s2"> empty (token-less) sequence(s); scoring at baseline sigmoid(intercept_)."</span><span class="p">,</span>
+                <span class="n">EmptySequenceWarning</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">features</span><span class="p">[</span><span class="n">empty</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># zero features → classifier returns baseline</span>
+        <span class="k">return</span> <span class="n">features</span></div>
+
+
+<div class="viewcode-block" id="EntropyTransformer.transform_tokens">
+<a class="viewcode-back" href="../../../../_autosummary/artefactual.scoring.EntropyTransformer.html#artefactual.scoring.EntropyTransformer.transform_tokens">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>  <span class="c1"># ruff: ignore[invalid-argument-name]</span>
+<span class="w">        </span><span class="sd">"""Reduce each token separately, keeping the token axis.</span>
+
+<span class="sd">        Applies the same pooling over a one-token window per position, so token features</span>
+<span class="sd">        are computed exactly as sequence features are.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : ndarray of shape (n_sequences, n_tokens, k) or (n_sequences, k)</span>
+<span class="sd">            Logprobs, NaN-padded. A 2-D table is one token per row. Ranks beyond `k` are</span>
+<span class="sd">            dropped.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ndarray of shape (n_sequences, n_tokens, n_features)</span>
+<span class="sd">            Padded tokens are still NaN. Never wrapped by `set_output`.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If `X` holds infinity, or is a table that is not numeric 2-D.</span>
+<span class="sd">        """</span>
+        <span class="n">s_kj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entropy_contributions</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
+        <span class="n">windows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">s_kj</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># (n, T, 1, k) — one 1-token window per token</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_pooling_is_the_fitted_one</span><span class="p">()(</span><span class="n">windows</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Artefact Research Center.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

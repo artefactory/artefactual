@@ -1,0 +1,6 @@
+﻿artefactual.scoring.epr\_reduction
+==================================
+
+.. currentmodule:: artefactual.scoring
+
+.. autofunction:: epr_reduction

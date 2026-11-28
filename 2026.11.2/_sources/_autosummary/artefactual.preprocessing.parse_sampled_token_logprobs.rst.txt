@@ -1,0 +1,6 @@
+﻿artefactual.preprocessing.parse\_sampled\_token\_logprobs
+=========================================================
+
+.. currentmodule:: artefactual.preprocessing
+
+.. autofunction:: parse_sampled_token_logprobs

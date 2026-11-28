@@ -1,0 +1,820 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Contributing to Artefactual &#8212; Artefactual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="_static/mermaid-theme.css?v=60300dae" />
+    <link rel="stylesheet" type="text/css" href="_static/notebook-buttons.css?v=9438e366" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=141ae7bb"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'contributing';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://artefactory.github.io/artefactual/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2026.11.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <link rel="canonical" href="https://artefactory.github.io/artefactual/2026.11.1/contributing.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Citation" href="citation.html" />
+    <link rel="prev" title="Changelog" href="changelog.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2026.11" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Artefactual</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="install.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/reference.html">
+    Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="guide/sklearn.html">
+    scikit-learn compatibility
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="changelog.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Contributing to Artefactual
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="citation.html">
+    Citation
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="install.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/sklearn.html">
+    scikit-learn compatibility
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="changelog.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Contributing to Artefactual
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="citation.html">
+    Citation
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Contributing to Artefactual</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="contributing-to-artefactual">
+<h1>Contributing to Artefactual<a class="headerlink" href="#contributing-to-artefactual" title="Link to this heading">#</a></h1>
+<section id="commit-message-guidelines">
+<h2>Commit Message Guidelines<a class="headerlink" href="#commit-message-guidelines" title="Link to this heading">#</a></h2>
+<p>We follow the <a class="reference external" href="https://www.conventionalcommits.org/">Conventional Commits</a> specification. This leads to more readable messages that are easy to follow when looking through the project history, and allows us to automatically generate changelogs.</p>
+<section id="commit-structure">
+<h3>Commit Structure<a class="headerlink" href="#commit-structure" title="Link to this heading">#</a></h3>
+<p>Each commit message should be structured as follows:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&lt;type&gt;[optional scope]: &lt;description&gt;
+
+[optional body]
+
+[optional footer(s)]
+</pre></div>
+</div>
+</section>
+<section id="allowed-types">
+<h3>Allowed Types<a class="headerlink" href="#allowed-types" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">&lt;type&gt;</span></code> must be one of the following:</p>
+<ul class="simple">
+<li><p><strong>build</strong>: Changes that affect the build system or external dependencies</p></li>
+<li><p><strong>ci</strong>: Changes to our CI configuration files and scripts</p></li>
+<li><p><strong>chore</strong>: Changes to the build process or auxiliary tools</p></li>
+<li><p><strong>docs</strong>: Documentation only changes</p></li>
+<li><p><strong>feat</strong>: A new feature</p></li>
+<li><p><strong>fix</strong>: A bug fix</p></li>
+<li><p><strong>perf</strong>: A code change that improves performance</p></li>
+<li><p><strong>refactor</strong>: A code change that neither fixes a bug nor adds a feature</p></li>
+<li><p><strong>style</strong>: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)</p></li>
+<li><p><strong>test</strong>: Adding missing tests or correcting existing tests</p></li>
+</ul>
+</section>
+<section id="semantic-versioning-impact">
+<span id="semantic-versioning--impact"></span><h3>Semantic Versioning &amp; Impact<a class="headerlink" href="#semantic-versioning-impact" title="Link to this heading">#</a></h3>
+<p>Following the Conventional Commits specification:</p>
+<ol class="arabic simple">
+<li><p><strong>fix:</strong> a commit of the <em>type</em> <code class="docutils literal notranslate"><span class="pre">fix</span></code> patches a bug in your codebase (this correlates with <a class="reference external" href="http://semver.org/#summary"><code class="docutils literal notranslate"><span class="pre">PATCH</span></code></a> in Semantic Versioning).</p></li>
+<li><p><strong>feat:</strong> a commit of the <em>type</em> <code class="docutils literal notranslate"><span class="pre">feat</span></code> introduces a new feature to the codebase (this correlates with <a class="reference external" href="http://semver.org/#summary"><code class="docutils literal notranslate"><span class="pre">MINOR</span></code></a> in Semantic Versioning).</p></li>
+<li><p><strong>BREAKING CHANGE:</strong> a commit that has a footer <code class="docutils literal notranslate"><span class="pre">BREAKING</span> <span class="pre">CHANGE:</span></code>, or appends a <code class="docutils literal notranslate"><span class="pre">!</span></code> after the type/scope, introduces a breaking API change (correlating with <a class="reference external" href="http://semver.org/#summary"><code class="docutils literal notranslate"><span class="pre">MAJOR</span></code></a> in Semantic Versioning). A BREAKING CHANGE can be part of commits of any <em>type</em>.</p></li>
+<li><p><strong>Other types:</strong> Types other than <code class="docutils literal notranslate"><span class="pre">fix:</span></code> and <code class="docutils literal notranslate"><span class="pre">feat:</span></code> are allowed (e.g., <code class="docutils literal notranslate"><span class="pre">build:</span></code>, <code class="docutils literal notranslate"><span class="pre">chore:</span></code>, <code class="docutils literal notranslate"><span class="pre">ci:</span></code>, <code class="docutils literal notranslate"><span class="pre">docs:</span></code>, <code class="docutils literal notranslate"><span class="pre">style:</span></code>, <code class="docutils literal notranslate"><span class="pre">refactor:</span></code>, <code class="docutils literal notranslate"><span class="pre">perf:</span></code>, <code class="docutils literal notranslate"><span class="pre">test:</span></code>).</p></li>
+<li><p><strong>Footers:</strong> Footers other than <code class="docutils literal notranslate"><span class="pre">BREAKING</span> <span class="pre">CHANGE:</span> <span class="pre">&lt;description&gt;</span></code> may be provided and follow a convention similar to <a class="reference external" href="https://git-scm.com/docs/git-interpret-trailers">git trailer format</a>.</p></li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="release-workflow">
+<h2>Release Workflow<a class="headerlink" href="#release-workflow" title="Link to this heading">#</a></h2>
+<p>This project uses <a class="reference external" href="https://calver.org/">CalVer</a> versioning with the format <code class="docutils literal notranslate"><span class="pre">YYYY.MM.PATCH</span></code> (e.g., <code class="docutils literal notranslate"><span class="pre">2026.01.0</span></code>).</p>
+<section id="creating-a-release">
+<h3>Creating a Release<a class="headerlink" href="#creating-a-release" title="Link to this heading">#</a></h3>
+<p>There is no tag to push and no version to edit: the version lives in the git tag, and the
+tag is created by CI. Two things start it.</p>
+<p><strong>Land the changes, then say when.</strong> Nothing about a merge releases by itself, so the
+pull requests go in normally and the release is a separate decision, taken once they are
+all on <code class="docutils literal notranslate"><span class="pre">main</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gh<span class="w"> </span>workflow<span class="w"> </span>run<span class="w"> </span>release.yaml<span class="w"> </span>--ref<span class="w"> </span>main
+</pre></div>
+</div>
+<p>Starting a workflow needs write access and the <code class="docutils literal notranslate"><span class="pre">pypi</span></code> environment still holds its required
+reviewer, so this is a way to ask rather than a way around the gate. It refuses any ref but
+<code class="docutils literal notranslate"><span class="pre">main</span></code>: the tag is created on <code class="docutils literal notranslate"><span class="pre">HEAD</span></code>, and a tag on a side branch is not reachable by
+<code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">describe</span></code> from <code class="docutils literal notranslate"><span class="pre">main</span></code>, which is where <code class="docutils literal notranslate"><span class="pre">hatch-vcs</span></code> reads the version back from. A
+<code class="docutils literal notranslate"><span class="pre">HEAD</span></code> that already carries a tag is refused too — that commit has been released, and a
+second tag on it would spend a version number on an identical tree.</p>
+<p><strong>Or decide at merge time</strong>, with the <strong><code class="docutils literal notranslate"><span class="pre">release</span></code></strong> label on the pull request. A merge to
+<code class="docutils literal notranslate"><span class="pre">main</span></code> releases when the pull request it came from carried the label, and does nothing
+otherwise:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gh<span class="w"> </span>pr<span class="w"> </span>edit<span class="w"> </span>&lt;number&gt;<span class="w"> </span>--add-label<span class="w"> </span>release
+</pre></div>
+</div>
+<p>This is the shorter path when one pull request is the whole release. It is also the one
+that has to be remembered in the middle of merging, and the label is not visible in the
+diff being reviewed, so prefer it for a single change and dispatch for a batch.</p>
+<p>Ordinary merges publish nothing, so a fix to a fix does not spend a version number. A
+commit pushed straight to <code class="docutils literal notranslate"><span class="pre">main</span></code>, belonging to no pull request, never releases.</p>
+<p>Do not start a dispatch while a labelled merge is still releasing: the two are serialised
+rather than rejected, so the second would run against whatever <code class="docutils literal notranslate"><span class="pre">main</span></code> is by then. The tag
+job refuses an already-released <code class="docutils literal notranslate"><span class="pre">HEAD</span></code>, which catches the common case, but the Actions tab
+is the thing to check first.</p>
+<p><code class="docutils literal notranslate"><span class="pre">bump-my-version</span></code> computes the next tag from the most recent reachable one and creates it,
+configured to write no files and make no commit. <code class="docutils literal notranslate"><span class="pre">hatch-vcs</span></code> then reads the version back
+off that tag at build time, so what is tagged and what is built cannot disagree — and
+<code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> carries no version string to fall out of step.</p>
+<p>The chain runs in one workflow, because a tag pushed with <code class="docutils literal notranslate"><span class="pre">GITHUB_TOKEN</span></code> does not start a
+workflow run: chaining on the tag would leave the tag created and nothing built.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>`gh workflow run release.yaml --ref main`, or a merge to main
+  -&gt; gate             a dispatch is the decision itself; a merge releases only if
+                      the pull request it came from carried `release`. Refuses a
+                      HEAD that already carries a tag, and names the version this
+                      release will be -- computed, not written down anywhere
+  -&gt; tests            the suite, against the exact commit being released
+  -&gt; docs-build       the site, with its notebooks executed -- a published example
+                      that stopped running stops the release here. The pages are
+                      told the version the gate named, since the tag does not
+                      exist yet
+  -&gt; tag              bump-my-version creates that same version as vYYYY.MM.PATCH
+  -&gt; build            hatch-vcs derives the version from the tag; `uv build` succeeds and
+                      the metadata of the distributions is checked
+  -&gt; publish-testpypi uploaded, then checked against the metadata the index serves
+  -&gt; publish          PyPI, held for a required reviewer
+  -&gt; github-release   the Release, once PyPI has the version
+  -&gt; docs-deploy      the pages built above, added to the archive of previous
+                      releases under their own version directory, and published
+                      as the whole site
+</pre></div>
+</div>
+<p>Everything that can fail without leaving a trace runs before the tag; the tag is the last
+recoverable step, and the PyPI upload is the first irreversible one. So a failing test or a
+notebook that stopped running costs nothing but a re-run.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">pypi</span></code> environment has a required reviewer, so nothing reaches PyPI unattended. A
+release that should not go out is declined there; the tag is already created by then, and a
+tag is cheap to delete – <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">push</span> <span class="pre">origin</span> <span class="pre">:vYYYY.MM.PATCH</span></code> – where a PyPI version is not
+reusable.</p>
+<p>The site keeps every release. Each one is published under its own version directory, with
+<code class="docutils literal notranslate"><span class="pre">stable/</span></code> a copy of the newest and a switcher in the navbar to move between them, so a
+reader pinned to an older version still has documentation that matches what they installed.
+The archive lives on the <code class="docutils literal notranslate"><span class="pre">gh-pages</span></code> branch because <code class="docutils literal notranslate"><span class="pre">actions/deploy-pages</span></code> replaces the whole
+site on every run; that branch is rewritten as a single commit each time, so the repository
+grows with the number of versions kept online rather than the number of deploys. At roughly
+10 MB a version, prune the oldest directories from <code class="docutils literal notranslate"><span class="pre">gh-pages</span></code> if the site approaches the
+1 GB Pages limit.</p>
+<p>Uploading before announcing is deliberate: a Release created first would advertise a
+version that a failed upload never produced, under a tag that cannot be reissued. The
+upload job holds only the credential to publish and no write access to the repository;
+creating the Release is a separate job holding the reverse.</p>
+<p>Which increment is taken comes from <code class="docutils literal notranslate"><span class="pre">bump-my-version</span></code>’s configuration, following
+<a class="reference external" href="https://calver.org/">CalVer</a>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">patch</span></code> — same month, increment the patch (2026.01.0 -&gt; 2026.01.1)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">release</span></code> — a new month, reset the patch (2025.12.5 -&gt; 2026.01.0)</p></li>
+</ul>
+<p>To see what the next tag would be without creating it:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uvx<span class="w"> </span>bump-my-version<span class="w"> </span>show-bump
+</pre></div>
+</div>
+<p>Every pull request runs the same build the release does, with publishing switched off, so a
+packaging fault surfaces before the merge rather than after the tag exists.</p>
+</section>
+</section>
+<section id="the-example-notebooks">
+<h2>The example notebooks<a class="headerlink" href="#the-example-notebooks" title="Link to this heading">#</a></h2>
+<p>The examples under <code class="docutils literal notranslate"><span class="pre">docs/examples/</span></code> are MyST Markdown, not <code class="docutils literal notranslate"><span class="pre">.ipynb</span></code>. The source is code and
+prose: no stored outputs, no execution counts, no base64 images, so a change to one is
+reviewable as an ordinary diff. The <code class="docutils literal notranslate"><span class="pre">.ipynb</span></code> a reader downloads or opens in Colab is written
+by the documentation build, into the site, and never committed – <code class="docutils literal notranslate"><span class="pre">docs/examples/*.ipynb</span></code> is
+ignored for that reason.</p>
+<p>To work on one in Jupyter, convert it and convert it back:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>jupytext<span class="w"> </span>--to<span class="w"> </span>ipynb<span class="w"> </span>docs/examples/train_wepr.md<span class="w">   </span><span class="c1"># edit train_wepr.ipynb in Jupyter</span>
+uv<span class="w"> </span>run<span class="w"> </span>jupytext<span class="w"> </span>--to<span class="w"> </span>md:myst<span class="w"> </span>docs/examples/train_wepr.ipynb
+</pre></div>
+</div>
+<p>Commit only the <code class="docutils literal notranslate"><span class="pre">.md</span></code>. The hooks pipe their code cells through the same <code class="docutils literal notranslate"><span class="pre">ruff</span></code> as the rest
+of the repository, so formatting stays consistent without nbQA unpacking a notebook first.</p>
+<p>The release build runs every example and publishes what it got, so the pages carry real
+outputs while the repository carries none. An example that needs credentials opts out in its
+own front matter (<code class="docutils literal notranslate"><span class="pre">mystnb:</span> <span class="pre">{execution_mode:</span> <span class="pre">&quot;off&quot;}</span></code>) – which is also why a documentation
+preview on a pull request shows the code with nothing under it: that build executes nothing.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="changelog.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Changelog</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="citation.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Citation</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#commit-message-guidelines">Commit Message Guidelines</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#commit-structure">Commit Structure</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#allowed-types">Allowed Types</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#semantic-versioning-impact">Semantic Versioning &amp; Impact</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#release-workflow">Release Workflow</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-a-release">Creating a Release</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-example-notebooks">The example notebooks</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Artefact Research Center.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

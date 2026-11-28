@@ -1,0 +1,33 @@
+﻿artefactual.EPR
+===============
+
+.. currentmodule:: artefactual
+
+.. autoclass:: EPR
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~EPR.cached_file
+      ~EPR.check_options
+      ~EPR.decision_function
+      ~EPR.fit
+      ~EPR.from_estimator
+      ~EPR.from_pretrained
+      ~EPR.get_feature_names_out
+      ~EPR.get_metadata_routing
+      ~EPR.get_params
+      ~EPR.load_file
+      ~EPR.predict
+      ~EPR.predict_proba
+      ~EPR.predict_token_proba
+      ~EPR.save_pretrained
+      ~EPR.score
+      ~EPR.set_params
+      ~EPR.set_score_request
+   
+   

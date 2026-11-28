@@ -1,0 +1,6 @@
+﻿artefactual.preprocessing.index\_by\_custom\_id
+===============================================
+
+.. currentmodule:: artefactual.preprocessing
+
+.. autofunction:: index_by_custom_id

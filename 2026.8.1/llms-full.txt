@@ -1,0 +1,1654 @@
+# Artefactual
+
+Artefactual assigns a language model's answer a probability of being a hallucination. It
+reads the answer that has already been generated, together with the token probabilities
+returned alongside it, and needs nothing else from the model.
+
+```bash
+pip install artefactual
+```
+
+```python
+from artefactual.scoring import wepr
+
+detector = wepr("chicham/artefactual-wepr-ministral")
+detector.predict_proba(response)[:, 1]   # P(hallucination) per sequence
+```
+
+The [project README](https://github.com/artefactory/artefactual) covers installation,
+requirements and the published results. This site covers using a detector in depth.
+
+- {doc}`guide/scoring` — choosing a detector, thresholds, batches, traces, training
+- {doc}`guide/how-it-works` — the three pipeline stages and the two entropy reductions
+- {doc}`guide/reference` — the rank count, weight-file layout, accepted response shapes
+- {doc}`examples/index` — runnable notebooks, no GPU or API key required
+- {doc}`api` — generated signatures
+
+Reproducing the ECIR 2026 experiments end to end is documented in the
+[`scripts/ecir`](https://github.com/artefactory/artefactual/tree/main/scripts/ecir)
+subdirectory.
+
+```{toctree}
+:maxdepth: 2
+:hidden:
+
+guide/scoring
+guide/how-it-works
+guide/reference
+examples/index
+api
+presentations/index
+```
+
+
+# Using a detector
+
+The examples below assume a `response` generated with `logprobs=True` and
+`top_logprobs=15`, as in the README's quick start.
+
+## Choosing a detector
+
+`wepr` is the default. Both detectors are trained the same way and on the same labelled
+data, so `epr` saves no preparation work — only parameters. The training cost is identical
+and `wepr` is the more accurate of the two.
+
+| | `wepr(...)` — default | `epr(...)` |
+|---|---|---|
+| Features | 2 × `k` | 1 |
+| Reads | Each rank separately | Overall confidence per token |
+| Output | Sigmoid, scaled to `[0, 1]` | Unscaled entropy rate |
+| Ships pre-trained | For the four shipped models | For the four shipped models |
+| Training needed | Only for another model | Only for another model |
+| Applicable when | Almost always | Too few labelled examples to fit `2k` coefficients |
+
+Both accept the same arguments and return the same type, so switching between them is a
+one-word change.
+
+## Turning a score into a decision
+
+There is no default threshold, and the package does not pick one. The paper evaluates with
+ROC-AUC and PR-AUC, both of which are threshold-free, so no operating point is published;
+the right cut depends on the base rate of hallucination in the traffic and on the relative
+cost of a false flag. Choose it on a labelled sample of your own responses.
+
+`wepr` is the more usable of the two here: its output is a sigmoid, so it is already scaled
+to `[0, 1]` and can be shown to a user as a confidence. `epr` returns an unscaled entropy
+rate, which orders responses but carries no absolute meaning.
+
+## Scoring every token
+
+```python
+token_scores = detector.predict_token_proba(response)  # (n_sequences, max_tokens, 1)
+```
+
+Sequences shorter than the longest in the batch are padded with `NaN`, so mask before
+aggregating:
+
+```python
+import numpy as np
+
+first = token_scores[0, :, 0]
+print(first[~np.isnan(first)])
+```
+
+Token-level scores identify the specific spans that drove a low score.
+
+## Scoring a batch
+
+A list scores many responses in one call. They are parsed, padded to a common length and
+scored together, one output row per generated sequence in input order:
+
+```python
+scores = detector.predict_proba([response_a, response_b])  # (n_sequences, 2)
+```
+
+Each response is validated on its own, so one malformed or too-narrow response is reported
+by position rather than quietly changing its neighbours' scores.
+
+## Scoring Langfuse traces
+
+The adapter fetches a trace, scores its output and writes the probability back as a trace
+score. Re-runs overwrite rather than duplicate, so the operation is safe to schedule:
+
+```python
+from langfuse import get_client
+
+from artefactual.adapters.langfuse.evaluator import HallucinationEvaluator
+
+evaluator = HallucinationEvaluator("wepr", get_client(), wepr("chicham/artefactual-wepr-phi4"))
+evaluator.score_trace(trace_id)
+```
+
+A worked version is in the [example notebooks](../examples/index.md).
+
+## Training a detector for another model
+
+Any model that returns `top_logprobs` can be scored, not only the four shipped ones. The
+same factory returns an unfitted detector, which is fitted on 0/1 labels where 1 marks a
+hallucination:
+
+```python
+# responses: a list of completion responses, each generated with top_logprobs >= k
+# y:         a matching list of 0/1 labels, 1 marking a hallucination
+detector = wepr(k=15, trainable=True).fit(responses, y)
+coefficients = detector.named_steps["classifier"].coef_
+```
+
+One label per generated sequence, in the same order `predict_proba` returns rows.
+
+`trainable=True` is explicit by design: calling `wepr()` with neither weights nor
+`trainable=True` raises, rather than returning a detector that would fit on the supplied
+data and emit probabilities no trained weights support.
+
+Reproducing the paper's end-to-end pipeline — generating answers, labelling them with an
+LLM judge, fitting and evaluating — is documented in the
+[`scripts/ecir`](https://github.com/artefactory/artefactual/tree/main/scripts/ecir)
+subdirectory.
+
+## Composing with scikit-learn
+
+Detectors are `sklearn.pipeline.Pipeline` subclasses, so introspection and composition
+work:
+
+```python
+from sklearn.base import clone
+
+detector = wepr("chicham/artefactual-wepr-ministral")
+detector.named_steps  # {'parser': ..., 'entropy': ..., 'classifier': ...}
+clone(detector)  # get_params / set_params round-trip
+```
+
+Both transformers are stateless — `fit` learns nothing — so `transform` may be called
+without fitting. `LogProbParser` sets `no_validation=True` in order to accept response
+objects rather than arrays, so cross-validation must start from already-parsed data.
+
+## When a response is refused
+
+Neither requirement needs auditing in advance: a response that fails one is refused by
+name, so running it through the detector is the check.
+
+A response whose provider did not return log-probabilities:
+
+```
+ValueError: None of the 1 response(s) carry any log-probabilities. The payload is a
+recognised completion format but its top_logprobs are absent or empty, which is what a
+provider returns when logprobs were not requested or are unsupported. Regenerate with
+logprobs=True and top_logprobs=15.
+```
+
+A response carrying fewer ranks than the detector was trained at:
+
+```
+ValueError: Response 0 carries 5 rank(s) per token but k=15 was requested. The missing
+ranks are not absent from the distribution, only unfetched, so zero-filling them would
+drop their entropy contributions and score the response as more confident than it was.
+Regenerate with top_logprobs=15, or score at k=5 with a detector trained at that rank
+count.
+```
+
+Why the second is refused rather than padded is in
+[the reference](reference.md#the-k-parameter).
+
+
+# How it works
+
+Each detector is a three-step scikit-learn pipeline:
+
+```
+LogProbParser  ->  EntropyTransformer  ->  LogisticRegression
+  response            uncertainty              P(hallucination)
+                       features
+```
+
+**1. Parse.** `LogProbParser` normalises OpenAI Chat Completions and Responses API payloads
+— as SDK objects or plain dicts, singly or batched — into a dense
+`(n_sequences, n_tokens, k)` array of log-probabilities, `NaN`-padded.
+
+**2. Measure.** The middle step turns the raw distribution into a small feature vector
+summarising how uncertain the model was. The shipped detectors measure this with the
+entropy contribution of each candidate, `s_kj = -p_kj * log(p_kj)` for token *j* and rank
+*k*, reduced two ways:
+
+| Reduction | Feature vector | Reads |
+|---|---|---|
+| `epr` | `mean_j( sum_k s_kj )` — 1 feature | The sequence's average top-`k` entropy |
+| `wepr` | `mean_j(s_kj)` ‖ `max_j(s_kj)` — 2k features | Per-rank mean and peak, weighted separately |
+
+EPR sums the rank axis, so it is the top-`k` entropy estimate averaged over the sequence —
+which is why `k` belongs to the feature's definition, and why a response carrying fewer
+ranks is rejected rather than padded: the missing contributions would simply be absent, and
+the response would look more confident than it was.
+
+WEPR weights each rank separately, which pays off because `-p*log(p)` peaks at `p = 1/e`: a
+mid-ranked candidate carries more signal than either the near-certain top rank or the
+negligible tail.
+
+**3. Classify.** A `LogisticRegression` pre-loaded with per-model coefficients maps the
+features to a probability. Because it is a real sklearn classifier, `predict`,
+`predict_proba` and `decision_function` all work as expected.
+
+The measurement step is a plain transformer, so any callable can replace the reduction:
+
+```python
+import numpy as np
+
+from artefactual.scoring import EntropyTransformer
+
+EntropyTransformer(reduction=lambda s, axis: np.nanmax(s, axis=axis))
+```
+
+
+# Reference
+
+Detail behind the rank count a detector is pinned to, the format of a weights file,
+and the response shapes the parser accepts.
+
+## The `k` parameter
+
+`k` is the top-k rank count used for scoring. It defaults to **15**, the rank count every
+shipped file was trained at.
+
+```python
+detector = wepr("chicham/artefactual-wepr-phi4", k=15)
+```
+
+**Responses must carry at least `k` ranks.** This is an input requirement rather than
+something the pipeline reconciles: generation must set `top_logprobs` to `k` or higher. The
+two directions are not symmetric:
+
+- **Wider than `k`** — surplus ranks are dropped. The detector never saw them, and a
+  mean over `k` ranks is defined without them, so scoring is unaffected.
+- **Narrower than `k`** — refused. Those ranks are not absent from the distribution, only
+  unfetched, so filling them with zeros drops their contributions from the sum:
+
+  ```
+  ValueError: Response 0 carries 5 rank(s) per token but k=15 was requested. The missing
+  ranks are not absent from the distribution, only unfetched, so zero-filling them would
+  drop their entropy contributions and score the response as more confident than it was.
+  Regenerate with top_logprobs=15, or score at k=5 with a detector trained at that rank
+  count.
+  ```
+
+  The resulting score is wrong rather than merely rescaled — a narrow response can score
+  as *more* confident than a genuinely wider one — so it is rejected instead of adjusted.
+  Each response is checked individually, so a wide response cannot mask a narrow one in
+  the same batch.
+
+WEPR additionally validates the weights themselves, since its coefficient vector has one
+entry per rank:
+
+```
+ValueError: Weights cover 15 rank(s) but k=20 was requested. WEPR coefficients are
+fixed at the rank count they were trained at; pass k=15, or supply weights
+trained at k=20.
+```
+
+EPR detectors record no rank count, so for `epr()` the `k` passed governs the input width.
+
+## Detector files
+
+A locally trained detector is loaded by passing a path instead of a name:
+
+```python
+detector = wepr("/path/to/my_detector.skops")
+```
+
+Weight files are JSON. EPR files carry a single coefficient:
+
+```json
+{"intercept": -2.91, "coefficients": {"mean_entropy": 58.17}}
+```
+
+WEPR weights carry a `mean_rank_i` and `max_rank_i` pair for each rank `1..k`:
+
+```json
+{"intercept": -3.02, "coefficients": {"mean_rank_1": 3.81, "max_rank_1": -0.44}}
+```
+
+## Input formats
+
+Both OpenAI wire formats are accepted, as SDK objects or plain mappings. A minimal
+Responses API payload looks like:
+
+```python
+response = {
+    "object": "response",
+    "output": [
+        {
+            "content": [
+                {
+                    "logprobs": [
+                        {"top_logprobs": [{"logprob": -0.1}, {"logprob": -2.3}]},
+                        {"top_logprobs": [{"logprob": -0.05}, {"logprob": -3.1}]},
+                    ]
+                }
+            ]
+        }
+    ],
+}
+```
+
+Malformed input fails loudly: a payload carrying no logprobs raises `TypeError`, and a
+positive or non-finite log-probability raises `ValueError` naming the offending sample,
+token and rank.
+
+The generated signatures for every public object are in the
+[API reference](https://artefactory.github.io/artefactual/api.html).
+
+
+# Examples
+
+Three runnable notebooks. The first two read committed response fixtures, so they need no
+GPU, API key or model download.
+
+| Notebook | Shows | Needs |
+|---|---|---|
+| {doc}`epr_usage_demo` | EPR scoring at sequence and token level, on a fixture narrower than the rank count the weights were trained at | Nothing |
+| {doc}`wepr_usage_demo` | WEPR at its trained rank count, with the risky spans highlighted token by token | Nothing |
+| {doc}`langfuse_integration_demo` | Scoring live Langfuse traces through `HallucinationEvaluator` | `[adapters]`, a `logprobs`-capable endpoint, a Langfuse project |
+
+Run one locally from the repository root:
+
+```bash
+uv run jupyter lab docs/examples/epr_usage_demo.ipynb
+```
+
+Outputs are committed and the documentation build does not re-execute them
+(`nbsphinx_execute = "never"`), so the published pages stay reproducible offline.
+`tests/test_examples.py` runs the notebooks against the current source, which is what keeps
+those stored outputs honest.
+
+```{toctree}
+:maxdepth: 1
+:hidden:
+
+epr_usage_demo
+wepr_usage_demo
+langfuse_integration_demo
+```
+
+
+# API Reference
+
+```{eval-rst}
+.. autosummary::
+   :toctree: _autosummary
+   :recursive:
+
+   artefactual
+```
+
+
+
+*****************
+Source Code Files
+*****************
+
+This section contains source code files from the project repository. These files are included to provide implementation context and technical details that complement the documentation above.
+
+**Files included:**
+
+.. code-block:: text
+
+   _version.py
+   base_detector.py
+   entropy_contributions.py
+   entropy_transformer.py
+   evaluator.py
+   exceptions.py
+   io.py
+   openai_parser.py
+   parser.py
+   response_models.py
+
+_version.py
+===========
+
+.. code-block:: python
+
+   # file generated by vcs-versioning
+   # don't change, don't track in version control
+   from __future__ import annotations
+
+   __all__ = [
+       "__version__",
+       "__version_tuple__",
+       "version",
+       "version_tuple",
+       "__commit_id__",
+       "commit_id",
+   ]
+
+   version: str
+   __version__: str
+   __version_tuple__: tuple[int | str, ...]
+   version_tuple: tuple[int | str, ...]
+   commit_id: str | None
+   __commit_id__: str | None
+
+   __version__ = version = '2026.8.1'
+   __version_tuple__ = version_tuple = (2026, 8, 1)
+
+   __commit_id__ = commit_id = None
+
+evaluator.py
+============
+
+.. code-block:: python
+
+   """Scoring of Langfuse traces with an artefactual detector.
+
+   `langfuse` is an optional dependency (`pip install artefactual[adapters]`) and is imported
+   only for type checking, so this module is importable without it.
+   """
+
+   from __future__ import annotations
+
+   from typing import TYPE_CHECKING
+
+   from artefactual.scoring.base_detector import BaseDetector
+
+   if TYPE_CHECKING:
+       from langfuse import Langfuse
+
+
+   class HallucinationEvaluator:
+       """Scores a Langfuse trace's output and writes the result back as a trace score.
+
+       The trace `output` must be the completion response itself, carrying logprobs — the
+       same object `BaseDetector.predict_proba` accepts.
+       """
+
+       def __init__(self, name: str, langfuse_client: Langfuse, detector: BaseDetector) -> None:
+           """
+           Args:
+               name: Score name recorded in Langfuse, used as the metric label in its UI.
+               langfuse_client: An authenticated `Langfuse` client.
+               detector: A calibrated detector, e.g. `epr("mistralai/Ministral-8B-Instruct-2410")`.
+           """
+           self.name = name
+           self.langfuse = langfuse_client
+           self.detector = detector
+
+       def score_trace(self, trace_id: str) -> float:
+           """Fetch a trace, score its output, and attach the probability to it.
+
+           The score id is derived from the trace id and the metric name, so a trace carries
+           one score per metric however often it is re-scored. Keying on the value instead
+           would mint a fresh id whenever the score moved — after a weights update or a
+           detector swap — and accumulate rows rather than replacing them.
+
+           Args:
+               trace_id: Id of the trace to fetch and score.
+
+           Returns:
+               P(hallucination) for the trace's first sequence, as a plain `float` —
+               Langfuse serialises the value to JSON, which numpy scalars do not survive.
+
+           Raises:
+               TypeError: If the trace output is not a completion response carrying logprobs.
+           """
+           trace = self.langfuse.api.trace.get(trace_id)
+           value = float(self.detector.predict_proba(trace.output)[0, 1])
+           self.langfuse.create_score(
+               trace_id=trace_id,
+               name=self.name,
+               value=value,
+               score_id=f"{trace_id}-{self.name}",  # idempotency key: one score per metric
+           )
+           return value
+
+exceptions.py
+=============
+
+.. code-block:: python
+
+   """Warnings and errors raised across the package.
+
+   Both hierarchies have a base class so callers can catch or filter the whole family:
+   `ArtefactualWarning` for recoverable conditions, `ArtefactualError` for failures.
+   """
+
+
+   class ArtefactualWarning(UserWarning):
+       """Base for all artefactual warnings (subclass of UserWarning → shown by default, filterable)."""
+
+
+   class EmptySequenceWarning(ArtefactualWarning):
+       """A sequence had no tokens; scored at the classifier baseline."""
+
+
+   class ArtefactualError(Exception):
+       """Base for all artefactual errors, so callers can catch the family."""
+
+
+   class UncalibratedModelError(ArtefactualError):
+       """Raised when a detector is built with neither pretrained weights nor `trainable=True`.
+
+       A detector has no default calibration: the coefficients are model-specific, so an
+       unfitted classifier would return probabilities backed by nothing. The two ways to
+       resolve it are naming a calibration or asking for an unfitted pipeline to `fit`.
+       """
+
+       _MESSAGE = (
+           "To enable this detector specify a `pretrained_model_name_or_path` — a model name "
+           "from the registry or a path to a weights file. To fit your own calibration "
+           "instead, pass `trainable=True` and call `fit`."
+       )
+
+       def __init__(self, message: str = _MESSAGE) -> None:
+           super().__init__(message)
+
+openai_parser.py
+================
+
+.. code-block:: python
+
+   """Format-specific extractors for the two OpenAI completion shapes.
+
+   `chat.completions` nests one sequence per `choice`; `responses` nests one per `output`
+   item. Both are handed a model from `response_models` that `parser` has already validated,
+   so fields are read by attribute: the "mapping or object?" question the payload arrives
+   with is settled at that boundary, and a raw mapping never reaches this module.
+
+   Dispatch between them lives in `parser`; nothing here is called directly by the pipeline.
+   """
+
+   import numpy as np
+
+   from artefactual.preprocessing.response_models import (
+       ChatCompletion,
+       ResponsesPayload,
+       TokenLogprobs,
+   )
+
+
+   def _ranks(token: TokenLogprobs) -> list[float]:
+       """The token's top-k logprobs, highest first; empty if the position carried none.
+
+       Sorted here rather than left to the transformer because `LogProbParser` truncates to
+       `k` ranks, and truncating an unordered list would keep the wrong ones.
+       """
+       return sorted((rank.logprob for rank in token.top_logprobs if rank.logprob is not None), reverse=True)
+
+
+   def process_openai_chat_completion(response: ChatCompletion) -> list[dict[int, list[float]]]:
+       """Extract per-token top logprobs from a chat completion, one dict per choice.
+
+       Args:
+           response: A validated `ChatCompletion`.
+
+       Returns:
+           One dict per sampled sequence, mapping token position to that token's ranks.
+           Positions whose `top_logprobs` was empty are omitted.
+       """
+       sequences = []
+       for choice in response.choices:
+           sequence: dict[int, list[float]] = {}
+           content = choice.logprobs.content if choice.logprobs is not None else []
+           for token_index, token in enumerate(content):
+               ranks = _ranks(token)
+               if ranks:
+                   sequence[token_index] = ranks
+           sequences.append(sequence)
+       return sequences
+
+
+   def process_openai_responses_api(response: ResponsesPayload) -> list[dict[int, list[float]]]:
+       """Extract per-token top logprobs from a Responses payload, one dict per output item.
+
+       Structure: `response.output -> [item] -> item.content -> [part] -> part.logprobs`.
+
+       Args:
+           response: A validated `ResponsesPayload`.
+
+       Returns:
+           One dict per sampled sequence, mapping token position to that token's ranks.
+           Positions whose `top_logprobs` was empty are omitted.
+       """
+       batch = []
+       for item in response.output:
+           sequence: dict[int, list[float]] = {}
+           # The index is the token's position in the generated sequence, so it advances for
+           # every token -- including one whose top_logprobs came back empty. Skipping the
+           # increment there would shift every later token onto the wrong word.
+           token_index = 0
+           for part in item.content:
+               for token in part.logprobs:
+                   # Unlike the chat format, a Responses token may carry only the sampled
+                   # logprob. Falling back to it keeps the position from being dropped.
+                   ranks = _ranks(token) if token.top_logprobs else _sampled_only(token)
+                   if ranks:
+                       sequence[token_index] = ranks
+                   token_index += 1
+           batch.append(sequence)
+       return batch
+
+
+   def _sampled_only(token: TokenLogprobs) -> list[float]:
+       """The sampled token's own logprob as a one-element rank list, or empty if absent."""
+       return [token.logprob] if token.logprob is not None else []
+
+
+   def sampled_tokens_logprobs_responses_api(response: ResponsesPayload) -> list[np.ndarray]:
+       """Logprobs of the sampled tokens only, one 1-D array per output item.
+
+       Args:
+           response: A validated `ResponsesPayload`.
+
+       Returns:
+           One array per sampled sequence, holding the sampled token logprobs in order.
+       """
+       return [
+           np.array([token.logprob for part in item.content for token in part.logprobs if token.logprob is not None])
+           for item in response.output
+       ]
+
+
+   def sampled_tokens_logprobs_chat_completion_api(response: ChatCompletion) -> list[np.ndarray]:
+       """Logprobs of the sampled tokens only, one 1-D array per choice.
+
+       Args:
+           response: A validated `ChatCompletion`.
+
+       Returns:
+           One array per sampled sequence, holding the sampled token logprobs in order.
+       """
+       return [
+           np.array([
+               token.logprob
+               for token in (choice.logprobs.content if choice.logprobs is not None else [])
+               if token.logprob is not None
+           ])
+           for choice in response.choices
+       ]
+
+parser.py
+=========
+
+.. code-block:: python
+
+   """Extraction of top-k logprobs from completion responses into a dense array.
+
+   Responses are validated against the models in `response_models` and dispatched by type,
+   so a new provider format is added by registering an extractor rather than by editing the
+   entry points here.
+   """
+
+   from functools import singledispatch
+   from typing import Any
+
+   import numpy as np
+   from beartype.door import is_bearable
+   from pydantic import TypeAdapter, ValidationError
+   from sklearn.base import BaseEstimator, TransformerMixin
+   from sklearn.utils import Tags
+
+   from artefactual.preprocessing.openai_parser import (
+       process_openai_chat_completion,
+       process_openai_responses_api,
+       sampled_tokens_logprobs_chat_completion_api,
+       sampled_tokens_logprobs_responses_api,
+   )
+   from artefactual.preprocessing.response_models import ChatCompletion, ResponsesPayload
+
+   _RESPONSE_ADAPTER = TypeAdapter(ChatCompletion | ResponsesPayload)
+
+
+   @singledispatch
+   def _top_logprobs(response: Any) -> list[dict[int, list[float]]]:
+       """Extract per-token top logprobs from a validated response. Register one per format."""
+       msg = f"No top-logprob extractor registered for {type(response).__name__}."
+       raise TypeError(msg)
+
+
+   @_top_logprobs.register
+   def _(response: ChatCompletion) -> list[dict[int, list[float]]]:
+       return process_openai_chat_completion(response)
+
+
+   @_top_logprobs.register
+   def _(response: ResponsesPayload) -> list[dict[int, list[float]]]:
+       return process_openai_responses_api(response)
+
+
+   @singledispatch
+   def _sampled_logprobs(response: Any) -> list[np.ndarray]:
+       """Extract sampled-token logprobs from a validated response. Register one per format."""
+       msg = f"No sampled-logprob extractor registered for {type(response).__name__}."
+       raise TypeError(msg)
+
+
+   @_sampled_logprobs.register
+   def _(response: ChatCompletion) -> list[np.ndarray]:
+       return sampled_tokens_logprobs_chat_completion_api(response)
+
+
+   @_sampled_logprobs.register
+   def _(response: ResponsesPayload) -> list[np.ndarray]:
+       return sampled_tokens_logprobs_responses_api(response)
+
+
+   class LogProbParser(BaseEstimator, TransformerMixin):
+       """First pipeline step: completion responses in, a dense logprob array out.
+
+       Accepts raw responses rather than arrays, so it opts out of scikit-learn's input
+       validation. Cross-validation over a `BaseDetector` therefore has to start from data
+       this step has already parsed, since sklearn cannot index a response object by row.
+
+       This step owns the rank axis. It sizes the output to `k` and refuses responses that
+       carry fewer ranks, which is possible only here: downstream, every token has been padded
+       to a common width and a token's original rank count is no longer recoverable.
+
+       Args:
+           k: Rank count to emit. `None` uses the widest rank count present in the batch.
+       """
+
+       def __init__(self, k: int | None = None) -> None:
+           self.k = k
+
+       def fit(self, X, y=None) -> "LogProbParser":  # noqa: ARG002, N803 — X / y unused but required by the sklearn fit signature
+           """No-op, present so the step composes in a `Pipeline`. Returns self."""
+           return self
+
+       def transform(self, X: list) -> np.ndarray:  # noqa: N803
+           """Parse responses into a NaN-padded logprob array.
+
+           Args:
+               X: One completion response, or a sequence of them. Each yields one row per
+                   sampled sequence.
+
+           Returns:
+               `(n_sequences, max_tokens, k)`, NaN where a sequence is shorter than the
+               longest in the batch or a token position carried no ranks. Empty input gives
+               an empty `(0, 0, 0)` array.
+
+           Raises:
+               TypeError: If a response is not a recognised completion format.
+               ValueError: If a logprob is missing, non-finite or positive, if no response
+                   carries any log-probabilities, or if a response carries fewer than `k`
+                   ranks per token.
+           """
+           parsed = parse_top_logprobs(X)
+           if not parsed:
+               return np.empty((0, 0, 0), dtype=np.float64)
+
+           # Rejected before the array is built: NaN is the padding marker downstream, so an
+           # invalid logprob cast into the array would be indistinguishable from padding.
+           # TODO(perf): O(n·T·k) Python loop — vectorize over the padded array once batches get large.
+           for i, sample in enumerate(parsed):  # sample is the dictionary for each generation
+               for token_idx, logprobs in sample.items():  # token position, ragged list of logprobs
+                   for rank, lp in enumerate(logprobs):  # column index or k index, logprob value
+                       if lp is None or not np.isfinite(lp) or lp > 0:
+                           error_msg = (
+                               f"Invalid logprob at sample {i}, token {token_idx}, "
+                               f"rank {rank}: {lp!r}. Expected a finite value <= 0."
+                           )
+                           raise ValueError(error_msg)
+           max_tokens = max((max(d.keys()) + 1 for d in parsed if d), default=0)
+           if max_tokens == 0 and self.k is not None:
+               # The shape was recognised but nothing carried ranks, which is what a provider
+               # returns when logprobs were not requested or are not supported. Caught here
+               # because a (n, 0, k) array reaches the entropy step as a zero-size reduction,
+               # whose numpy error names nothing the caller can act on. Gated on `k` for the
+               # same reason `_reject_narrow` is: without a declared rank count the parser has
+               # no expectation to contradict, and an empty parse is just an empty parse.
+               error_msg = (
+                   f"None of the {len(parsed)} response(s) carry any log-probabilities. The "
+                   f"payload is a recognised completion format but its top_logprobs are "
+                   f"absent or empty, which is what a provider returns when logprobs were "
+                   f"not requested or are unsupported. Regenerate with logprobs=True and "
+                   f"top_logprobs={self.k if self.k is not None else 'k'}."
+               )
+               raise ValueError(error_msg)
+           self._reject_narrow(parsed)
+
+           # float64: `LogisticRegression` takes the dtype of the features it is fitted on, and
+           # the pretrained coefficients are read from JSON at full decimal precision. Matching
+           # them keeps a fitted detector and a pretrained one on one dtype, and keeps the dot
+           # product from upcasting on every call.
+           #
+           # Surplus ranks are dropped rather than kept: a calibration fit at k has no
+           # coefficient for rank k+1, and EPR's mean is defined over exactly k ranks.
+           width = self.k if self.k is not None else max((len(v) for d in parsed for v in d.values()), default=0)
+
+           arr = np.full((len(parsed), max_tokens, width), np.nan, dtype=np.float64)
+           for i, sample in enumerate(parsed):
+               for token_idx, logprobs in sample.items():
+                   ranks = logprobs[:width]
+                   arr[i, token_idx, : len(ranks)] = ranks  # [depth, row, columns]
+
+           return arr
+
+       def _reject_narrow(self, parsed: list[dict[int, list[float]]]) -> None:
+           """Raise if any response carries fewer than `k` ranks per token.
+
+           Compared per response, not across the batch, because padding is applied per batch:
+           a wide response would otherwise raise the measured width above a narrow sibling's
+           own rank count.
+
+           Token positions holding no ranks are skipped. Those are the empty-`top_logprobs`
+           case and remain padding, which the entropy step reports as an empty sequence.
+           """
+           if self.k is None:
+               return
+
+           for i, sample in enumerate(parsed):
+               widths = [len(logprobs) for logprobs in sample.values() if logprobs]
+               if widths and min(widths) < self.k:
+                   error_msg = (
+                       f"Response {i} carries {min(widths)} rank(s) per token but k={self.k} "
+                       f"was requested. The missing ranks are not absent from the "
+                       f"distribution, only unfetched, so zero-filling them would drop their "
+                       f"entropy contributions and score the response as more confident than "
+                       f"it was. Regenerate with top_logprobs={self.k}, or score at "
+                       f"k={min(widths)} with a detector trained at that rank count."
+                   )
+                   raise ValueError(error_msg)
+
+       def __sklearn_tags__(self) -> Tags:
+           """Declares the step stateless and exempt from array validation."""
+           tags = super().__sklearn_tags__()
+           tags.no_validation = True
+           tags.requires_fit = False  # model is stateless
+           tags.input_tags.two_d_array = False
+           return tags
+
+
+   def parse_top_logprobs(outputs: Any) -> list[dict[int, list[float]]]:
+       """Extract each token's top-k logprobs, one entry per sampled sequence.
+
+       Args:
+           outputs: A completion response, as a mapping or an object, or a sequence of them
+               parsed and concatenated in order.
+
+       Returns:
+           One dict per sequence, mapping token position to that token's ranks. Ranks are
+           ragged: a position whose `top_logprobs` was empty maps to an empty list, and the
+           position is still counted so token indices track the generated text.
+
+       Raises:
+           TypeError: If the output is not a recognised completion format.
+       """
+       if is_bearable(outputs, list | tuple):
+           return [sequence for response in outputs for sequence in parse_top_logprobs(response)]
+
+       try:
+           response = _RESPONSE_ADAPTER.validate_python(outputs, from_attributes=True)
+       except ValidationError as error:
+           msg = f"Unsupported output format: {type(outputs).__name__}. Expected a completion response carrying logprobs."
+           raise TypeError(msg) from error
+
+       return _top_logprobs(response)
+
+
+   def parse_sampled_token_logprobs(outputs: Any) -> list[np.ndarray]:
+       """Extract the logprob of each *sampled* token, ignoring the alternatives.
+
+       The counterpart to `parse_top_logprobs`, which reads the top-k distribution. Neither
+       EPR nor WEPR uses this; it is exposed for callers measuring sequence likelihood.
+
+       Args:
+           outputs: A single completion response, as a mapping or an object.
+
+       Returns:
+           One 1-D array per sequence, holding the sampled token logprobs in order.
+
+       Raises:
+           TypeError: If the output is not a recognised completion format.
+       """
+       try:
+           response = _RESPONSE_ADAPTER.validate_python(outputs, from_attributes=True)
+       except ValidationError as error:
+           msg = f"Unsupported output format: {type(outputs).__name__}. Expected a completion response carrying logprobs."
+           raise TypeError(msg) from error
+
+       return _sampled_logprobs(response)
+
+response_models.py
+==================
+
+.. code-block:: python
+
+   """Typed models for the completion formats the parsers consume.
+
+   Only the logprob path is modelled; `extra="ignore"` drops the rest of the payload.
+   `from_attributes=True` accepts both a raw mapping and an attribute-style object.
+   """
+
+   from pydantic import BaseModel, ConfigDict
+
+   _ACCEPTS_DICT_OR_OBJECT = ConfigDict(from_attributes=True, extra="ignore")
+
+
+   class TopLogprob(BaseModel):
+       """One rank of the top-k distribution for a single token."""
+
+       model_config = _ACCEPTS_DICT_OR_OBJECT
+
+       logprob: float | None = None
+
+
+   class TokenLogprobs(BaseModel):
+       """One generated token, with the top-k alternatives considered at that position."""
+
+       model_config = _ACCEPTS_DICT_OR_OBJECT
+
+       logprob: float | None = None
+       top_logprobs: list[TopLogprob] = []
+
+
+   class ChatChoiceLogprobs(BaseModel):
+       """The `logprobs` block of a chat choice, holding one entry per generated token."""
+
+       model_config = _ACCEPTS_DICT_OR_OBJECT
+
+       content: list[TokenLogprobs] = []
+
+
+   class ChatChoice(BaseModel):
+       """One sampled sequence of a chat completion."""
+
+       model_config = _ACCEPTS_DICT_OR_OBJECT
+
+       logprobs: ChatChoiceLogprobs | None = None
+
+
+   class ChatCompletion(BaseModel):
+       """`client.chat.completions.create(...)` — one `choice` per sampled sequence."""
+
+       model_config = _ACCEPTS_DICT_OR_OBJECT
+
+       choices: list[ChatChoice]
+
+
+   class ResponseContentPart(BaseModel):
+       """One content part of an output item, holding its per-token logprobs."""
+
+       model_config = _ACCEPTS_DICT_OR_OBJECT
+
+       logprobs: list[TokenLogprobs] = []
+
+
+   class ResponseOutputItem(BaseModel):
+       """One sampled sequence of a Responses API payload."""
+
+       model_config = _ACCEPTS_DICT_OR_OBJECT
+
+       content: list[ResponseContentPart] = []
+
+
+   class ResponsesPayload(BaseModel):
+       """`client.responses.create(...)` — one `output` item per sampled sequence."""
+
+       model_config = _ACCEPTS_DICT_OR_OBJECT
+
+       output: list[ResponseOutputItem]
+
+base_detector.py
+================
+
+.. code-block:: python
+
+   """The detector pipeline and the `epr` / `wepr` factories that build it."""
+
+   from typing import Any
+
+   import numpy as np
+   from sklearn.base import BaseEstimator
+   from sklearn.linear_model import LogisticRegression
+   from sklearn.pipeline import Pipeline
+
+   from artefactual.exceptions import UncalibratedModelError
+   from artefactual.preprocessing.parser import LogProbParser
+   from artefactual.scoring.entropy_methods.entropy_transformer import EntropyTransformer
+   from artefactual.utils.io import EstimatorPersistenceMixin, Reduction
+
+   # Every published detector was fit at 15 ranks.
+   DEFAULT_K = 15
+
+   # Features each reduction produces: EPR pools the ranks into one, WEPR keeps a mean and a
+   # max per rank. The loaded estimator is checked against this, since a detector's
+   # coefficient vector is fixed at the rank count it was trained at.
+   _FEATURE_COUNT = {"epr": lambda _k: 1, "wepr": lambda k: 2 * k}
+
+
+   def _load_pretrained(reduction: Reduction, identifier: str, k: int) -> BaseEstimator:
+       """Load a published detector and check it covers exactly `k` ranks.
+
+       Raises:
+           ValueError: If the detector was fit at a different rank count than `k`.
+       """
+       estimator = BaseDetector.load_estimator(identifier)
+       expected = _FEATURE_COUNT[reduction](k)
+       # `n_features_in_` is set by fit, so it is absent from the `BaseEstimator` interface
+       # even though every estimator reaching here is fitted. Read it through `Any` rather
+       # than suppressing per type-checker: the suppression is itself reported as unused by
+       # versions that do not raise, which fails the hook the other way round.
+       fitted: Any = estimator
+       actual: int = fitted.n_features_in_
+       if actual != expected:
+           implied = actual // 2 if reduction == "wepr" else actual
+           msg = (
+               f"The {reduction} detector at '{identifier}' takes {actual} feature(s), but "
+               f"k={k} needs {expected}. Its coefficients are fixed at the rank count they "
+               f"were trained at; pass k={implied}, or use a detector trained at k={k}."
+           )
+           raise ValueError(msg)
+       return estimator
+
+
+   class BaseDetector(Pipeline, EstimatorPersistenceMixin):
+       """A `parser -> entropy -> classifier` pipeline returning P(hallucination).
+
+       A scikit-learn `Pipeline`, so `predict`, `predict_proba`, `fit`, `get_params` and
+       `clone` behave as expected and the detector composes into `GridSearchCV` and friends.
+       Build one with `epr()` or `wepr()` rather than constructing it directly.
+
+       Class 1 is the hallucination class: `predict_proba(...)[:, 1]` is the score of
+       interest.
+       """
+
+       @property
+       def estimator(self) -> BaseEstimator:
+           """The final estimator, which is the only fitted step in the pipeline."""
+           return self.steps[-1][1]
+
+       def predict_token_proba(self, x) -> np.ndarray:
+           """Per-token hallucination probabilities, for locating *where* a response drifts.
+
+           Runs the transformer steps in token mode (`transform_tokens`, falling back to
+           `transform`), then scores only the non-padded token rows and scatters the results
+           back, so padded positions stay NaN rather than being scored as real tokens.
+
+           Args:
+               x: The same input `predict_proba` accepts.
+
+           Returns:
+               `(n_sequences, max_tokens, 1)`, NaN at padded positions.
+           """
+           raw_output = x
+           for _, transformer in self.steps[:-1]:
+               try:
+                   step_transform = transformer.transform_tokens
+               except AttributeError:
+                   step_transform = transformer.transform
+               raw_output = step_transform(raw_output)
+
+           token_features = raw_output
+
+           n_samples, max_tokens, n_features = token_features.shape
+           flat_features = np.asarray(token_features).reshape(n_samples * max_tokens, n_features)
+           non_padded = ~np.isnan(flat_features).any(axis=1)
+
+           classifier = self.steps[-1][1]
+           flat_scores = np.full(n_samples * max_tokens, np.nan)
+           flat_scores[non_padded] = classifier.predict_proba(flat_features[non_padded])[:, 1]
+
+           return flat_scores.reshape(n_samples, max_tokens, 1)
+
+       @classmethod
+       def from_pretrained(cls, pretrained_model_name_or_path: str, reduction: str, k: int = DEFAULT_K) -> "BaseDetector":
+           """Build a trained detector, selecting the reduction by name.
+
+           Equivalent to calling `epr()` or `wepr()` directly; provided for callers that hold
+           the reduction as data.
+
+           Args:
+               pretrained_model_name_or_path: A registry model name, or a path to a file.
+               reduction: `"epr"` or `"wepr"`.
+               k: Rank count the responses carry.
+
+           Returns:
+               A detector ready to `predict_proba`.
+           """
+           factory = {"epr": epr, "wepr": wepr}[reduction]
+           return factory(pretrained_model_name_or_path, k=k)
+
+       @classmethod
+       def trainable(
+           cls, reduction: Reduction, k: int = DEFAULT_K, *, classifier: BaseEstimator | None = None
+       ) -> "BaseDetector":
+           """An unfitted detector, selecting the reduction by name.
+
+           The counterpart to `from_pretrained` for callers that hold the reduction as data and
+           intend to `fit`, so selecting a reduction never means re-deriving the mapping from
+           its name to a factory.
+
+           Args:
+               reduction: `"epr"` or `"wepr"`.
+               k: Rank count the responses carry.
+               classifier: Final estimator to fit. Defaults to the unregularised logistic
+                   regression the published detectors were fit with.
+
+           Returns:
+               A detector ready to `fit`.
+           """
+           factory = {"epr": epr, "wepr": wepr}[reduction]
+           return factory(k=k, trainable=True, classifier=classifier)
+
+
+   def _build(
+       reduction: Reduction,
+       pretrained_model_name_or_path: str | None,
+       k: int,
+       *,
+       trainable: bool,
+       classifier: BaseEstimator | None,
+       **pipeline_kwargs,
+   ) -> "BaseDetector":
+       """Assemble a parser -> entropy -> classifier pipeline pinned to `k` ranks.
+
+       `k` is handled at the ends of the pipeline: the parser sizes the rank axis to it, and
+       the classifier checks the loaded weights were trained at it. The entropy step in
+       between carries no rank count, since its input width is already `k`.
+       """
+       if trainable:
+           if pretrained_model_name_or_path is not None:
+               msg = "Pass either pretrained weights or trainable=True, not both."
+               raise ValueError(msg)
+           # Unregularised, so the fitted coefficients are comparable to the shipped files.
+           # C=np.inf rather than penalty=None: the latter is deprecated in scikit-learn 1.8
+           # and removed in 1.10, and the two produce identical coefficients.
+           final = classifier if classifier is not None else LogisticRegression(C=np.inf, max_iter=1000)
+       else:
+           if classifier is not None:
+               msg = "`classifier` only applies with trainable=True; pretrained weights bring their own."
+               raise ValueError(msg)
+           if pretrained_model_name_or_path is None:
+               raise UncalibratedModelError()
+           final = _load_pretrained(reduction, pretrained_model_name_or_path, k)
+
+       return BaseDetector(
+           steps=[
+               ("parser", LogProbParser(k=k)),
+               ("entropy", EntropyTransformer(reduction=reduction)),
+               ("classifier", final),
+           ],
+           **pipeline_kwargs,
+       )
+
+
+   def epr(
+       pretrained_model_name_or_path: str | None = None,
+       k: int = DEFAULT_K,
+       *,
+       trainable: bool = False,
+       classifier: BaseEstimator | None = None,
+       transform_input=None,
+       memory=None,
+       verbose=False,
+   ) -> "BaseDetector":
+       """Build a hallucination detector that pools a response's uncertainty into one number.
+
+       EPR — Entropy Production Rate. A single feature, pooling every rank of the token
+       distribution into one number.
+
+       Both estimators need a detector fit on labelled data, so choosing this one saves no
+       setup work over `wepr` — only parameters. Prefer `wepr` unless there is too little
+       labelled data to fit its larger coefficient vector.
+
+       Example:
+           >>> detector = epr("mistralai/Ministral-8B-Instruct-2410")
+           >>> detector.predict_proba(response)[:, 1]  # doctest: +SKIP
+
+       Args:
+           pretrained_model_name_or_path: A model name from the registry, or a path to a
+               detector file. Omit it only together with `trainable=True`.
+           k: Rank count the responses carry, and the width EPR averages over. Responses
+               carrying fewer than `k` ranks are rejected when parsed.
+           trainable: Return an *unfitted* detector to calibrate on your own labelled data.
+               Call `fit(responses, y)`, where 1 marks a hallucination.
+           classifier: Final estimator, with `trainable=True` only. Defaults to the
+               unregularised logistic regression the shipped estimators were fit with.
+
+       Returns:
+           A `BaseDetector`, trained and ready to predict, or unfitted if `trainable`.
+
+       Raises:
+           UncalibratedModelError: If neither weights nor `trainable=True` were given.
+           ValueError: If both were given, or if `classifier` is passed without `trainable`.
+       """
+       return _build(
+           "epr",
+           pretrained_model_name_or_path,
+           k,
+           trainable=trainable,
+           classifier=classifier,
+           transform_input=transform_input,
+           memory=memory,
+           verbose=verbose,
+       )
+
+
+   def wepr(
+       pretrained_model_name_or_path: str | None = None,
+       k: int = DEFAULT_K,
+       *,
+       trainable: bool = False,
+       classifier: BaseEstimator | None = None,
+       transform_input=None,
+       memory=None,
+       verbose=False,
+   ) -> "BaseDetector":
+       """Build a hallucination detector that reads each rank of the token distribution.
+
+       WEPR — Weighted EPR. `2k` features, one learned coefficient per rank, letting the
+       detector weight the informative ranks over the rest.
+
+       The default choice: it costs the same to calibrate as `epr` and reads strictly more of
+       the distribution. Fall back to `epr` only when labelled data is too scarce to fit `2k`
+       coefficients.
+
+       Example:
+           >>> detector = wepr("mistralai/Ministral-8B-Instruct-2410")
+           >>> detector.predict_proba(response)[:, 1]  # doctest: +SKIP
+
+       Args:
+           pretrained_model_name_or_path: A model name from the registry, or a path to a
+               weights file. Omit it only together with `trainable=True`.
+           k: Rank count the responses carry. The weights must cover exactly this many ranks,
+               and responses carrying fewer are rejected when parsed.
+           trainable: Return an *unfitted* detector to calibrate on your own labelled data.
+               Call `fit(responses, y)`, where 1 marks a hallucination.
+           classifier: Final estimator, with `trainable=True` only. Defaults to the
+               unregularised logistic regression the shipped estimators were fit with.
+
+       Returns:
+           A `BaseDetector`, trained and ready to predict, or unfitted if `trainable`.
+
+       Raises:
+           UncalibratedModelError: If neither weights nor `trainable=True` were given.
+           ValueError: If both were given, if `classifier` is passed without `trainable`, or
+               if the weights do not cover exactly `k` ranks.
+       """
+       return _build(
+           "wepr",
+           pretrained_model_name_or_path,
+           k,
+           trainable=trainable,
+           classifier=classifier,
+           transform_input=transform_input,
+           memory=memory,
+           verbose=verbose,
+       )
+
+entropy_contributions.py
+========================
+
+.. code-block:: python
+
+   """Per-rank entropy contributions, the quantity both EPR and WEPR reduce."""
+
+   import numpy as np
+   from beartype import beartype
+
+   # Hints below are bare `np.ndarray`, not `NDArray[np.floating]`: beartype cannot resolve any
+   # NDArray subscript against numpy >= 2.5 and raises at decoration time, making the package
+   # unimportable. Re-subscripting them reintroduces that failure.
+
+
+   class EntropyContributionsMixin:
+       """Provides `entropy_contributions` to the transformers that reduce it."""
+
+       @staticmethod
+       @beartype
+       def entropy_contributions(logprobs: np.ndarray) -> np.ndarray:
+           """Entropy contribution `s_kj = -p_kj * ln(p_kj)` for each rank of each token.
+
+           The contribution peaks at `p = 1/e`, so it is not monotonic in rank: a mid-ranked
+           candidate contributes more than either a near-certain top rank or a negligible
+           tail one.
+
+           Ranks are sorted descending before the conversion, so callers need not supply them
+           in order. NaN sorts to the end and propagates, keeping padded positions padded.
+
+           In nats, matching the ECIR2026 release the paper's results were produced with.
+           The paper writes the entropy in bits (Eq. 1 and 3); the two differ by a factor of
+           ln 2, which a fitted coefficient absorbs, so the released convention is the one to
+           follow -- it is what the published weights were trained against.
+
+           Args:
+               logprobs: Natural-log probabilities, with the rank axis last. Any number of
+                   leading axes is allowed.
+
+           Returns:
+               Contributions in nats, same shape, NaN in the same positions.
+           """
+
+           if logprobs.size == 0:
+               return np.empty_like(logprobs)
+
+           # Enforce descending rank order along the rank axis.
+           logprobs = -np.sort(-logprobs, axis=-1)
+
+           # Convert to probabilities (logprobs are in natural log, base e)
+           probs = np.exp(logprobs)
+
+           # s = -p * ln(p), with the log term already supplied as a natural log
+           with np.errstate(divide="ignore", invalid="ignore"):
+               return -probs * logprobs
+
+entropy_transformer.py
+======================
+
+.. code-block:: python
+
+   """Reduction of entropy contributions into the feature vector a calibration consumes."""
+
+   import warnings
+   from collections.abc import Callable
+
+   import numpy as np
+   from sklearn.base import BaseEstimator, TransformerMixin
+   from sklearn.utils import Tags
+
+   from artefactual.exceptions import EmptySequenceWarning
+   from artefactual.scoring.entropy_methods.entropy_contributions import EntropyContributionsMixin
+
+
+   def _nan_reduce(reduction: Callable, x: np.ndarray, axis: int) -> np.ndarray:
+       """Apply a NaN-aware numpy reduction, silencing its all-NaN-slice warnings.
+
+       A fully padded sequence — or a padded token position, in `transform_tokens` — is an
+       expected input here, not an anomaly: `transform` detects it and raises
+       `EmptySequenceWarning`, which names the condition and says what the score will be.
+       numpy's "Mean of empty slice" and "All-NaN slice encountered" report the same thing a
+       second time, from a frame that points at this file rather than at the caller's data.
+
+       Scoped to these reductions rather than to `transform`, so a caller-supplied `reduction`
+       keeps whatever warnings it raises.
+       """
+       with warnings.catch_warnings():
+           warnings.filterwarnings("ignore", "Mean of empty slice", RuntimeWarning)
+           warnings.filterwarnings("ignore", "All-NaN slice encountered", RuntimeWarning)
+           return reduction(x, axis=axis)
+
+
+   def _epr(x, axis) -> np.ndarray:
+       """Entropy Production Rate: the truncated entropy, averaged over tokens.
+
+       The paper's Eq. 6 -- the mean over the sequence of the top-K entropy estimate
+       `H~_K = -sum_k p_k ln p_k` (Eq. 3). So the rank axis is summed, not averaged: the
+       result is an entropy, on the same scale as `H(q)` itself, in nats as the ECIR2026
+       release computes it.
+
+       A token whose ranks are entirely NaN is padding rather than data, and is excluded from
+       the token mean rather than contributing the 0 that `nansum` would give it.
+       """
+       padded = np.all(np.isnan(x), axis=-1, keepdims=True)  # fully-NaN (padded) tokens
+       s = np.nansum(x, axis=-1, keepdims=True)  # H~_K: sum over the K ranks
+       s = np.where(padded, np.nan, s)  # nansum gave 0 for padded tokens → restore NaN
+       return _nan_reduce(np.nanmean, s, axis)  # EPR: mean over the token axis
+
+
+   def _wepr(x, axis) -> np.ndarray:
+       mean_branch = _nan_reduce(np.nanmean, x, axis)
+       max_branch = _nan_reduce(np.nanmax, x, axis)
+       return np.concatenate([mean_branch, max_branch], axis=-1)
+
+
+   STRATEGIES = {"epr": _epr, "wepr": _wepr}
+
+
+   class EntropyTransformer(BaseEstimator, TransformerMixin, EntropyContributionsMixin):
+       """Reduce per-rank entropy contributions to the features a calibration was fit on.
+
+       Input is the `(n_sequences, n_tokens, k)` array `LogProbParser` emits, NaN-padded on
+       both the token and rank axes. Output is one feature row per sequence: 1 column for
+       `epr`, `2k` for `wepr`.
+
+       Stateless, and takes no rank count -- the width of the input is already the calibrated
+       `k`, since the parser sizes the rank axis.
+
+       Args:
+           reduction: `"epr"`, `"wepr"`, or a callable `(s_kj, axis) -> features` reducing the
+               token axis.
+       """
+
+       def __init__(self, reduction: str | Callable = "epr") -> None:
+           self.reduction = reduction  # "epr" | "wepr" | custom reduction(s_kj, axis)
+
+       def __sklearn_tags__(self) -> Tags:
+           """Declares the transformer stateless and NaN-tolerant."""
+           tags = super().__sklearn_tags__()
+           tags.requires_fit = False  # stateless: fit learns nothing from data
+           tags.input_tags.allow_nan = True  # consumes NaN-padded input on purpose (else check_estimators_nan_inf fails)
+           return tags
+
+       def fit(self, _x, _y=None) -> "EntropyTransformer":
+           """No-op, present so the step composes in a `Pipeline`. Returns self."""
+           return self
+
+       @property
+       def reduction_fn(self) -> Callable:
+           """The callable named by `reduction`, resolved per call.
+
+           Resolved here rather than in `__init__` because sklearn requires constructor
+           arguments to survive `get_params`/`set_params`/`clone` unmodified.
+
+           Raises:
+               ValueError: If `reduction` is neither a known name nor callable.
+           """
+           if callable(self.reduction):
+               return self.reduction
+           if self.reduction in STRATEGIES:
+               return STRATEGIES[self.reduction]
+           msg = f"Invalid reduction: {self.reduction!r}. Expected 'epr', 'wepr', or a callable."
+           raise ValueError(msg)
+
+       def transform(self, x: np.ndarray) -> np.ndarray:
+           """Reduce each sequence to one feature row.
+
+           A sequence with no tokens has no entropy to measure. Its features are set to zero,
+           which makes the downstream classifier return `sigmoid(intercept_)`, its base rate,
+           and a warning is raised rather than letting the degenerate input pass unremarked.
+
+           Args:
+               x: `(n_sequences, n_tokens, k)` logprobs, NaN-padded.
+
+           Returns:
+               `(n_sequences, n_features)` — 1 column for `epr`, `2k` for `wepr`.
+
+           Warns:
+               EmptySequenceWarning: If any sequence carries no tokens.
+           """
+           s_kj = self.entropy_contributions(x)
+           features = self.reduction_fn(s_kj, axis=1)
+           empty = np.isnan(features).all(axis=1)  # token-less sequences → all-NaN row
+           if empty.any():
+               warnings.warn(  # surface the degenerate input, don't pass silently
+                   f"{int(empty.sum())} empty (token-less) sequence(s); scoring at baseline sigmoid(intercept_).",
+                   EmptySequenceWarning,
+                   stacklevel=2,
+               )
+           features[empty] = 0.0  # zero features → classifier returns baseline
+           return features
+
+       def transform_tokens(self, x: np.ndarray) -> np.ndarray:
+           """Reduce each token separately, keeping the token axis.
+
+           Applies the same reduction over a one-token window per position, so token features
+           are computed exactly as sequence features are.
+
+           Args:
+               x: `(n_sequences, n_tokens, k)` logprobs, NaN-padded.
+
+           Returns:
+               `(n_sequences, n_tokens, n_features)`, padded tokens still NaN.
+           """
+           s_kj = self.entropy_contributions(x)
+           windows = np.expand_dims(s_kj, axis=2)  # (n, T, 1, k) — one 1-token window per token
+           return self.reduction_fn(windows, axis=2)
+
+io.py
+=====
+
+.. code-block:: python
+
+   """Persistence of estimators: skops on disk, Hugging Face repositories by name.
+
+   An estimator is named by a Hugging Face repository id, a `.skops` file, or a directory
+   holding one. Nothing here maps a language model to a detector: which detector suits which
+   model is documentation, so publishing one costs a README line rather than a release.
+
+   The persisted artifact is the fitted estimator alone, not a whole detector. The pipeline
+   around it -- parsing, entropy reduction -- is assembled from this package at the version
+   installed, so a published estimator carries no reference to this package's modules and
+   survives their renaming.
+   """
+
+   from pathlib import Path
+   from typing import Any, Literal
+
+   import skops.io as sio
+   from sklearn.base import BaseEstimator
+   from sklearn.utils.validation import check_is_fitted
+
+   Reduction = Literal["epr", "wepr"]
+
+
+   class EstimatorPersistenceMixin:
+       """Reading and writing estimators, for the estimator that owns one.
+
+       Mixed into the detector so persistence is part of its surface rather than a separate
+       set of helpers: a detector saves the fitted estimator it scores with, and loads one
+       the same way regardless of whether the caller names a file or a published model.
+       """
+
+       MODEL_FILENAME = "model.skops"
+
+       @classmethod
+       def local_estimator(cls, identifier: str | Path) -> Path | None:
+           """The `.skops` file *identifier* names on disk, or None if it names none.
+
+           A directory is accepted and read as the `model.skops` inside it, which is the
+           layout a published repository has once downloaded, so a clone and a repository name
+           reach the same file.
+           """
+           local = Path(identifier)
+           if local.is_file():
+               return local
+           if local.is_dir() and (local / cls.MODEL_FILENAME).is_file():
+               return local / cls.MODEL_FILENAME
+           return None
+
+       @classmethod
+       def resolve_estimator(cls, identifier: str | Path) -> Path:
+           """Resolve *identifier* to a local `.skops` file, downloading it if it names a repo.
+
+           The only step here that reaches the network is the download itself; which file to
+           read, and which repository a name means, are both decided beforehand.
+
+           Args:
+               identifier: A Hugging Face repository id, a `.skops` file, or a directory
+                   holding `model.skops`.
+
+           Returns:
+               Path to a local `.skops` file. For a repository the path is in the Hugging Face
+               cache, so a second call for the same revision does not download again.
+
+           Raises:
+               ValueError: If *identifier* names no local file and no repository that could be
+                   fetched.
+           """
+           local = cls.local_estimator(identifier)
+           if local is not None:
+               return local
+
+           # Imported here rather than at module scope: loading a local file never reaches the
+           # Hub, so it does not pay the import cost. The dependency is required either way.
+           from huggingface_hub import hf_hub_download
+
+           repo_id = str(identifier)
+           try:
+               return Path(hf_hub_download(repo_id, cls.MODEL_FILENAME))
+           except Exception as error:
+               msg = (
+                   f"Could not load an estimator from '{identifier}'. Expected a path to a "
+                   f".skops file, a directory holding {cls.MODEL_FILENAME}, or a Hugging Face "
+                   f"repository id holding one. Fetching it failed with: {error}"
+               )
+               raise ValueError(msg) from error
+
+       @classmethod
+       def read_estimator(cls, path: str | Path, trusted: list[str] | None = None) -> BaseEstimator:
+           """Read a fitted estimator from a `.skops` file, refusing types not asked for.
+
+           Never loads with blanket trust. skops names every type in the file it does not
+           already trust, and those are reported rather than accepted: an estimator is data
+           from somewhere else, and loading one must not become a way to have it construct
+           arbitrary objects. The published estimators hold a plain `LogisticRegression`,
+           which skops trusts on its own, so they need nothing here.
+
+           Args:
+               path: A `.skops` file.
+               trusted: Type names to accept beyond the ones skops trusts by default. Needed
+                   only for an estimator fitted with a `classifier=` this package did not
+                   write.
+
+           Returns:
+               The estimator the file holds.
+
+           Raises:
+               ValueError: If the file holds a type that is neither trusted by default nor
+                   listed in *trusted*.
+           """
+           unknown = [name for name in sio.get_untrusted_types(file=path) if name not in (trusted or [])]
+           if unknown:
+               msg = (
+                   f"The estimator at '{path}' holds types this package does not load by "
+                   f"default: {unknown}. Loading a file constructs the objects it names, so "
+                   f"they are refused unless asked for. Pass trusted={unknown!r} if this file "
+                   f"is yours and those types are what you saved."
+               )
+               raise ValueError(msg)
+           return sio.load(path, trusted=trusted)
+
+       @classmethod
+       def load_estimator(cls, identifier: str | Path, trusted: list[str] | None = None) -> BaseEstimator:
+           """Resolve *identifier* and read the estimator it names.
+
+           Args:
+               identifier: A repository id or path. See `resolve_estimator`.
+               trusted: Type names to accept beyond skops' defaults.
+
+           Returns:
+               The fitted estimator.
+
+           Raises:
+               ValueError: If the identifier resolves to nothing, or the file holds a type
+                   that was not asked for.
+           """
+           return cls.read_estimator(cls.resolve_estimator(identifier), trusted=trusted)
+
+       def save_estimator(self, path: str | Path) -> Path:
+           """Write this object's fitted estimator to a `.skops` file.
+
+           Persists the estimator alone rather than the whole object, so the file stays
+           readable by a differently-versioned install: it names only scikit-learn types.
+
+           Args:
+               path: Destination file, or a directory in which to write `model.skops`. Missing
+                   parent directories are created.
+
+           Returns:
+               The path written.
+
+           Raises:
+               NotFittedError: If the estimator has not been fitted. An unfitted estimator
+                   writes a file that looks valid and fails only when something later tries to
+                   score with it, far from the call that forgot to fit.
+           """
+           check_is_fitted(self.estimator)
+           path = Path(path)
+           if path.is_dir():
+               path = path / self.MODEL_FILENAME
+           path.parent.mkdir(parents=True, exist_ok=True)
+           sio.dump(self.estimator, path)
+           return path
+
+       @property
+       def estimator(self) -> Any:
+           """The fitted estimator this object scores with. Overridden by the owner."""
+           raise NotImplementedError

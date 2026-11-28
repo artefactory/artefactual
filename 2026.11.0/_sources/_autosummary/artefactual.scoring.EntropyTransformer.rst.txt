@@ -1,0 +1,29 @@
+﻿artefactual.scoring.EntropyTransformer
+======================================
+
+.. currentmodule:: artefactual.scoring
+
+.. autoclass:: EntropyTransformer
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~EntropyTransformer.applied_pooling
+      ~EntropyTransformer.check_pooling_is_the_fitted_one
+      ~EntropyTransformer.entropy_contributions
+      ~EntropyTransformer.fit
+      ~EntropyTransformer.fit_transform
+      ~EntropyTransformer.get_feature_names_out
+      ~EntropyTransformer.get_metadata_routing
+      ~EntropyTransformer.get_params
+      ~EntropyTransformer.set_output
+      ~EntropyTransformer.set_params
+      ~EntropyTransformer.transform
+      ~EntropyTransformer.transform_tokens
+      ~EntropyTransformer.validate
+   
+   

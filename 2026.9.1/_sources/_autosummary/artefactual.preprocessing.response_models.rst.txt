@@ -1,0 +1,28 @@
+artefactual.preprocessing.response\_models
+==========================================
+
+.. automodule:: artefactual.preprocessing.response_models
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      read_message
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      BatchRequestOutput
+      BatchResponseData
+      ChatChoice
+      ChatChoiceLogprobs
+      ChatCompletion
+      ChatMessage
+      ResponseContentPart
+      ResponseOutputItem
+      ResponsesPayload
+      TokenLogprobs
+      TopLogprob
+   

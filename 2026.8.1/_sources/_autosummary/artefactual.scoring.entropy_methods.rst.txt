@@ -1,0 +1,14 @@
+artefactual.scoring.entropy\_methods
+====================================
+
+.. automodule:: artefactual.scoring.entropy_methods
+
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   entropy_contributions
+   entropy_transformer

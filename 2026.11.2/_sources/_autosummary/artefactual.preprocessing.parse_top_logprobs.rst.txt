@@ -1,0 +1,6 @@
+﻿artefactual.preprocessing.parse\_top\_logprobs
+==============================================
+
+.. currentmodule:: artefactual.preprocessing
+
+.. autofunction:: parse_top_logprobs

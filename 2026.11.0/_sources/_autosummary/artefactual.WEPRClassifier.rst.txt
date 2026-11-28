@@ -1,0 +1,42 @@
+﻿artefactual.WEPRClassifier
+==========================
+
+.. currentmodule:: artefactual
+
+.. autoclass:: WEPRClassifier
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~WEPRClassifier.assemble_steps
+      ~WEPRClassifier.cached_file
+      ~WEPRClassifier.check_options
+      ~WEPRClassifier.decision_function
+      ~WEPRClassifier.fit
+      ~WEPRClassifier.fit_predict
+      ~WEPRClassifier.fit_transform
+      ~WEPRClassifier.from_estimator
+      ~WEPRClassifier.from_pretrained
+      ~WEPRClassifier.get_feature_names_out
+      ~WEPRClassifier.get_metadata_routing
+      ~WEPRClassifier.get_params
+      ~WEPRClassifier.inverse_transform
+      ~WEPRClassifier.load_file
+      ~WEPRClassifier.predict
+      ~WEPRClassifier.predict_log_proba
+      ~WEPRClassifier.predict_proba
+      ~WEPRClassifier.predict_token_proba
+      ~WEPRClassifier.save_pretrained
+      ~WEPRClassifier.score
+      ~WEPRClassifier.score_samples
+      ~WEPRClassifier.set_callbacks
+      ~WEPRClassifier.set_output
+      ~WEPRClassifier.set_params
+      ~WEPRClassifier.set_score_request
+      ~WEPRClassifier.transform
+   
+   

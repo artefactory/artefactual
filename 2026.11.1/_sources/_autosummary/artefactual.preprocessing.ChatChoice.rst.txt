@@ -1,0 +1,39 @@
+﻿artefactual.preprocessing.ChatChoice
+====================================
+
+.. currentmodule:: artefactual.preprocessing
+
+.. autoclass:: ChatChoice
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~ChatChoice.construct
+      ~ChatChoice.copy
+      ~ChatChoice.dict
+      ~ChatChoice.from_orm
+      ~ChatChoice.json
+      ~ChatChoice.model_construct
+      ~ChatChoice.model_copy
+      ~ChatChoice.model_dump
+      ~ChatChoice.model_dump_json
+      ~ChatChoice.model_json_schema
+      ~ChatChoice.model_parametrized_name
+      ~ChatChoice.model_post_init
+      ~ChatChoice.model_rebuild
+      ~ChatChoice.model_validate
+      ~ChatChoice.model_validate_json
+      ~ChatChoice.model_validate_strings
+      ~ChatChoice.parse_file
+      ~ChatChoice.parse_obj
+      ~ChatChoice.parse_raw
+      ~ChatChoice.schema
+      ~ChatChoice.schema_json
+      ~ChatChoice.update_forward_refs
+      ~ChatChoice.validate
+   
+   

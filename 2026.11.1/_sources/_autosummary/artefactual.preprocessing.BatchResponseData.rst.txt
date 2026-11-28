@@ -1,0 +1,39 @@
+﻿artefactual.preprocessing.BatchResponseData
+===========================================
+
+.. currentmodule:: artefactual.preprocessing
+
+.. autoclass:: BatchResponseData
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~BatchResponseData.construct
+      ~BatchResponseData.copy
+      ~BatchResponseData.dict
+      ~BatchResponseData.from_orm
+      ~BatchResponseData.json
+      ~BatchResponseData.model_construct
+      ~BatchResponseData.model_copy
+      ~BatchResponseData.model_dump
+      ~BatchResponseData.model_dump_json
+      ~BatchResponseData.model_json_schema
+      ~BatchResponseData.model_parametrized_name
+      ~BatchResponseData.model_post_init
+      ~BatchResponseData.model_rebuild
+      ~BatchResponseData.model_validate
+      ~BatchResponseData.model_validate_json
+      ~BatchResponseData.model_validate_strings
+      ~BatchResponseData.parse_file
+      ~BatchResponseData.parse_obj
+      ~BatchResponseData.parse_raw
+      ~BatchResponseData.schema
+      ~BatchResponseData.schema_json
+      ~BatchResponseData.update_forward_refs
+      ~BatchResponseData.validate
+   
+   

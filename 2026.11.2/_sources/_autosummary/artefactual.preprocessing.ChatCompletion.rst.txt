@@ -1,0 +1,44 @@
+﻿artefactual.preprocessing.ChatCompletion
+========================================
+
+.. currentmodule:: artefactual.preprocessing
+
+.. autoclass:: ChatCompletion
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~ChatCompletion.adapter
+      ~ChatCompletion.construct
+      ~ChatCompletion.copy
+      ~ChatCompletion.dict
+      ~ChatCompletion.from_orm
+      ~ChatCompletion.json
+      ~ChatCompletion.model_construct
+      ~ChatCompletion.model_copy
+      ~ChatCompletion.model_dump
+      ~ChatCompletion.model_dump_json
+      ~ChatCompletion.model_json_schema
+      ~ChatCompletion.model_parametrized_name
+      ~ChatCompletion.model_post_init
+      ~ChatCompletion.model_rebuild
+      ~ChatCompletion.model_validate
+      ~ChatCompletion.model_validate_json
+      ~ChatCompletion.model_validate_strings
+      ~ChatCompletion.parse
+      ~ChatCompletion.parse_file
+      ~ChatCompletion.parse_obj
+      ~ChatCompletion.parse_raw
+      ~ChatCompletion.sampled_logprobs
+      ~ChatCompletion.schema
+      ~ChatCompletion.schema_json
+      ~ChatCompletion.sequences
+      ~ChatCompletion.top_logprobs
+      ~ChatCompletion.update_forward_refs
+      ~ChatCompletion.validate
+   
+   

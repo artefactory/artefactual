@@ -1,0 +1,6 @@
+﻿artefactual.preprocessing.read\_judgment
+========================================
+
+.. currentmodule:: artefactual.preprocessing
+
+.. autofunction:: read_judgment

@@ -1,0 +1,42 @@
+﻿artefactual.preprocessing.Judgment
+==================================
+
+.. currentmodule:: artefactual.preprocessing
+
+.. autoclass:: Judgment
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~Judgment.construct
+      ~Judgment.copy
+      ~Judgment.dict
+      ~Judgment.from_batch
+      ~Judgment.from_completion
+      ~Judgment.from_orm
+      ~Judgment.from_text
+      ~Judgment.json
+      ~Judgment.model_construct
+      ~Judgment.model_copy
+      ~Judgment.model_dump
+      ~Judgment.model_dump_json
+      ~Judgment.model_json_schema
+      ~Judgment.model_parametrized_name
+      ~Judgment.model_post_init
+      ~Judgment.model_rebuild
+      ~Judgment.model_validate
+      ~Judgment.model_validate_json
+      ~Judgment.model_validate_strings
+      ~Judgment.parse_file
+      ~Judgment.parse_obj
+      ~Judgment.parse_raw
+      ~Judgment.schema
+      ~Judgment.schema_json
+      ~Judgment.update_forward_refs
+      ~Judgment.validate
+   
+   

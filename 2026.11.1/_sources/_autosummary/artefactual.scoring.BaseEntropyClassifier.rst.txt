@@ -1,0 +1,42 @@
+﻿artefactual.scoring.BaseEntropyClassifier
+=========================================
+
+.. currentmodule:: artefactual.scoring
+
+.. autoclass:: BaseEntropyClassifier
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~BaseEntropyClassifier.assemble_steps
+      ~BaseEntropyClassifier.cached_file
+      ~BaseEntropyClassifier.check_options
+      ~BaseEntropyClassifier.decision_function
+      ~BaseEntropyClassifier.fit
+      ~BaseEntropyClassifier.fit_predict
+      ~BaseEntropyClassifier.fit_transform
+      ~BaseEntropyClassifier.from_estimator
+      ~BaseEntropyClassifier.from_pretrained
+      ~BaseEntropyClassifier.get_feature_names_out
+      ~BaseEntropyClassifier.get_metadata_routing
+      ~BaseEntropyClassifier.get_params
+      ~BaseEntropyClassifier.inverse_transform
+      ~BaseEntropyClassifier.load_file
+      ~BaseEntropyClassifier.predict
+      ~BaseEntropyClassifier.predict_log_proba
+      ~BaseEntropyClassifier.predict_proba
+      ~BaseEntropyClassifier.predict_token_proba
+      ~BaseEntropyClassifier.save_pretrained
+      ~BaseEntropyClassifier.score
+      ~BaseEntropyClassifier.score_samples
+      ~BaseEntropyClassifier.set_callbacks
+      ~BaseEntropyClassifier.set_output
+      ~BaseEntropyClassifier.set_params
+      ~BaseEntropyClassifier.set_score_request
+      ~BaseEntropyClassifier.transform
+   
+   

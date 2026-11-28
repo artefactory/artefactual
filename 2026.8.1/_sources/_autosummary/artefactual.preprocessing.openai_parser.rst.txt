@@ -1,0 +1,15 @@
+artefactual.preprocessing.openai\_parser
+========================================
+
+.. automodule:: artefactual.preprocessing.openai_parser
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      process_openai_chat_completion
+      process_openai_responses_api
+      sampled_tokens_logprobs_chat_completion_api
+      sampled_tokens_logprobs_responses_api
+   

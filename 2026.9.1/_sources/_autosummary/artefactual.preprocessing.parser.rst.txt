@@ -1,0 +1,19 @@
+artefactual.preprocessing.parser
+================================
+
+.. automodule:: artefactual.preprocessing.parser
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      parse_sampled_token_logprobs
+      parse_top_logprobs
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      LogProbParser
+   

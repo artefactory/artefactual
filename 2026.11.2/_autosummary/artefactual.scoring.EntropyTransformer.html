@@ -1,0 +1,968 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>artefactual.scoring.EntropyTransformer &#8212; Artefactual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mermaid-theme.css?v=60300dae" />
+    <link rel="stylesheet" type="text/css" href="../_static/notebook-buttons.css?v=9438e366" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=23e26dd1"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/artefactual.scoring.EntropyTransformer';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://artefactory.github.io/artefactual/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2026.11.2';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <link rel="canonical" href="https://artefactory.github.io/artefactual/2026.11.2/_autosummary/artefactual.scoring.EntropyTransformer.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="artefactual.scoring.epr_reduction" href="artefactual.scoring.epr_reduction.html" />
+    <link rel="prev" title="artefactual.DetectorPipeline" href="artefactual.DetectorPipeline.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2026.11" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Artefactual</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../install.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/reference.html">
+    Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../guide/sklearn.html">
+    scikit-learn compatibility
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="../api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../contributing.html">
+    Contributing to Artefactual
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../citation.html">
+    Citation
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../install.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../guide/sklearn.html">
+    scikit-learn compatibility
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing to Artefactual
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../citation.html">
+    Citation
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="artefactual.EPR.html">artefactual.EPR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.WEPR.html">artefactual.WEPR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.DetectorPipeline.html">artefactual.DetectorPipeline</a></li>
+</ul>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">artefactual.scoring.EntropyTransformer</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="artefactual.scoring.epr_reduction.html">artefactual.scoring.epr_reduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.scoring.wepr_reduction.html">artefactual.scoring.wepr_reduction</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="artefactual.scoring.Pooling.html">artefactual.scoring.Pooling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.scoring.EPRPooling.html">artefactual.scoring.EPRPooling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.scoring.WEPRPooling.html">artefactual.scoring.WEPRPooling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.scoring.FunctionPooling.html">artefactual.scoring.FunctionPooling</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="artefactual.preprocessing.LogProbParser.html">artefactual.preprocessing.LogProbParser</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="artefactual.preprocessing.index_by_custom_id.html">artefactual.preprocessing.index_by_custom_id</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.preprocessing.parse_sampled_token_logprobs.html">artefactual.preprocessing.parse_sampled_token_logprobs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.preprocessing.parse_top_logprobs.html">artefactual.preprocessing.parse_top_logprobs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.preprocessing.read_batch.html">artefactual.preprocessing.read_batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.preprocessing.read_judgment.html">artefactual.preprocessing.read_judgment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.preprocessing.read_message.html">artefactual.preprocessing.read_message</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="artefactual.preprocessing.BatchRequestOutput.html">artefactual.preprocessing.BatchRequestOutput</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.preprocessing.BatchResponseData.html">artefactual.preprocessing.BatchResponseData</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.preprocessing.ChatChoice.html">artefactual.preprocessing.ChatChoice</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.preprocessing.ChatCompletion.html">artefactual.preprocessing.ChatCompletion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.preprocessing.ChatMessage.html">artefactual.preprocessing.ChatMessage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.preprocessing.Judgment.html">artefactual.preprocessing.Judgment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.preprocessing.ResponsesPayload.html">artefactual.preprocessing.ResponsesPayload</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="artefactual.scoring.TokenTransformer.html">artefactual.scoring.TokenTransformer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.scoring.TokenClassifier.html">artefactual.scoring.TokenClassifier</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.scoring.TokenProbaMixin.html">artefactual.scoring.TokenProbaMixin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.scoring.EntropyContributionsMixin.html">artefactual.scoring.EntropyContributionsMixin</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="artefactual.scoring.token_proba.html">artefactual.scoring.token_proba</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="artefactual.adapters.langfuse.evaluator.HallucinationEvaluator.html">artefactual.adapters.langfuse.evaluator.HallucinationEvaluator</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="artefactual.exceptions.ArtefactualError.html">artefactual.exceptions.ArtefactualError</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.exceptions.ArtefactualWarning.html">artefactual.exceptions.ArtefactualWarning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="artefactual.exceptions.EmptySequenceWarning.html">artefactual.exceptions.EmptySequenceWarning</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../api.html" class="nav-link">API reference</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">artefactual.scoring.EntropyTransformer</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="artefactual-scoring-entropytransformer">
+<h1>artefactual.scoring.EntropyTransformer<a class="headerlink" href="#artefactual-scoring-entropytransformer" title="Link to this heading">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="artefactual.scoring.EntropyTransformer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">artefactual.scoring.</span></span><span class="sig-name descname"><span class="pre">EntropyTransformer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pooling</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/scoring/entropy_methods/entropy_transformer.html#EntropyTransformer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.scoring.EntropyTransformer" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.base.TransformerMixin.html#sklearn.base.TransformerMixin" title="(in scikit-learn v1.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TransformerMixin</span></code></a>, <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html#sklearn.base.BaseEstimator" title="(in scikit-learn v1.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseEstimator</span></code></a>, <a class="reference internal" href="artefactual.scoring.EntropyContributionsMixin.html#artefactual.scoring.EntropyContributionsMixin" title="artefactual.scoring.entropy_methods.entropy_contributions.EntropyContributionsMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">EntropyContributionsMixin</span></code></a></p>
+<p>Reduce per-candidate entropy contributions to the features a calibration was fit on.</p>
+<p>Input is the <cite>(n_sequences, n_tokens, width)</cite> array <cite>LogProbParser</cite> emits, NaN-padded on
+both the token and rank axes, or a 2-D <cite>(n_sequences, width)</cite> table of per-rank
+logprobs, which is read as one token per row. Output is one feature row per sequence,
+as wide as the pooling makes it: 1 column for <cite>EPRPooling</cite>, <cite>2 * width</cite> for <cite>WEPRPooling</cite>.</p>
+<p>Learns nothing, but <cite>fit</cite> records the width of the input and the column names of a 2-D
+table, as scikit-learn’s validation does, so the features of a named table are named
+after its columns. A fitted step refuses input of another width: the estimators after it
+were fitted on the features of that width.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pooling</strong> (<a class="reference internal" href="artefactual.scoring.Pooling.html#artefactual.scoring.Pooling" title="artefactual.scoring.Pooling"><em>Pooling</em></a><em> or </em><em>callable</em>) – Required: no pooling is chosen for you. A <cite>Pooling</cite> instance (<cite>EPRPooling()</cite>,
+<cite>WEPRPooling()</cite>, or a subclass of your own), or a callable <cite>f(x, axis) -&gt; (…, n_features)</cite>
+pooling the token <cite>axis</cite> of the NaN-padded contributions <cite>x</cite>, whose last axis is the
+rank axis. Stored as given and wrapped when used, so a string raises <cite>TypeError</cite> from <cite>transform</cite> and
+<cite>get_feature_names_out</cite>.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">features</span> <span class="o">=</span> <span class="n">EntropyTransformer</span><span class="p">(</span><span class="n">WEPRPooling</span><span class="p">())</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">logprobs</span>
+<span class="gp">... </span><span class="p">)</span>  
+<span class="gp">&gt;&gt;&gt; </span><span class="n">features</span><span class="o">.</span><span class="n">shape</span>  <span class="c1"># (n_sequences, 2 * width)  </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">EntropyTransformer</span><span class="p">(</span><span class="n">pooling</span><span class="o">=</span><span class="n">my_pooling</span><span class="p">)</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">logprobs</span><span class="p">)</span>  
+</pre></div>
+</div>
+<p class="rubric">Methods</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#artefactual.scoring.EntropyTransformer.applied_pooling" title="artefactual.scoring.EntropyTransformer.applied_pooling"><code class="xref py py-obj docutils literal notranslate"><span class="pre">applied_pooling</span></code></a></p></td>
+<td><p>The <cite>Pooling</cite> that <cite>transform</cite> applies: <cite>pooling</cite> itself, or a callable wrapped.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#artefactual.scoring.EntropyTransformer.check_pooling_is_the_fitted_one" title="artefactual.scoring.EntropyTransformer.check_pooling_is_the_fitted_one"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_pooling_is_the_fitted_one</span></code></a></p></td>
+<td><p>The <cite>Pooling</cite> to apply, once it is the one the step was fitted with.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">entropy_contributions</span></code></p></td>
+<td><p>Entropy contribution <cite>s_kj = -p_kj * ln(p_kj)</cite> for each candidate of each token.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#artefactual.scoring.EntropyTransformer.fit" title="artefactual.scoring.EntropyTransformer.fit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit</span></code></a></p></td>
+<td><p>Learns nothing; the input is validated so its width and column names are recorded.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit_transform</span></code></p></td>
+<td><p>Fit to data, then transform it.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#artefactual.scoring.EntropyTransformer.get_feature_names_out" title="artefactual.scoring.EntropyTransformer.get_feature_names_out"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_feature_names_out</span></code></a></p></td>
+<td><p>Names of the features <cite>transform</cite> returns.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_metadata_routing</span></code></p></td>
+<td><p>Get metadata routing of this object.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_params</span></code></p></td>
+<td><p>Get parameters for this estimator.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_output</span></code></p></td>
+<td><p>Set output container.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_params</span></code></p></td>
+<td><p>Set the parameters of this estimator.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#artefactual.scoring.EntropyTransformer.transform" title="artefactual.scoring.EntropyTransformer.transform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transform</span></code></a></p></td>
+<td><p>Reduce each sequence to one feature row.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#artefactual.scoring.EntropyTransformer.transform_tokens" title="artefactual.scoring.EntropyTransformer.transform_tokens"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transform_tokens</span></code></a></p></td>
+<td><p>Reduce each token separately, keeping the token axis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#artefactual.scoring.EntropyTransformer.validate" title="artefactual.scoring.EntropyTransformer.validate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate</span></code></a></p></td>
+<td><p><cite>X</cite> as a float <cite>(n, tokens, width)</cite> array.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="artefactual.scoring.EntropyTransformer.applied_pooling">
+<span class="sig-name descname"><span class="pre">applied_pooling</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/scoring/entropy_methods/entropy_transformer.html#EntropyTransformer.applied_pooling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.scoring.EntropyTransformer.applied_pooling" title="Link to this definition">#</a></dt>
+<dd><p>The <cite>Pooling</cite> that <cite>transform</cite> applies: <cite>pooling</cite> itself, or a callable wrapped.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#TypeError" title="(in Python v3.15)"><strong>TypeError</strong></a> – If <cite>pooling</cite> is neither a <cite>Pooling</cite> nor callable.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="artefactual.scoring.Pooling.html#artefactual.scoring.Pooling" title="artefactual.scoring.entropy_methods.pooling.Pooling"><code class="xref py py-class docutils literal notranslate"><span class="pre">Pooling</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="artefactual.scoring.EntropyTransformer.check_pooling_is_the_fitted_one">
+<span class="sig-name descname"><span class="pre">check_pooling_is_the_fitted_one</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/scoring/entropy_methods/entropy_transformer.html#EntropyTransformer.check_pooling_is_the_fitted_one"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.scoring.EntropyTransformer.check_pooling_is_the_fitted_one" title="Link to this definition">#</a></dt>
+<dd><p>The <cite>Pooling</cite> to apply, once it is the one the step was fitted with.</p>
+<p>A downstream estimator is fitted on the features of the pooling in force at <cite>fit</cite>, and
+<cite>set_params</cite> does not refit, so a swapped pooling would feed it features it was not
+fitted on. A step that was never fitted has nothing to be held to.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If <cite>pooling</cite> differs from the one <cite>fit</cite> saw: refit.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="artefactual.scoring.Pooling.html#artefactual.scoring.Pooling" title="artefactual.scoring.entropy_methods.pooling.Pooling"><code class="xref py py-class docutils literal notranslate"><span class="pre">Pooling</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="artefactual.scoring.EntropyTransformer.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/scoring/entropy_methods/entropy_transformer.html#EntropyTransformer.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.scoring.EntropyTransformer.fit" title="Link to this definition">#</a></dt>
+<dd><p>Learns nothing; the input is validated so its width and column names are recorded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>array-like</em><em> or </em><em>None</em>) – A 3-D cube sets <cite>n_features_in_</cite>, its last dimension; a 2-D table sets it too,
+and <cite>feature_names_in_</cite> when its columns are named. <cite>None</cite> fits nothing.</p></li>
+<li><p><strong>y</strong> (<em>array-like</em><em>, </em><em>default=None</em>) – Ignored.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>self</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#artefactual.scoring.EntropyTransformer" title="artefactual.scoring.EntropyTransformer">EntropyTransformer</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="artefactual.scoring.EntropyTransformer.get_feature_names_out">
+<span class="sig-name descname"><span class="pre">get_feature_names_out</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/scoring/entropy_methods/entropy_transformer.html#EntropyTransformer.get_feature_names_out"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.scoring.EntropyTransformer.get_feature_names_out" title="Link to this definition">#</a></dt>
+<dd><p>Names of the features <cite>transform</cite> returns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>input_features</strong> (<em>array-like</em><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>default=None</em>) – Names of the rank columns, as the parser names them (<cite>rank0</cite>, …): one per
+column the step was fitted on. They must equal the column names the step was
+fitted on, if any. Without it the names are the fitted table’s columns, or
+<cite>rank0</cite>, … for the width the step was fitted on.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>What the pooling’s <cite>feature_names</cite> gives: <cite>[“epr”]</cite> for <cite>EPRPooling</cite>;
+<cite>wepr_mean_&lt;rank&gt;</cite> for each rank followed by <cite>wepr_max_&lt;rank&gt;</cite> for each rank for
+<cite>WEPRPooling</cite>; by default the pooling’s name for one feature and <cite>name_0</cite>,
+<cite>name_1</cite>, … for more. A rank is named by the column it was read from when the
+step was fitted on a named table.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)">str</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If <cite>input_features</cite> does not have one entry per column fitted on or disagrees
+    with the fitted column names; if the pooling’s width depends on the number of
+    ranks and neither <cite>input_features</cite>, a fit nor fitted column names give it; or
+    if its feature names do not match its width.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#TypeError" title="(in Python v3.15)"><strong>TypeError</strong></a> – If <cite>pooling</cite> is neither a <cite>Pooling</cite> nor callable.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="artefactual.scoring.EntropyTransformer.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/scoring/entropy_methods/entropy_transformer.html#EntropyTransformer.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.scoring.EntropyTransformer.transform" title="Link to this definition">#</a></dt>
+<dd><p>Reduce each sequence to one feature row.</p>
+<p>A sequence with no tokens has no entropy to measure. Its features are set to zero,
+which makes the downstream classifier return <cite>sigmoid(intercept_)</cite>, its base rate,
+and a warning is raised rather than letting the degenerate input pass unremarked.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>array-like</em><em> of </em><em>shape</em><em> (</em><em>n_sequences</em><em>, </em><em>n_tokens</em><em>, </em><em>width</em><em>) or </em><em>(</em><em>n_sequences</em><em>, </em><em>width</em><em>)</em>) – Logprobs, NaN-padded; a nested list is accepted. A 2-D table is one token per
+row.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>1 column for <cite>EPRPooling</cite>, <cite>2 * width</cite> for <cite>WEPRPooling</cite>, the pooling’s own width otherwise. After
+<cite>set_output(transform=”pandas”)</cite> or <cite>“polars”</cite>, a frame whose columns are <cite>get_feature_names_out()</cite>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_sequences, n_features)</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If <cite>X</cite> holds infinity, or is a table that is not numeric 2-D.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#TypeError" title="(in Python v3.15)"><strong>TypeError</strong></a> – If <cite>pooling</cite> is neither a <cite>Pooling</cite> nor callable.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Warns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>EmptySequenceWarning</strong> – If any sequence carries no tokens.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="artefactual.scoring.EntropyTransformer.transform_tokens">
+<span class="sig-name descname"><span class="pre">transform_tokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/scoring/entropy_methods/entropy_transformer.html#EntropyTransformer.transform_tokens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.scoring.EntropyTransformer.transform_tokens" title="Link to this definition">#</a></dt>
+<dd><p>Reduce each token separately, keeping the token axis.</p>
+<p>Applies the same pooling over a one-token window per position, so token features
+are computed exactly as sequence features are. A padding token (all values NaN) is
+not passed to the pooling, so a pooling never sees a window the caller did not write.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>ndarray</em><em> of </em><em>shape</em><em> (</em><em>n_sequences</em><em>, </em><em>n_tokens</em><em>, </em><em>width</em><em>) or </em><em>(</em><em>n_sequences</em><em>, </em><em>width</em><em>)</em>) – Logprobs, NaN-padded. A 2-D table is one token per row.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Padded tokens are NaN rows. Never wrapped by <cite>set_output</cite>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_sequences, n_tokens, n_features)</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If <cite>X</cite> holds infinity, or is a table that is not numeric 2-D.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="artefactual.scoring.EntropyTransformer.validate">
+<span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/artefactual/scoring/entropy_methods/entropy_transformer.html#EntropyTransformer.validate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#artefactual.scoring.EntropyTransformer.validate" title="Link to this definition">#</a></dt>
+<dd><p><cite>X</cite> as a float <cite>(n, tokens, width)</cite> array.</p>
+<p>A 3-D input is the parser’s cube: NaN is the padding marker and passes, <cite>inf</cite> is no
+logprob and would reduce to a meaningless feature, so it is refused. Anything else
+is validated as a numeric 2-D table, which records (<cite>reset=True</cite>) or checks
+(<cite>reset=False</cite>) <cite>n_features_in_</cite> and the column names, and is read as one token
+per row. A list converts, so the step takes what <cite>np.asarray</cite> would. Empty batches
+pass: the parser returns an empty cube for them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>array-like</em>) – A 3-D cube or a 2-D table of per-rank logprobs.</p></li>
+<li><p><strong>reset</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a><em>, </em><em>default=False</em>) – Record the width (and, for a table, the column names), as <cite>fit</cite> does, instead of
+checking them against the recorded ones.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><cite>width</cite> is the input’s last dimension.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_sequences, n_tokens, width)</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If a cube holds infinity, or a table is not numeric 2-D or disagrees with the
+    fitted width or column names, or a cube’s last dimension differs from the fitted width.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="artefactual.DetectorPipeline.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">artefactual.DetectorPipeline</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="artefactual.scoring.epr_reduction.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">artefactual.scoring.epr_reduction</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.scoring.EntropyTransformer"><code class="docutils literal notranslate"><span class="pre">EntropyTransformer</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.scoring.EntropyTransformer.applied_pooling"><code class="docutils literal notranslate"><span class="pre">EntropyTransformer.applied_pooling()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.scoring.EntropyTransformer.check_pooling_is_the_fitted_one"><code class="docutils literal notranslate"><span class="pre">EntropyTransformer.check_pooling_is_the_fitted_one()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.scoring.EntropyTransformer.fit"><code class="docutils literal notranslate"><span class="pre">EntropyTransformer.fit()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.scoring.EntropyTransformer.get_feature_names_out"><code class="docutils literal notranslate"><span class="pre">EntropyTransformer.get_feature_names_out()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.scoring.EntropyTransformer.transform"><code class="docutils literal notranslate"><span class="pre">EntropyTransformer.transform()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.scoring.EntropyTransformer.transform_tokens"><code class="docutils literal notranslate"><span class="pre">EntropyTransformer.transform_tokens()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#artefactual.scoring.EntropyTransformer.validate"><code class="docutils literal notranslate"><span class="pre">EntropyTransformer.validate()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Artefact Research Center.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

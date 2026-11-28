@@ -1,0 +1,17 @@
+﻿artefactual.scoring.EntropyContributionsMixin
+=============================================
+
+.. currentmodule:: artefactual.scoring
+
+.. autoclass:: EntropyContributionsMixin
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~EntropyContributionsMixin.entropy_contributions
+   
+   

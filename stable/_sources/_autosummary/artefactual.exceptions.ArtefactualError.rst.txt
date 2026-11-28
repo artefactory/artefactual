@@ -1,0 +1,10 @@
+﻿artefactual.exceptions.ArtefactualError
+=======================================
+
+.. currentmodule:: artefactual.exceptions
+
+.. autoclass:: ArtefactualError
+
+   
+   
+   

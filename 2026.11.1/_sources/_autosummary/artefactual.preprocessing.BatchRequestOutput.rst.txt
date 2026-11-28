@@ -1,0 +1,40 @@
+﻿artefactual.preprocessing.BatchRequestOutput
+============================================
+
+.. currentmodule:: artefactual.preprocessing
+
+.. autoclass:: BatchRequestOutput
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~BatchRequestOutput.construct
+      ~BatchRequestOutput.copy
+      ~BatchRequestOutput.dict
+      ~BatchRequestOutput.from_orm
+      ~BatchRequestOutput.json
+      ~BatchRequestOutput.model_construct
+      ~BatchRequestOutput.model_copy
+      ~BatchRequestOutput.model_dump
+      ~BatchRequestOutput.model_dump_json
+      ~BatchRequestOutput.model_json_schema
+      ~BatchRequestOutput.model_parametrized_name
+      ~BatchRequestOutput.model_post_init
+      ~BatchRequestOutput.model_rebuild
+      ~BatchRequestOutput.model_validate
+      ~BatchRequestOutput.model_validate_json
+      ~BatchRequestOutput.model_validate_strings
+      ~BatchRequestOutput.parse_file
+      ~BatchRequestOutput.parse_obj
+      ~BatchRequestOutput.parse_raw
+      ~BatchRequestOutput.payload
+      ~BatchRequestOutput.schema
+      ~BatchRequestOutput.schema_json
+      ~BatchRequestOutput.update_forward_refs
+      ~BatchRequestOutput.validate
+   
+   

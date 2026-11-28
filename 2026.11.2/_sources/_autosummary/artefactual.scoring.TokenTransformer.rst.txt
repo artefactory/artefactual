@@ -1,0 +1,18 @@
+﻿artefactual.scoring.TokenTransformer
+====================================
+
+.. currentmodule:: artefactual.scoring
+
+.. autoclass:: TokenTransformer
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~TokenTransformer.transform
+      ~TokenTransformer.transform_tokens
+   
+   

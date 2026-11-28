@@ -1,0 +1,42 @@
+﻿artefactual.EPRClassifier
+=========================
+
+.. currentmodule:: artefactual
+
+.. autoclass:: EPRClassifier
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~EPRClassifier.assemble_steps
+      ~EPRClassifier.cached_file
+      ~EPRClassifier.check_options
+      ~EPRClassifier.decision_function
+      ~EPRClassifier.fit
+      ~EPRClassifier.fit_predict
+      ~EPRClassifier.fit_transform
+      ~EPRClassifier.from_estimator
+      ~EPRClassifier.from_pretrained
+      ~EPRClassifier.get_feature_names_out
+      ~EPRClassifier.get_metadata_routing
+      ~EPRClassifier.get_params
+      ~EPRClassifier.inverse_transform
+      ~EPRClassifier.load_file
+      ~EPRClassifier.predict
+      ~EPRClassifier.predict_log_proba
+      ~EPRClassifier.predict_proba
+      ~EPRClassifier.predict_token_proba
+      ~EPRClassifier.save_pretrained
+      ~EPRClassifier.score
+      ~EPRClassifier.score_samples
+      ~EPRClassifier.set_callbacks
+      ~EPRClassifier.set_output
+      ~EPRClassifier.set_params
+      ~EPRClassifier.set_score_request
+      ~EPRClassifier.transform
+   
+   

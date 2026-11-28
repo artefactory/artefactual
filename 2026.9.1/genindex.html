@@ -1,0 +1,1276 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Index &#8212; Artefactual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="_static/mermaid-theme.css?v=60300dae" />
+    <link rel="stylesheet" type="text/css" href="_static/notebook-buttons.css?v=9438e366" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=25264a1c"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";
+const load = async () => {
+    await mermaid.run();
+    const all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+    if(mermaids_to_add_zoom > 0) {
+        var svgs = d3.selectAll(".mermaid svg");
+        if(all_mermaids.length !== mermaids_processed.length) {
+            // try again in a sec, wait for mermaids to load
+            setTimeout(load, 200);
+            return;
+        } else if(svgs.size() !== mermaids_to_add_zoom) {
+            // try again in a sec, wait for mermaids to load
+            setTimeout(load, 200);
+            return;
+        } else {
+            svgs.each(function() {
+                var svg = d3.select(this);
+                svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                var inner = svg.select("g");
+                var zoom = d3.zoom().on("zoom", function(event) {
+                    inner.attr("transform", event.transform);
+                });
+                svg.call(zoom);
+            });
+        }
+    }
+};
+
+window.addEventListener("load", load);
+</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'genindex';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://artefactory.github.io/artefactual/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2026.9.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <link rel="canonical" href="https://artefactory.github.io/artefactual/genindex.html" />
+    <link rel="index" title="Index" href="#" />
+    <link rel="search" title="Search" href="search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2026.9" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Artefactual</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples/index.html">
+    Examples
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="guide/reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none"></div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+
+<h1 id="index">Index</h1>
+
+<div class="genindex-jumpbox">
+ <a href="#_"><strong>_</strong></a>
+ | <a href="#A"><strong>A</strong></a>
+ | <a href="#B"><strong>B</strong></a>
+ | <a href="#C"><strong>C</strong></a>
+ | <a href="#E"><strong>E</strong></a>
+ | <a href="#F"><strong>F</strong></a>
+ | <a href="#H"><strong>H</strong></a>
+ | <a href="#I"><strong>I</strong></a>
+ | <a href="#K"><strong>K</strong></a>
+ | <a href="#L"><strong>L</strong></a>
+ | <a href="#M"><strong>M</strong></a>
+ | <a href="#O"><strong>O</strong></a>
+ | <a href="#P"><strong>P</strong></a>
+ | <a href="#R"><strong>R</strong></a>
+ | <a href="#S"><strong>S</strong></a>
+ | <a href="#T"><strong>T</strong></a>
+ | <a href="#W"><strong>W</strong></a>
+ 
+</div>
+<h2 id="_">_</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.adapters.langfuse.evaluator.html#artefactual.adapters.langfuse.evaluator.HallucinationEvaluator.__init__">__init__() (artefactual.adapters.langfuse.evaluator.HallucinationEvaluator method)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.base_detector.BaseDetector.__init__">(artefactual.scoring.base_detector.BaseDetector method)</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.BaseDetector.__init__">(artefactual.scoring.BaseDetector method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="A">A</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    artefactual
+
+      <ul>
+        <li><a href="_autosummary/artefactual.html#module-artefactual">module</a>
+</li>
+      </ul></li>
+      <li>
+    artefactual.adapters
+
+      <ul>
+        <li><a href="_autosummary/artefactual.adapters.html#module-artefactual.adapters">module</a>
+</li>
+      </ul></li>
+      <li>
+    artefactual.adapters.langfuse
+
+      <ul>
+        <li><a href="_autosummary/artefactual.adapters.langfuse.html#module-artefactual.adapters.langfuse">module</a>
+</li>
+      </ul></li>
+      <li>
+    artefactual.adapters.langfuse.evaluator
+
+      <ul>
+        <li><a href="_autosummary/artefactual.adapters.langfuse.evaluator.html#module-artefactual.adapters.langfuse.evaluator">module</a>
+</li>
+      </ul></li>
+      <li>
+    artefactual.exceptions
+
+      <ul>
+        <li><a href="_autosummary/artefactual.exceptions.html#module-artefactual.exceptions">module</a>
+</li>
+      </ul></li>
+      <li>
+    artefactual.preprocessing
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.html#module-artefactual.preprocessing">module</a>
+</li>
+      </ul></li>
+      <li>
+    artefactual.preprocessing.batch_output
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.batch_output.html#module-artefactual.preprocessing.batch_output">module</a>
+</li>
+      </ul></li>
+      <li>
+    artefactual.preprocessing.judgments
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.judgments.html#module-artefactual.preprocessing.judgments">module</a>
+</li>
+      </ul></li>
+      <li>
+    artefactual.preprocessing.openai_parser
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.openai_parser.html#module-artefactual.preprocessing.openai_parser">module</a>
+</li>
+      </ul></li>
+      <li>
+    artefactual.preprocessing.parser
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.parser.html#module-artefactual.preprocessing.parser">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    artefactual.preprocessing.response_models
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#module-artefactual.preprocessing.response_models">module</a>
+</li>
+      </ul></li>
+      <li>
+    artefactual.scoring
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.html#module-artefactual.scoring">module</a>
+</li>
+      </ul></li>
+      <li>
+    artefactual.scoring.base_detector
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.base_detector.html#module-artefactual.scoring.base_detector">module</a>
+</li>
+      </ul></li>
+      <li>
+    artefactual.scoring.entropy_methods
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.entropy_methods.html#module-artefactual.scoring.entropy_methods">module</a>
+</li>
+      </ul></li>
+      <li>
+    artefactual.scoring.entropy_methods.entropy_contributions
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.entropy_methods.entropy_contributions.html#module-artefactual.scoring.entropy_methods.entropy_contributions">module</a>
+</li>
+      </ul></li>
+      <li>
+    artefactual.scoring.entropy_methods.entropy_transformer
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.entropy_methods.entropy_transformer.html#module-artefactual.scoring.entropy_methods.entropy_transformer">module</a>
+</li>
+      </ul></li>
+      <li>
+    artefactual.utils
+
+      <ul>
+        <li><a href="_autosummary/artefactual.utils.html#module-artefactual.utils">module</a>
+</li>
+      </ul></li>
+      <li>
+    artefactual.utils.io
+
+      <ul>
+        <li><a href="_autosummary/artefactual.utils.io.html#module-artefactual.utils.io">module</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.exceptions.html#artefactual.exceptions.ArtefactualError">ArtefactualError</a>
+</li>
+      <li><a href="_autosummary/artefactual.exceptions.html#artefactual.exceptions.ArtefactualWarning">ArtefactualWarning</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="B">B</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.BaseDetector">BaseDetector (class in artefactual.scoring)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.base_detector.BaseDetector">(class in artefactual.scoring.base_detector)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.BatchRequestOutput">BatchRequestOutput (class in artefactual.preprocessing)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.BatchRequestOutput">(class in artefactual.preprocessing.response_models)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.BatchResponseData">BatchResponseData (class in artefactual.preprocessing)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.BatchResponseData">(class in artefactual.preprocessing.response_models)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.BatchResponseData.body">body (artefactual.preprocessing.BatchResponseData attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.BatchResponseData.body">(artefactual.preprocessing.response_models.BatchResponseData attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="C">C</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.ChatChoice">ChatChoice (class in artefactual.preprocessing)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ChatChoice">(class in artefactual.preprocessing.response_models)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ChatChoiceLogprobs">ChatChoiceLogprobs (class in artefactual.preprocessing.response_models)</a>
+</li>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.ChatCompletion">ChatCompletion (class in artefactual.preprocessing)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ChatCompletion">(class in artefactual.preprocessing.response_models)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.ChatMessage">ChatMessage (class in artefactual.preprocessing)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ChatMessage">(class in artefactual.preprocessing.response_models)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.ChatCompletion.choices">choices (artefactual.preprocessing.ChatCompletion attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ChatCompletion.choices">(artefactual.preprocessing.response_models.ChatCompletion attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.BatchRequestOutput.completion">completion (artefactual.preprocessing.BatchRequestOutput property)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.BatchRequestOutput.completion">(artefactual.preprocessing.response_models.BatchRequestOutput property)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.ChatMessage.content">content (artefactual.preprocessing.ChatMessage attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ChatChoiceLogprobs.content">(artefactual.preprocessing.response_models.ChatChoiceLogprobs attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ChatMessage.content">(artefactual.preprocessing.response_models.ChatMessage attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ResponseOutputItem.content">(artefactual.preprocessing.response_models.ResponseOutputItem attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.BatchRequestOutput.custom_id">custom_id (artefactual.preprocessing.BatchRequestOutput attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.BatchRequestOutput.custom_id">(artefactual.preprocessing.response_models.BatchRequestOutput attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.exceptions.html#artefactual.exceptions.EmptySequenceWarning">EmptySequenceWarning</a>
+</li>
+      <li><a href="_autosummary/artefactual.scoring.entropy_methods.entropy_contributions.html#artefactual.scoring.entropy_methods.entropy_contributions.EntropyContributionsMixin.entropy_contributions">entropy_contributions() (artefactual.scoring.entropy_methods.entropy_contributions.EntropyContributionsMixin static method)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.EntropyContributionsMixin.entropy_contributions">(artefactual.scoring.EntropyContributionsMixin static method)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.EntropyContributionsMixin">EntropyContributionsMixin (class in artefactual.scoring)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.entropy_methods.entropy_contributions.html#artefactual.scoring.entropy_methods.entropy_contributions.EntropyContributionsMixin">(class in artefactual.scoring.entropy_methods.entropy_contributions)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.EntropyTransformer">EntropyTransformer (class in artefactual.scoring)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.entropy_methods.entropy_transformer.html#artefactual.scoring.entropy_methods.entropy_transformer.EntropyTransformer">(class in artefactual.scoring.entropy_methods.entropy_transformer)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.EPR">EPR (class in artefactual.scoring)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.base_detector.EPR">(class in artefactual.scoring.base_detector)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.BatchRequestOutput.error">error (artefactual.preprocessing.BatchRequestOutput attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.BatchRequestOutput.error">(artefactual.preprocessing.response_models.BatchRequestOutput attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.base_detector.BaseDetector.estimator">estimator (artefactual.scoring.base_detector.BaseDetector property)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.BaseDetector.estimator">(artefactual.scoring.BaseDetector property)</a>
+</li>
+        <li><a href="_autosummary/artefactual.utils.html#artefactual.utils.EstimatorPersistenceMixin.estimator">(artefactual.utils.EstimatorPersistenceMixin property)</a>
+</li>
+        <li><a href="_autosummary/artefactual.utils.io.html#artefactual.utils.io.EstimatorPersistenceMixin.estimator">(artefactual.utils.io.EstimatorPersistenceMixin property)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.utils.html#artefactual.utils.EstimatorPersistenceMixin">EstimatorPersistenceMixin (class in artefactual.utils)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.utils.io.html#artefactual.utils.io.EstimatorPersistenceMixin">(class in artefactual.utils.io)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="F">F</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.BatchRequestOutput.failure">failure (artefactual.preprocessing.BatchRequestOutput property)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.BatchRequestOutput.failure">(artefactual.preprocessing.response_models.BatchRequestOutput property)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.LogProbParser.fit">fit() (artefactual.preprocessing.LogProbParser method)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.parser.html#artefactual.preprocessing.parser.LogProbParser.fit">(artefactual.preprocessing.parser.LogProbParser method)</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.entropy_methods.entropy_transformer.html#artefactual.scoring.entropy_methods.entropy_transformer.EntropyTransformer.fit">(artefactual.scoring.entropy_methods.entropy_transformer.EntropyTransformer method)</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.EntropyTransformer.fit">(artefactual.scoring.EntropyTransformer method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.utils.html#artefactual.utils.EstimatorPersistenceMixin.from_pretrained">from_pretrained() (artefactual.utils.EstimatorPersistenceMixin class method)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.utils.io.html#artefactual.utils.io.EstimatorPersistenceMixin.from_pretrained">(artefactual.utils.io.EstimatorPersistenceMixin class method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="H">H</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.adapters.langfuse.evaluator.html#artefactual.adapters.langfuse.evaluator.HallucinationEvaluator">HallucinationEvaluator (class in artefactual.adapters.langfuse.evaluator)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.BatchRequestOutput.id">id (artefactual.preprocessing.BatchRequestOutput attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.BatchRequestOutput.id">(artefactual.preprocessing.response_models.BatchRequestOutput attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.index_by_custom_id">index_by_custom_id() (in module artefactual.preprocessing)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.batch_output.html#artefactual.preprocessing.batch_output.index_by_custom_id">(in module artefactual.preprocessing.batch_output)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="K">K</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.base_detector.BaseDetector.k">k (artefactual.scoring.base_detector.BaseDetector property)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.BaseDetector.k">(artefactual.scoring.BaseDetector property)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="L">L</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.utils.html#artefactual.utils.EstimatorPersistenceMixin.load_estimator">load_estimator() (artefactual.utils.EstimatorPersistenceMixin class method)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.utils.io.html#artefactual.utils.io.EstimatorPersistenceMixin.load_estimator">(artefactual.utils.io.EstimatorPersistenceMixin class method)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.utils.html#artefactual.utils.EstimatorPersistenceMixin.local_estimator">local_estimator() (artefactual.utils.EstimatorPersistenceMixin class method)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.utils.io.html#artefactual.utils.io.EstimatorPersistenceMixin.local_estimator">(artefactual.utils.io.EstimatorPersistenceMixin class method)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.TokenLogprobs.logprob">logprob (artefactual.preprocessing.response_models.TokenLogprobs attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.TopLogprob.logprob">(artefactual.preprocessing.response_models.TopLogprob attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.LogProbParser">LogProbParser (class in artefactual.preprocessing)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.parser.html#artefactual.preprocessing.parser.LogProbParser">(class in artefactual.preprocessing.parser)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.ChatChoice.logprobs">logprobs (artefactual.preprocessing.ChatChoice attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ChatChoice.logprobs">(artefactual.preprocessing.response_models.ChatChoice attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ResponseContentPart.logprobs">(artefactual.preprocessing.response_models.ResponseContentPart attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="M">M</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.ChatChoice.message">message (artefactual.preprocessing.ChatChoice attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ChatChoice.message">(artefactual.preprocessing.response_models.ChatChoice attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.BatchRequestOutput.model_config">model_config (artefactual.preprocessing.BatchRequestOutput attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.BatchResponseData.model_config">(artefactual.preprocessing.BatchResponseData attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.ChatChoice.model_config">(artefactual.preprocessing.ChatChoice attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.ChatCompletion.model_config">(artefactual.preprocessing.ChatCompletion attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.ChatMessage.model_config">(artefactual.preprocessing.ChatMessage attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.BatchRequestOutput.model_config">(artefactual.preprocessing.response_models.BatchRequestOutput attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.BatchResponseData.model_config">(artefactual.preprocessing.response_models.BatchResponseData attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ChatChoice.model_config">(artefactual.preprocessing.response_models.ChatChoice attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ChatChoiceLogprobs.model_config">(artefactual.preprocessing.response_models.ChatChoiceLogprobs attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ChatCompletion.model_config">(artefactual.preprocessing.response_models.ChatCompletion attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ChatMessage.model_config">(artefactual.preprocessing.response_models.ChatMessage attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ResponseContentPart.model_config">(artefactual.preprocessing.response_models.ResponseContentPart attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ResponseOutputItem.model_config">(artefactual.preprocessing.response_models.ResponseOutputItem attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ResponsesPayload.model_config">(artefactual.preprocessing.response_models.ResponsesPayload attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.TokenLogprobs.model_config">(artefactual.preprocessing.response_models.TokenLogprobs attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.TopLogprob.model_config">(artefactual.preprocessing.response_models.TopLogprob attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.utils.html#artefactual.utils.EstimatorPersistenceMixin.MODEL_FILENAME">MODEL_FILENAME (artefactual.utils.EstimatorPersistenceMixin attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.utils.io.html#artefactual.utils.io.EstimatorPersistenceMixin.MODEL_FILENAME">(artefactual.utils.io.EstimatorPersistenceMixin attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    module
+
+      <ul>
+        <li><a href="_autosummary/artefactual.html#module-artefactual">artefactual</a>
+</li>
+        <li><a href="_autosummary/artefactual.adapters.html#module-artefactual.adapters">artefactual.adapters</a>
+</li>
+        <li><a href="_autosummary/artefactual.adapters.langfuse.html#module-artefactual.adapters.langfuse">artefactual.adapters.langfuse</a>
+</li>
+        <li><a href="_autosummary/artefactual.adapters.langfuse.evaluator.html#module-artefactual.adapters.langfuse.evaluator">artefactual.adapters.langfuse.evaluator</a>
+</li>
+        <li><a href="_autosummary/artefactual.exceptions.html#module-artefactual.exceptions">artefactual.exceptions</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.html#module-artefactual.preprocessing">artefactual.preprocessing</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.batch_output.html#module-artefactual.preprocessing.batch_output">artefactual.preprocessing.batch_output</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.judgments.html#module-artefactual.preprocessing.judgments">artefactual.preprocessing.judgments</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.openai_parser.html#module-artefactual.preprocessing.openai_parser">artefactual.preprocessing.openai_parser</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.parser.html#module-artefactual.preprocessing.parser">artefactual.preprocessing.parser</a>
+</li>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#module-artefactual.preprocessing.response_models">artefactual.preprocessing.response_models</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.html#module-artefactual.scoring">artefactual.scoring</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.base_detector.html#module-artefactual.scoring.base_detector">artefactual.scoring.base_detector</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.entropy_methods.html#module-artefactual.scoring.entropy_methods">artefactual.scoring.entropy_methods</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.entropy_methods.entropy_contributions.html#module-artefactual.scoring.entropy_methods.entropy_contributions">artefactual.scoring.entropy_methods.entropy_contributions</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.entropy_methods.entropy_transformer.html#module-artefactual.scoring.entropy_methods.entropy_transformer">artefactual.scoring.entropy_methods.entropy_transformer</a>
+</li>
+        <li><a href="_autosummary/artefactual.utils.html#module-artefactual.utils">artefactual.utils</a>
+</li>
+        <li><a href="_autosummary/artefactual.utils.io.html#module-artefactual.utils.io">artefactual.utils.io</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="O">O</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ResponsesPayload.output">output (artefactual.preprocessing.response_models.ResponsesPayload attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="P">P</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.parse_sampled_token_logprobs">parse_sampled_token_logprobs() (in module artefactual.preprocessing)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.parser.html#artefactual.preprocessing.parser.parse_sampled_token_logprobs">(in module artefactual.preprocessing.parser)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.parse_top_logprobs">parse_top_logprobs() (in module artefactual.preprocessing)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.parser.html#artefactual.preprocessing.parser.parse_top_logprobs">(in module artefactual.preprocessing.parser)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.base_detector.BaseDetector.predict_token_proba">predict_token_proba() (artefactual.scoring.base_detector.BaseDetector method)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.BaseDetector.predict_token_proba">(artefactual.scoring.BaseDetector method)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.openai_parser.html#artefactual.preprocessing.openai_parser.process_openai_chat_completion">process_openai_chat_completion() (in module artefactual.preprocessing.openai_parser)</a>
+</li>
+      <li><a href="_autosummary/artefactual.preprocessing.openai_parser.html#artefactual.preprocessing.openai_parser.process_openai_responses_api">process_openai_responses_api() (in module artefactual.preprocessing.openai_parser)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="R">R</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.read_batch">read_batch() (in module artefactual.preprocessing)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.batch_output.html#artefactual.preprocessing.batch_output.read_batch">(in module artefactual.preprocessing.batch_output)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.utils.html#artefactual.utils.EstimatorPersistenceMixin.read_estimator">read_estimator() (artefactual.utils.EstimatorPersistenceMixin class method)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.utils.io.html#artefactual.utils.io.EstimatorPersistenceMixin.read_estimator">(artefactual.utils.io.EstimatorPersistenceMixin class method)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.read_judgment">read_judgment() (in module artefactual.preprocessing)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.judgments.html#artefactual.preprocessing.judgments.read_judgment">(in module artefactual.preprocessing.judgments)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.read_message">read_message() (in module artefactual.preprocessing)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.read_message">(in module artefactual.preprocessing.response_models)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.base_detector.BaseDetector.reduction">reduction (artefactual.scoring.base_detector.BaseDetector attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.base_detector.EPR.reduction">(artefactual.scoring.base_detector.EPR attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.base_detector.WEPR.reduction">(artefactual.scoring.base_detector.WEPR attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.BaseDetector.reduction">(artefactual.scoring.BaseDetector attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.EPR.reduction">(artefactual.scoring.EPR attribute)</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.WEPR.reduction">(artefactual.scoring.WEPR attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.scoring.entropy_methods.entropy_transformer.html#artefactual.scoring.entropy_methods.entropy_transformer.EntropyTransformer.reduction_fn">reduction_fn (artefactual.scoring.entropy_methods.entropy_transformer.EntropyTransformer property)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.EntropyTransformer.reduction_fn">(artefactual.scoring.EntropyTransformer property)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.BatchResponseData.request_id">request_id (artefactual.preprocessing.BatchResponseData attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.BatchResponseData.request_id">(artefactual.preprocessing.response_models.BatchResponseData attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.utils.html#artefactual.utils.EstimatorPersistenceMixin.resolve_estimator">resolve_estimator() (artefactual.utils.EstimatorPersistenceMixin class method)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.utils.io.html#artefactual.utils.io.EstimatorPersistenceMixin.resolve_estimator">(artefactual.utils.io.EstimatorPersistenceMixin class method)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.BatchRequestOutput.response">response (artefactual.preprocessing.BatchRequestOutput attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.BatchRequestOutput.response">(artefactual.preprocessing.response_models.BatchRequestOutput attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ResponseContentPart">ResponseContentPart (class in artefactual.preprocessing.response_models)</a>
+</li>
+      <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ResponseOutputItem">ResponseOutputItem (class in artefactual.preprocessing.response_models)</a>
+</li>
+      <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.ResponsesPayload">ResponsesPayload (class in artefactual.preprocessing.response_models)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="S">S</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.preprocessing.openai_parser.html#artefactual.preprocessing.openai_parser.sampled_tokens_logprobs_chat_completion_api">sampled_tokens_logprobs_chat_completion_api() (in module artefactual.preprocessing.openai_parser)</a>
+</li>
+      <li><a href="_autosummary/artefactual.preprocessing.openai_parser.html#artefactual.preprocessing.openai_parser.sampled_tokens_logprobs_responses_api">sampled_tokens_logprobs_responses_api() (in module artefactual.preprocessing.openai_parser)</a>
+</li>
+      <li><a href="_autosummary/artefactual.utils.html#artefactual.utils.EstimatorPersistenceMixin.save_estimator">save_estimator() (artefactual.utils.EstimatorPersistenceMixin method)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.utils.io.html#artefactual.utils.io.EstimatorPersistenceMixin.save_estimator">(artefactual.utils.io.EstimatorPersistenceMixin method)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.adapters.langfuse.evaluator.html#artefactual.adapters.langfuse.evaluator.HallucinationEvaluator.score_trace">score_trace() (artefactual.adapters.langfuse.evaluator.HallucinationEvaluator method)</a>
+</li>
+      <li><a href="_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.base_detector.BaseDetector.set_score_request">set_score_request() (artefactual.scoring.base_detector.BaseDetector method)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.base_detector.EPR.set_score_request">(artefactual.scoring.base_detector.EPR method)</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.base_detector.WEPR.set_score_request">(artefactual.scoring.base_detector.WEPR method)</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.BaseDetector.set_score_request">(artefactual.scoring.BaseDetector method)</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.EPR.set_score_request">(artefactual.scoring.EPR method)</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.WEPR.set_score_request">(artefactual.scoring.WEPR method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.scoring.entropy_methods.entropy_transformer.html#artefactual.scoring.entropy_methods.entropy_transformer.EntropyTransformer.set_transform_request">set_transform_request() (artefactual.scoring.entropy_methods.entropy_transformer.EntropyTransformer method)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.EntropyTransformer.set_transform_request">(artefactual.scoring.EntropyTransformer method)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.BatchResponseData.status_code">status_code (artefactual.preprocessing.BatchResponseData attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.BatchResponseData.status_code">(artefactual.preprocessing.response_models.BatchResponseData attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="T">T</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.TokenLogprobs">TokenLogprobs (class in artefactual.preprocessing.response_models)</a>
+</li>
+      <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.TokenLogprobs.top_logprobs">top_logprobs (artefactual.preprocessing.response_models.TokenLogprobs attribute)</a>
+</li>
+      <li><a href="_autosummary/artefactual.preprocessing.response_models.html#artefactual.preprocessing.response_models.TopLogprob">TopLogprob (class in artefactual.preprocessing.response_models)</a>
+</li>
+      <li><a href="_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.base_detector.BaseDetector.trainable">trainable() (artefactual.scoring.base_detector.BaseDetector class method)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.BaseDetector.trainable">(artefactual.scoring.BaseDetector class method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.preprocessing.html#artefactual.preprocessing.LogProbParser.transform">transform() (artefactual.preprocessing.LogProbParser method)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.preprocessing.parser.html#artefactual.preprocessing.parser.LogProbParser.transform">(artefactual.preprocessing.parser.LogProbParser method)</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.entropy_methods.entropy_transformer.html#artefactual.scoring.entropy_methods.entropy_transformer.EntropyTransformer.transform">(artefactual.scoring.entropy_methods.entropy_transformer.EntropyTransformer method)</a>
+</li>
+        <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.EntropyTransformer.transform">(artefactual.scoring.EntropyTransformer method)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/artefactual.scoring.entropy_methods.entropy_transformer.html#artefactual.scoring.entropy_methods.entropy_transformer.EntropyTransformer.transform_tokens">transform_tokens() (artefactual.scoring.entropy_methods.entropy_transformer.EntropyTransformer method)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.EntropyTransformer.transform_tokens">(artefactual.scoring.EntropyTransformer method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/artefactual.scoring.html#artefactual.scoring.WEPR">WEPR (class in artefactual.scoring)</a>
+
+      <ul>
+        <li><a href="_autosummary/artefactual.scoring.base_detector.html#artefactual.scoring.base_detector.WEPR">(class in artefactual.scoring.base_detector)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Artefact Research Center.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

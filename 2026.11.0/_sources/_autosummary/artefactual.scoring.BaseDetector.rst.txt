@@ -1,0 +1,42 @@
+﻿artefactual.scoring.BaseDetector
+================================
+
+.. currentmodule:: artefactual.scoring
+
+.. autoclass:: BaseDetector
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~BaseDetector.assemble_steps
+      ~BaseDetector.cached_file
+      ~BaseDetector.check_options
+      ~BaseDetector.decision_function
+      ~BaseDetector.fit
+      ~BaseDetector.fit_predict
+      ~BaseDetector.fit_transform
+      ~BaseDetector.from_estimator
+      ~BaseDetector.from_pretrained
+      ~BaseDetector.get_feature_names_out
+      ~BaseDetector.get_metadata_routing
+      ~BaseDetector.get_params
+      ~BaseDetector.inverse_transform
+      ~BaseDetector.load_file
+      ~BaseDetector.predict
+      ~BaseDetector.predict_log_proba
+      ~BaseDetector.predict_proba
+      ~BaseDetector.predict_token_proba
+      ~BaseDetector.save_pretrained
+      ~BaseDetector.score
+      ~BaseDetector.score_samples
+      ~BaseDetector.set_callbacks
+      ~BaseDetector.set_output
+      ~BaseDetector.set_params
+      ~BaseDetector.set_score_request
+      ~BaseDetector.transform
+   
+   

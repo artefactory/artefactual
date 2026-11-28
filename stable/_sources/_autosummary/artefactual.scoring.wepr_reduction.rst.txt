@@ -1,0 +1,6 @@
+﻿artefactual.scoring.wepr\_reduction
+===================================
+
+.. currentmodule:: artefactual.scoring
+
+.. autofunction:: wepr_reduction

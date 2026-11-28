@@ -1,0 +1,17 @@
+﻿artefactual
+===========
+
+.. automodule:: artefactual
+
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   adapters
+   exceptions
+   preprocessing
+   scoring
+   utils

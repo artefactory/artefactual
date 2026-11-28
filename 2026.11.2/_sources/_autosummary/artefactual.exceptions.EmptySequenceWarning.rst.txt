@@ -1,0 +1,10 @@
+﻿artefactual.exceptions.EmptySequenceWarning
+===========================================
+
+.. currentmodule:: artefactual.exceptions
+
+.. autoclass:: EmptySequenceWarning
+
+   
+   
+   

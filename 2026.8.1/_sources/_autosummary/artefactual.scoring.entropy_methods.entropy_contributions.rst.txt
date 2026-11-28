@@ -1,0 +1,12 @@
+artefactual.scoring.entropy\_methods.entropy\_contributions
+===========================================================
+
+.. automodule:: artefactual.scoring.entropy_methods.entropy_contributions
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      EntropyContributionsMixin
+   

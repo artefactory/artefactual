@@ -1,0 +1,62 @@
+/* Mermaid renders client-side with its own light palette baked into the SVG, so on a dark
+   page the edges are drawn near-black on near-black and a diagram looks like disconnected
+   boxes. Restating the few colours in terms of the theme's own variables makes a diagram
+   follow the light/dark toggle the way the rest of the page does, live and without JS. */
+
+.mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Mermaid scopes its own rules by the SVG's generated id, which outranks any class
+   selector here, so every declaration below has to be marked important to win. */
+
+/* Edges and their arrowheads. The marker is filled, not stroked. */
+.mermaid .flowchart-link,
+.mermaid .edgePath .path {
+  stroke: var(--pst-color-text-base) !important;
+}
+
+.mermaid .marker,
+.mermaid .arrowMarkerPath {
+  fill: var(--pst-color-text-base) !important;
+  stroke: var(--pst-color-text-base) !important;
+}
+
+/* Boxes. */
+.mermaid .node rect,
+.mermaid .node circle,
+.mermaid .node ellipse,
+.mermaid .node polygon,
+.mermaid .node path {
+  fill: var(--pst-color-surface) !important;
+  stroke: var(--pst-color-accent) !important;
+}
+
+.mermaid .cluster rect {
+  fill: var(--pst-color-on-background) !important;
+  stroke: var(--pst-color-border) !important;
+}
+
+/* Labels are HTML in a foreignObject, so they take `color`, not `fill`. */
+.mermaid .nodeLabel,
+.mermaid .nodeLabel p,
+.mermaid .cluster-label,
+.mermaid .cluster-label p,
+.mermaid .edgeLabel,
+.mermaid .edgeLabel p,
+.mermaid .label text,
+.mermaid .node .label span,
+.mermaid span {
+  color: var(--pst-color-text-base) !important;
+  fill: var(--pst-color-text-base) !important;
+  background-color: transparent !important;
+}
+
+/* The edge label's own backdrop, which mermaid paints a fixed light grey. */
+.mermaid .edgeLabel rect,
+.mermaid .labelBkg {
+  fill: var(--pst-color-background) !important;
+  background-color: var(--pst-color-background) !important;
+  opacity: 0.85;
+}

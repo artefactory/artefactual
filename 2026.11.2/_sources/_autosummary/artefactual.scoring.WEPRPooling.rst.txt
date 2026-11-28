@@ -1,0 +1,18 @@
+﻿artefactual.scoring.WEPRPooling
+===============================
+
+.. currentmodule:: artefactual.scoring
+
+.. autoclass:: WEPRPooling
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~WEPRPooling.feature_names
+      ~WEPRPooling.width
+   
+   

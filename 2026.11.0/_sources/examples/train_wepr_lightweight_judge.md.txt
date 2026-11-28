@@ -1,0 +1,365 @@
+---
+file_format: mystnb
+jupytext:
+  notebook_metadata_filter: mystnb,file_format
+  text_representation:
+    extension: .md
+    format_name: myst
+    format_version: 0.13
+    jupytext_version: 1.19.5
+kernelspec:
+  display_name: Python 3 (ipykernel)
+  language: python
+  name: python3
+---
+
+# Train a WEPR detector from unjudged answers, judged on your machine
+
+You start with answers the model under test generated, and nothing judged yet. The judge
+that grades them here **runs locally, on CPU, with no API key and no per-response cost** —
+which is the reason to pick this notebook over the other two. It downloads a 210M encoder
+once (~420 MB) and every response after that is one forward pass on the machine you are
+already sitting at, so relabelling a run, or trying another threshold, costs seconds rather
+than another N requests.
+
+A detector is trained for one model, on answers that model produced plus a verdict on
+each. The wider context is in the guide's *Training a detector*.
+
+The checkpoint is `artefactory/BERTJudge`. Give it the question, the answer to grade and the
+gold answer; its own output is P(correct), which this notebook turns into P(hallucination)
+once, at the call, so that every number on the page after it points the same way as the
+detector's. Its own package, `bert-judge`, wraps the loading and the scoring, so grading the
+whole file is one call; `THRESHOLD` turns each probability into the verdict written to the
+judgments file.
+
+The sample files are synthetic — real questions, but the responses and their
+log-probabilities were generated rather than sampled from a model. This notebook ships
+without stored outputs because it downloads the judge's weights, so the numbers you see are
+the ones your own run produces.
+
+**Needs / cost:** no API key, no GPU; a one-off ~420 MB judge download (cached), then CPU seconds per run.
+
+| Section | What it does | Cost |
+|---|---|---|
+| The inputs | Read the responses and the questions they answer | none, both files ship beside this notebook |
+| Judge the responses | One forward pass per response, locally | the judge's weights, ~420 MB once; then CPU seconds |
+| Fit | Fit on a stratified split, report ROC-AUC on the holdout | seconds |
+| Audit the labels the judge produced | What each verdict was made against | seconds |
+| Save it, and load it back | `.skops` out, `from_pretrained` in | seconds |
+
+```{code-cell} ipython3
+:tags: [hide-input]
+
+import subprocess  # ruff: ignore[suspicious-subprocess-import]
+import sys
+import urllib.request
+
+# Colab starts from a runtime with neither the package nor the files that sit beside
+# this notebook in the repository. Everywhere else -- a clone synced with
+# `uv sync --group notebooks`, the docs build, the test suite -- both are already there,
+# so this cell does nothing and there is nothing for a reader to uncomment. The release
+# build runs this notebook, so the judge's own repo code executes there too --
+# `trust_remote_code` below, on an org-owned checkpoint.
+#
+# `bert-judge` is the judge's own package and declares no dependencies, so torch,
+# transformers and datasets are named alongside it. The transformers range is the
+# checkpoint's: outside it the load fails, on `torch_dtype=` below 4.57 and
+# `KeyError: 'default'` at 5.x.
+ON_COLAB = "google.colab" in sys.modules
+
+PACKAGES = [
+    "artefactual",
+    "torch",
+    "transformers>=4.57,<5",
+    "datasets",
+    "bert-judge @ git+https://github.com/artefactory/BERT-as-a-Judge.git",
+]
+
+FETCH = [
+    "https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/responses_sample.jsonl",
+    "https://raw.githubusercontent.com/artefactory/artefactual/main/docs/examples/questions_sample.json",
+]
+
+if ON_COLAB:
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", *PACKAGES], check=True)  # ruff: ignore[subprocess-without-shell-equals-true]
+    for url in FETCH:
+        urllib.request.urlretrieve(url, url.rsplit("/", 1)[-1])  # ruff: ignore[suspicious-url-open-usage]
+```
+
+## The inputs
+
+`RESPONSES` holds what the model under test generated, one OpenAI Batch line per request,
+each carrying `top_logprobs` per token — that distribution is the only thing the detector
+reads. `QUESTIONS` holds what each response is graded against: the question that was asked
+and the gold answer, keyed by the `custom_id` the response carries.
+
+`read_batch` reads the lines and `read_message` reads the text inside one — both the
+library's, so the batch file is never indexed as a raw dict. A failed request carries no completion and
+`failure` says why: two of the hundred lines are timeouts, which is what leaves 98
+responses to judge.
+
+```{code-cell} ipython3
+import json
+from collections import Counter
+from pathlib import Path
+
+from artefactual.preprocessing import (
+    BatchRequestOutput,
+    BatchResponseData,
+    ChatChoice,
+    ChatCompletion,
+    ChatMessage,
+    index_by_custom_id,
+    read_batch,
+    read_judgment,
+    read_message,
+)
+
+# Responses generated by the model this detector is being built for. This is the file to
+# swap for your own run.
+RESPONSES = Path("responses_sample.jsonl")
+# What each of them is graded against: `question`, `short_answer`, and the `question_id`
+# that is the response's `custom_id`.
+QUESTIONS = Path("questions_sample.json")
+# Where the judge's verdicts go, in the same Batch shape the responses arrive in.
+JUDGMENTS = Path("judgments.jsonl")
+
+# The checkpoint the model card recommends: trained on unconstrained generations, and
+# reading question, candidate and reference.
+JUDGE_MODEL = "artefactory/BERTJudge"
+# P(hallucination) above which the response counts as a hallucination.
+THRESHOLD = 0.5
+# Sequences per forward pass. Raise it on a GPU.
+JUDGE_BATCH = 8
+K = 15  # candidates per token; a detector is loaded at the k it was fit at
+SEED = 42
+
+lines = read_batch(RESPONSES)
+for row in lines:
+    if row.failure:
+        print(f"dropped {row.custom_id}: {row.failure}")
+
+generated = index_by_custom_id(lines)
+questions = {entry["question_id"]: entry for entry in json.loads(QUESTIONS.read_text(encoding="utf-8"))}
+
+
+# `read_message` opens the envelope: no batch line is ever indexed as a raw dict.
+graded = [
+    (questions[custom_id], row, (read_message(row.completion) or "").strip())
+    for custom_id, row in generated.items()
+    if custom_id in questions
+]
+print(f"{len(generated)} responses, {len(graded)} with a reference to grade against")
+```
+
+## Judge the responses
+
+`BERTJudge.predict` takes the three fields as parallel lists and returns one **P(correct)**
+per response — the one place on this page where a probability rises as the answer gets
+better. It is negated at the call, and everything downstream reads P(hallucination), the
+same direction as `predict_proba(...)[:, 1]`.
+
+`THRESHOLD` is therefore a hallucination probability, and it turns each score into a
+verdict. `judgments.jsonl` gets one Batch line per response, carrying
+`{"judgment": ..., "explanation": ...}` as its message content:
+
+| `judgment` | Set when | Label |
+|---|---|---|
+| `true` | P(hallucination) <= `THRESHOLD` | 0, grounded |
+| `false` | P(hallucination) > `THRESHOLD` | 1, hallucination |
+| `null` | the response carried no text | none; the row is dropped |
+
+`judgment` stays in the judge's own direction — `true` means the answer was correct —
+because that is what `read_judgment`, `train_wepr.ipynb` and `scripts/train_detector.py`
+read, and what a generative judge writes. It is the last value on the page in that
+direction; the label beside it is its negation.
+
+Those are the three values `read_judgment` returns.
+
+The sample responses are short answers, 98 with text and about half of them more than one
+word, and this checkpoint judges such answers erratically: some verbatim matches against the
+gold answer come back `false`.
+
+```{code-cell} ipython3
+from bert_judge.judges import BERTJudge
+
+# float32 on CPU; pass "bfloat16" on a GPU, which is the checkpoint's own dtype.
+judge = BERTJudge(model_path=JUDGE_MODEL, trust_remote_code=True, dtype="float32")
+
+correct_scores = judge.predict(
+    questions=[question["question"] for question, _, _ in graded],
+    candidates=[response for _, _, response in graded],
+    references=[question["short_answer"] for question, _, _ in graded],
+    batch_size=JUDGE_BATCH,
+)
+
+# The judge answers P(correct); the detector, this notebook and every number below speak
+# P(hallucination). Negated here, once, so nothing downstream has to remember which way a
+# score points. A comprehension rather than `1 - scores`, because `predict` is documented
+# to return a sequence and not specifically an array.
+hallucination_scores = [1.0 - score for score in correct_scores]
+
+with JUDGMENTS.open("w", encoding="utf-8") as out:
+    for (question, _, response), score in zip(graded, hallucination_scores, strict=True):
+        # `judgment` says the answer was CORRECT, the opposite of the score above and of the
+        # class the detector predicts -- it is what `read_judgment` expects, and what a
+        # generative judge writes. `None` for a response with no text, which `read_judgment`
+        # reads as no verdict.
+        # `<=`, so a score of exactly THRESHOLD stays "correct", as it did when this compared P(correct).
+        judgment = bool(score <= THRESHOLD) if response else None
+        verdict = {
+            "judgment": judgment,
+            "explanation": (
+                f"BERTJudge, P(hallucination)={score:.3f} at THRESHOLD={THRESHOLD}, "
+                f"against {question['short_answer']!r}"
+            ),
+        }
+        # Built from the models `read_batch` validates with, so the writer and the reader
+        # share one definition of the shape. They carry what the pipeline reads and no
+        # more: a judge's `model`, `index` and `finish_reason` have no reader, and the
+        # judge's identity is in the explanation.
+        # `id` is left unset: the Batch API assigns it (a `batch_req_...` value), and a
+        # line written outside a batch run has no such id to carry. Nothing joins on it --
+        # `custom_id` is the key -- so an invented one would be provenance that is not true.
+        line = BatchRequestOutput(
+            custom_id=question["question_id"],
+            response=BatchResponseData(
+                status_code=200,
+                body=ChatCompletion(choices=[ChatChoice(message=ChatMessage(content=json.dumps(verdict)))]),
+            ),
+            error=None,
+        )
+        # `json.dumps` rather than `model_dump_json`, for `ensure_ascii`: every reader of
+        # these files splits them with `splitlines()`, which breaks on U+2028, U+2029 and
+        # U+0085 -- characters JSON does not require escaping and a model can emit.
+        out.write(json.dumps(line.model_dump(), ensure_ascii=True) + "\n")
+
+# Counted from the file, not from `hallucination_scores`: what the run produced is what it wrote.
+verdicts = [read_judgment(row.completion) for row in read_batch(JUDGMENTS)]
+tally = Counter("Undefined" if verdict is None else str(verdict) for verdict in verdicts)
+print(f"wrote {JUDGMENTS}, {len(verdicts)} verdicts")
+print("  " + ", ".join(f"{count} {word}" for word, count in sorted(tally.items())))
+for (question, _, response), verdict in list(zip(graded, verdicts, strict=True))[:3]:
+    word = "Undefined" if verdict is None else str(verdict)
+    print(f"  [{word:>9}] said {response[:30]!r} (gold: {question['short_answer']!r})")
+```
+
+## Fit
+
+This step reads both files back rather than using what is still in memory, which is what
+makes it true that you can come back tomorrow, change `k`, and refit without scoring
+anything again. `WEPR(k=15)` returns the pipeline unfitted, so `fit` takes the batch
+lines directly and there is no feature extraction to write: `wepr`'s own parser opens the
+Batch envelope and reads the `top_logprobs`. The split is stratified and happens first, so what is reported
+describes responses the detector never saw.
+
+Two numbers, and they answer different questions. **ROC-AUC** scores the ranking — whether
+hallucinations sort above grounded responses — which is what matters if you triage by score.
+The **classification report** scores the decisions at a 0.5 cut: recall on the
+`hallucination` row is the fraction actually caught. Only the AUC carries over to a
+different threshold.
+
+```{code-cell} ipython3
+import numpy as np
+from sklearn.metrics import classification_report, roc_auc_score
+from sklearn.model_selection import train_test_split
+
+from artefactual import WEPR
+from artefactual.scoring import BaseDetector
+
+# Read back from disk rather than from the variables above: this is the path a fresh kernel
+# takes, and the one anything else reading these files takes too. `read_judgment` answers
+# True when the judge said the response was CORRECT, so the label is its negation; an
+# Undefined verdict answers None, and the row is left out.
+labelled = [
+    (generated[row.custom_id], int(not verdict))
+    for row in read_batch(JUDGMENTS)
+    if row.custom_id in generated and (verdict := read_judgment(row.completion)) is not None
+]
+
+responses = [row for row, _ in labelled]
+y = np.array([label for _, label in labelled])
+print(f"read {len(responses)} responses with a True or False verdict back from {JUDGMENTS.name}")
+print(f"{y.sum()} hallucinations ({y.mean():.0%})")
+
+x_train, x_test, y_train, y_test = train_test_split(responses, y, test_size=0.25, stratify=y, random_state=SEED)
+detector = WEPR(k=K).fit(x_train, y_train)
+predicted = detector.predict_proba(x_test)[:, 1]
+
+print(f"fitted on {len(y_train)}, holding out {len(y_test)}")
+print(f"ROC-AUC: {roc_auc_score(y_test, predicted):.2f}\n")
+print(classification_report(y_test, predicted >= 0.5, target_names=["grounded", "hallucination"], zero_division=0))
+```
+
+## Audit the labels the judge produced
+
+An encoder judge gives a verdict and no argument for it, so the audit has to come from
+somewhere else. The judge says whether the answer matches the gold one; the label is the
+negation of that, so a mismatch is `hallucination`, the class the detector is fitted to
+predict. Both columns below are on that axis.
+
+`cross_val_predict` gives every response a score from a fold that did not contain it. The
+rows where the detector is most confident and disagrees with the label are the ones to read
+first, printed with the question and the gold answer the verdict was made against.
+
+```{code-cell} ipython3
+from sklearn.model_selection import StratifiedKFold, cross_val_predict
+
+folds = StratifiedKFold(5, shuffle=True, random_state=SEED)
+# Out-of-fold: every score comes from a detector that never saw that response.
+out_of_fold = cross_val_predict(WEPR(k=K), responses, y, cv=folds, method="predict_proba")[:, 1]
+
+scored = zip(out_of_fold, y, responses, strict=True)
+disagreements = sorted(scored, key=lambda row: abs(row[0] - row[1]), reverse=True)[:5]
+
+print("the five rows the detector disagrees with the label about most:\n")
+for score, label, row in disagreements:
+    question = questions[row.custom_id]
+    # `label` is the judge's verdict already negated, so both columns say hallucination.
+    print(f"  labelled {'hallucination' if label else 'grounded'}, detector P(hallucination)={score:.3f}")
+    print(f"    Q     {question['question']}")
+    print(f"    said  {(read_message(row.completion) or '').strip()!r}")
+    print(f"    gold  {question['short_answer']!r}\n")
+```
+
+## Save it, and load it back
+
+`.skops` rather than a pickle. `from_pretrained` takes a `.skops` file, a directory holding
+`model.skops`, or **a Hugging Face repository id** — the shipped detectors are loaded that
+way, and yours is too once you push its `model.skops` to a repository of your own.
+
+`k` is part of the weights, not a runtime option: the coefficients were fitted at one rank
+count and mean nothing at another, so loading at a different `k` raises rather than
+mis-shaping the score.
+
+```{code-cell} ipython3
+path = detector.save_pretrained("wepr-lightweight-judge.skops")
+reloaded = WEPR.from_pretrained(path, k=K)
+
+# Held-out responses: the rows the fit above never saw.
+for row, label in list(zip(x_test, y_test, strict=True))[:5]:
+    said = (read_message(row.completion) or "")[:40]
+    print(f"[{'hallucination' if label else 'grounded    '}] P={reloaded.predict_proba(row)[0, 1]:.3f}  {said!r}")
+```
+
+## Where to go next
+
+- **Choose the threshold rather than accept it.** `THRESHOLD` is what turns a
+  P(hallucination) into a verdict, and it is the one knob that decided every label. Re-running the
+  judging cell at another value relabels the run in seconds — the download is already paid
+  for.
+- **Compare against a generative judge.** Ask one for a verdict on the same responses and
+  join the two files on `custom_id` — both carry one of the same three values (`true`, `false`, `null`). Where they disagree
+  is where the alias list mattered, since this judge reads `short_answer` alone, or where
+  one of them is wrong.
+- **Feed the CLI.** `judgments.jsonl` and `responses_sample.jsonl` go straight into the
+  `train_detector.py` script in
+  [the repository](https://github.com/artefactory/artefactual/blob/main/scripts/train_detector.py),
+  which also reports the bootstrap confidence intervals a holdout this size needs.
+
+- **Another judge checkpoint.** `artefactory/BERTJudge-Free-CR` drops the question from the
+  input, and the `Formatted` family expects responses that end in `Final answer: <x>`. The
+  paper's own recommendation is the one set above.
+- **Your own responses.** Only section 1 changes: point `RESPONSES` at a Batch output file
+  from the model you want to detect hallucinations in, and `QUESTIONS` at what to grade it
+  against.

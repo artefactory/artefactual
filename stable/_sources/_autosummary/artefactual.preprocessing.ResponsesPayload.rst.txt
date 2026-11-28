@@ -1,0 +1,44 @@
+﻿artefactual.preprocessing.ResponsesPayload
+==========================================
+
+.. currentmodule:: artefactual.preprocessing
+
+.. autoclass:: ResponsesPayload
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~ResponsesPayload.adapter
+      ~ResponsesPayload.construct
+      ~ResponsesPayload.copy
+      ~ResponsesPayload.dict
+      ~ResponsesPayload.from_orm
+      ~ResponsesPayload.json
+      ~ResponsesPayload.model_construct
+      ~ResponsesPayload.model_copy
+      ~ResponsesPayload.model_dump
+      ~ResponsesPayload.model_dump_json
+      ~ResponsesPayload.model_json_schema
+      ~ResponsesPayload.model_parametrized_name
+      ~ResponsesPayload.model_post_init
+      ~ResponsesPayload.model_rebuild
+      ~ResponsesPayload.model_validate
+      ~ResponsesPayload.model_validate_json
+      ~ResponsesPayload.model_validate_strings
+      ~ResponsesPayload.parse
+      ~ResponsesPayload.parse_file
+      ~ResponsesPayload.parse_obj
+      ~ResponsesPayload.parse_raw
+      ~ResponsesPayload.sampled_logprobs
+      ~ResponsesPayload.schema
+      ~ResponsesPayload.schema_json
+      ~ResponsesPayload.sequences
+      ~ResponsesPayload.top_logprobs
+      ~ResponsesPayload.update_forward_refs
+      ~ResponsesPayload.validate
+   
+   

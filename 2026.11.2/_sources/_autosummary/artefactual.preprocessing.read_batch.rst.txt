@@ -1,0 +1,6 @@
+﻿artefactual.preprocessing.read\_batch
+=====================================
+
+.. currentmodule:: artefactual.preprocessing
+
+.. autofunction:: read_batch

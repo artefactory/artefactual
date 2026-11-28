@@ -1,0 +1,12 @@
+artefactual.preprocessing.judgments
+===================================
+
+.. automodule:: artefactual.preprocessing.judgments
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      read_judgment
+   

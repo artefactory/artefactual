@@ -1,0 +1,35 @@
+﻿artefactual.DetectorPipeline
+============================
+
+.. currentmodule:: artefactual
+
+.. autoclass:: DetectorPipeline
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~DetectorPipeline.decision_function
+      ~DetectorPipeline.fit
+      ~DetectorPipeline.fit_predict
+      ~DetectorPipeline.fit_transform
+      ~DetectorPipeline.get_feature_names_out
+      ~DetectorPipeline.get_metadata_routing
+      ~DetectorPipeline.get_params
+      ~DetectorPipeline.inverse_transform
+      ~DetectorPipeline.predict
+      ~DetectorPipeline.predict_log_proba
+      ~DetectorPipeline.predict_proba
+      ~DetectorPipeline.predict_token_proba
+      ~DetectorPipeline.score
+      ~DetectorPipeline.score_samples
+      ~DetectorPipeline.set_callbacks
+      ~DetectorPipeline.set_output
+      ~DetectorPipeline.set_params
+      ~DetectorPipeline.set_score_request
+      ~DetectorPipeline.transform
+   
+   

@@ -1,0 +1,812 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>scikit-learn compatibility &#8212; Artefactual</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mermaid-theme.css?v=60300dae" />
+    <link rel="stylesheet" type="text/css" href="../_static/notebook-buttons.css?v=9438e366" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=141ae7bb"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'guide/sklearn';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://artefactory.github.io/artefactual/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2026.11.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <link rel="canonical" href="https://artefactory.github.io/artefactual/2026.11.1/guide/sklearn.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Examples" href="../examples/index.html" />
+    <link rel="prev" title="Reference" href="reference.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2026.11" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Artefactual</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../install.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="reference.html">
+    Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    scikit-learn compatibility
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../contributing.html">
+    Contributing to Artefactual
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../citation.html">
+    Citation
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../install.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="scoring.html">
+    Using a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="training.html">
+    Training a detector
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="how-it-works.html">
+    How it works
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="reference.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    scikit-learn compatibility
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../presentations/index.html">
+    Presentations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing to Artefactual
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../citation.html">
+    Citation
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/artefactory/artefactual" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">scikit-learn compatibility</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="scikit-learn-compatibility">
+<h1>scikit-learn compatibility<a class="headerlink" href="#scikit-learn-compatibility" title="Link to this heading">#</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">EPRClassifier</span></code> and <code class="docutils literal notranslate"><span class="pre">WEPRClassifier</span></code> are scikit-learn classifiers: subclasses of
+<code class="docutils literal notranslate"><span class="pre">sklearn.pipeline.Pipeline</span></code> with an <code class="docutils literal notranslate"><span class="pre">entropy</span> <span class="pre">-&gt;</span> <span class="pre">classifier</span></code> chain over logprob arrays. <code class="docutils literal notranslate"><span class="pre">EPR</span></code>
+and <code class="docutils literal notranslate"><span class="pre">WEPR</span></code> are the same estimators with a <code class="docutils literal notranslate"><span class="pre">LogProbParser</span></code> in front, so they take completion
+responses: a <code class="docutils literal notranslate"><span class="pre">parser</span> <span class="pre">-&gt;</span> <span class="pre">entropy</span> <span class="pre">-&gt;</span> <span class="pre">classifier</span></code> chain. <code class="docutils literal notranslate"><span class="pre">clone</span></code>, <code class="docutils literal notranslate"><span class="pre">get_params</span></code>,
+<code class="docutils literal notranslate"><span class="pre">GridSearchCV</span></code>, <code class="docutils literal notranslate"><span class="pre">cross_val_score</span></code> and <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> slicing all work as they do for any
+estimator.</p>
+<p>The package requires scikit-learn 1.8 or later (the <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> floor, set by the
+published detectors). The estimator checks run in CI on the 1.8 floor and on the release
+the lockfile pins, currently 1.9; releases in between are expected to behave the same, but
+are not tested.</p>
+<section id="what-is-checked">
+<h2>What is checked<a class="headerlink" href="#what-is-checked" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">EPRClassifier</span></code>, <code class="docutils literal notranslate"><span class="pre">WEPRClassifier</span></code> and <code class="docutils literal notranslate"><span class="pre">EntropyTransformer</span></code> run scikit-learn’s own estimator
+checks (<code class="docutils literal notranslate"><span class="pre">parametrize_with_checks</span></code>) in
+<a class="reference external" href="https://github.com/artefactory/artefactual/blob/main/tests/test_common.py"><code class="docutils literal notranslate"><span class="pre">tests/test_common.py</span></code></a>.
+<code class="docutils literal notranslate"><span class="pre">LogProbParser</span></code> runs the checks that need no data, called by hand. The transformer passes
+every check. The classifiers pass all but one, which is declared and enforced as a strict
+expected failure:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">check_estimators_overwrite_params</span></code>. A <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> fits its steps in place, which the
+check reads as the constructor parameters being overwritten. scikit-learn lists the
+same check as an expected failure for <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> itself, so the classifiers inherit the
+limitation rather than add one. If a scikit-learn release fixes it, the strict marker
+turns the suite red and the entry is removed.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">EPR</span></code> and <code class="docutils literal notranslate"><span class="pre">WEPR</span></code> are not in <code class="docutils literal notranslate"><span class="pre">parametrize_with_checks</span></code>. They and <code class="docutils literal notranslate"><span class="pre">LogProbParser</span></code> read
+responses, which are not an array, and every check that sends data feeds arrays, which the
+parser refuses. The parser is why the checks that need no data are called by hand on it, and
+the classifiers, which have an array entry point, stand for the detectors: they are the same
+estimators without the parser.</p>
+</section>
+<section id="known-limitations">
+<h2>Known limitations<a class="headerlink" href="#known-limitations" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">k</span></code> must be the trained <code class="docutils literal notranslate"><span class="pre">k</span></code>.</strong> <code class="docutils literal notranslate"><span class="pre">WEPR</span></code> raises when it is loaded with another <code class="docutils literal notranslate"><span class="pre">k</span></code>.
+<code class="docutils literal notranslate"><span class="pre">EPR</span></code> does not: it has one feature whatever <code class="docutils literal notranslate"><span class="pre">k</span></code> is, so <code class="docutils literal notranslate"><span class="pre">EPR.from_pretrained</span></code> checks the
+width only, and an <code class="docutils literal notranslate"><span class="pre">EPR</span></code> used with a <code class="docutils literal notranslate"><span class="pre">k</span></code> other than the one it was trained at scores
+without an error and the scores are wrong. Pass the <code class="docutils literal notranslate"><span class="pre">k</span></code> the weights were trained at.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">classes_</span></code> is sorted.</strong> <code class="docutils literal notranslate"><span class="pre">predict_proba</span></code> columns follow it, so column 1 is the
+hallucination class only for <code class="docutils literal notranslate"><span class="pre">0</span></code>/<code class="docutils literal notranslate"><span class="pre">1</span></code> labels.</p></li>
+<li><p><strong>Targets are binary.</strong> A multi-class <code class="docutils literal notranslate"><span class="pre">y</span></code> raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> at <code class="docutils literal notranslate"><span class="pre">fit</span></code>.</p></li>
+</ul>
+</section>
+<section id="two-kinds-of-input">
+<h2>Two kinds of input<a class="headerlink" href="#two-kinds-of-input" title="Link to this heading">#</a></h2>
+<p>The two pairs of estimators differ in what <code class="docutils literal notranslate"><span class="pre">fit</span></code>, <code class="docutils literal notranslate"><span class="pre">predict</span></code>, <code class="docutils literal notranslate"><span class="pre">predict_proba</span></code> and
+<code class="docutils literal notranslate"><span class="pre">predict_token_proba</span></code> take:</p>
+<ul class="simple">
+<li><p><strong>Responses</strong>, for <code class="docutils literal notranslate"><span class="pre">EPR</span></code> and <code class="docutils literal notranslate"><span class="pre">WEPR</span></code>: a list of what an OpenAI-compatible client returns
+with <code class="docutils literal notranslate"><span class="pre">logprobs=True</span></code> and <code class="docutils literal notranslate"><span class="pre">top_logprobs</span></code> set to <code class="docutils literal notranslate"><span class="pre">k</span></code> (<a class="reference internal" href="scoring.html"><span class="doc">Using a detector</span></a>). This is what you score in
+practice. The accepted shapes are in <a class="reference internal" href="reference.html"><span class="doc">Reference</span></a>. A 1-D array or Series of responses
+is read as responses. A numeric table raises <code class="docutils literal notranslate"><span class="pre">TypeError</span></code>, which names the classifiers.</p></li>
+<li><p><strong>Logprob arrays</strong>, for <code class="docutils literal notranslate"><span class="pre">EPRClassifier</span></code> and <code class="docutils literal notranslate"><span class="pre">WEPRClassifier</span></code>: a
+<code class="docutils literal notranslate"><span class="pre">(n_sequences,</span> <span class="pre">n_tokens,</span> <span class="pre">width)</span></code> array, <code class="docutils literal notranslate"><span class="pre">NaN</span></code>-padded, or a numeric 2-D table, in which
+each row is a one-token sequence and each column that token’s logprob at one rank. Ranks
+beyond <code class="docutils literal notranslate"><span class="pre">k</span></code> are dropped, so one wide array serves a search over <code class="docutils literal notranslate"><span class="pre">k</span></code>. Responses are
+validated; tables are not.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">artefactual</span><span class="w"> </span><span class="kn">import</span> <span class="n">WEPR</span><span class="p">,</span> <span class="n">WEPRClassifier</span>
+
+<span class="n">K</span> <span class="o">=</span> <span class="mi">15</span>  <span class="c1"># the k the published detectors were trained with</span>
+
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">logprobs</span> <span class="o">=</span> <span class="o">-</span><span class="n">rng</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="mi">15</span><span class="p">))</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># 40 one-token rows, 15 ranks</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
+
+<span class="n">classifier</span> <span class="o">=</span> <span class="n">WEPRClassifier</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">logprobs</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">classifier</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">logprobs</span><span class="p">)[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Targets must be binary. A multi-class <code class="docutils literal notranslate"><span class="pre">y</span></code> raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> at <code class="docutils literal notranslate"><span class="pre">fit</span></code>, and the tags say
+so: <code class="docutils literal notranslate"><span class="pre">get_tags(WEPRClassifier(k=15)).classifier_tags.multi_class</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code>, and the input is
+declared as a 2-D array.</p>
+<p>The code below uses the two responses shipped with the repository, repeated to make a
+training set big enough to split. They are a stand-in for your own labelled responses.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">path</span> <span class="o">=</span> <span class="s2">"docs/examples/open_ai_responses_top15.json"</span>
+<span class="n">RESPONSES</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">))[</span><span class="s2">"responses"</span><span class="p">]</span>
+<span class="n">responses</span> <span class="o">=</span> <span class="n">RESPONSES</span> <span class="o">*</span> <span class="mi">10</span>
+<span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)</span>
+
+<span class="n">detector</span> <span class="o">=</span> <span class="n">WEPR</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">responses</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+<span class="n">detector</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">RESPONSES</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="model-selection">
+<h2>Model selection<a class="headerlink" href="#model-selection" title="Link to this heading">#</a></h2>
+<p>Because a detector is an estimator over responses, the scikit-learn tools take the
+responses directly. Step parameters use the <code class="docutils literal notranslate"><span class="pre">step__parameter</span></code> convention, and the steps
+are named <code class="docutils literal notranslate"><span class="pre">parser</span></code>, <code class="docutils literal notranslate"><span class="pre">entropy</span></code> and <code class="docutils literal notranslate"><span class="pre">classifier</span></code>. A classifier has the last two:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">GridSearchCV</span><span class="p">,</span> <span class="n">cross_val_score</span>
+
+<span class="n">cross_val_score</span><span class="p">(</span><span class="n">WEPR</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">),</span> <span class="n">responses</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">search</span> <span class="o">=</span> <span class="n">GridSearchCV</span><span class="p">(</span>
+    <span class="n">WEPR</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">),</span>
+    <span class="p">{</span><span class="s2">"k"</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">15</span><span class="p">],</span> <span class="s2">"classifier__C"</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">]},</span>
+    <span class="n">cv</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+<span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">responses</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+<span class="n">search</span><span class="o">.</span><span class="n">best_params_</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">k</span></code> is the parameter to sweep: setting it reaches the parser and the entropy step.</p>
+<p>Sample weights reach the logistic regression through the pipeline’s own prefix:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">))</span>
+<span class="n">WEPR</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">responses</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">classifier__sample_weight</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+
+<span class="n">GridSearchCV</span><span class="p">(</span><span class="n">WEPR</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">),</span> <span class="p">{</span><span class="s2">"classifier__C"</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]},</span> <span class="n">cv</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">responses</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">classifier__sample_weight</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="feature-names-and-dataframe-output">
+<h2>Feature names and DataFrame output<a class="headerlink" href="#feature-names-and-dataframe-output" title="Link to this heading">#</a></h2>
+<p>Slices of an estimator are transformers, so scikit-learn’s <code class="docutils literal notranslate"><span class="pre">set_output</span></code> applies to them.
+The columns are named from <code class="docutils literal notranslate"><span class="pre">k</span></code>: <code class="docutils literal notranslate"><span class="pre">epr</span></code> for <code class="docutils literal notranslate"><span class="pre">EPR</span></code> and <code class="docutils literal notranslate"><span class="pre">EPRClassifier</span></code>;
+<code class="docutils literal notranslate"><span class="pre">wepr_mean_rank0</span></code>..<code class="docutils literal notranslate"><span class="pre">wepr_mean_rank{k-1}</span></code> then <code class="docutils literal notranslate"><span class="pre">wepr_max_rank0</span></code>..<code class="docutils literal notranslate"><span class="pre">wepr_max_rank{k-1}</span></code> for
+<code class="docutils literal notranslate"><span class="pre">WEPR</span></code> and <code class="docutils literal notranslate"><span class="pre">WEPRClassifier</span></code>. A classifier fitted on a DataFrame names them after its
+columns instead, <code class="docutils literal notranslate"><span class="pre">wepr_mean_&lt;column&gt;</span></code> then <code class="docutils literal notranslate"><span class="pre">wepr_max_&lt;column&gt;</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">front</span> <span class="o">=</span> <span class="n">detector</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_output</span><span class="p">(</span><span class="n">transform</span><span class="o">=</span><span class="s2">"pandas"</span><span class="p">)</span>  <span class="c1"># or "polars"</span>
+<span class="n">front</span><span class="o">.</span><span class="n">get_feature_names_out</span><span class="p">()</span>
+<span class="n">front</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">RESPONSES</span><span class="p">)</span>  <span class="c1"># a DataFrame with those columns</span>
+</pre></div>
+</div>
+<p>The parser yields a three-dimensional array that has no table form, so it is never
+converted; only the entropy step’s <code class="docutils literal notranslate"><span class="pre">transform</span></code> is. A custom pooling function is named after itself,
+and a <code class="docutils literal notranslate"><span class="pre">Pooling</span></code> subclass by its <code class="docutils literal notranslate"><span class="pre">feature_names</span></code>.</p>
+</section>
+<section id="persistence">
+<h2>Persistence<a class="headerlink" href="#persistence" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">save_pretrained</span></code> writes the fitted classifier alone to a <code class="docutils literal notranslate"><span class="pre">.skops</span></code> file, which names only
+scikit-learn types and so loads under a different install of artefactual.
+<code class="docutils literal notranslate"><span class="pre">from_pretrained</span></code> reads one back from a path, a directory holding <code class="docutils literal notranslate"><span class="pre">model.skops</span></code>, or a
+Hugging Face repository id (<a class="reference internal" href="reference.html"><span class="doc">Reference</span></a> has the file layout):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">saved</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">save_pretrained</span><span class="p">(</span><span class="s2">"my_detector.skops"</span><span class="p">)</span>
+<span class="n">again</span> <span class="o">=</span> <span class="n">WEPR</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">saved</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">K</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Dumping the whole detector with <code class="docutils literal notranslate"><span class="pre">skops.io.dump</span></code> also works, but loading it names the
+artefactual types it holds, which you pass as <code class="docutils literal notranslate"><span class="pre">trusted=</span></code>. Ask skops for the exact list:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">skops.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">dump</span><span class="p">,</span> <span class="n">get_untrusted_types</span><span class="p">,</span> <span class="n">load</span>
+
+<span class="n">dump</span><span class="p">(</span><span class="n">detector</span><span class="p">,</span> <span class="s2">"whole.skops"</span><span class="p">)</span>
+<span class="n">trusted</span> <span class="o">=</span> <span class="n">get_untrusted_types</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="s2">"whole.skops"</span><span class="p">)</span>
+<span class="n">whole</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="s2">"whole.skops"</span><span class="p">,</span> <span class="n">trusted</span><span class="o">=</span><span class="n">trusted</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Do not open an untrusted file with <code class="docutils literal notranslate"><span class="pre">joblib</span></code> or <code class="docutils literal notranslate"><span class="pre">pickle</span></code>: they run code from the file. The
+<code class="docutils literal notranslate"><span class="pre">trusted=</span></code> list is for files you produced yourself.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="reference.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Reference</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../examples/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Examples</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-is-checked">What is checked</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#known-limitations">Known limitations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#two-kinds-of-input">Two kinds of input</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model-selection">Model selection</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#feature-names-and-dataframe-output">Feature names and DataFrame output</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#persistence">Persistence</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Artefact Research Center.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

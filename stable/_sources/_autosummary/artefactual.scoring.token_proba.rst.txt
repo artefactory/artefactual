@@ -1,0 +1,6 @@
+﻿artefactual.scoring.token\_proba
+================================
+
+.. currentmodule:: artefactual.scoring
+
+.. autofunction:: token_proba
